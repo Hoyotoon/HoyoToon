@@ -1,4 +1,4 @@
-﻿﻿// Material/Shader Inspector for Unity 2017/2018
+﻿// Material/Shader Inspector for Unity 2017/2018
 // CopyRight (C) 2024 Thryrallo + HoyoToon
 #if UNITY_EDITOR
 using System.Collections.Generic;
@@ -521,7 +521,7 @@ namespace HoyoToon
             Active = this;
 
             DoVariantWarning();
-            GUIManualReloadButton();
+            //GUIManualReloadButton();
             GUIDevloperMode();
             GUIShaderVersioning();
             GUILogo();
@@ -601,73 +601,167 @@ namespace HoyoToon
 
         }
 
+        // Layout constants for the top bar
+        private struct TopBarLayout
+        {
+            public const float BANNER_HEIGHT = 150f;
+            public const float LOGO_WIDTH = 348f;
+            public const float LOGO_HEIGHT = 114f;
+            public const float CHARACTER_MAX_WIDTH = 256f;
+            public const float CHARACTER_MAX_HEIGHT = 180f;
+            public const float MIN_LOGO_DISTANCE = 5f;
+        }
+
         private void GUITopBar()
         {
-            // Get the logo path from the shader property
-            MaterialProperty logoPathProperty = GetMaterialProperty("ShaderLogo");
-            MaterialProperty bgPathProperty = GetMaterialProperty("ShaderBG");
+            var layout = CreateTopBarLayout();
+            
+            DrawBannerBackground(layout);
+            DrawCharacterImages(layout);
+            DrawLogo(layout);
+            DrawHeaderElements(layout);
+        }
 
-            Rect bgRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandWidth(true), GUILayout.Height(145.0f));
-            bgRect.x = 0;
-            bgRect.width = EditorGUIUtility.currentViewWidth;
-            Rect logoRect = new Rect(bgRect.width / 2 - 375f, bgRect.height / 3f - 65f, 750f, 200f);
+        private TopBarLayoutData CreateTopBarLayout()
+        {
+            var data = new TopBarLayoutData();
+            
+            // Get shader properties
+            data.logoPathProperty = GetMaterialProperty("ShaderLogo");
+            data.bgPathProperty = GetMaterialProperty("ShaderBG");
+            data.characterLeftProperty = GetMaterialProperty("CharacterLeft");
+            data.characterRightProperty = GetMaterialProperty("CharacterRight");
+            
+            // Calculate layout rectangles
+            data.contentRect = GUILayoutUtility.GetRect(GUIContent.none, GUIStyle.none, GUILayout.ExpandWidth(true), GUILayout.Height(TopBarLayout.BANNER_HEIGHT));
+            data.originalY = data.contentRect.y;
+            
+            // Extended background rect
+            data.bgRect = new Rect(0, 0, EditorGUIUtility.currentViewWidth, data.contentRect.height + data.originalY);
+            
+            // Logo rect centered in original content area
+            float logoY = data.originalY + (TopBarLayout.BANNER_HEIGHT - TopBarLayout.LOGO_HEIGHT) / 2;
+            data.logoRect = new Rect((data.bgRect.width - TopBarLayout.LOGO_WIDTH) / 2, logoY, TopBarLayout.LOGO_WIDTH, TopBarLayout.LOGO_HEIGHT);
+            
+            return data;
+        }
 
-            if (bgPathProperty != null && !string.IsNullOrEmpty(bgPathProperty.displayName))
+        private void DrawBannerBackground(TopBarLayoutData layout)
+        {
+            if (layout.bgPathProperty?.displayName != null)
             {
-                // Load the background from the path
-                Texture2D bg = Resources.Load<Texture2D>(bgPathProperty.displayName);
-
+                Texture2D bg = Resources.Load<Texture2D>(layout.bgPathProperty.displayName);
                 if (bg != null)
                 {
-                    GUI.DrawTexture(bgRect, bg, ScaleMode.ScaleAndCrop);
+                    GUI.DrawTexture(layout.bgRect, bg, ScaleMode.StretchToFill);
                 }
             }
+        }
 
-            if (logoPathProperty != null && !string.IsNullOrEmpty(logoPathProperty.displayName))
+        private void DrawCharacterImages(TopBarLayoutData layout)
+        {
+            DrawCharacterImage(layout.characterLeftProperty, layout, true);
+            DrawCharacterImage(layout.characterRightProperty, layout, false);
+        }
+
+        private void DrawLogo(TopBarLayoutData layout)
+        {
+            if (layout.logoPathProperty?.displayName != null)
             {
-                // Load the logo from the path
-                Texture2D logo = Resources.Load<Texture2D>(logoPathProperty.displayName);
-
+                Texture2D logo = Resources.Load<Texture2D>(layout.logoPathProperty.displayName);
                 if (logo != null)
                 {
-                    GUI.DrawTexture(logoRect, logo, ScaleMode.ScaleToFit);
+                    GUI.DrawTexture(layout.logoRect, logo, ScaleMode.ScaleToFit);
                 }
             }
+        }
 
+
+
+        private void DrawHeaderElements(TopBarLayoutData layout)
+        {
             // Draw the header if it exists
-            if (_shaderHeader != null && _shaderHeader.Options.texture != null) _shaderHeader.Draw();
+            if (_shaderHeader?.Options.texture != null) 
+                _shaderHeader.Draw();
 
-            bool drawAboveToolbar = EditorGUIUtility.wideMode == false;
-            if (_shaderHeader != null && drawAboveToolbar) _shaderHeader.Draw(EditorGUILayout.GetControlRect());
+            bool drawAboveToolbar = !EditorGUIUtility.wideMode;
+            if (_shaderHeader != null && drawAboveToolbar) 
+                _shaderHeader.Draw(EditorGUILayout.GetControlRect());
 
-            // Draw the icons on top of the background at the bottom left
-            Rect iconRect = new Rect(bgRect.x, bgRect.yMax - 40, 40, 40); // Adjusted position to bottom left of bgRect
-            if (GUILib.ButtonWithCursor(iconRect, Styles.icon_style_settings, "Settings"))
-            {
-                EditorWindow.GetWindow<Settings>(false, "HoyoToon Settings", true);
-            }
-            iconRect.x += 40; // Adjust spacing between icons
-            iconRect.width = 40; // Set the width of the iconRect to match the width of the icons
-            if (GUILib.ButtonWithCursor(iconRect, Styles.icon_style_tools, "Tools"))
-            {
-                PopupTools(iconRect);
-            }
-
+            // Header rect for master label
             Rect headerRect = new Rect(0, 0, EditorGUIUtility.currentViewWidth, 25);
-            headerRect.x = iconRect.x + 35;
-            headerRect.width = EditorGUIUtility.currentViewWidth - headerRect.x;
 
             if (LocaleProperty != null)
             {
-                Rect localeRect = new Rect(headerRect);
-                localeRect.width = 100;
-                localeRect.x = headerRect.width - 100;
+                Rect localeRect = new Rect(headerRect.width - 100, 0, 100, 25);
                 LocaleProperty.Draw(localeRect);
-                headerRect.width -= localeRect.width;
+                headerRect.width -= 100;
             }
 
-            // Draw master label text after UI elements, so it can be positioned between
-            if (_shaderHeader != null && !drawAboveToolbar) _shaderHeader.Draw(headerRect);
+            // Draw master label text
+            if (_shaderHeader != null && !drawAboveToolbar) 
+                _shaderHeader.Draw(headerRect);
+        }
+
+        // Data structure to hold layout information
+        private struct TopBarLayoutData
+        {
+            public MaterialProperty logoPathProperty;
+            public MaterialProperty bgPathProperty; 
+            public MaterialProperty characterLeftProperty;
+            public MaterialProperty characterRightProperty;
+            public Rect contentRect;
+            public Rect bgRect;
+            public Rect logoRect;
+            public float originalY;
+        }
+
+        /// <summary>
+        /// Draws character images at the absolute left or right edges of the UI
+        /// </summary>
+        /// <param name="characterProperty">The shader property containing the character texture path</param>
+        /// <param name="layout">Layout data containing all positioning information</param>
+        /// <param name="isLeftSide">True for left character, false for right character</param>
+        private void DrawCharacterImage(MaterialProperty characterProperty, TopBarLayoutData layout, bool isLeftSide)
+        {
+            if (characterProperty?.displayName == null)
+                return;
+
+            Texture2D characterTexture = Resources.Load<Texture2D>(characterProperty.displayName);
+            if (characterTexture == null)
+                return;
+
+            var characterRect = CalculateCharacterRect(characterTexture, layout, isLeftSide);
+            GUI.DrawTexture(characterRect, characterTexture, ScaleMode.ScaleToFit);
+        }
+
+        /// <summary>
+        /// Calculates the optimal rectangle for a character image
+        /// </summary>
+        private Rect CalculateCharacterRect(Texture2D texture, TopBarLayoutData layout, bool isLeftSide)
+        {
+            // Calculate character dimensions while maintaining aspect ratio
+            float aspectRatio = (float)texture.width / texture.height;
+            float characterWidth = Mathf.Min(TopBarLayout.CHARACTER_MAX_WIDTH, TopBarLayout.CHARACTER_MAX_HEIGHT * aspectRatio);
+            float characterHeight = Mathf.Min(TopBarLayout.CHARACTER_MAX_HEIGHT, TopBarLayout.CHARACTER_MAX_WIDTH / aspectRatio);
+
+            // Calculate Y position (bottom of banner)
+            float characterY = layout.originalY + TopBarLayout.BANNER_HEIGHT - characterHeight;
+
+            // Calculate X position with logo boundary constraints
+            float characterX;
+            if (isLeftSide)
+            {
+                float maxAllowedX = layout.logoRect.x - characterWidth - TopBarLayout.MIN_LOGO_DISTANCE;
+                characterX = Mathf.Min(layout.bgRect.x, maxAllowedX);
+            }
+            else
+            {
+                float minAllowedX = layout.logoRect.xMax + TopBarLayout.MIN_LOGO_DISTANCE;
+                characterX = Mathf.Max(layout.bgRect.xMax - characterWidth, minAllowedX);
+            }
+
+            return new Rect(characterX, characterY, characterWidth, characterHeight);
         }
 
         private void GUILockinButton()
