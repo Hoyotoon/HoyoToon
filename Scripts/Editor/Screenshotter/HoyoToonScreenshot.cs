@@ -88,6 +88,12 @@ namespace HoyoToon
             EditorGUILayout.Space();
             initialWidth = EditorGUILayout.IntField("Initial Width", initialWidth);
             initialHeight = EditorGUILayout.IntField("Initial Height", initialHeight);
+            
+            if (GUILayout.Button("Sync with Current View"))
+            {
+                SyncWithCurrentView();
+            }
+            
             resolutionMultiplier = EditorGUILayout.IntSlider("Resolution Multiplier", resolutionMultiplier, 1, 4);
             transparency = EditorGUILayout.Toggle("Transparency", transparency);
             openScreenshotOnSave = EditorGUILayout.Toggle("Open Screenshot on Save", openScreenshotOnSave);
@@ -302,6 +308,142 @@ namespace HoyoToon
             else
             {
                 HoyoToonLogs.LogDebug("Screenshot folder does not exist: " + fullPath);
+            }
+        }
+
+        private void SyncWithCurrentView()
+        {
+            if (selectedView == ViewType.SceneView)
+            {
+                SceneView sceneView = SceneView.lastActiveSceneView;
+                if (sceneView != null)
+                {
+                    initialWidth = (int)sceneView.position.width;
+                    initialHeight = (int)sceneView.position.height;
+                    HoyoToonLogs.LogDebug($"Synced with Scene View: {initialWidth}x{initialHeight}");
+                }
+                else
+                {
+                    HoyoToonLogs.ErrorDebug("No active SceneView found.");
+                }
+            }
+            else if (selectedView == ViewType.GameView)
+            {
+                // Get Game View rendering dimensions using reflection
+                try
+                {
+                    var gameViewType = System.Type.GetType("UnityEditor.GameView,UnityEditor");
+                    
+                    if (gameViewType != null)
+                    {
+                        var gameViewWindows = Resources.FindObjectsOfTypeAll(gameViewType);
+                        if (gameViewWindows.Length > 0)
+                        {
+                            var gameView = gameViewWindows[0];
+                            
+                            // Try to get the target size directly
+                            var targetSizeProperty = gameViewType.GetProperty("targetSize", 
+                                System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                            
+                            if (targetSizeProperty != null)
+                            {
+                                var targetSize = (Vector2)targetSizeProperty.GetValue(gameView);
+                                initialWidth = (int)targetSize.x;
+                                initialHeight = (int)targetSize.y;
+                                
+                                // Get the display name for logging
+                                var selectedSizeIndexProperty = gameViewType.GetProperty("selectedSizeIndex", 
+                                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                                
+                                string sizeName = "Unknown";
+                                if (selectedSizeIndexProperty != null)
+                                {
+                                    try
+                                    {
+                                        int selectedIndex = (int)selectedSizeIndexProperty.GetValue(gameView);
+                                        var gameViewSizesType = System.Type.GetType("UnityEditor.GameViewSizes,UnityEditor");
+                                        var gameViewSizesInstance = gameViewSizesType.GetProperty("instance", 
+                                            System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+                                        var gameViewSizes = gameViewSizesInstance.GetValue(null);
+                                        var currentGroupProperty = gameViewSizes.GetType().GetProperty("currentGroup");
+                                        var currentGroup = currentGroupProperty.GetValue(gameViewSizes);
+                                        var getGameViewSizeMethod = currentGroup.GetType().GetMethod("GetGameViewSize");
+                                        var gameViewSize = getGameViewSizeMethod.Invoke(currentGroup, new object[] { selectedIndex });
+                                        var displayTextProperty = gameViewSize.GetType().GetProperty("displayText");
+                                        sizeName = (string)displayTextProperty.GetValue(gameViewSize);
+                                    }
+                                    catch
+                                    {
+                                        sizeName = $"{initialWidth}x{initialHeight}";
+                                    }
+                                }
+                                
+                                HoyoToonLogs.LogDebug($"Synced with Game View '{sizeName}': {initialWidth}x{initialHeight}");
+                            }
+                            else
+                            {
+                                // Fallback: try the previous method
+                                var selectedSizeIndexProperty = gameViewType.GetProperty("selectedSizeIndex", 
+                                    System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+                                
+                                if (selectedSizeIndexProperty != null)
+                                {
+                                    int selectedSizeIndex = (int)selectedSizeIndexProperty.GetValue(gameView);
+                                    
+                                    var gameViewSizesType = System.Type.GetType("UnityEditor.GameViewSizes,UnityEditor");
+                                    var gameViewSizesInstance = gameViewSizesType.GetProperty("instance", 
+                                        System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.Public);
+                                    var gameViewSizes = gameViewSizesInstance.GetValue(null);
+                                    var currentGroupProperty = gameViewSizes.GetType().GetProperty("currentGroup");
+                                    var currentGroup = currentGroupProperty.GetValue(gameViewSizes);
+                                    var getGameViewSizeMethod = currentGroup.GetType().GetMethod("GetGameViewSize");
+                                    var gameViewSize = getGameViewSizeMethod.Invoke(currentGroup, new object[] { selectedSizeIndex });
+                                    
+                                    var widthProperty = gameViewSize.GetType().GetProperty("width");
+                                    var heightProperty = gameViewSize.GetType().GetProperty("height");
+                                    var displayTextProperty = gameViewSize.GetType().GetProperty("displayText");
+                                    
+                                    initialWidth = (int)widthProperty.GetValue(gameViewSize);
+                                    initialHeight = (int)heightProperty.GetValue(gameViewSize);
+                                    string displayText = (string)displayTextProperty.GetValue(gameViewSize);
+                                    
+                                    HoyoToonLogs.LogDebug($"Synced with Game View '{displayText}': {initialWidth}x{initialHeight}");
+                                }
+                                else
+                                {
+                                    HoyoToonLogs.ErrorDebug("Could not access Game View size properties.");
+                                }
+                            }
+                        }
+                        else
+                        {
+                            HoyoToonLogs.ErrorDebug("No Game View windows found.");
+                        }
+                    }
+                    else
+                    {
+                        HoyoToonLogs.ErrorDebug("Could not access Game View type.");
+                    }
+                }
+                catch (System.Exception ex)
+                {
+                    HoyoToonLogs.ErrorDebug($"Failed to sync with Game View: {ex.Message}");
+                    // Fallback: try to get main camera screen dimensions
+                    Camera mainCamera = Camera.main;
+                    if (mainCamera != null)
+                    {
+                        initialWidth = Screen.width;
+                        initialHeight = Screen.height;
+                        HoyoToonLogs.LogDebug($"Using fallback screen dimensions: {initialWidth}x{initialHeight}");
+                    }
+                    else
+                    {
+                        // Ultimate fallback
+                        initialWidth = 1920;
+                        initialHeight = 1080;
+                        HoyoToonLogs.LogDebug($"Using default resolution: {initialWidth}x{initialHeight}");
+                    }
+                }
             }
         }
     }
