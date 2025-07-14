@@ -103,6 +103,7 @@ float3 hi3_rim(float ndotv, float lightmap, float ndotl, float3 diffuse)
     return diffuse;
 }
 
+
 void dissolve_a(in float2 uv2, in float4 mask_uv, in float2 dis_angle, inout float3 color, out float blend_alpha, out float add_alpha, out float out_noise, out float2 out_mask)
 {
     #if defined(can_dissolve)

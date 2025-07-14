@@ -17,6 +17,10 @@ SamplerState sampler_FaceMapTex;
 SamplerState sampler_FacExpTex;
 SamplerState sampler_NoiseTex;
 SamplerState sampler_MaskDisTex;
+
+float _UseAlphaClip;
+float _AlphaClipThreshold;
+float _DisableFOVScalingOL;
 float _EnableShadow;
 float _EnableSpecular;
 float _EnableOutline;

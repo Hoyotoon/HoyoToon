@@ -3,13 +3,12 @@ Shader "HoyoToon/Honkai Impact/Character Part 1"
     Properties 
   { 
       [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0 
-      [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0 
-      [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0 
-      [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0 
         //Header
         //[HideInInspector] shader_master_label ("✧<b><i><color=#C69ECE>HoyoToon Honkai Impact</color></i></b>✧", Float) = 0
         [HideInInspector] ShaderBG ("UI/background", Float) = 0
         [HideInInspector] ShaderLogo ("UI/hi3p1logo", Float) = 0
+        [HideInInspector] CharacterLeft ("UI/hi3p1l", Float) = 0
+        [HideInInspector] CharacterRight ("UI/hi3p1r", Float) = 0
         [HideInInspector] shader_is_using_hoyeditor ("", Float) = 0
         [HideInInspector] footer_github ("{texture:{name:hoyogithub},action:{type:URL,data:https://github.com/HoyoToon/HoyoToon},hover:Github}", Float) = 0
         [HideInInspector] footer_discord ("{texture:{name:hoyodiscord},action:{type:URL,data:https://discord.gg/hoyotoon},hover:Discord}", Float) = 0
@@ -18,17 +17,33 @@ Shader "HoyoToon/Honkai Impact/Character Part 1"
         [HoyoToonShaderOptimizerLockButton] _ShaderOptimizerEnabled ("Lock Material", Float) = 0
 
         //Material Type
-        [HoyoToonWideEnum(Base, 0, Face, 1, Hair, 2, Eye, 3)]variant_selector("Material Type--{on_value_actions:[
+        [HoyoToonWideEnum(Base, 0, Face, 1, Hair, 2, Eye, 3, Mouth, 4, EyeL, 5, EyeR, 6)]variant_selector("Material Type--{on_value_actions:[
             {value:0,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=8}]},
+            {value:0,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]}]},
             {value:0,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
             {value:1,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=6}]},
+            {value:1,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]}]},
             {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=16}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
+            {value:4,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=6}]},
+            {value:4,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=5}, {type:SET_PROPERTY,data:_DstBlend=10}]}]},
+            {value:4,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=16}, {type:SET_PROPERTY,data:render_queue=2001}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+            
+            {value:5,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=6}]},
+            {value:5,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=5}, {type:SET_PROPERTY,data:_DstBlend=10}]}]},
+            {value:5,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=16}, {type:SET_PROPERTY,data:render_queue=2001}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+
+            {value:6,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=6}]},
+            {value:6,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=5}, {type:SET_PROPERTY,data:_DstBlend=10}]}]},
+            {value:6,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=16}, {type:SET_PROPERTY,data:render_queue=2001}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+
             {value:2,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=6}]},
+            {value:2,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]}]},
             {value:2,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=16}, {type:SET_PROPERTY,data:render_queue=2002}, {type:SET_PROPERTY,data:render_type=Opaque}]},
             
             {value:3,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=6}]},
+            {value:3,actions:[{value:1,actions:[{type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]}]},
             {value:3,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=16}, {type:SET_PROPERTY,data:render_queue=2001}, {type:SET_PROPERTY,data:render_type=Opaque}]}]}", Int) = 0
         //Material Type End
             
@@ -123,6 +138,7 @@ Shader "HoyoToon/Honkai Impact/Character Part 1"
             //Outlines
             [HideInInspector] start_outlines("Outlines--{reference_property:_EnableOutline}", Float) = 0
                 [Toggle] _EnableOutline ("Enable Outline", Float) = 1
+                [Toggle] _DisableFOVScalingOL ("Disable FOV Scaling", Float) = 1
                 _OutlineWidth ("Outline Width", Range(0, 100)) = 0.0
                 _Scale ("Outline Scale", Float) = 0.01 // I don't think there's a noticable difference between hoyo2vrc and maya scales
                 _GlobalOutlineScale ("X: Scale W:Distance Toggle", Vector) = (1, 1, 1, 1) //X: Scale Y:Distance Toggle (w > 0.09: manual, w < 0.09: camera)
@@ -130,6 +146,10 @@ Shader "HoyoToon/Honkai Impact/Character Part 1"
                 _OutlineCamStart ("Outline Camera Adjustment Start Distance", Range(0, 10000)) = 1000
                 [Toggle(TRANSPARENTOUTLINE)] _TrasOutline ("Outline is Transparent By MainTex", Float) = 0
                 [Toggle] _OutlineTrans ("Outline Tranparent", Float) = 0
+                [HideInInspector] start_outlineAlpha("Outline Alpha Options", Float) = 0
+                    [Toggle] _UseAlphaClip ("Use Alpha Clipping", Float) = 0
+                    _AlphaClipThreshold ("Clip Value", Range(0, 1)) = 1 
+                [HideInInspector] end_outlineAlpha(" ", Float) = 0
                 [HideInInspector] start_outlinescolor("Outline Colors", Float) = 0
                     _OutlineColor ("Outline Color 1", Color) = (0,0,0,1)
                     _OutlineColor2 ("Outline Color 2", Color) = (0,0,0,1)
@@ -137,6 +157,11 @@ Shader "HoyoToon/Honkai Impact/Character Part 1"
                     _OutlineColor4 ("Outline Color 4", Color) = (0,0,0,1)
                     _OutlineColor5 ("Outline Color 5", Color) = (0,0,0,1)
                 [HideInInspector] end_outlinescolor(" ", Float) = 0
+                [HideInInspector] start_outlinefade("Outline Fade", Float) = 0
+                [Toggle] _UseCameraFade ("Use Camera Fade", Float) = 0
+                _FadeOffset ("Fade Offset", Float) = 0
+                _FadeDistance ("Fade Distance", Float) = 0
+                [HideInInspector] end_outlinefade("Outline Fade", Float) = 0
             [HideInInspector] end_outlines(" ", Float) = 0
             //Outlines End
         //endex
@@ -384,6 +409,12 @@ Shader "HoyoToon/Honkai Impact/Character Part 1"
             Tags{  "LightMode" = "ForwardBase" } 
             Cull front
             Blend SrcAlpha OneMinusSrcAlpha
+            Stencil
+            {
+				ref 255
+                Comp Always
+                Pass Keep
+            }
             HLSLPROGRAM
                     
             #pragma vertex edge_model

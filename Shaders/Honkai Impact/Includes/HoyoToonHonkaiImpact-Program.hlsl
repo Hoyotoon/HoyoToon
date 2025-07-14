@@ -9,8 +9,8 @@ edge_out edge_model(edge_in i)
         float3 pos, scale, scale_check;
 
         outline_normal = mul((float3x3)UNITY_MATRIX_IT_MV, i.tangent.xyz);
-        outline_normal.z = 0.00999999978;
-        outline_normal.xyz = normalize(outline_normal.xyz);
+        // outline_normal.z = 0.001;
+        outline_normal.xy = normalize(outline_normal.xy);
 
         float4 wv_pos = mul(UNITY_MATRIX_MV, i.pos);
         float4 wvtmp = wv_pos;
@@ -18,27 +18,15 @@ edge_out edge_model(edge_in i)
         wvtmp.x = (-wvtmp.z) + (-_ProjectionParams.y);
         wvtmp.x = wvtmp.x * _OutlineColor.w;
 
-
-        pos.x = (-wvtmp.z) / unity_CameraProjection[1].y;
-
-        scale = pos.x * _GlobalOutlineScale.x;
-        scale_check = 0.00999999978 < _GlobalOutlineScale.w;
-        scale = scale_check ? scale : pos.x;
-        scale = scale / _Scale;
-
-        pos.x = rsqrt(scale);
-        pos.x = 1.0f / pos.x;
-
         scale = _OutlineWidth * _Scale * i.vertexcolor.w;
-        scale = pos.x * scale;
+        scale = ((unity_CameraProjection[3].w == 1) ? 2 : 5.0f) * scale;
 
         pos.x = normalize(wv_pos.xyz);
 
-        pos.xyz = pos.xxx * wv_pos.xyz * _MaxOutlineZOffset * _Scale;
+        pos.xyz = normalize(wv_pos.xyz) * ((unity_CameraProjection[3].w == 1) ? 0.001 : _MaxOutlineZOffset) * _Scale;
 
-        float u_xlat2 = i.vertexcolor.z - 0.5;
-        pos.xyz = pos.xyz * u_xlat2 + wv_pos.xyz;
-        pos.xy = outline_normal.xy * float2(scale.xx) + pos.xy;
+        pos.xyz = pos.xyz + wv_pos.xyz;
+        pos.xyz = outline_normal.xyz * (float3)(scale) + pos.xyz;
 
         wv_pos.xyz = pos;
         o.pos = mul(UNITY_MATRIX_P, wv_pos);
@@ -96,6 +84,7 @@ vs_out vs_model (vs_in v)
     vs_out o;
     o = (vs_out)0.0f;
     o.pos = mul(UNITY_MATRIX_MVP, v.vertex);
+    if(variant_selector >= 4 ) o.pos.z += 0.0001;
     o.uv = v.uv;
     o.uv2 = v.uv2;
     o.normal = normalize(mul((float3x3)unity_ObjectToWorld, v.normal));
@@ -153,7 +142,7 @@ float4 ps_model (vs_out i, bool vface : SV_ISFRONTFACE) : SV_Target
     if(variant_selector == 1 || variant_selector == 2 || variant_selector == 3) ndotv = 1;
 
     // textures
-    float4 diffuse = _MainTex.Sample(sampler_MainTex, uv);
+    float4 diffuse = _MainTex.Sample(sampler_MainTex, uv * _MainTex_ST.xy + _MainTex_ST.zw);
     float4 Alpha = _MaskDisTex.Sample(sampler_linear_repeat, uv);
     float4 lightmap = _LightMapTex.Sample(sampler_linear_repeat, uv); 
     
