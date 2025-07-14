@@ -381,11 +381,11 @@ float ramp_shadow_hair(float shadow_area, float4 mask)
 
 //--------------------------------------------------------------------------------------
 // SHADOW COLOR
-float4 shadow_color_base(float3 normal, float3 light, float2 uv, float shadow_mask, float skin_id, float ramp_mask, in float shadow_area)
+float4 shadow_color_base(float3 normal, float3 light, float2 uv, float shadow_mask, float skin_id, float ramp_mask, in float shadow_area, in float casted)
 {
     // first shadow terms : 
-    float shadow = (_UseSDFShadow || (_MaterialType == 1)) ? ((1.0 -  face_shadow(uv, light)) + 0.5f):  saturate(base_shadow(dot(normal, light), shadow_mask));
-    float2 ramp_uv = (_UseSDFShadow || (_MaterialType == 1)) ? 1.0 - face_shadow(uv, light) : ramp_shadow_base(dot(normal, light), 1.0);
+    float shadow = (_UseSDFShadow || (_MaterialType == 1)) ? ((1.0 -  face_shadow(uv, light)) + 0.5f):  saturate(base_shadow(dot(normal, light) * casted, shadow_mask));
+    float2 ramp_uv = (_UseSDFShadow || (_MaterialType == 1)) ? 1.0 - face_shadow(uv, light) : ramp_shadow_base(dot(normal, light) * casted, 1.0);
 
     float4 subsurface = lerp(_SubsurfaceColor, _SkinSubsurfaceColor, saturate(skin_id.x + (_MaterialType == 1)));
 
@@ -408,10 +408,10 @@ float4 shadow_color_base(float3 normal, float3 light, float2 uv, float shadow_ma
     return float4(shadow_color, saturate(shadow)); 
 }
 
-float4 shadow_color_hair(float3 normal, float3 light, float4 mask, float skin_id, in float shadow_area)
+float4 shadow_color_hair(float3 normal, float3 light, float4 mask, float skin_id, in float shadow_area, in float casted )
 {
     // first shadow terms : 
-    float shadow = hair_shadow(dot(normal, light), mask);
+    float shadow = hair_shadow(dot(normal, light) * casted, mask);
     float2 ramp_uv = saturate(ramp_shadow_hair(shadow, mask)+0.1f);
     shadow = (shadow);
     ramp_uv = (ramp_uv) ;
@@ -604,7 +604,7 @@ float3 matcap_coloring(float3 diffuse, float4 matcap, float spec)
 
 //--------------------------------------------------------------------------------------
 // material funtions 
-void material_basic(inout float3 color, inout float4 shadow, inout float3 specular, in float3 normal, in float3 light, in float3 half_vector, in float3 spec, in float2 uv, in float shadow_mask, in float3 skin_id, in float3 typemask, inout float shadow_area, inout float4 matcap)
+void material_basic(inout float3 color, inout float4 shadow, inout float3 specular, in float3 normal, in float3 light, in float3 half_vector, in float3 spec, in float2 uv, in float shadow_mask, in float3 skin_id, in float3 typemask, inout float shadow_area, inout float4 matcap, in float casted)
 {
     float metal_check = (0.00000003 >= spec.z); 
     metal_check = (metal_check) ? 0 : pow(spec.z, 0.1f);
@@ -621,7 +621,7 @@ void material_basic(inout float3 color, inout float4 shadow, inout float3 specul
     specular = saturate(specular) * pow(color, lerp(0.5f, 2.0f, spec.x));
 
     // get shadow color
-    float4 container = shadow_color_base(normal, light, uv, shadow_mask, skin_id.x, typemask.z, shadow_area);
+    float4 container = shadow_color_base(normal, light, uv, shadow_mask, skin_id.x, typemask.z, shadow_area, casted);
     shadow = container.xyzw;
     shadow_area = container.w;
 
@@ -631,7 +631,7 @@ void material_basic(inout float3 color, inout float4 shadow, inout float3 specul
     
 }
 
-void material_tight(inout float3 color, inout float4 shadow, inout float3 specular, in float3 half_vector, in float3 light, in float3 normal, in float3 tangent, in float3 bitangent, in float3 ws_pos, in float2 uv, float2 bump, in float3 view, in float shadow_mask, in float2 skin_id, in float3 typemask, inout float shadow_area, inout float3 shift, inout float4 matcap, in float3 spec)
+void material_tight(inout float3 color, inout float4 shadow, inout float3 specular, in float3 half_vector, in float3 light, in float3 normal, in float3 tangent, in float3 bitangent, in float3 ws_pos, in float2 uv, float2 bump, in float3 view, in float shadow_mask, in float2 skin_id, in float3 typemask, inout float shadow_area, inout float3 shift, inout float4 matcap, in float3 spec, in float casted)
 {
     float3 aniso = specular_tight(normal, tangent, bitangent, half_vector, dot(normal, view), ws_pos.xyz, uv, bump);
     
@@ -648,7 +648,7 @@ void material_tight(inout float3 color, inout float4 shadow, inout float3 specul
 
     float3 stocking = stocking_light.x + shift;
 
-    float4 container = shadow_color_base(normal, light, uv, shadow_mask, skin_id.x, typemask.z, shadow_area);
+    float4 container = shadow_color_base(normal, light, uv, shadow_mask, skin_id.x, typemask.z, shadow_area, casted);
     shadow = container.xyzw;
     shadow_area = container.w;
     
@@ -662,14 +662,14 @@ void material_tight(inout float3 color, inout float4 shadow, inout float3 specul
 void material_face(inout float3 shadow, in float3 normal, in float3 light, in float2 uv, in float shadow_mask, in float skin_id, in float typemask, inout float shadow_area)
 {
     
-    float4 container = shadow_color_base(normal, light, uv, shadow_mask, skin_id, typemask, shadow_area);
+    float4 container = shadow_color_base(normal, light, uv, shadow_mask, skin_id, typemask, shadow_area, 1.0f);
     shadow = container.xyz;
     shadow_area = container.w;
 }
 
-void material_hair(inout float3 shadow, inout float3 specular, in float3 normal, in float3 light, in float3 half_vector, in float4 hair_mask, in float skin_id, inout float shadow_area)
+void material_hair(inout float3 shadow, inout float3 specular, in float3 normal, in float3 light, in float3 half_vector, in float4 hair_mask, in float skin_id, inout float shadow_area, in float casted)
 {   
-    float4 container = shadow_color_hair(normal, light, hair_mask, skin_id, shadow_area);
+    float4 container = shadow_color_hair(normal, light, hair_mask, skin_id, shadow_area, casted);
     shadow = container.xyz;
     shadow_area = container.w;
     specular = specular_hair(normal, half_vector, hair_mask.x, dot(normal, light));
@@ -701,61 +701,59 @@ void material_eye(inout float3 color, inout float stencilmask, inout float3 shin
 
     float2 slight_pos = lerp(float2(_SecondLight_PositionX, _SecondLight_PositionY), float2(_SecondLight_PositionX, _SecondLight_PositionY), vertexcolor.yy);
 
-    slight_pos.x = ((_LightShakPositionX * shake + slight_pos.x) + _LightPositionX);
+    slight_pos.x = ((_LightShakPositionX * shake + slight_pos.x) + (_LightPositionX + 0.5f));
     slight_pos.y = ((_LightShakPositionY * shake + slight_pos.y));
 
     float2 light_pos; 
     light_pos.x = slight_pos.x + 0.05f;
-    light_pos.y = slight_pos.y + _LightPositionY;
+    light_pos.y = slight_pos.y + (_LightPositionY + -0.5f);
 
     float2 idk = ((float2)1.f / float2(0.24f, 0.135f));
 
     light_pos.xy = light_pos.xy * idk;
 
-    float2 rotation;
-    sincos(_RotateAngle, rotation.x, rotation.y);
-    float4 r6;
-    r6.x = rotation.y;
-    float4 r1;
-    float4 r4;
-    r4.xy = light_pos.xy;
-    r4.zw = idk;
-    float4 r5;
-    r5.x = rotation.x;
-    float4 r7;
-    float4 r8;
-
-    r7.z = -r5.x * r4.w;
-    r1.w = -r6.x * r4.x + (r5.x * r4.y);
-    r7.w = 0.5 + r1.w;
-    r8.x = r5.x * r4.z;
-    r7.xy = r6.xx * r4.zw;
-
-    r1.w = -r5.x * r4.x + -(r6.x * r4.y);
-    r8.z = 0.5 + r1.w;
-    r4.xy = uv.xy;
-    r4.z = 1;
-    r5.x = dot(r7.xzw, r4.xyz);
-    r8.y = r7.y;
-    r5.y = dot(r8.xyz, r4.xyz);
-
-    float3 highlight = _HeightLightMap.Sample(sampler_linear_clamp, r5.xy).xyz;
-    r5.xyz = highlight;
-
-    r1.w = _EyeScale * r5.z;
-    r1.w = _HeightRatioInput * -r1.w + r1.w;
-    r6.xy = float2(1,1) / float2(_HeightLight_WidthX, _HeightLight_WidthY);
-    r6.zw = -float2(0.5, 0.5) * r6.xy + float2(0.5,0.5);
-    r7.x = dot(r6.xz, r4.xz);
-    r7.y = dot(r6.yw, r4.yz);
-
-    float shine2 = _EM.Sample(sampler_linear_clamp, r7.xy).x;
-    shine2 = lerp(shine2, 0, mask) * _HeightRatioInput;
+    // Calculate rotation for eye highlight positioning
+    float2 rotationSinCos;
+    sincos(_RotateAngle, rotationSinCos.x, rotationSinCos.y);
+    float rotationSin = rotationSinCos.x;
+    float rotationCos = rotationSinCos.y;
     
-    eye = eye + r1.w + shine2;
-    shine = r1.w;
+    // Transform light position with rotation
+    float2 transformedLightPos;
+    transformedLightPos.x = -rotationSin * light_pos.y + -rotationCos * light_pos.x;
+    transformedLightPos.y = -rotationSin * light_pos.x + rotationCos * light_pos.y;
     
+    // Create transformation matrices for highlight mapping
+    float3 transformRow1 = float3(rotationCos * idk.x, -rotationSin * idk.y, 0.5 + transformedLightPos.y);
+    float3 transformRow2 = float3(rotationSin * idk.x, rotationCos * idk.y, 0.5 + transformedLightPos.x);
     
+    // Apply transformation to UV coordinates
+    float3 uvHomogeneous = float3(uv.xy, 1);
+    float2 transformedUV;
+    transformedUV.x = dot(transformRow1, uvHomogeneous);
+    transformedUV.y = dot(transformRow2, uvHomogeneous);
+    
+    // Sample highlight texture with transformed UVs
+    float3 highlightColor = _HeightLightMap.Sample(sampler_linear_clamp, transformedUV).xyz;
+    
+    // Calculate primary eye highlight
+    float primaryHighlightIntensity = _EyeScale * highlightColor.z;
+    primaryHighlightIntensity = lerp(primaryHighlightIntensity, _HeightRatioInput * primaryHighlightIntensity, 1.0);
+    
+    // Calculate secondary eye highlight
+    float2 highlightScale = float2(1,1) / float2(_HeightLight_WidthX, _HeightLight_WidthY);
+    float2 highlightOffset = float2(0.5,0.5) - float2(0.5, 0.5) * highlightScale;
+    
+    float2 secondaryUV;
+    secondaryUV.x = dot(float2(highlightScale.x, highlightOffset.x), float2(uv.x, 1));
+    secondaryUV.y = dot(float2(highlightScale.y, highlightOffset.y), float2(uv.y, 1));
+    
+    float secondaryHighlight = _EM.Sample(sampler_linear_clamp, secondaryUV).x;
+    secondaryHighlight = lerp(secondaryHighlight, 0, mask) * _HeightRatioInput;
+    
+    // Apply highlights to eye color
+    eye = eye + primaryHighlightIntensity + secondaryHighlight;
+    shine = primaryHighlightIntensity;
     
     #if !defined(is_stencil)
         color = eye;
@@ -810,4 +808,112 @@ void aurora_wave(in float2 uv, in float3 pos, in float3 normal, in float3 tangen
 
     // mask and add the auroraColor to the output color
     color.xyz =  auroraColor * mask + color;
+}
+
+float2 remap(float2 x, float2 minOld, float2 maxOld, float2 minNew, float2 maxNew)
+{
+    return minNew + (x - minOld) * (maxNew - minNew) / (maxOld - minOld);
+}
+
+float2 rotateUV(float2 uv, float rotation, float2 mid)
+{
+    float angle = rotation * 6.2831853; // 2*PI
+    float cosAngle = cos(angle);
+    float sinAngle = sin(angle);
+    float2 p = uv - mid;
+    return float2(
+        cosAngle * p.x + sinAngle * p.y + mid.x,
+        cosAngle * p.y - sinAngle * p.x + mid.y
+    ); 
+}
+
+float3 apply_tacet_decal(float3 color, float2 uv, float2 uv3)
+{
+
+    float2 tacet_uv = uv;
+    float2 scale = float2(_UVScaleX, _UVScaleY);
+    float2 position = float2(_UVpositionX, _UVpositionY);
+
+    
+
+    // Scale tacet_uv around the _XingHenPosition pivot
+    float2 transformed = (0.5f + (tacet_uv - 0.5f) * scale);
+    transformed.x -= position.x;
+    transformed.y += position.y;
+
+    float2 rotated = rotateUV(transformed, _RotationAngle, _XingHenPosition.xx);
+    tacet_uv = (_UseRotation) ? rotated : transformed;
+
+    float4 sdf = _D.Sample(sampler_linear_clamp, tacet_uv).xyzw;
+
+    float2 noise2_uv = _Time.yy * (float2)_SoundWaveSpeed02 + (tacet_uv * (float2)_SoundWaveTiling02);
+    float2 noise1_uv = _Time.yy * (float2)_SoundWaveSpeed01 + (tacet_uv * (float2)_SoundWaveTiling01);
+    float noise1 = _Noise.Sample(sampler_linear_repeat, noise1_uv).xy;
+    float noise2 = _Noise02.Sample(sampler_linear_repeat, noise2_uv).xy;
+
+    float mark = (noise1.x * noise2.x - sdf.z )  >=  _SDFStart;
+    mark = saturate(1.0 - mark);
+
+    float side[3] = 
+    {
+        1, 
+        uv3.x > 0.5,
+        uv3.x < 0.5
+    };
+
+    color = lerp(color, _SDFColor, mark * side[_MaskingSide % 3]);
+
+    return color;
+}
+
+float3 uv_gradient(float3 color, float2 uv3)
+{
+    float height = uv3.y * _UvGradientScale + _UvGradientProcess;
+    
+    float3 gradient_color = (_UVGradientColor.xyz * color) * _UVGradientIn;
+
+    float luminance = dot(gradient_color, float3(0.299, 0.587, 0.114));
+    gradient_color = lerp(luminance.xxx, gradient_color, _UVSaturationIntensity);
+    color = lerp(saturate(gradient_color), color, saturate(height ));
+    return color;
+}
+
+float3 tonemapping(float3 color)
+{
+    float4 lutParams = float4(0.0011f, 0.0311f, 31.00f, 1.0f);
+    // Apply initial transformations to the color
+    float3 adjustedColor = color.zxy * 5.55555582f + 0.0479959995f;
+    adjustedColor = log2(adjustedColor);
+    adjustedColor = adjustedColor * 0.0734997839f + 0.386036009f;
+    adjustedColor = clamp(adjustedColor, 0.0, 1.0);
+
+    // Calculate LUT coordinates
+    float3 lutCoord = adjustedColor * lutParams.z;
+    float xCoord = floor(lutCoord.x);
+    
+    // Calculate base and next LUT sample positions
+    float2 lutSize = lutParams.xy * 0.5;
+    float2 lutPos = lutCoord.yz * lutParams.xy + lutSize;
+    float2 lutPos1 = float2(xCoord * lutParams.y + lutPos.x, lutPos.y);
+    float2 lutPos2 = lutPos1 + float2(lutParams.y, 0);
+    
+    lutPos1.y = 1.0f - lutPos1.y;
+    lutPos2.y = 1.0f - lutPos2.y;
+    
+
+    // Sample the LUT
+    float3 sample1 = _Lut2DTex.Sample(sampler_linear_clamp, lutPos1).rgb;
+    float3 sample2 = _Lut2DTex.Sample(sampler_linear_clamp, lutPos2).rgb;
+
+    // Interpolate between the two 
+    float lerpFactor = lutCoord.x - xCoord;
+    float3 lutColor = lerp(sample1, sample2, lerpFactor);
+
+    // Clamp the final color
+    lutColor = saturate(lutColor);
+
+    lutColor = pow(lutColor+0.25, 4.5f);
+
+
+    return lutColor;
 }

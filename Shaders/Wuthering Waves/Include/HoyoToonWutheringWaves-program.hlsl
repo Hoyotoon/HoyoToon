@@ -5,13 +5,21 @@ vertex_out vs_model (vertex_in v)
     
     o.pos = UnityObjectToClipPos(v.vertex);
     #if defined(_IS_PASS_SHADOW)
-        if(_EnableHairShadow)
+        if(_EnableHairShadow && (_MaterialType == 3))
         {
             float4 ws_pos = mul(unity_ObjectToWorld, v.vertex);
             float3 vl = mul(_WorldSpaceLightPos0.xyz, UNITY_MATRIX_V) * (1.f / ws_pos.w);
-            float3 offset_pos = ((vl * .001f) * float3(4,0,0)) + v.vertex.xyz;
+            float3 offset_pos = ((vl * .001f) * float3(7,0,5)) + v.vertex.xyz;
             v.vertex.xyz = offset_pos;
             o.pos = UnityObjectToClipPos(v.vertex);
+        }
+        else if((_MaterialType == 1) && _EnableHairShadow)
+        {
+            o.pos = UnityObjectToClipPos(v.vertex);
+        }
+        else
+        {
+            o.pos = float4(-90, -90, -90, 1.0f); // this is a hack to prevent the shadow pass from rendering the model
         }
     #endif
     o.coord0.xy = v.uv0;
@@ -26,7 +34,7 @@ vertex_out vs_model (vertex_in v)
     o.tangent.w = v.tangent.w * unity_WorldTransformParams.w; 
     o.view = _WorldSpaceCameraPos.xyz - mul(unity_ObjectToWorld, v.vertex).xyz;
     o.color = v.color;
-
+    
     
     TRANSFER_SHADOW(o)
     return o;
@@ -65,7 +73,7 @@ vertex_out vs_edge (vertex_in v)
     }
     else // if no outline, then just set everything to 0 so it esentially doesnt display...
     {
-        o = (vertex_out)0.0f; 
+        o = (vertex_out)-90.0f; 
     }
     
     return o;
@@ -78,6 +86,7 @@ fixed4 ps_model (vertex_out i) : SV_Target
 
     // intialize inputs : 
     float2 uv = i.coord0.xy;
+    float2 uv3 = i.coord1.zw;
 
     // get lighting information 
     UNITY_LIGHT_ATTENUATION(atten, i, i.ws_pos.xyz);
@@ -107,6 +116,15 @@ fixed4 ps_model (vertex_out i) : SV_Target
     float stencil_mask = _Mask.Sample(sampler_linear_repeat, uv).x;
     
     float shadow_mask = (_UseMainTexA) ? diffuse.w : mask.y;
+
+    float unity_shadow = 1.0f;
+    unity_shadow = SHADOW_ATTENUATION(i);
+    unity_shadow = saturate(smoothstep(0.0f, 1.f, unity_shadow));
+
+    if((!_UseSelfShadow)||(_MaterialType == 1)||(_MaterialType == 2)||(_MaterialType == 5)||(_MaterialType == 6)) 
+    {
+        unity_shadow = 1.f;
+    }
     
     #if defined(use_normal)
     if(_UseNormalMap) // only if normal mapping is enabled however
@@ -154,12 +172,12 @@ fixed4 ps_model (vertex_out i) : SV_Target
         #if defined(use_stocking)
             if(_UseStocking && (skin_id.y > 0.5))
             {
-                material_tight(color.xyz, shadow_color, specular, half_vector, light, normal, tangent, bitangent, i.ws_pos, uv, normalmap.xy, view, shadow_mask.x, skin_id.xy, typemask.xyz, shadow_area, shift, matcap, spec);
+                material_tight(color.xyz, shadow_color, specular, half_vector, light, normal, tangent, bitangent, i.ws_pos, uv, normalmap.xy, view, shadow_mask.x, skin_id.xy, typemask.xyz, shadow_area, shift, matcap, spec, unity_shadow);
             }
             else 
             {
         #endif
-            material_basic(color.xyz, shadow_color, specular, normal, light, half_vector, spec, uv, shadow_mask.x, skin_id.xyz, typemask.xyz, shadow_area, matcap);
+            material_basic(color.xyz, shadow_color, specular, normal, light, half_vector, spec, uv, shadow_mask.x, skin_id.xyz, typemask.xyz, shadow_area, matcap, unity_shadow);
             specular *= 1.0  - normalmap.w;
         #if defined(use_stocking)
             }
@@ -183,7 +201,7 @@ fixed4 ps_model (vertex_out i) : SV_Target
     else if(_MaterialType == 3 || _MaterialType == 4) // hair shading
     {
         stencil_mask = diffuse.w;
-        material_hair(shadow_color.xyz, specular.xyz, normal, light, half_vector, mask, skin_id, shadow_area);
+        material_hair(shadow_color.xyz, specular.xyz, normal, light, half_vector, mask, skin_id, shadow_area, unity_shadow);
     }
     #endif
     #if defined(is_glass)
@@ -206,6 +224,8 @@ fixed4 ps_model (vertex_out i) : SV_Target
     }
     #endif
 
+    // shadow_area = shadow_area * unity_shadow;
+
     
     #if defined(_IS_PASS_BASE)
         output.xyz = color.xyz + rim_light;
@@ -216,6 +236,11 @@ fixed4 ps_model (vertex_out i) : SV_Target
 
         float emissive = 0.0f;
 
+        if(_UseToneMapping)
+        {
+            output.xyz = tonemapping(saturate(output.xyz));
+        }
+
         #if defined(use_emission)
         emission_coloring(output.xyz, diffuse.w, emissive);
         #endif
@@ -225,8 +250,23 @@ fixed4 ps_model (vertex_out i) : SV_Target
             output.xyz =  output.xyz * light_color;
             output.xyz = output.xyz + (GI_color * GI_intensity * _GI_Intensity * smoothstep(1.0f ,0.0f, GI_intensity / 2.0f));
         }
+
+        if(_UseXingHen)
+        {
+            output.xyz = apply_tacet_decal(output.xyz, uv, uv3);
+        }
         
-        
+        if(_UseTranslucent)
+        {
+            output.w = diffuse.w;
+        }        
+
+        if(_UseUVGradient_DYN)
+        {
+            output.xyz = uv_gradient(output.xyz, gradient);
+        }
+
+
         #if defined(can_debug)
             if(_DebugMode == 1)
             {
@@ -302,19 +342,24 @@ fixed4 ps_model (vertex_out i) : SV_Target
         #endif
         // hair cast shadow block
         #if defined(_IS_PASS_SHADOW)
-            if(_MaterialType == 3)
+            if(_MaterialType == 1)
+            {
+                float face_shadow_area = 1.0f -face_shadow(uv, light);
+                output.xyzw = face_shadow_area;
+                clip(( face_shadow_area) - 0.05f);
+            }
+            else if(_MaterialType == 3)
             {
                 float2 ramp_uv;
                 ramp_uv.x = 0.1f;
                 ramp_uv.y = 1.0 - 0.1;
                 float3 ramp = _Ramp.Sample(sampler_linear_clamp, ramp_uv); 
                 float3 hair_shadow = lerp(_HairShadowColor, ramp, 0.4);
-                hair_shadow = saturate(sqrt(hair_shadow + 0.25f));
-                shadow_area =  dot(normal, normalize(_WorldSpaceLightPos0.xyz));
-                hair_shadow = lerp(1.0f, hair_shadow, shadow_area);
+                hair_shadow = saturate(sqrt(hair_shadow));
                 output.xyz = saturate(hair_shadow);
-            }
-            else if(_MaterialType != 3)
+                output.w = 0.1;
+            }   
+            else
             {
                 clip(-1.f);
             }
@@ -358,4 +403,3 @@ float4 ps_edge (vertex_out i) : SV_TARGET
     if(_MaterialType == 2 || _MaterialType >= 5 ) clip(-1); 
     return color;
 }
-

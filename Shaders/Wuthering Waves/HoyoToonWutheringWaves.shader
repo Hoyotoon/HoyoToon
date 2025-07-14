@@ -2,10 +2,12 @@ Shader "HoyoToon/Wuthering Waves/Character"
 {
     Properties 
   { 
-      [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0
+        [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0
         // GUI THINGS
         [HideInInspector] ShaderBG ("UI/background", Float) = 0
         [HideInInspector] ShaderLogo ("UI/wuwalogo", Float) = 0
+        [HideInInspector] CharacterLeft ("UI/wuwal", Float) = 0
+        [HideInInspector] CharacterRight ("UI/wuwar", Float) = 0
         [HideInInspector] shader_is_using_hoyeditor ("", Float) = 0
         [HideInInspector] footer_github ("{texture:{name:hoyogithub},action:{type:URL,data:https://github.com/HoyoToon/HoyoToon},hover:Github}", Float) = 0
         [HideInInspector] footer_discord ("{texture:{name:hoyodiscord},action:{type:URL,data:https://discord.gg/hoyotoon},hover:Discord}", Float) = 0
@@ -14,26 +16,32 @@ Shader "HoyoToon/Wuthering Waves/Character"
 
         [Enum(Base, 0, Face, 1, Eye, 2, Bangs, 3, Hair, 4, Glass, 5, Tacet Mark, 6)] _MaterialType ("Material Type--{on_value_actions:[
             {value:0,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
-            {value:0,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2040}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+            {value:0,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+            {value:0,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRefA=0}, {type:SET_PROPERTY,data:_StencilRefB=0}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
             {value:1,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=5}]},
-            {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompB=5}, {type:SET_PROPERTY,data:_StencilRef=100}, {type:SET_PROPERTY,data:render_queue=2010}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+            {value:1,actions:[{type:SET_PROPERTY,data:_sdwRef=20}, {type:SET_PROPERTY,data:_sdwPass=2}, {type:SET_PROPERTY,data:_sdwComp=7}, {type:SET_PROPERTY,data:_sdwColorMask=0}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=0}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+            {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompB=5}, {type:SET_PROPERTY,data:_StencilRefA=25}, {type:SET_PROPERTY,data:_StencilRefB=26}, {type:SET_PROPERTY,data:render_queue=2010}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
             {value:2,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=5}]},
-            {value:2,actions:[{type:SET_PROPERTY,data:_StencilCompB=5}, {type:SET_PROPERTY,data:_StencilRef=100}, {type:SET_PROPERTY,data:render_queue=2011}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+            {value:2,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=0}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+            {value:2,actions:[{type:SET_PROPERTY,data:_StencilCompB=5}, {type:SET_PROPERTY,data:_StencilRefA=25}, {type:SET_PROPERTY,data:_StencilRefB=26}, {type:SET_PROPERTY,data:render_queue=2012}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
             {value:3,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=5}]},
-            {value:3,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=100}, {type:SET_PROPERTY,data:render_queue=2020}, {type:SET_PROPERTY,data:render_type=Opaque}]},
-            
+            {value:3,actions:[{type:SET_PROPERTY,data:_sdwRef=20}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=3}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=2}, {type:SET_PROPERTY,data:_sdwDst=3}, {type:SET_PROPERTY,data:_sdwZWrite=0}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+            {value:3,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRefA=25}, {type:SET_PROPERTY,data:_StencilRefB=27}, {type:SET_PROPERTY,data:render_queue=2020}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+
             {value:4,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
-            {value:4,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2040}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+            {value:4,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+            {value:4,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
             {value:5,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
+            {value:5,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
             {value:5,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2060}, {type:SET_PROPERTY,data:render_type=Opaque}]}, 
 
             {value:6,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
+            {value:6,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
             {value:6,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2060}, {type:SET_PROPERTY,data:render_type=Opaque}]}]}", Float) = 0
-        
         [HideInInspector] start_main ("Main", Float) = 0
             [Toggle] _MultiLight ("Enable Multi Light Source Mode", float) = 1
             [Toggle] _FilterLight ("Limit Spot/Point Light Intensity", Float) = 1
@@ -41,6 +49,7 @@ Shader "HoyoToon/Wuthering Waves/Character"
             [HideInInspector] start_diff ("Diffuse Texture", Float) = 0
                 _MainTex ("Diffuse Texture", 2D) = "white" {}
                 [Toggle] _UseMainTexA ("Alpha is Toon Mask", Float) = 0
+                [Toggle] _UseTranslucent ("Alpha is Translucent", Float) = 0
             [HideInInspector]  end_diff ("", Float) = 0
             [HideInInspector] start_mask ("Type Mask", Float) = 0
                 _MaskTex ("Mask", 2D) = "grey" {}
@@ -144,12 +153,12 @@ Shader "HoyoToon/Wuthering Waves/Character"
                     _LightPositionX ("Light Position X", Float) = 0.5
                     _LightPositionY ("Light Position Y", Float) = 0.5
                 [HideInInspector] end_lightpos ("", Float) = 0
-                [HideInInspector] start_heightlight ("Height Light", Float) = 0
+                [HideInInspector] start_aight ("Height Light", Float) = 0
                     _HeightLight_PositionX ("Highlight Pos X", Float) = 0.54
                     _HeightLight_PositionY ("Highlight Pos Y", Float) = 0.58 
                     _HeightLight_WidthX ("Highlight Width X", Float) = 1.71
                     _HeightLight_WidthY ("HighLight Width Y", Float) = 1.03
-                [HideInInspector] end_heightlight ("", Float) = 0
+                [HideInInspector] end_aight ("", Float) = 0
             [HideInInspector] end_hlight ("", Float) = 0
             [HideInInspector] start_parallax ("Parallax", Float) = 0
                 _ParallaxSteps ("Step Count", Int) = 25 
@@ -170,6 +179,7 @@ Shader "HoyoToon/Wuthering Waves/Character"
             _ShadowWidth ("Shadow Width", Float) = 0.01
             _ShadowOffsetPower ("Shadow Offset Power", Float) = 0.56
             _MaskShadowOffsetStrength ("Mask Shadow Offset Strength", Float) = .42
+            [Toggle] _UseSelfShadow ("Use Self Shadow", Float) = 1
             [HideInInspector] start_solidshadow("Solid Shadow Settings", Float) = 0
                 _SolidShadowWidth ("Solid Shadow Width", Float) = 0.9
                 _SolidShadowStrength ("Solid Shadow Strength", Float) = 1
@@ -183,13 +193,20 @@ Shader "HoyoToon/Wuthering Waves/Character"
                 _RampWidth ("Ramp Width", Float) = 0.1
                 _RampInt ("Ramp Intensity", Float) = 0.3
             [HideInInspector] end_ramp ("", Float) = 0
+            [Helpbox] _HairShadowHelp ("The Hair Shadow is a separate feature from the Self Shadows, Self shadows will not be applied to the face but the Hair Shadow will be applied to it. You need to apply it to both the face and bangs materials for it to work.", float) = 0
             [HideInInspector] start_hair ("Hair Shadow", Float) = 0
                 [Toggle] _EnableHairShadow ("Enable Hair Shadow", Float) = 0
                 _HairShadowColor("Hair Subsurface Color", Color) = (0.938686,0.603828,0.40724,1.0)
-                [IntRange] _StencilRefShadow ("Stencil Reference Value", Range(0, 255)) = 0
-
-                [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassShadow ("Stencil Pass Op Shadow", Float) = 0
-                [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompShadow ("Stencil Compare Function Shadow", Float) = 8
+                [HideInInspector] start_shadowstencil ("Stencil Settings", Float) = 0
+                    [IntRange] _sdwRef ("Stenci l Reference Value", Range(0, 255)) = 0
+                    [Enum(UnityEngine.Rendering.CompareFunction)] _sdwComp ("Stencil Compare Function", Float) = 8
+                    [Enum(UnityEngine.Rendering.StencilOp)] _sdwPass ("Stencil Pass Op", Float) = 0
+                    [IntRange] _sdwColorMask ("Stencil Color Mask", Range(0, 16)) = 16
+                    [Enum(UnityEngine.Rendering.BlendMode)] _sdwSrc ("Source Blend", Int) = 1
+                    [Enum(UnityEngine.Rendering.BlendMode)] _sdwDst ("Destination Blend", Int) = 1
+                    [Enum(Off, 0, On, 1)] _sdwZWrite ("Zwrite", Int) = 1
+                    [Enum(UnityEngine.Rendering.CompareFunction)] _sdwZTest ("ZTest", Float) = 2 // mihoyo uses this in their shader but set it to something that doesnt work 
+                    [HideInInspector] end_shadowstenci ("", Float) = 0
             [HideInInspector] end_hair ("", Float) = 0
         [HideInInspector] end_shadow ("", Float) = 0
     
@@ -221,10 +238,15 @@ Shader "HoyoToon/Wuthering Waves/Character"
                 [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassB ("Stencil Pass Op B", Float) = 0
                 [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompA ("Stencil Compare Function A", Float) = 8
                 [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompB ("Stencil Compare Function B", Float) = 8
-                [IntRange] _StencilRef ("Stencil Reference Value", Range(0, 255)) = 0
+                [IntRange] _StencilRefA ("Stencil Reference Value", Range(0, 255)) = 0
+                [IntRange] _StencilRefB ("Stencil Reference Value", Range(0, 255)) = 0
             [HideInInspector] end_stencil ("", Float) = 0
             //endex
             [HideInInspector] start_tacet ("Tacet Mark", Float) = 0
+                [Toggle] _UseXingHen ("Enable Tacet Mark Decal", Float) = 0
+                [Enum(Middle, 0, Left, 1, Right, 2)] _MaskingSide ("Tacet Mark Appears on Side", Float) = 0
+                _XingHenControl ("Tacet Mark Control", Float) = 0
+                _XingHenPosition ("Tacet Mark Position", Float) = 1
                 _D ("Tacet Mark", 2D) = "white" {}
                 // _SDF ("Tacet Mark SDF", 2D) = "white" {} // not sure if unused or if just not in this particular capture
                 _Noise ("Tacet Mark Noise", 2D) = "white" {}
@@ -232,12 +254,18 @@ Shader "HoyoToon/Wuthering Waves/Character"
                 // _ShakeNoise ("Tacet Mark Shake Noise", 2D) = "white" {} // // not sure if unused or if just not in this particular capture
                 _SDFStart ("Tacet Mark SDF Start", Range(-1, -0.01)) = -0.2
                 _SDFColor ("Tacet Mark SDF Color", Color) = (0.0, 0.0, 0.0,1)
+                [HideInInspector] start_tacetuv ("Tacet UV", Float) = 0
+                    [Toggle] _UseRotate180UV ("Tacet Mark UV Rotation", Float) = 0
+                    _RotationAngle ("Tacet Mark UV Rotation Angle", Float) = 0
+                    _UVpositionX ("Tacet Mark UV Position X", Float) = 0
+                    _UVpositionY ("Tacet Mark UV Position Y", Float) = 0
+                    _UVScaleX ("Tacet Mark UV Scale X", Float) = 1
+                    _UVScaleY ("Tacet Mark UV Scale Y", Float) = 1
+                [HideInInspector] end_tacetuv ("", Float) = 0
                 [HideInInspector] start_soundwave ("Sound Wave", Float) = 0
                     _SoundWaveSpeed01 ("Sound Wave Speed 01", Float) = -0.2
-                    // _SoundWaveInt01 ("Sound Wave Intensity 01", Float) = 0.0
                     _SoundWaveTiling01 ("Sound Wave Tiling 01", Float) = 3.8
                     _SoundWaveSpeed02 ("Sound Wave Speed 02", Float) = -0.57
-                    // _SoundWaveInt02 ("Sound Wave Intensity 02", Float) = 0.0
                     _SoundWaveTiling02 ("Sound Wave Tiling 02", Float) = 7.8
                 [HideInInspector] end_soundwave ("", Float) = 0
              
@@ -264,6 +292,20 @@ Shader "HoyoToon/Wuthering Waves/Character"
                 [HideInInspector] end_wave ("", Float) = 0
                 
             [HideInInspector] end_uvwave("", Float) = 0
+
+            [HideInInspector] start_heightlight ("Height Light", Float) = 0
+                [Toggle] _UseUVGradient_DYN ("Use Gradient", Float) = 0
+                _UvGradientScale ("Gradient Scale", Float) = 1.0
+                _UvGradientProcess ("Gradient Process", Float) = 0.5
+                _UVGradientIn ("Gradient Intensity", Float) = 0
+                _UVSaturationIntensity ("Gradient Saturation Intensity", Float) = 1.0
+                _UVGradientColor ("Gradient Color", Color) = (1,1,1,1)
+            [HideInInspector] end_heightlight ("", Float) = 0
+
+            [HideInInspector] start_tonemapping("Tone Mapping", Float) = 0
+                [Toggle] _UseToneMapping ("Enable Tone Mapping", Float) = 0
+                _Lut2DTex ("LUT Texture", 2D) = "white" {}
+            [HideInInspector] end_tonemapping ("", Float) = 0
         [HideInInspector] end_special ("", Float) = 0
 
         [HideInInspector] start_renderingOptions("Rendering Options", Float) = 0
@@ -352,14 +394,15 @@ Shader "HoyoToon/Wuthering Waves/Character"
         {
             Name "Stencil Shadow"
             Tags { "LightMode" = "ForwardBase" }
-            ZWrite Off
-            Blend DstColor Zero
-
+            Blend [_sdwSrcd] [_sdwDst]
+            ZWrite [_sdwZWrite]
+            ZTest [_sdwZTest]
+            ColorMask [_sdwColorMask]
             Stencil
             {
-                Ref [_StencilRefShadow]
-                Comp [_StencilCompShadow]
-				Pass [_StencilPassShadow]
+				ref [_sdwRef]
+                Comp [_sdwComp]
+				Pass [_sdwPass]
             }
             HLSLPROGRAM
             #pragma multi_compile_fwdbase
@@ -380,10 +423,10 @@ Shader "HoyoToon/Wuthering Waves/Character"
             Blend [_SrcBlend] [_DstBlend]
             Stencil
             {
-                Ref [_StencilRef]      
-                Comp [_StencilCompA]
-				Pass [_StencilPassA]
-            }
+                ref [_StencilRefA]
+        		Comp [_StencilCompA]
+        		Pass [_StencilPassA]
+        	}
             HLSLPROGRAM
             #pragma multi_compile_fwdbase
             #pragma multi_compile _IS_PASS_BASE
@@ -398,13 +441,14 @@ Shader "HoyoToon/Wuthering Waves/Character"
         {
             Name "Stencil"
             Tags{ "LightMode" = "ForwardBase" }
+            Cull Back  
             Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
             Stencil
             {
-                ref [_StencilRef]              
-				Comp [_StencilCompB]
-				Pass [_StencilPassB]
-			}
+                ref [_StencilRefB]             
+        		Comp [_StencilCompB]
+        		Pass [_StencilPassB]
+        	}
             HLSLPROGRAM
             #define is_stencil
             #pragma multi_compile_fwdbase
@@ -447,10 +491,10 @@ Shader "HoyoToon/Wuthering Waves/Character"
             Cull Front
             Stencil
             {
-				ref [_StencilRef]  
-                Comp [_StencilCompA]
-				Pass [_StencilPassA]
-			}
+                ref 255
+                Comp Always
+                Pass Keep
+            }	
             HLSLPROGRAM
             #pragma multi_compile_fwdbase
             #pragma vertex vs_edge

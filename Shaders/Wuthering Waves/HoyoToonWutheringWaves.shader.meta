@@ -2,7 +2,23 @@ fileFormatVersion: 2
 guid: b53fb0d1a9fd21c44b5a22c58e3c45b5
 ShaderImporter:
   externalObjects: {}
-  defaultTextures: []
+  defaultTextures:
+  - _MainTex: {instanceID: 0}
+  - _MaskTex: {instanceID: 0}
+  - _TypeMask: {instanceID: 0}
+  - _Normal_Roughness_Metallic: {instanceID: 0}
+  - _MatCapTex: {instanceID: 0}
+  - _HeightLightMap: {instanceID: 0}
+  - _EM: {instanceID: 0}
+  - _Ramp: {instanceID: 0}
+  - _OutlineTexture: {instanceID: 0}
+  - _Mask: {instanceID: 0}
+  - _D: {instanceID: 0}
+  - _Noise: {instanceID: 0}
+  - _Noise02: {instanceID: 0}
+  - _Second_RGB: {instanceID: 0}
+  - _CommonNoiseMap: {instanceID: 0}
+  - _Lut2DTex: {fileID: 2800000, guid: ab903261df1de8549b02bd65c9feefd2, type: 3}
   nonModifiableTextures: []
   userData: 
   assetBundleName: 
