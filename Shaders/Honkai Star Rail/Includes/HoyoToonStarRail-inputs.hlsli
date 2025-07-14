@@ -23,7 +23,7 @@ struct vs_out
     float4 vertex    : TEXCOORD4; 
     float4 dis_uv  : TEXCOORD5; // dissolve uv and distortion uv
     float4 dis_pos : TEXCOORD6;
-    float4 grab    : TEXCOORD7;
+    float4 uv_2    : TEXCOORD7;
     float4 v_col   : COLOR0; // vertex color 
     UNITY_VERTEX_OUTPUT_STEREO
     SHADOW_COORDS(8)

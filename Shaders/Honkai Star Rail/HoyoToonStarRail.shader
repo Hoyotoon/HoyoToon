@@ -1,12 +1,14 @@
 Shader "HoyoToon/Star Rail/Character"
 {
     Properties 
-  { 
+    { 
         [HideInInspector] shader_is_using_HoyoToon_editor("", Float) = 0 
         //Header
         // [HideInInspector] shader_master_label ("✧<b><i><color=#C69ECE>HoyoToon Honkai Star Rail</color></i></b>✧", Float) = 0
 		[HideInInspector] ShaderBG ("UI/background", Float) = 0
         [HideInInspector] ShaderLogo ("UI/hsrlogo", Float) = 0
+        [HideInInspector] CharacterLeft ("UI/hsrl", Float) = 0
+        [HideInInspector] CharacterRight ("UI/hsrr", Float) = 0
         [HideInInspector] shader_is_using_hoyeditor ("", Float) = 0
         [HideInInspector] footer_github ("{texture:{name:hoyogithub},action:{type:URL,data:https://github.com/HoyoToon/HoyoToon},hover:Github}", Float) = 0
 		[HideInInspector] footer_discord ("{texture:{name:hoyodiscord},action:{type:URL,data:https://discord.gg/hoyotoon},hover:Discord}", Float) = 0
@@ -15,26 +17,38 @@ Shader "HoyoToon/Star Rail/Character"
         [HoyoToonShaderOptimizerLockButton] _ShaderOptimizerEnabled ("Lock Material", Float) = 0
 
         //Material Type
-        [HoyoToonWideEnum(Base, 0, Face, 1, EyeShadow, 2, Hair, 3)]variant_selector("Material Type--{on_value_actions:[
-		{value:0,actions:[{type:SET_PROPERTY,data:_BaseMaterial=1.0}, {type:SET_PROPERTY,data:_FaceMaterial=0.0}, {type:SET_PROPERTY,data:_EyeShadowMat=0.0}, {type:SET_PROPERTY,data:_HairMaterial=0.0}]},
+        [HoyoToonWideEnum(Base, 0, Face, 1, EyeShadow, 2, Hair, 3, Bang, 4)]variant_selector("Material Type--{on_value_actions:[
+        {value:0,actions:[{type:SET_PROPERTY,data:_BaseMaterial=1.0}, {type:SET_PROPERTY,data:_FaceMaterial=0.0}, {type:SET_PROPERTY,data:_EyeShadowMat=0.0}, {type:SET_PROPERTY,data:_HairMaterial=0.0}]},
         {value:0,actions:[{type:SET_PROPERTY,data:_CullMode=0}, {type:SET_PROPERTY,data:_SrcBlend=5}, {type:SET_PROPERTY,data:_DstBlend=10}]},
+        {value:0,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
         {value:0,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
-        {value:0,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2040}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+        {value:0,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRefA=0}, {type:SET_PROPERTY,data:_StencilRefB=0}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
         {value:1,actions:[{type:SET_PROPERTY,data:_BaseMaterial=0.0}, {type:SET_PROPERTY,data:_FaceMaterial=1.0}, {type:SET_PROPERTY,data:_EyeShadowMat=0.0}, {type:SET_PROPERTY,data:_HairMaterial=0.0}]},
         {value:1,actions:[{type:SET_PROPERTY,data:_CullMode=2}, {type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]},
+        {value:1,actions:[{type:SET_PROPERTY,data:_sdwRef=20}, {type:SET_PROPERTY,data:_sdwPass=2}, {type:SET_PROPERTY,data:_sdwComp=7}, {type:SET_PROPERTY,data:_sdwColorMask=0}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=0}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
         {value:1,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=5}]},
-        {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompB=5}, {type:SET_PROPERTY,data:_StencilRef=100}, {type:SET_PROPERTY,data:render_queue=2010}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+        {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompB=5}, {type:SET_PROPERTY,data:_StencilRefA=100}, {type:SET_PROPERTY,data:_StencilRefB=100}, {type:SET_PROPERTY,data:render_queue=2010}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
         {value:2,actions:[{type:SET_PROPERTY,data:_BaseMaterial=0.0}, {type:SET_PROPERTY,data:_FaceMaterial=0.0}, {type:SET_PROPERTY,data:_EyeShadowMat=1.0}, {type:SET_PROPERTY,data:_HairMaterial=0.0}]},
         {value:2,actions:[{type:SET_PROPERTY,data:_CullMode=0}, {type:SET_PROPERTY,data:_SrcBlend=2}, {type:SET_PROPERTY,data:_DstBlend=0}]},
+        {value:2,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
         {value:2,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=2}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
-        {value:2,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=0}, {type:SET_PROPERTY,data:render_queue=2015}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+        {value:2,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRefA=0}, {type:SET_PROPERTY,data:_StencilRefB=0}, {type:SET_PROPERTY,data:render_queue=2015}, {type:SET_PROPERTY,data:render_type=Opaque}]},
 
         {value:3,actions:[{type:SET_PROPERTY,data:_BaseMaterial=0.0}, {type:SET_PROPERTY,data:_FaceMaterial=0.0}, {type:SET_PROPERTY,data:_EyeShadowMat=0.0}, {type:SET_PROPERTY,data:_HairMaterial=1.0}]},
-        {value:3,actions:[{type:SET_PROPERTY,data:_CullMode=0}, {type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]},
-        {value:3,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=5}]},
-        {value:3,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRef=100}, {type:SET_PROPERTY,data:render_queue=2020}, {type:SET_PROPERTY,data:render_type=Opaque}]}]}", Int) = 0
+        {value:3,actions:[{type:SET_PROPERTY,data:_CullMode=0}, {type:SET_PROPERTY,data:_SrcBlend=5}, {type:SET_PROPERTY,data:_DstBlend=10}]},
+        {value:3,actions:[{type:SET_PROPERTY,data:_sdwRef=0}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=1}, {type:SET_PROPERTY,data:_sdwDst=1}, {type:SET_PROPERTY,data:_sdwZWrite=1}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+        {value:3,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=0}]},
+        {value:3,actions:[{type:SET_PROPERTY,data:_StencilCompB=0}, {type:SET_PROPERTY,data:_StencilRefA=0}, {type:SET_PROPERTY,data:_StencilRefB=0}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]},
+        
+        {value:4,actions:[{type:SET_PROPERTY,data:_BaseMaterial=0.0}, {type:SET_PROPERTY,data:_FaceMaterial=0.0}, {type:SET_PROPERTY,data:_EyeShadowMat=0.0}, {type:SET_PROPERTY,data:_HairMaterial=1.0}]},
+        {value:4,actions:[{type:SET_PROPERTY,data:_CullMode=0}, {type:SET_PROPERTY,data:_SrcBlend=1}, {type:SET_PROPERTY,data:_DstBlend=0}]},
+        {value:4,actions:[{type:SET_PROPERTY,data:_sdwRef=20}, {type:SET_PROPERTY,data:_sdwPass=0}, {type:SET_PROPERTY,data:_sdwComp=3}, {type:SET_PROPERTY,data:_sdwColorMask=16}, {type:SET_PROPERTY,data:_sdwSrc=2}, {type:SET_PROPERTY,data:_sdwDst=3}, {type:SET_PROPERTY,data:_sdwZWrite=0}, {type:SET_PROPERTY,data:_sdwZTest=2}]},
+        {value:4,actions:[{type:SET_PROPERTY,data:_StencilPassA=0}, {type:SET_PROPERTY,data:_StencilPassB=0}, {type:SET_PROPERTY,data:_StencilCompA=5}]},
+        {value:4,actions:[{type:SET_PROPERTY,data:_StencilCompB=8}, {type:SET_PROPERTY,data:_StencilRefA=100}, {type:SET_PROPERTY,data:_StencilRefB=100}, {type:SET_PROPERTY,data:render_queue=2020}, {type:SET_PROPERTY,data:render_type=Opaque}]}
+        ]}", Int) = 0
+
 
         //Material Type End
 
@@ -60,6 +74,7 @@ Shader "HoyoToon/Star Rail/Character"
                 [Toggle] _UseSecondaryTex ("Enable Secondary Diffuse", float) = 0
                 _SecondaryDiff ("Secondary Diffuse Texture", 2D) = "white" {}
                 _SecondaryFade ("Fade to Secondary", Range(0,1)) = 0
+                [HoyoToonWideEnum(UV0, 0, UV1, 1, UV2, 2)] _SecondaryUV ("UV", Float) = 0
             [HideInInspector] end_secondarymain("", Float) = 0
             //endex
             [HideInInspector] start_mainalpha ("Alpha Options", Float) = 0
@@ -71,7 +86,7 @@ Shader "HoyoToon/Star Rail/Character"
                 // _VertexShadowColor ("Vertex Shadow Color", Color) = (1, 1, 1, 1) // unsure of what this does yet for star rail
                 _Color  ("Front Face Color", Color) = (1, 1, 1, 1)
                 _BackColor ("Back Face Color", Color) = (1, 1, 1, 1)
-                _Color0("Color 0", Color) = (1.0, 1.0, 1.0, 1.0)
+                _Color0("Color ", Color) = (1.0, 1.0, 1.0, 1.0)
                 _Color1("Color 1", Color) = (1.0, 1.0, 1.0, 1.0)
                 _Color2("Color 2", Color) = (1.0, 1.0, 1.0, 1.0)
                 _Color3("Color 3", Color) = (1.0, 1.0, 1.0, 1.0)
@@ -81,24 +96,42 @@ Shader "HoyoToon/Star Rail/Character"
                 _Color7("Color 7", Color) = (1.0, 1.0, 1.0, 1.0)
 
                 [HideInInspector] start_customcolors("Custom Colors", Float) = 0
+                [Helpbox] _NPCColorHelp("This is utilizing the NPC color system, based on the ID texture it will use the diffuse's red channel as a gradient map", float) = 0
+                
                     [Toggle] _UseCustomColors ("Enable Custom Colors", Float) = 0
                     _AlphaTex ("ID Texture", 2D) = "white" {}
-                    _CustomSkinColor ("Custom Skin Color (ID = 0)", Color) = (1,1,1,1)
-                    _CustomSkinColor1 ("Custom Skin Color (ID = 0)", Color) = (1,1,1,1)
-                    _CustomColor0 ("Custom Color 1 (ID = 31)", Color) = (1,1,1,1)
-                    _CustomColor1 ("Custom Color 1 (ID = 31)", Color) = (1,1,1,1)
-                    _CustomColor2 ("Custom Color 2 (ID = 63)", Color) = (1,1,1,1)
-                    _CustomColor3 ("Custom Color 2 (ID = 63)", Color) = (1,1,1,1)
-                    _CustomColor4 ("Custom Color 3 (ID = 95)", Color) = (1,1,1,1)
-                    _CustomColor5 ("Custom Color 3 (ID = 95)", Color) = (1,1,1,1)
-                    _CustomColor6 ("Custom Color 4 (ID = 127)", Color) = (1,1,1,1)
-                    _CustomColor7 ("Custom Color 4 (ID = 127)", Color) = (1,1,1,1)
-                    _CustomColor8 ("Custom Color 5 (ID = 159)", Color) = (1,1,1,1)
-                    _CustomColor9 ("Custom Color 5 (ID = 159)", Color) = (1,1,1,1)
-                    _CustomColor10 ("Custom Color 6 (ID = 192)", Color) = (1,1,1,1)
-                    _CustomColor11 ("Custom Color 6 (ID = 192)", Color) = (1,1,1,1)
-                    _CustomColor12 ("Custom Color 7 (ID = 223)", Color) = (1,1,1,1)
-                    _CustomColor13 ("Custom Color 7 (ID = 223)", Color) = (1,1,1,1)
+                    [HideInInspector] start_customskincolor("Custom Skin Color", Float) = 0
+                        _CustomSkinColor ("Top Skin Color (ID = 0)", Color) = (1,1,1,1)
+                        _CustomSkinColor1 ("Bottom Skin Color (ID = 0)", Color) = (1,1,1,1)
+                    [HideInInspector] end_customskincolor("", Float) = 0
+                    [HideInInspector] start_customcolor0("Custom Area Color 1", Float) = 0
+                        _CustomColor0 ("Top Color 1", Color) = (1,1,1,1)
+                        _CustomColor1 ("Bottom Color 1", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor0("", Float) = 0
+                    [HideInInspector] start_customcolor1("Custom Area Color 2", Float) = 0
+                        _CustomColor2 ("Top Color 2", Color) = (1,1,1,1)
+                        _CustomColor3 ("Bottom Color 2", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor1("", Float) = 0
+                    [HideInInspector] start_customcolor2("Custom Area Color 3", Float) = 0
+                        _CustomColor4 ("Top Color 3", Color) = (1,1,1,1)
+                        _CustomColor5 ("Bottom Color 3", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor2("", Float) = 0
+                    [HideInInspector] start_customcolor3("Custom Area Color 4", Float) = 0
+                        _CustomColor6 ("Top Color 4", Color) = (1,1,1,1)
+                        _CustomColor7 ("Bottom Color 4", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor3("", Float) = 0
+                    [HideInInspector] start_customcolor4("Custom Area Color 5", Float) = 0
+                        _CustomColor8 ("Top Color 5", Color) = (1,1,1,1)
+                        _CustomColor9 ("Bottom Color 5", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor4("", Float) = 0
+                    [HideInInspector] start_customcolor5("Custom Area Color 6", Float) = 0
+                        _CustomColor10 ("Top Color 6", Color) = (1,1,1,1)
+                        _CustomColor11 ("Bottom Color 6", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor5("", Float) = 0
+                    [HideInInspector] start_customcolor6("Custom Area Color 7", Float) = 0
+                        _CustomColor12 ("Top Color 7", Color) = (1,1,1,1)
+                        _CustomColor13 ("Bottom Color 7", Color) = (1,1,1,1)
+                    [HideInInspector] end_customcolor6("", Float) = 0
                 [HideInInspector] end_customcolors ("", Float) = 0
                 //_EnvColor ("Env Color", Color) = (1, 1, 1, 1)
                 //_AddColor ("Add Color", Color) = (0, 0, 0, 0)
@@ -134,7 +167,6 @@ Shader "HoyoToon/Star Rail/Character"
                 _ExShadowColor ("Expression Shadow Color", Color) = (1, 1, 1, 1)
                 // _ExEyeColor ("Expression Eye Color", Color) = (1, 1, 1, 1)
                 _ExShadowIntensity ("Expression Shadow Intensity", Range(0, 1)) = 0
-                
             [HideInInspector] end_faceexpression("", Float) = 0
         [HideInInspector] end_faceshading("", Float) = 0 
         //endex
@@ -150,6 +182,7 @@ Shader "HoyoToon/Star Rail/Character"
                 [SmallTexture]_DiffuseCoolRampMultiTex ("Cool Shadow Ramp | 8 ramps", 2D) = "white" {}
                 [Toggle] _ES_LEVEL_ADJUST_ON ("Enable Level Adjust", Float) = 0
                 _ShadowRamp ("Shadow Ramp", Range(0.01, 1)) = 1
+                _ShadowSoftness ("Face Shading Softness", Range(0, 1)) = 0.0001
                 _ShadowColor ("Shadow Color", Color) = (0.5, 0.5, 0.5, 1)
                 [HideInInspector] start_shadowcontrol ("Shadow Levels--{condition_show:{type:PROPERTY_BOOL,data:_ES_LEVEL_ADJUST_ON==1.0}}", Float) = 0
                     _ES_LevelSkinLightColor ("Skin Shadow Color", Color) = (1, 1, 1, 0.5)
@@ -166,6 +199,16 @@ Shader "HoyoToon/Star Rail/Character"
                     _SelfShadowDarken ("Self Shadow Darken", Float) = 0
                     _SelfShadowDepthOffset ("Shadow Depth Offset", Float) = 0
                     _SelfShadowSampleOffset ("Shadow Sample Offset", Float) = 0
+                    [HideInInspector] start_shadowstencil ("Hair Stencil", Float) = 0
+                    [IntRange] _sdwRef ("Stenci l Reference Value", Range(0, 255)) = 0
+                    [Enum(UnityEngine.Rendering.CompareFunction)] _sdwComp ("Stencil Compare Function", Float) = 8
+                    [Enum(UnityEngine.Rendering.StencilOp)] _sdwPass ("Stencil Pass Op", Float) = 0
+                    [IntRange] _sdwColorMask ("Stencil Color Mask", Range(0, 16)) = 16
+                    [Enum(UnityEngine.Rendering.BlendMode)] _sdwSrc ("Source Blend", Int) = 1
+                    [Enum(UnityEngine.Rendering.BlendMode)] _sdwDst ("Destination Blend", Int) = 1
+                    [Enum(Off, 0, On, 1)] _sdwZWrite ("Zwrite", Int) = 1
+                    [Enum(UnityEngine.Rendering.CompareFunction)] _sdwZTest ("ZTest", Float) = 2 // mihoyo uses this in their shader but set it to something that doesnt work 
+                    [HideInInspector] end_shadowstenci ("", Float) = 0
                 [HideInInspector] end_selfshadow ("", Float) = 0
                 //endex
             [HideInInspector] end_lightandshadow("", Float) = 0
@@ -235,44 +278,51 @@ Shader "HoyoToon/Star Rail/Character"
                     _RimDark6 ("Rim Dark 6 | (RGB ID = 192)", Range(0.0, 1.0)) = 0.5
                     _RimDark7 ("Rim Dark 7 | (RGB ID = 223)", Range(0.0, 1.0)) = 0.5
                 [HideInInspector] end_lightingrimdark("", Float) = 0
-                // // BACKLIGHT RIM
-                // [Toggle] _EnableBackRimLight ("Enable Back Rim Light", Float) = 1
-                // _RimShadowCt ("Rim Shadow Control", Float) = 1
-                // _RimShadowIntensity ("Rim Shadow Intensity", Float) = 1
-                // // --- Color
-                // _RimShadowColor0 (" Rim Shadow Color 0 | (RGB ID = 0)", Color)   = (1, 1, 1, 1)
-                // _RimShadowColor1 (" Rim Shadow Color 1 | (RGB ID = 31)", Color)  = (1, 1, 1, 1)
-                // _RimShadowColor2 (" Rim Shadow Color 2 | (RGB ID = 63)", Color)  = (1, 1, 1, 1)
-                // _RimShadowColor3 (" Rim Shadow Color 3 | (RGB ID = 95)", Color)  = (1, 1, 1, 1)
-                // _RimShadowColor4 (" Rim Shadow Color 4 | (RGB ID = 127)", Color) = (1, 1, 1, 1)
-                // _RimShadowColor5 (" Rim Shadow Color 5 | (RGB ID = 159)", Color) = (1, 1, 1, 1)
-                // _RimShadowColor6 (" Rim Shadow Color 6 | (RGB ID = 192)", Color) = (1, 1, 1, 1)
-                // _RimShadowColor7 (" Rim Shadow Color 7 | (RGB ID = 223)", Color) = (1, 1, 1, 1)
-                // // --- Width
-                // _RimShadowWidth0 ("Rim Shadow Width 0 | (RGB ID = 0)", Float) = 1
-                // _RimShadowWidth1 ("Rim Shadow Width 1 | (RGB ID = 31)", Float) = 1
-                // _RimShadowWidth2 ("Rim Shadow Width 2 | (RGB ID = 63)", Float) = 1
-                // _RimShadowWidth3 ("Rim Shadow Width 3 | (RGB ID = 95)", Float) = 1
-                // _RimShadowWidth4 ("Rim Shadow Width 4 | (RGB ID = 127)", Float) = 1
-                // _RimShadowWidth5 ("Rim Shadow Width 5 | (RGB ID = 159)", Float) = 1
-                // _RimShadowWidth6 ("Rim Shadow Width 6 | (RGB ID = 192)", Float) = 1
-                // _RimShadowWidth7 ("Rim Shadow Width 7 | (RGB ID = 223)", Float) = 1
-                // // --- Feather
-                // _RimShadowFeather0 ("Rim Shadow Feather 0 | (RGB ID = 0)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather1 ("Rim Shadow Feather 1 | (RGB ID = 31)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather2 ("Rim Shadow Feather 2 | (RGB ID = 63)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather3 ("Rim Shadow Feather 3 | (RGB ID = 95)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather4 ("Rim Shadow Feather 4 | (RGB ID = 127)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather5 ("Rim Shadow Feather 5 | (RGB ID = 159)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather6 ("Rim Shadow Feather 6 | (RGB ID = 192)", Range(0.01, 0.99)) = 0.01
-                // _RimShadowFeather7 ("Rim Shadow Feather 7 | (RGB ID = 223)", Range(0.01, 0.99)) = 0.01
+            [HideInInspector] end_lightingrim("", Float) = 0
+            [HideInInspector] start_lightingrimshadow("Rim Shadow", Float) = 0
+                _ES_RimShadowColor ("Global Rim Shadow Color", Color) = (1, 1, 1, 1)
+                _RimShadowCt ("Rim Shadow Control", Float) = 1
+                _ES_RimShadowIntensity ("Global Rim Shadow Intensity", Float) = 0.1
+                _RimShadowIntensity ("Rim Shadow Intensity", Float) = 1
+                [HideInInspector] start_rimshdwcolor ("Color", Float) = 0
+                // --- Color
+                _RimShadowColor0 (" Rim Shadow Color 0 | (RGB ID = 0)", Color)   = (1, 1, 1, 1)
+                _RimShadowColor1 (" Rim Shadow Color 1 | (RGB ID = 31)", Color)  = (1, 1, 1, 1)
+                _RimShadowColor2 (" Rim Shadow Color 2 | (RGB ID = 63)", Color)  = (1, 1, 1, 1)
+                _RimShadowColor3 (" Rim Shadow Color 3 | (RGB ID = 95)", Color)  = (1, 1, 1, 1)
+                _RimShadowColor4 (" Rim Shadow Color 4 | (RGB ID = 127)", Color) = (1, 1, 1, 1)
+                _RimShadowColor5 (" Rim Shadow Color 5 | (RGB ID = 159)", Color) = (1, 1, 1, 1)
+                _RimShadowColor6 (" Rim Shadow Color 6 | (RGB ID = 192)", Color) = (1, 1, 1, 1)
+                _RimShadowColor7 (" Rim Shadow Color 7 | (RGB ID = 223)", Color) = (1, 1, 1, 1)
+                [HideInInspector] end_rimshdwcolor("", Float) = 0
+                [HideInInspector] start_rimshdwwidth ("Width", Float) = 0
+                // --- Width
+                _RimShadowWidth0 ("Rim Shadow Width 0 | (RGB ID = 0)", Float) = 1
+                _RimShadowWidth1 ("Rim Shadow Width 1 | (RGB ID = 31)", Float) = 1
+                _RimShadowWidth2 ("Rim Shadow Width 2 | (RGB ID = 63)", Float) = 1
+                _RimShadowWidth3 ("Rim Shadow Width 3 | (RGB ID = 95)", Float) = 1
+                _RimShadowWidth4 ("Rim Shadow Width 4 | (RGB ID = 127)", Float) = 1
+                _RimShadowWidth5 ("Rim Shadow Width 5 | (RGB ID = 159)", Float) = 1
+                _RimShadowWidth6 ("Rim Shadow Width 6 | (RGB ID = 192)", Float) = 1
+                _RimShadowWidth7 ("Rim Shadow Width 7 | (RGB ID = 223)", Float) = 1
+                [HideInInspector] end_rimshdwwidth("", Float) = 0
+                [HideInInspector] start_rimshdwfeather ("Feather", Float) = 0
+                // --- Feather
+                _RimShadowFeather0 ("Rim Shadow Feather 0 | (RGB ID = 0)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather1 ("Rim Shadow Feather 1 | (RGB ID = 31)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather2 ("Rim Shadow Feather 2 | (RGB ID = 63)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather3 ("Rim Shadow Feather 3 | (RGB ID = 95)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather4 ("Rim Shadow Feather 4 | (RGB ID = 127)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather5 ("Rim Shadow Feather 5 | (RGB ID = 159)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather6 ("Rim Shadow Feather 6 | (RGB ID = 192)", Range(0.01, 0.99)) = 0.01
+                _RimShadowFeather7 ("Rim Shadow Feather 7 | (RGB ID = 223)", Range(0.01, 0.99)) = 0.01
+                [HideInInspector] end_rimshdwfeather("", Float) = 0
                 // // --- Offset 
                 // _RimShadowOffset ("Rim Shadow Offset", Vector) = (0, 0, 0, 0)
-            [HideInInspector] end_lightingrim("", Float) = 0
+            [HideInInspector] end_lightingrimshadow("", Float) = 0
             //endex
         [HideInInspector] end_lighting("", Int) = 0
         // -------------------------------------------
-
         //ifex _EnableSpecular == 0
         // specular 
         [HideInInspector] start_specular("Specular--{reference_property:_EnableSpecular}", Float) = 0
@@ -325,7 +375,7 @@ Shader "HoyoToon/Star Rail/Character"
         [HideInInspector] end_specular("", Float) = 0
         //endex
         
-        // ifex _EnableMatcap == 0
+        //ifex _EnableMatcap == 0
         [HideInInspector] start_matcap("Matcap--{reference_property:_UseMatcap}", Float) = 0
             [Toggle] _UseMatcap ("Use Matcap", Float) = 0
             [Toggle] _ReplaceColor ("Use Matcap as Diffuse Color", Float) = 0
@@ -338,8 +388,7 @@ Shader "HoyoToon/Star Rail/Character"
             _MatCapStrengthInShadow ("Matcap Strength In Shadow", Range(0, 100)) = 1
             _MatCapColor ("Matcap Color", Color) = (1, 1, 1, 1)
         [HideInInspector] end_matcap("", Float) = 0
-        //endif
-        
+        //endex
 
         //ifex _EnableStocking == 0
         [HideInInspector] start_stockings("Stockings--{reference_property:_EnableStocking}", Float) = 0
@@ -361,6 +410,7 @@ Shader "HoyoToon/Star Rail/Character"
             [Toggle] _EnableOutline ("Enable Outlines", Float) = 1 // on by default
             _AlphaCutoff ("Outline Alpha Cutoff", Range(0,1)) = 0.0
             [Toggle]_EnableFOVWidth ("Enable FOV Scaling", Float) = 1
+            [Toggle]_OutlineZOff ("Outline Z Offset Disable", Float) = 0
             _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
             _OutlineScale ("Outline Scale", Range(0, 1)) = 0.187
             [HideInInspector] start_outlinecolor("Outline Color", Float) = 0
@@ -385,6 +435,21 @@ Shader "HoyoToon/Star Rail/Character"
             [HideInInspector] end_outlinelip("", Float) = 0
         [HideInInspector] end_outlines("", Float) = 0        
         //endex
+        [HideInInspector] start_bloomcontrol ("Additive Bloom Control", Float) = 0
+            _mBloomColor ("Bloom Color", Color) = (1, 1, 1, 1)
+            [HideInInspector] start_pmintensity ("Per Region Bloom Intensity", Float) = 0
+                _mBloomIntensity0 ("Intensity 0", Float) = 0.0
+                _mBloomIntensity1 ("Intensity 1", Float) = 0.0
+                _mBloomIntensity2 ("Intensity 2", Float) = 0.0
+                _mBloomIntensity3 ("Intensity 3", Float) = 0.0
+                _mBloomIntensity4 ("Intensity 4", Float) = 0.0
+                _mBloomIntensity5 ("Intensity 5", Float) = 0.0
+                _mBloomIntensity6 ("Intensity 6", Float) = 0.0
+                _mBloomIntensity7 ("Intensity 7", Float) = 0.0
+            [HideInInspector] end_pmintensity ("Per Region Bloom Intensity", Float) = 0
+        [HideInInspector] end_bloomcontrol ("", Float) = 0
+
+
         [HideInInspector] start_specialeffects("Special Effects", Float) = 0
             //ifex _EnableEmission == 0
             [HideInInspector] start_specialeffectsemission("Emission--{reference_property:_EmissionToggle}", Float) = 0
@@ -409,7 +474,8 @@ Shader "HoyoToon/Star Rail/Character"
                 [Enum(UnityEngine.Rendering.StencilOp)] _StencilPassB ("Stencil Pass Op B", Float) = 0
                 [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompA ("Stencil Compare Function A", Float) = 8
                 [Enum(UnityEngine.Rendering.CompareFunction)] _StencilCompB ("Stencil Compare Function B", Float) = 8
-                [IntRange] _StencilRef ("Stencil Reference Value", Range(0, 255)) = 0
+                [IntRange] _StencilRefA ("Stencil Reference Value", Range(0, 255)) = 0
+                [IntRange] _StencilRefB ("Stencil Reference Value", Range(0, 255)) = 0
             [HideInInspector] end_stencilfade("", Float) = 0
             //endex
             //ifex _CausToggle == 0
@@ -469,7 +535,13 @@ Shader "HoyoToon/Star Rail/Character"
             [HideInInspector] end_dissolve("", Float) = 0
             //endex
 
-
+            //ifex _EnableLUT == 0
+            [HideInInspector] start_lut("Built In Tonemapping--{reference_property:_EnableLUT}", Float) = 0
+                [Toggle] _EnableLUT ("Enable LUT", float) = 0 
+                _Lut2DTex ("LUT", 2D) = "white" {}
+                _Lut2DTexParam ("LUT Paramters", Vector) = (0.00098, 0.03125, 31, 0)
+            [HideInInspector] end_lut ("", Float) = 0
+            //endex
             // this is the effect that appears on a model when theyre in the character details menu
             [HideInInspector] start_heightfog("Height Light", Float) = 0
                 // this is entirely scripted
@@ -477,8 +549,8 @@ Shader "HoyoToon/Star Rail/Character"
                 _CharaWorldSpaceOffset ("World Space Offset", Float) = 0
                 _ES_HeightLerpBottom ("Height Bottom", Float) = 0
                 _ES_HeightLerpTop ("Height Top", Float) = 1
-                [HideInInspector] start_heightcolors("", Float) = 0
-                    [HDR] _ES_HeightLerpBottomColor ("Light Bottom Color", Color) = (1,1,1,1)
+                [HideInInspector] start_heightcolors("Height Gradient Colors", Float) = 0
+                    [HDR] _ES_HeightLerpBottomColor ("Light Bottom Color", Color) = (0.5,0.5,0.5,1)
                     [HDR] _ES_HeightLerpMiddleColor ("Light Middle Color", Color) = (1,1,1,1)
                     [HDR] _ES_HeightLerpTopColor ("Light Top Color", Color) = (1,1,1,1)
                 [HideInInspector] end_heightcolors("", Float) = 0
@@ -486,43 +558,55 @@ Shader "HoyoToon/Star Rail/Character"
 
             // this isnt anywhere near actually useable, This needs to be iterated on more.
             //ifex _EnableParticleSwirl == 0
-            // [HideInInspector] start_particleswirl ("SwirlDissolve", Float) = 0
-
-            //     [Toggle] _EnableParticleSwirl("Enable Swirl Dissolve", Float) = 0
-            //     [KeywordEnum(R,RGBA,RA)] _CL ("Channel Mapping", Float) = 0
-            //     _MainChannel ("MainChannelA      RGB+W=0/1 ", Vector) = (1,0,0,1)
-            //     _MainChannelRGB ("MainChannelRGB  RGB=0/1 ", Vector) = (1,0,0,0)
-            //     // _MainTex ("MainTex", 2D) = "white" { }
-            //     _MainSpeed ("MainSpeed  intensity* +", Vector) = (0,0,1,0)
-            //     _Opacity ("Opacity", Range(0, 1)) = 1
-            //     _DisStep ("DisStep             Y=OutEdge", Vector) = (1.1,0,0,0)
-            //     [HDR] _InsideColor ("InsideColor", Color) = (1,1,1,0)
-            //     [HDR] _OutSideColor ("OutSideColor", Color) = (1,1,1,0)
-            //     [Toggle(_MidColorON)] _Mid ("Mid", Float) = 0
-            //     [HDR] _MidColor ("MidColorRGB   a", Color) = (1,1,1,0.1)
-            //     _SmoothStep ("SmoothStep_xyz W=Midedge", Vector) = (0,0,0,0)
-            //     _DisTex ("DisTex  (r+b)*mask ", 2D) = "white" { }
-            //     _DisRSpeed ("Dis(R)Speed  rg+z", Vector) = (0,0,0,0)
-            //     [Toggle(_DisTexGON)] _DisTexG ("Dis(G)_Switch", Float) = 0
-            //     _DisGSpeed ("Dis(G)Speed  uv", Vector) = (0,0,1,1)
-            //     _MaskON ("MaskTex_Switch  /  OFF=UVramp  offset=0/1/2 ", Float) = 0
-            //     _MaskTex ("MaskTex", 2D) = "white" { }
-            //     _MaskChannel ("MaskChannel  RGB=0/1 A=MaskNoise", Vector) = (1,0,0,0)
-            //     _MaskChannelA ("MaskChannel Alpha", Float) = 0
-            //     [Toggle] _MaskTransparency ("Mask Transparency", Float) = 0
-            //     _MaskTransparencyChannel ("Mask Transparency Channel", Vector) = (0,0,0,1)
-            //     [Toggle(_Noise)] _NoiseSwitch ("NoiseTex_Switch", Float) = 0
-            //     _NoiseTex ("NoiseTex", 2D) = "white" { }
-            //     _NoiseSpeed ("NoiseSpeed  itensity", Vector) = (0,0,1,1)
-            //     _Disappear ("Disappear", Range(0, 1)) = 0
-            //     _SoftNear ("Soft Near", Range(-5, 5)) = 0
-            //     _SoftFar ("Soft Far", Range(-5, 5)) = 1
-            //     _ES_EP_EffectParticle ("Particle", Color) = (0,0,1,1)
-            //     _ES_EP_EffectParticleBottom ("Particle Bottom", float) = 1
-            //     _ES_EP_EffectParticleTop ("Particle Top", float) = 1
-            //     [Enum(AlphaBlend, 0, Additive, 1, Multiply, 2, OneChannel, 3, Opaque, 4)] _RenderingMode ("Rendering Mode", Float) = 0
+            [HideInInspector] start_particleswirl ("SwirlDissolve", Float) = 0
             
-            // [HideInInspector] end_particleswirl ("", Float) = 0
+                [Toggle] _VertexColor ("Use Vertex Color", float) = 1
+                _VertexColorFallback ("Vertex Color Fallback", Color) = (1,1,1,1)
+
+                [HideInInspector] start_rand ("Rand", Float) = 0
+                    _EnableRandomSeed ("Enable Random Seed", Float) = 0
+                    _LineRendererAniRandomSeed ("Line Renderer Animation Random Seed", Float) = 0
+                [HideInInspector] end_rand ("", Float) = 0
+
+                [Toggle] _EffectOverrideTimeEnable ("Enable Override Time", Float) = 0
+                _EffectOverrideTime ("Override Time", Float) = 0
+
+                
+
+                [Toggle] _EnableParticleSwirl("Enable Swirl Dissolve", Float) = 0
+                [KeywordEnum(R,RGBA,RA)] _CL ("Channel Mapping", Float) = 0
+                _MainChannel ("MainChannelA      RGB+W=0/1 ", Vector) = (1,0,0,1)
+                _MainChannelRGB ("MainChannelRGB  RGB=0/1 ", Vector) = (1,0,0,0)
+                _MainSpeed ("MainSpeed  intensity* +", Vector) = (0,0,1,0)
+                _Opacity ("Opacity", Range(0, 1)) = 1
+                _DisStep ("DisStep Y=OutEdge", Vector) = (1.1,0,0,0)
+                [HDR] _InsideColor ("InsideColor", Color) = (1,1,1,0)
+                [HDR] _OutSideColor ("OutSideColor", Color) = (1,1,1,0)
+                [Toggle(_MidColorON)] _Mid ("Mid", Float) = 0
+                [HDR] _MidColor ("MidColorRGB", Color) = (1,1,1,0.1)
+                _SmoothStep ("SmoothStep_xyz W=Midedge", Vector) = (0,0,0,0)
+                _DisTex ("DisTex  (r+b)*mask ", 2D) = "white" { }
+                _DisRSpeed ("Dis(R)Speed  rg+z", Vector) = (0,0,0,0)
+                [Toggle] _DisTexG ("Dis(G)_Switch", Float) = 0
+                _DisGSpeed ("Dis(G)Speed  uv", Vector) = (0,0,1,1)
+                _MaskON ("MaskTex_Switch  /  OFF=UVramp  offset=0/1/2 ", Float) = 0
+                _MaskTex ("MaskTex", 2D) = "white" { }
+                _MaskChannel ("MaskChannel  RGB=0/1 A=MaskNoise", Vector) = (1,0,0,0)
+                _MaskChannelA ("MaskChannel Alpha", Float) = 0
+                [Toggle] _MaskTransparency ("Mask Transparency", Float) = 0
+                _MaskTransparencyChannel ("Mask Transparency Channel", Vector) = (0,0,0,1)
+                [Toggle(_Noise)] _NoiseSwitch ("NoiseTex_Switch", Float) = 0
+                _NoiseTex ("NoiseTex", 2D) = "white" { }
+                _NoiseSpeed ("NoiseSpeed  itensity", Vector) = (0,0,1,1)
+                _Disappear ("Disappear", Range(0, 1)) = 0
+                _SoftNear ("Soft Near", Range(-5, 5)) = 0
+                _SoftFar ("Soft Far", Range(-5, 5)) = 1
+                _ES_EP_EffectParticle ("Particle", Color) = (0,0,1,1)
+                _ES_EP_EffectParticleBottom ("Particle Bottom", float) = 1
+                _ES_EP_EffectParticleTop ("Particle Top", float) = 1
+                [Enum(AlphaBlend, 0, Additive, 1, Multiply, 2, OneChannel, 3, Opaque, 4)] _RenderingMode ("Rendering Mode", Float) = 0
+            
+            [HideInInspector] end_particleswirl ("", Float) = 0
             //endex
 
             [HideInInspector] start_starrysky ("Starry Sky", Float) = 0
@@ -690,8 +774,11 @@ Shader "HoyoToon/Star Rail/Character"
         //ifex _DissoveON == 0
         #define can_dissolve
         //endex
-        // ifex _EnableMatcap == 0
+        //ifex _EnableMatcap == 0
         #define use_matcap
+        //endex
+        //ifex _EnableLUT == 0
+        #define is_tonemapped
         //endex
         //ifex _DebugMode == 0
         #define debug_mode
@@ -714,18 +801,18 @@ Shader "HoyoToon/Star Rail/Character"
         {
             Name "Hair Shadow"
             Tags{ "LightMode" = "ForwardBase" }
-            Cull [_CullMode]
-            // Blend [_SrcBlend] [_DstBlend]
-            ZWrite Off
-            ZTest LEqual
-            ZClip False
-            Blend DstColor Zero
+            Cull Back
+            Blend [_sdwSrcd] [_sdwDst]
+            ZWrite [_sdwZWrite]
+            ZTest [_sdwZTest]
+            // ZClip False
+            // Blend DstColor Zero
+            ColorMask [_sdwColorMask]
             Stencil
             {
-				ref 101
-                Comp GEqual
-				Pass Keep
-                Fail Keep
+				ref [_sdwRef]
+                Comp [_sdwComp]
+				Pass [_sdwPass]
             }
             HLSLPROGRAM
             // #define is_stencil
@@ -748,11 +835,9 @@ Shader "HoyoToon/Star Rail/Character"
             Blend [_SrcBlend] [_DstBlend]
             Stencil
             {
-                ref 100              
+                ref [_StencilRefA]
         		Comp [_StencilCompA]
-        		Pass [_StencilPassA]  
-                // Fail Keep
-        		// ZFail Keep
+        		Pass [_StencilPassA]
         	}
 
             HLSLPROGRAM
@@ -775,11 +860,9 @@ Shader "HoyoToon/Star Rail/Character"
             Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
             Stencil
             {
-                ref 100             
+                ref [_StencilRefB]             
         		Comp [_StencilCompB]
-        		Pass [_StencilPassB]  
-                // Fail Keep
-        		// ZFail Keep
+        		Pass [_StencilPassB]
         	}
 
             // Cull [_Cull]
@@ -824,7 +907,15 @@ Shader "HoyoToon/Star Rail/Character"
             Tags{ "LightMode" = "ForwardBase" }
             Blend SrcAlpha OneMinusSrcAlpha
             Cull Front
-			
+            ZWrite On
+            ZTest Less
+            ZClip On
+            Stencil
+            {
+                ref 255
+                Comp Always
+                Pass Keep
+            }			
             HLSLPROGRAM
             #pragma multi_compile_fwdbase
             #pragma vertex vs_edge

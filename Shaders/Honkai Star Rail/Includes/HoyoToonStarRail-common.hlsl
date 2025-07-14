@@ -70,7 +70,6 @@ float3 hue_shift(float3 in_color, float material_id, float shift1, float shift2,
     #endif
 }
 
-
 int material_region(float lightmap_alpha)
 {
     int material = 0;
@@ -100,9 +99,9 @@ int material_region(float lightmap_alpha)
 }
 
 // float shadow_rate(float ndotl, float lightmap_ao, float vertex_ao, float shadow_ramp, float shadow_map)
-float shadow_rate(float ndotl, float lightmap_ao, float vertex_ao, float shadow_ramp)
+float shadow_rate(float ndotl, float lightmap_ao, float vertex_ao, float shadow_ramp, float casted)
 {
-    float shadow_ndotl  = ndotl * 0.5f + 0.5f;
+    float shadow_ndotl  = (ndotl * 0.5f + 0.5f) * casted;
     float shadow_thresh = (lightmap_ao + lightmap_ao) * vertex_ao;
     float shadow_area   = min(1.0f, dot(shadow_ndotl.xx, shadow_thresh.xx));
     #ifndef _IS_PASS_LIGHT
@@ -139,7 +138,7 @@ float shadow_rate_face(float2 uv, float3 light)
         // use only the alpha channel of the texture 
         float facemap = _FaceMap.Sample(sampler_linear_repeat, faceuv).w;
         // interpolate between sharp and smooth face shading
-        shadow_step = smoothstep(shadow_step - (_FaceSoftness), shadow_step + (_FaceSoftness), facemap);
+        shadow_step = smoothstep(shadow_step - (_ShadowSoftness), shadow_step + (_ShadowSoftness), facemap);
 
     #else
         float shadow_step = 1.00f;
@@ -195,6 +194,77 @@ float remap(float value, float old_min, float old_max, float new_min, float new_
 }
 
 void dissolve_vertex(vs_in i, out float4 dis_pos, out float4 dis_uv)
+{
+    #if defined(can_dissolve)
+        // Get the appropriate UV coordinates based on the dissolve UV setting
+        float2 dissolveUV = lerp(i.uv_0, i.uv_1, _DissolveUV);
+        
+        // Calculate the final UV coordinates for both dissolve and distortion effects
+        dis_uv = float4(
+            dissolveUV.xy * _DissolveST.xy + _DissolveST.zw,     // Dissolve UVs
+            dissolveUV.xy * _DistortionST.xy + _DistortionST.zw  // Distortion UVs
+        );
+        
+        // Store the original UV x-coordinate
+        dis_pos.x = dissolveUV.x;
+        
+        // Transform vertex position to world space
+        float4 ws_pos = mul(unity_ObjectToWorld, i.vertex);
+        
+        // Choose between local and world space position based on mask setting
+        float4 dissolvePos = lerp(i.vertex, ws_pos, _DissolvePosMaskWorldON);
+        
+        // Position mask calculation
+        float3 posToLight = dissolvePos.xyz - _ES_EffCustomLightPosition.xyz;
+        float3 adjustedPos = dissolvePos.xyz;
+        
+        // Apply global position adjustment if enabled
+        if (_DissolvePosMaskGlobalOn) {
+            adjustedPos = dissolvePos.xyz - posToLight;
+        }
+        
+        // Apply root offset
+        adjustedPos -= _DissolvePosMaskRootOffset.xyz;
+        
+        // Calculate light direction
+        float3 lightOffset = _ES_EffCustomLightPosition.xyz - unity_ObjectToWorld[3].xyz;
+        float3 maskPos = _DissolvePosMaskWorldON ? _DissolvePosMaskPos.xyz - unity_ObjectToWorld[3].xyz : _DissolvePosMaskPos.xyz;
+        float3 lightDir = lightOffset - maskPos;
+        
+        // Apply global adjustment to light direction if enabled
+        if (_DissolvePosMaskGlobalOn) {
+            lightDir = maskPos;
+        }
+        
+        // Normalize light direction
+        float lightDirLength = length(lightDir);
+        float3 normalizedLightDir = lightDir / lightDirLength;
+        
+        // Check if light direction is valid
+        bool isValidLightDir = (dot(abs(lightDir), float3(1.0, 1.0, 1.0)) >= 0.001);
+        
+        // Calculate dot product for position masking
+        float dotProduct = dot(normalizedLightDir, adjustedPos);
+        
+        // Calculate mask threshold and range
+        float maskRadius = max(_DissolvePosMaskPos.w, 0.01);
+        float maskValue = (abs(dotProduct) + maskRadius) / (2.0 * maskRadius);
+        
+        // Apply flip if enabled
+        if (_DissolvePosMaskFilpOn) {
+            maskValue = 1.0 - maskValue;
+        }
+        
+        // Apply mask settings and clamp result
+        float finalMask = clamp(maskValue + (1.0 - _DissolvePosMaskOn), 0.0, 1.0);
+        
+        // Store the calculated mask value or 1.0 if light direction is invalid
+        dis_pos.y = isValidLightDir ? finalMask : 1.0;
+        dis_pos.zw = float2(0.0, 0.0);
+    #endif
+}
+
+void dissolve_vertex_sdw(vs_in i, out float4 dis_pos, out float4 dis_uv)
 {
     #if defined(can_dissolve)
         // Get the appropriate UV coordinates based on the dissolve UV setting
@@ -453,131 +523,95 @@ void heightlightlerp(float4 pos, inout float4 color)
 
 void swirl_dissolve(vs_out i, inout float4 output)
 {
-    float4 dis_color = i.v_col;
-    float disappear_range = dis_color.w * _DisStep.x;
-    dis_color.w = lerp(1.0f, _Disappear, disappear_range);
-    dis_color.xyz = dis_color.xyz * _InsideColor;
 
-    float2 _MaskCheck = (-i.uv.xy) + _MaskTex_ST.zw;
-    _MaskCheck = min(abs(_MaskCheck.xy), float2(1.0, 1.0));
-    float2 mask_uv = _MaskON ? i.uv.xy * _MaskTex_ST.xy + _MaskTex_ST.zw : _MaskCheck; 
-    // vs_TEXCOORD0.zw
-
-    
-    float2 main_uv = i.uv.xy * _MainTex_ST.xy + _MainTex_ST.zw; // vs_TEXCOORD0.xy
-    float2 dissolve_uv = i.uv.xy * _DisTex_ST.xy + _DisTex_ST.zw; // vs_TEXCOORD1.xy
-    main_uv = _Time.yy * _MainSpeed.xy + main_uv;
-    dissolve_uv = _Time.yy * _DisRSpeed.xy + dissolve_uv;
-
-    float4 u_xlat16_0;
-    float4 u_xlat1;
-    float4 u_xlat16_1;
-    bool u_xlatb1;
-    float3 u_xlat16_2;
-    float4 u_xlat16_3;
-    float4 u_xlat4;
-    float4 u_xlat16_5;
-    float u_xlat16_6;
-    float u_xlat7;
-    float u_xlat16_8;
-    float u_xlat10;
-    float u_xlat16_12;
-    float u_xlat16_14;
-    float u_xlat16;
-    bool u_xlatb16;
-    float u_xlat16_18;
-
-
-    u_xlat16_0.xyz = _MaskChannel.xyz;
-    u_xlat16_0.w = _MaskChannelA;
-    u_xlat16_1 = _MaskTex.Sample(sampler_linear_repeat, mask_uv);
-    u_xlat16_0.x = dot(u_xlat16_1, u_xlat16_0);
-    u_xlat16_6 = dot(u_xlat16_1, _MaskTransparencyChannel);
-
-    u_xlat7 = mask_uv.y * mask_uv.x;
-    u_xlat1.x = (_MaskON) ? u_xlat16_0.x : u_xlat7;
-    u_xlat16_2.x = dis_color.w;
-    u_xlat7 = _DisTex.Sample(sampler_linear_repeat, dissolve_uv).x;
-    dissolve_uv.y = dissolve_uv.y + 0.5f;
-    u_xlat16_0.x = u_xlat7 + _DisRSpeed.z;
-    u_xlat16_12 = (_Mid != 0) ? u_xlat7 : 1.0;
-    u_xlat16_2.y = dis_color.w + _DisStep.y;
-    u_xlat16_2.z = u_xlat16_2.y + _SmoothStep.w;
-    u_xlat16_2.xyz = u_xlat1.xxx * u_xlat16_0.xxx + (-u_xlat16_2.xyz);
-    u_xlat16_3.xyz = 1.0 / _SmoothStep.xyz;
-    u_xlat16_2.xyz = u_xlat16_2.xyz * u_xlat16_3.xyz;
-
-    u_xlat16_2.xyz = clamp(u_xlat16_2.xyz, 0.0, 1.0);
-
-    u_xlat16_0.x = (_Mid != 0) ? u_xlat16_2.z : 0.0;
-    u_xlat1 = _MainTex.Sample(sampler_linear_repeat, main_uv);
-    u_xlat16_18 = dot(_MainChannel, u_xlat1);
-    u_xlat16_3.y = u_xlat16_18 * u_xlat1.w;
-    u_xlat16_3.x = dot(_MainChannelRGB, u_xlat1);
-    u_xlat16_3 = u_xlat16_3.xxxy;
-
-    u_xlat16_3 = clamp(u_xlat16_3, 0.0, 1.0);
-
-    u_xlat16_3 = (_CL == 2) ? u_xlat16_3 : u_xlat1;
-    u_xlat16_18 = dot(u_xlat1.xyz, _MainChannel.xyz);
-    u_xlat16_5.w = u_xlat16_18 * u_xlat1.w;
-
-    u_xlat16_5.w = clamp(u_xlat16_5.w, 0.0, 1.0);
-
-    u_xlat16_5.xyz = u_xlat1.xyz + _MainChannel.www;
-
-    u_xlat16_5.xyz = clamp(u_xlat16_5.xyz, 0.0, 1.0);
-
-    u_xlat16_1 = (_CL == 1) ? u_xlat16_5 : u_xlat16_3;
-    u_xlat16_3.xyz = u_xlat16_1.xyz * u_xlat16_12 + _MainSpeed.www;
-    u_xlat16_5.xyz = u_xlat16_3.xyz * _OutSideColor.xyz;
-    u_xlat16_3.xyz = _MidColor.xyz * u_xlat16_3.xyz + (-u_xlat16_5.xyz);
-    u_xlat16_0.xzw = u_xlat16_0.xxx * u_xlat16_3.xyz + u_xlat16_5.xyz;
-    u_xlat16_3.xyz = dis_color.xyz * u_xlat16_1.xyz + (-u_xlat16_0.xzw);
-    u_xlat16_0.xzw = u_xlat16_2.yyy * u_xlat16_3.xyz + u_xlat16_0.xzw;
-    u_xlat16_2.x = u_xlat16_1.w * u_xlat16_2.x;
-    u_xlat16_2.x = u_xlat16_2.x * _MidColor.w;
-    u_xlat16_0.xzw = u_xlat16_0.xzw * _MainSpeed.zzz;
-    u_xlat16_8 = 1;
-    u_xlat16_0.xzw = u_xlat16_0.xzw * u_xlat16_8;
-    u_xlat16_8 = 1;
-    u_xlat16_0.xzw = u_xlat16_0.xzw * u_xlat16_8;
-    u_xlat16_0.xzw = u_xlat16_0.xzw * 1;
-    u_xlat16_8 = max(u_xlat16_0.z, u_xlat16_0.x);
-    u_xlat16_8 = max(u_xlat16_0.w, u_xlat16_8);
-    u_xlat16_14 = _MaskTransparency * _MaskON;
-
-    u_xlat16_6 = (u_xlat16_14 == 0) ? u_xlat16_6 : 1.0;
-    u_xlat16_6 = u_xlat16_6 * u_xlat16_2.x;
-    u_xlat16_6 = u_xlat16_6 * 10.0;
-
-    u_xlat16_6 = clamp(u_xlat16_6, 0.0, 1.0);
-
-    u_xlat16_2.x = u_xlat16_6 * u_xlat16_8;
-    output.w = u_xlat16_6;
-    u_xlat4.x = max(u_xlat16_2.x, 0.00999999978);
-    u_xlat10 = u_xlat4.x + (-_ES_EP_EffectParticleBottom);
-    u_xlat16 = (-_ES_EP_EffectParticleBottom) + _ES_EP_EffectParticleTop;
-    u_xlat16 = 1.0 / u_xlat16;
-    u_xlat10 = u_xlat16 * u_xlat10;
-
-    u_xlat10 = clamp(u_xlat10, 0.0, 1.0);
-
-    u_xlat16 = u_xlat10 * -2.0 + 3.0;
-    u_xlat10 = u_xlat10 * u_xlat10;
-    u_xlat10 = u_xlat10 * u_xlat16;
-    u_xlat16_6 = (-_ES_EP_EffectParticleBottom) + _ES_EP_EffectParticleTop;
-    u_xlat16_6 = u_xlat10 * u_xlat16_6 + _ES_EP_EffectParticleBottom;
-    u_xlat10 = (-u_xlat4.x) + u_xlat16_6;
-    u_xlat10 = _ES_EP_EffectParticle * u_xlat10 + u_xlat4.x;
-
-    u_xlatb16 = _ES_EP_EffectParticleBottom<u_xlat4.x;
-
-    u_xlat10 = (u_xlatb16) ? u_xlat10 : u_xlat4.x;
-    u_xlat4.xzw = u_xlat16_0.xzw / u_xlat4.xxx;
-    u_xlat4.xyz = u_xlat10 * u_xlat4.xzw;
-    output.xyz = u_xlat4.xyz;
-    return;
+    // float2 mask_uv = i.uv.zw;
+    // float4 mask_tex = _MaskTex.Sample(sampler_linear_repeat, mask_uv);
+    // // (u_xlat16_0 = texture(_MaskTex, vs_TEXCOORD0.zw));
+    // // (u_xlatb1 = (vec4(0.0, 0.0, 0.0, 0.0) != vec4(_MaskON)));
+    // // (u_xlat16_2.xyz = _MaskChannel.xyz);
+    // // (u_xlat16_2.w = _MaskChannelA);
+    // // (u_xlat16_2.x = dot(u_xlat16_0, u_xlat16_2));
+    // // (u_xlat8 = (vs_TEXCOORD0.w * vs_TEXCOORD0.z));
+    // float mask = _MaskON ? dot(mask_tex, float4(_MaskChannel.xyz, _MaskChannelA)) : mask_uv.x * mask_uv.y;
+    // // (u_xlat16_2.x = (_MaskTransparency * _MaskON));
+    // // (u_xlatb8 = (vec4(0.0, 0.0, 0.0, 0.0) != vec4(u_xlat16_2.x)));
+    // // (u_xlat16_2 = _MaskTransparencyChannel);
+    // // (u_xlat16_2 = clamp(u_xlat16_2, 0.0, 1.0));
+    // // (u_xlat16_2.x = dot(u_xlat16_0, u_xlat16_2));
+    // // (u_xlat16_2.x = ((u_xlatb8) ? (u_xlat16_2.x) : (1.0)));
+    // float trans_mask = _MaskTransparency * _MaskON ? dot(mask_tex, float4(saturate(_MaskTransparencyChannel))) : 1.0f;
+    // // (u_xlat0.x = texture(_DisTex, vs_TEXCOORD1.xy).x);
+    // // (u_xlat16_7 = texture(_DisTex, vs_TEXCOORD1.zw).y);
+    // float main_dis = _DisTex.Sample(sampler_linear_repeat, i.uv_1.xy).x;
+    // float mask_dis = _DisTex.Sample(sampler_linear_repeat, i.uv_1.zw).y;
+    // (u_xlat16_9.x = (u_xlat16_7 + u_xlat0.x));
+    // (u_xlat7.x = (u_xlat16_9.x + _DisRSpeed.z));
+    // (u_xlat7.x = (u_xlat7.x * u_xlat1.x));
+    // (u_xlat1 = texture(_MainTex, vs_TEXCOORD0.xy));
+    // (u_xlat16_3.xyz = (u_xlat1.xyz + _MainChannel.www));
+    // (u_xlat16_3.xyz = clamp(u_xlat16_3.xyz, 0.0, 1.0));
+    // (u_xlat14 = dot(u_xlat1.xyz, _MainChannel.xyz));
+    // (u_xlat16_3.w = (u_xlat14 * u_xlat1.w));
+    // (u_xlat16_3.w = clamp(u_xlat16_3.w, 0.0, 1.0));
+    // (u_xlatb14.xy = equal(ivec4(ivec4(_CL, _CL, _CL, _CL)), ivec4(1, 2, 1, 2)).xy);
+    // (u_xlat16_9.x = dot(_MainChannelRGB, u_xlat1));
+    // (u_xlat4 = dot(_MainChannel, u_xlat1));
+    // (u_xlat16_4.w = (u_xlat1.w * u_xlat4));
+    // (u_xlat16_4.w = clamp(u_xlat16_4.w, 0.0, 1.0));
+    // (u_xlat16_4.xyz = u_xlat16_9.xxx);
+    // (u_xlat16_4.xyz = clamp(u_xlat16_4.xyz, 0.0, 1.0));
+    // (u_xlat16_1 = ((u_xlatb14.y) ? (u_xlat16_4) : (u_xlat1)));
+    // (u_xlat16_1 = ((u_xlatb14.x) ? (u_xlat16_3) : (u_xlat16_1)));
+    // (u_xlat16_3.y = (vs_COLOR0.w + _DisStep.y));
+    // (u_xlat16_3.z = (u_xlat16_3.y + _SmoothStep.w));
+    // (u_xlat16_3.x = vs_COLOR0.w);
+    // (u_xlat16_9.xyz = ((u_xlat7.xxx * vec3(0.5, 0.5, 0.5)) + (-u_xlat16_3.xyz)));
+    // (u_xlat16_3.xyz = (vec3(1.0, 1.0, 1.0) / _SmoothStep.xyz));
+    // (u_xlat16_9.xyz = (u_xlat16_9.xyz * u_xlat16_3.xyz));
+    // (u_xlat16_9.xyz = clamp(u_xlat16_9.xyz, 0.0, 1.0));
+    // (u_xlat16_23 = (((_Mid != 0)) ? (u_xlat16_9.z) : (0.0)));
+    // (u_xlat16_3.x = (((_Mid != 0)) ? (u_xlat0.x) : (1.0)));
+    // (u_xlat0.xyz = ((u_xlat16_1.xyz * u_xlat16_3.xxx) + _MainSpeed.www));
+    // (u_xlat16_3.xyz = (u_xlat0.xyz * _OutSideColor.xyz));
+    // (u_xlat16_5.xyz = ((_MidColor.xyz * u_xlat0.xyz) + (-u_xlat16_3.xyz)));
+    // (u_xlat16_3.xyz = ((vec3(u_xlat16_23) * u_xlat16_5.xyz) + u_xlat16_3.xyz));
+    // (u_xlat16_5.xyz = ((vs_COLOR0.xyz * u_xlat16_1.xyz) + (-u_xlat16_3.xyz)));
+    // (u_xlat16_3.xyz = ((u_xlat16_9.yyy * u_xlat16_5.xyz) + u_xlat16_3.xyz));
+    // (u_xlat16_9.x = (u_xlat16_1.w * u_xlat16_9.x));
+    // (u_xlat16_9.x = (u_xlat16_9.x * _MidColor.w));
+    // (u_xlat16_2.x = (u_xlat16_2.x * u_xlat16_9.x));
+    // (u_xlat16_2.x = (u_xlat16_2.x * 10.0));
+    // (u_xlat0.xyz = (u_xlat16_3.xyz * _MainSpeed.zzz));
+    // (u_xlatb21 = (0.5 < _OverrideAlphaByVertexColor));
+    // (u_xlat6 = (u_xlat16_2.x * vs_TEXCOORD4.w));
+    // (u_xlat16_2.x = ((u_xlatb21) ? (u_xlat6) : (u_xlat16_2.x)));
+    // (u_xlat16_2.x = clamp(u_xlat16_2.x, 0.0, 1.0));
+    // u_xlat16_9.xy = 1;
+    // (u_xlat16_3.xyz = (u_xlat0.xyz * u_xlat16_9.xxx));
+    // (u_xlat16_9.xyz = (u_xlat16_9.yyy * u_xlat16_3.xyz));
+    // (u_xlat16_9.xyz = (u_xlat16_9.xyz * vec3(vec3(_ES_EffectIntensityScale, _ES_EffectIntensityScale, _ES_EffectIntensityScale))));
+    // (u_xlat16_3.x = max(u_xlat16_9.y, u_xlat16_9.x));
+    // (u_xlat16_3.x = max(u_xlat16_9.z, u_xlat16_3.x));
+    // (u_xlat16_3.x = (u_xlat16_2.x * u_xlat16_3.x));
+    // (u_xlat0.x = max(u_xlat16_3.x, 0.0099999998));
+    // (u_xlat7.xyz = (u_xlat16_9.xyz / u_xlat0.xxx));
+    // (u_xlatb6 = (_ES_EP_EffectParticleBottom < u_xlat0.x));
+    // (u_xlat13 = (_ES_EP_EffectParticleTop + (-_ES_EP_EffectParticleBottom)));
+    // (u_xlat20 = (u_xlat0.x + (-_ES_EP_EffectParticleBottom)));
+    // (u_xlat13 = (1.0 / u_xlat13));
+    // (u_xlat13 = (u_xlat13 * u_xlat20));
+    // (u_xlat13 = clamp(u_xlat13, 0.0, 1.0));
+    // (u_xlat20 = ((u_xlat13 * -2.0) + 3.0));
+    // (u_xlat13 = (u_xlat13 * u_xlat13));
+    // (u_xlat13 = (u_xlat13 * u_xlat20));
+    // (u_xlat16_9.x = (_ES_EP_EffectParticleTop + (-_ES_EP_EffectParticleBottom)));
+    // (u_xlat16_9.x = ((u_xlat13 * u_xlat16_9.x) + _ES_EP_EffectParticleBottom));
+    // (u_xlat13 = ((-u_xlat0.x) + u_xlat16_9.x));
+    // (u_xlat13 = ((_ES_EP_EffectParticle * u_xlat13) + u_xlat0.x));
+    // (u_xlat0.x = ((u_xlatb6) ? (u_xlat13) : (u_xlat0.x)));
+    // (u_xlat0.xyz = (u_xlat0.xxx * u_xlat7.xyz));
+    // (SV_Target0.xyz = u_xlat0.xyz);
+    // (SV_Target0.w = u_xlat16_2.x);
 }
 
 float4 starry_sky(float4 color, float4 diffuse, float2 uv)
@@ -796,4 +830,48 @@ void custom_coloring(inout float4 color, in float alpha_tex)
     
     // Apply the calculated color
     color.xyz = lerp(color.xyz, base_color.xyz, original_tex_check);
+}
+
+void increase_bloom(float4 bloom_color, float bloom_intensity, inout float3 out_color)
+{
+    // Calculate bloom effect based on bloom color and intensity
+    float3 bloom_effect = bloom_color.xyz * bloom_intensity;
+    
+    // Apply bloom effect to the output color
+    out_color.xyz = out_color.xyz * bloom_effect + out_color.xyz;
+}
+
+void LUT_2D(inout float3 color, in float4 lutParams)
+{   
+    #if defined(is_tonemapped)
+    // Apply initial transformations to the color
+    float3 adjustedColor = color.zxy * 5.55555582f + 0.0479959995f;
+    adjustedColor = log2(adjustedColor);
+    adjustedColor = adjustedColor * 0.0734997839f + 0.386036009f;
+    adjustedColor = clamp(adjustedColor, 0.0, 1.0);
+
+    // Calculate LUT coordinates
+    float3 lutCoord = adjustedColor * lutParams.z;
+    float xCoord = floor(lutCoord.x);
+    
+    // Calculate base and next LUT sample positions
+    float2 lutSize = lutParams.xy * 0.5;
+    float2 lutPos = lutCoord.yz * lutParams.xy + lutSize;
+    float2 lutPos1 = float2(xCoord * lutParams.y + lutPos.x, lutPos.y);
+    float2 lutPos2 = lutPos1 + float2(lutParams.y, 0);
+
+
+    // Sample the LUT
+    float3 sample1 = _Lut2DTex.Sample(sampler_linear_clamp, lutPos1).rgb;
+    float3 sample2 = _Lut2DTex.Sample(sampler_linear_clamp, lutPos2).rgb;
+
+    // Interpolate between the two 
+    float lerpFactor = lutCoord.x - xCoord;
+    float3 lutColor = lerp(sample1, sample2, lerpFactor);
+
+    // Clamp the final color
+    lutColor = saturate(lutColor);
+
+    color = lutColor;
+    #endif
 }

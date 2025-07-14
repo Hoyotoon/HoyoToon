@@ -38,6 +38,9 @@ float4 _CausTexture_ST;
 
 Texture2D _AlphaTex;
 
+#if defined(is_tonemapped)
+    Texture2D _Lut2DTex;
+#endif
 
 Texture2D _DisTex;
 Texture2D _MaskTex;
@@ -45,6 +48,10 @@ Texture2D _NoiseTex;
 float4 _DisTex_ST;
 float4 _MaskTex_ST;
 float4 _NoiseTex_ST;
+
+float _SecondaryUV;
+
+float _OutlineZOff;
 
 float _EnableParticleSwirl;
 float _CL;
@@ -75,6 +82,8 @@ float _RenderingMode;
 float4 _ES_EP_EffectParticle;
 float _ES_EP_EffectParticleBottom;
 float _ES_EP_EffectParticleTop;
+float _VertexColor;
+float4 _VertexColorFallback;
 
 
 SamplerState sampler_MainTex;
@@ -93,6 +102,7 @@ int _HideCharaParts;
 int _HideNPCParts;
 
 // MATERIAL STATES
+float variant_selector;
 float _BaseMaterial;
 float _FaceMaterial;
 float _EyeShadowMat;
@@ -119,6 +129,17 @@ float4 _Color5;
 float4 _Color6;
 float4 _Color7;
 float _backfdceuv2;
+
+// bloom shit
+float4 _mBloomColor;
+float _mBloomIntensity0;
+float _mBloomIntensity1;
+float _mBloomIntensity2;
+float _mBloomIntensity3;
+float _mBloomIntensity4;
+float _mBloomIntensity5;
+float _mBloomIntensity6;
+float _mBloomIntensity7;
 
 // secondary 
 float _UseSecondaryTex;
@@ -278,6 +299,8 @@ float _RimDark6;
 float _RimDark7;
 
 // rim shadow properties 
+float4 _ES_RimShadowColor;
+float _ES_RimShadowIntensity;
 float _EnableBackRimLight;
 float _RimShadowCt;
 float _RimShadowIntensity;
@@ -533,6 +556,9 @@ float _UseMatcap;
 float4 _MatCapColor;
 float _MatCapStrength;
 float _MatCapStrengthInShadow;
+
+float _EnableLUT;
+float4 _Lut2DTexParam;
 
 
 float _DebugMode;
