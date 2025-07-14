@@ -1,407 +1,1179 @@
 {
-  "Textures": {
-    "ClampKeyword": [
-      "Dissolve",
-      "ramp",
-      "Star",
-      "_Skin"
-    ],
-    "SRGBKeywords": [
-      "diffuse"
-    ],
-    "NonSRGBKeywords": [
-      "normalmap",
-      "lightmap",
-      "face_shadow",
-      "face01_shadow",
-      "specular_ramp",
-      "gradient",
-      "Grain",
-      "Dissolve",
-      "Repeat",
-      "Stockings",
-      "ExpressionMap",
-      "FaceMap",
-      "materialidvalueslut",
-      "ColorMask",
-      "_Mask",
-      "_Normal",
-      "_VAT",
-      "HairVat"
-    ],
-    "EndsWithNonSRGBKeywords": [
-      "_HM",
-      "_N",
-      "_HET",
-      "_ID",
-      "_SDF",
-      "_CUBE",
-      "_EG",
-      "_EM",
-      "T_Caustic",
-      "Ramp_NoStream"
-    ],
-    "NonPower2Keywords": [
-      "materialidvalueslut"
-    ]
-  },
-  "Shaders": {
-    "HSRShader": [
-      "HoyoToon/Star Rail/Character"
-    ],
-    "GIShader": [
-      "HoyoToon/Genshin/Character"
-    ],
-    "HI3Shader": [
-      "HoyoToon/Honkai Impact/Character Part 1"
-    ],
-    "HI3P2Shader": [
-      "HoyoToon/Honkai Impact/Character Part 2"
-    ],
-    "WuWaShader": [
-      "HoyoToon/Wuthering Waves/Character"
-    ],
-    "ZZZShader": [
-      "HoyoToon/Zenless Zone Zero/Character"
-    ],
-    "QuestShader": [
-      "VRChat/Mobile/Toon Lit"
-    ]
-  },
-  "ShaderKeywords": {
-    "HSRShader": [
-      "_ScreenLineInst",
-      "_DissolveDistortionIntensity",
-      "_DissolveRate"
-    ],
-    "GIShader": [
-      "_UtilityDisplay1",
-      "_NyxStateOutlineColorOnBodyOpacity",
-      "_DisableCGP",
-      "UseGlassSpecularToggle",
-      "_CurrentFrame"
-    ],
-    "HI3Shader": [
-      "_SPCubeMapIntensity"
-    ],
-    "HI3P2Shader": [
-      "_MetalMapGrp",
-      "_MicsGrp"
-    ],
-    "WuWaShader": [
-      "ShadingModel"
-    ],
-    "ZZZShader": [
-      "_YOffsetEnter",
-      "_PointSpace"
-    ]
-  },
-  "MaterialSettings": {
-    "HoyoToon/Star Rail/Character": {
-      "Face": {
-        "variant_selector": 1,
-        "_BaseMaterial": 0,
-        "_HairMaterial": 0,
-        "_FaceMaterial": 1,
-        "_EyeShadowMat": 0,
-        "_CullMode": 2,
-        "_SrcBlend": 1,
-        "_DstBlend": 0,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 5,
-        "_StencilCompB": 5,
-        "_StencilRef": 100,
-        "renderQueue": 2010
-      },
-      "EyeShadow": {
-        "variant_selector": 2,
-        "_BaseMaterial": 0,
-        "_HairMaterial": 0,
-        "_FaceMaterial": 0,
-        "_EyeShadowMat": 1,
-        "_CullMode": 0,
-        "_SrcBlend": 2,
-        "_DstBlend": 0,
-        "_EnableStencil": 0,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 0,
-        "_StencilCompB": 8,
-        "_StencilRef": 0,
-        "renderQueue": 2015
-      },
-      "FaceMask": {
-        "variant_selector": 1,
-        "_BaseMaterial": 0,
-        "_HairMaterial": 0,
-        "_FaceMaterial": 1,
-        "_EyeShadowMat": 0,
-        "_CullMode": 0,
-        "_SrcBlend": 1,
-        "_DstBlend": 0,
-        "_EnableStencil": 0,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 5,
-        "_StencilCompB": 5,
-        "_StencilRef": 99,
-        "_OutlineWidth": 0,
-        "renderQueue": 2010
-      },
-      "Trans": {
-        "_IsTransparent": 1,
-        "variant_selector": 0,
-        "_BaseMaterial": 1,
-        "_HairMaterial": 0,
-        "_FaceMaterial": 0,
-        "_EyeShadowMat": 0,
-        "_CullMode": 0,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "_EnableStencil": 0,
-        "_StencilPassA": 2,
-        "_StencilPassB": 0,
-        "_StencilCompA": 0,
-        "_StencilCompB": 0,
-        "_StencilRef": 0,
-        "renderQueue": 2041
-      },
-      "Hair": {
-        "variant_selector": 3,
-        "_BaseMaterial": 0,
-        "_HairMaterial": 1,
-        "_FaceMaterial": 0,
-        "_EyeShadowMat": 0,
-        "_CullMode": 0,
-        "_SrcBlend": 1,
-        "_DstBlend": 0,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 0,
-        "_StencilCompA": 5,
-        "_StencilCompB": 8,
-        "_StencilRef": 100,
-        "_UseSelfShadow": 1,
-        "renderQueue": 2020
-      },
-      "Default": {
-        "variant_selector": 0,
-        "_BaseMaterial": 1,
-        "_HairMaterial": 0,
-        "_FaceMaterial": 0,
-        "_EyeShadowMat": 0,
-        "_CullMode": 0,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "_EnableStencil": 0,
-        "_StencilPassA": 2,
-        "_StencilPassB": 0,
-        "_StencilCompA": 0,
-        "_StencilCompB": 0,
-        "_StencilRef": 0,
-        "_OutlineScale": 0.187,
-        "_RimWidth": 1,
-        "_UseSelfShadow": 1,
-        "renderQueue": 2040
-      }
+    "TextureAssignments": {
+        "GIShader": {
+            "BodyTypes": [
+                "GIBoy",
+                "GIGirl",
+                "GILady",
+                "GIMale",
+                "GILoli"
+            ],
+            "Properties": {
+                "_FaceMapTex": [
+                    "Avatar_Boy_Tex_FaceLightmap",
+                    "Avatar_Girl_Tex_FaceLightmap",
+                    "Avatar_Lady_Tex_FaceLightmap",
+                    "Avatar_Male_Tex_FaceLightmap",
+                    "Avatar_Loli_Tex_FaceLightmap"
+                ],
+                "_MTMap": "Avatar_Tex_MetalMap",
+                "_MTSpecularRamp": "Avatar_Tex_Specular_Ramp",
+                "_WeaponDissolveTex": "Eff_WeaponsTotem_Dissolve_00",
+                "_WeaponPatternTex": "Eff_WeaponsTotem_Grain_00",
+                "_ScanPatternTex": "Eff_Gradient_Repeat_01",
+                "_NyxStateOutlineNoise": "Eff_Avatar_NyxState"
+            }
+        },
+        "HSRShader": {
+            "BodyTypes": [
+                "HSRMaid",
+                "HSRKid",
+                "HSRLad",
+                "HSRMale",
+                "HSRLady",
+                "HSRGirl",
+                "HSRBoy",
+                "HSRMiss"
+            ],
+            "Properties": {
+                "_FaceMap": [
+                    "W_160_Maid_FaceMap_00",
+                    "W_120_Kid_FaceMap_00",
+                    "M_170_Lad_FaceMap_00",
+                    "M_180_Male_FaceMap_00",
+                    "W_170_Lady_FaceMap_00",
+                    "W_140_Girl_FaceMap_00",
+                    "M_150_Boy_FaceMap_00",
+                    "W_168_Miss_FaceMap_00"
+                ],
+                "_ExpressionMap": [
+                    "W_160_Maid_Face_ExpressionMap_00",
+                    "W_120_Kid_Face_ExpressionMap_00",
+                    "M_170_Lad_Face_ExpressionMap",
+                    "M_180_Male_Face_ExpressionMap_00",
+                    "W_170_Lady_Face_ExpressionMap_00",
+                    "W_140_Girl_Face_ExpressionMap_00",
+                    "M_150_Boy_Face_ExpressionMap_00",
+                    "W_168_Miss_Face_ExpressionMap_00"
+                ],
+                "_DissolveMap": "Eff_Noise_17",
+                "_Lut2DTex": "LUT_HSR"
+            }
+        },
+        "WuWaShader": {
+            "Properties": {
+                "_Lut2DTex": "LUT_WUWA"
+            }
+        },
+        "ZZZShader": {
+            "Properties": {
+                "_Lut2DTex": "LUT_ZZZ"
+            }
+        }
     },
-    "HoyoToon/Genshin/Character": {
-      "Face": {
-        "variant_selector": 1,
-        "_UseFaceMapNew": 1,
-        "_UseSelfShadow": 0
-      },
-      "Hair": {
-        "_ToggleEyeGlow": 1.0
-      },
-      "Equip": {
-        "variant_selector": 2,
-        "_UseWeapon": 1
-      },
-      "Glass_Eff": {
-        "_SrcBlend": "_SrcBlendMode",
-        "_DstBlend": "_DstBlendMode",
-        "variant_selector": 3,
-        "_UseGlassSpecularToggle": 1,
-        "renderQueue": 2001
-      },
-      "Helmet_Glass": {
-        "_SrcBlend": "_SrcBlendMode",
-        "_DstBlend": "_DstBlendMode",
-        "variant_selector": 3,
-        "_UseGlassSpecularToggle": 1,
-        "renderQueue": 2001
-      },
-      "Eff_Mavuika_Hair1": {
-        "_VertexAnimType": 1
-      },
-      "Eff_Mavuika_VAT1": {
-        "_VertexAnimType": 2
-      },
-      "Default": {
-        "variant_selector": 0
-      }
+    "TextureImportSettings": {
+        "Global": {
+            "SpecificTextures": {},
+            "PatternSettings": {
+                "Dissolve": {
+                    "SRGBTexture": false
+                },
+                "FaceMap": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "lightmap": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "diffuse": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false
+                },
+                "normalmap": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "_Mask": {
+                    "SRGBTexture": false
+                }
+            },
+            "EndsWithPatternSettings": {
+                "_N": {
+                    "TextureType": "Default",
+                    "SRGBTexture": false
+                },
+                "_Mask": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "Compression": "CompressedHQ"
+                }
+            },
+            "DefaultSettings": {
+                "TextureCompression": "CompressedHQ"
+            }
+        },
+        "GIShader": {
+            "SpecificTextures": {},
+            "PatternSettings": {
+                "FaceLightmap": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "MetalMap": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "eff_matcap": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": true
+                },
+                "Shadow_Ramp": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false
+                },
+                "face_shadow": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "face01_shadow": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "_Normal": {
+                    "SRGBTexture": false
+                },
+                "_VAT": {
+                    "SRGBTexture": false
+                },
+                "HairVat": {
+                    "SRGBTexture": false
+                },
+                "gradient": {
+                    "SRGBTexture": false
+                },
+                "Grain": {
+                    "SRGBTexture": false
+                },
+                "Repeat": {
+                    "SRGBTexture": false
+                },
+                "specular_ramp": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false
+                }
+            },
+            "EndsWithPatternSettings": {
+                "Ramp_NoStream": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false
+                }
+            }
+        },
+        "HSRShader": {
+            "SpecificTextures": {
+                "LUT_HSR": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                }
+            },
+            "PatternSettings": {
+                "ExpressionMap": {
+                    "SRGBTexture": false
+                },
+                "FaceMap": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "LUT": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "materialidvalueslut": {
+                    "SRGBTexture": false,
+                    "NPOTScale": "None"
+                },
+                "Stockings": {
+                    "SRGBTexture": false
+                },
+                "Warm_Ramp": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                },
+                "Cool_Ramp": {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                }
+            },
+            "EndsWithPatternSettings": {
+                "T_Caustic": {
+                    "SRGBTexture": false
+                },
+                "Stockings": {
+                    "SRGBTexture": false
+                }
+            }
+        },
+        "WuWaShader": {
+            "SpecificTextures": {
+                "LUT_WUWA": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                },
+                "T_3XingStar_D": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                },
+                "T_5XingStar_D": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                },
+                "T_6XingStar_D": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                }
+            },
+            "PatternSettings": {
+                "_Skin": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                }
+            },
+            "EndsWithPatternSettings": {
+                "_SDF": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "_HM": {
+                    "SRGBTexture": false
+                },
+                "_HET": {
+                    "SRGBTexture": false
+                },
+                "_ID": {
+                    "SRGBTexture": false
+                },
+                "_CUBE": {
+                    "SRGBTexture": false
+                },
+                "_EG": {
+                    "SRGBTexture": false
+                },
+                "_EM": {
+                    "SRGBTexture": false
+                }
+            }
+        },
+        "ZZZShader": {
+            "SpecificTextures": {
+                "LUT_ZZZ": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false,
+                    "TextureCompression": "Uncompressed"
+                }
+            },
+            "EndsWithPatternSettings": {
+                "_M": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                },
+                "_A": {
+                    "SRGBTexture": false,
+                    "MipmapEnabled": false
+                }
+            },
+            "PatternSettings": {}
+        },
+        "HI3Shader": {
+            "SpecificTextures": {},
+            "PatternSettings": {},
+            "EndsWithPatternSettings": {
+                "_Star": {
+                    "SRGBTexture": true
+                },
+                "_ColorMask": {
+                    "SRGBTexture": false
+                }
+            }
+        },
+        "HI3P2Shader": {
+            "SpecificTextures": {},
+            "PatternSettings": {
+                "Ramp":
+                {
+                    "SRGBTexture": true,
+                    "MipmapEnabled": false
+                }
+            },
+            "EndsWithPatternSettings": {
+                "_Normal": {
+                    "SRGBTexture": false
+                }
+            }
+        }
     },
-    "HoyoToon/Honkai Impact/Character Part 1": {
-      "Face": {
-        "variant_selector": 1,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 6,
-        "_StencilCompB": 8,
-        "_StencilRef": 16,
-        "renderQueue": 2000
-      },
-      "Hair": {
-        "variant_selector": 2,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 6,
-        "_StencilCompB": 8,
-        "_StencilRef": 16,
-        "renderQueue": 2002
-      },
-      "Eye": {
-        "variant_selector": 3,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 6,
-        "_StencilCompB": 8,
-        "_StencilRef": 16,
-        "renderQueue": 2001
-      },
-      "Alpha": {
-        "_AlphaType": 1,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "renderQueue": 2003
-      }
+    "Shaders": {
+        "HSRShader": [
+            "HoyoToon/Star Rail/Character"
+        ],
+        "GIShader": [
+            "HoyoToon/Genshin/Character"
+        ],
+        "HI3Shader": [
+            "HoyoToon/Honkai Impact/Character Part 1"
+        ],
+        "HI3P2Shader": [
+            "HoyoToon/Honkai Impact/Character Part 2"
+        ],
+        "WuWaShader": [
+            "HoyoToon/Wuthering Waves/Character"
+        ],
+        "ZZZShader": [
+            "HoyoToon/Zenless Zone Zero/Character"
+        ],
+        "QuestShader": [
+            "VRChat/Mobile/Toon Lit"
+        ]
     },
-    "HoyoToon/Honkai Impact/Character Part 2": {
-      "Face": {
-        "variant_selector": 1,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 6,
-        "_StencilCompB": 8,
-        "_StencilRef": 16,
-        "renderQueue": 2000
-      },
-      "Hair": {
-        "variant_selector": 2,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 6,
-        "_StencilCompB": 8,
-        "_StencilRef": 16,
-        "renderQueue": 2002
-      },
-      "Eye": {
-        "variant_selector": 3,
-        "_EnableStencil": 1,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 6,
-        "_StencilCompB": 8,
-        "_StencilRef": 16,
-        "renderQueue": 2001
-      }
+    "ShaderKeywords": {
+        "HSRShader": [
+            "_ScreenLineInst",
+            "_DissolveDistortionIntensity",
+            "_DissolveRate"
+        ],
+        "GIShader": [
+            "_UtilityDisplay1",
+            "_NyxStateOutlineColorOnBodyOpacity",
+            "_DisableCGP",
+            "UseGlassSpecularToggle",
+            "_CurrentFrame"
+        ],
+        "HI3P2Shader": [
+            "_MetalMapGrp",
+            "_MicsGrp"
+        ],
+        "HI3Shader": [
+            "_SPCubeMapIntensity",
+            "_ColorTolerance"
+        ],
+        "WuWaShader": [
+            "ShadingModel"
+        ],
+        "ZZZShader": [
+            "_YOffsetEnter",
+            "_UseVertexMaterialID",
+            "_PointSpace",
+            "_SymmetryUV"
+        ]
     },
-    "HoyoToon/Wuthering Waves/Character": {
-      "Bangs": {
-        "_MaterialType": 3,
-        "_SrcBlend": 1,
-        "_DstBlend": 0,
-        "_StencilPassA": 0,
-        "_StencilPassB": 0,
-        "_StencilPassShadow": 0,
-        "_StencilCompA": 5,
-        "_StencilCompB": 8,
-        "_StencilCompShadow": 5,
-        "_StencilRef": 100,
-        "_StencilRefShadow": 100,
-        "_EnableHairShadow": 1.0,
-        "renderQueue": 2020
-      },
-      "Eye": {
-        "_MaterialType": 2,
-        "_SrcBlend": 1,
-        "_DstBlend": 0,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 5,
-        "_StencilCompB": 5,
-        "_StencilRef": 100,
-        "renderQueue": 2012
-      },
-      "Face": {
-        "_MaterialType": 1,
-        "_SrcBlend": 1,
-        "_DstBlend": 0,
-        "_StencilPassA": 0,
-        "_StencilPassB": 2,
-        "_StencilCompA": 5,
-        "_StencilCompB": 5,
-        "_StencilRef": 100,
-        "renderQueue": 2010
-      },
-      "Hair": {
-        "_MaterialType": 4,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "_StencilPassA": 2,
-        "_StencilPassB": 0,
-        "_StencilCompA": 0,
-        "_StencilCompB": 0,
-        "_StencilRef": 0,
-        "renderQueue": 2030
-      },
-      "Glass": {
-        "_MaterialType": 5,
-        "_AlphaMode": 2,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "_StencilPassA": 2,
-        "_StencilPassB": 0,
-        "_StencilCompA": 0,
-        "_StencilCompB": 0,
-        "_StencilRef": 0,
-        "renderQueue": 2030
-      },
-      "XingStar": {
-        "_MaterialType": 6,
-        "_AlphaMode": 2,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "_StencilPassA": 2,
-        "_StencilPassB": 0,
-        "_StencilCompA": 0,
-        "_StencilCompB": 0,
-        "_StencilRef": 0,
-        "renderQueue": 2050
-      },
-      "Default": {
-        "_MaterialType": 0,
-        "_SrcBlend": 5,
-        "_DstBlend": 10,
-        "_StencilPassA": 2,
-        "_StencilPassB": 0,
-        "_StencilCompA": 0,
-        "_StencilCompB": 0,
-        "_StencilRef": 0,
-        "renderQueue": 2040
-      }
+    "MaterialSettings": {
+        "HoyoToon/Star Rail/Character": {
+            "Face": {
+                "variant_selector": 1,
+                "_BaseMaterial": 0,
+                "_HairMaterial": 0,
+                "_FaceMaterial": 1,
+                "_EyeShadowMat": 0,
+                "_CullMode": 2,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_EnableStencil": 1,
+                "_StencilCompA": 8,
+                "_StencilCompB": 8,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilRefA": 2,
+                "_StencilRefB": 26,
+                "_OutlineFixRange1": 1,
+                "_OutlineFixRange2": 1,
+                "_OutlineFixRange3": 1,
+                "_OutlineFixRange4": 1,
+                "_OutlineFixFront": 0,
+                "_UseSelfShadow": 1,
+                "_sdwColorMask": 0,
+                "_sdwComp": 7,
+                "_sdwDst": 0,
+                "_sdwPass": 2,
+                "_sdwRef": 20,
+                "_sdwSrc": 1,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 1,
+                "_OutlineScale": 0.187,
+                "_EnableLUT": 1.0,
+                "renderQueue": 2010
+            },
+            "EyeShadow": {
+                "variant_selector": 2,
+                "_BaseMaterial": 0,
+                "_HairMaterial": 0,
+                "_FaceMaterial": 0,
+                "_EyeShadowMat": 1,
+                "_CullMode": 0,
+                "_SrcBlend": 2,
+                "_DstBlend": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 0,
+                "_StencilCompB": 8,
+                "_StencilRef": 0,
+                "renderQueue": 2015,
+                "_EnableLUT": 1.0,
+                "_OutlineZOff": 1.0
+            },
+            "FaceMask": {
+                "variant_selector": 1,
+                "_BaseMaterial": 0,
+                "_HairMaterial": 0,
+                "_FaceMaterial": 1,
+                "_EyeShadowMat": 0,
+                "_CullMode": 0,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilRef": 99,
+                "_OutlineWidth": 0,
+                "renderQueue": 2010,
+                "_EnableLUT": 1.0,
+                "_OutlineZOff": 1.0
+            },
+            "Trans": {
+                "_IsTransparent": 1,
+                "variant_selector": 0,
+                "_BaseMaterial": 1,
+                "_HairMaterial": 0,
+                "_FaceMaterial": 0,
+                "_EyeShadowMat": 0,
+                "_CullMode": 0,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_EnableStencil": 0,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "renderQueue": 2040,
+                "_EnableLUT": 1.0,
+                "_OutlineZOff": 1.0
+            },
+            "Bang": {
+                "variant_selector": 4,
+                "_BaseMaterial": 0,
+                "_HairMaterial": 1,
+                "_FaceMaterial": 0,
+                "_EyeShadowMat": 0,
+                "_CullMode": 0,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_EnableStencil": 1,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilPassA": 0,
+                "_StencilPassB": 0,
+                "_StencilRefA": 25,
+                "_StencilRefB": 27,
+                "_sdwColorMask": 16,
+                "_sdwComp": 3,
+                "_sdwDst": 3,
+                "_sdwPass": 0,
+                "_sdwRef": 20,
+                "_sdwSrc": 2,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 0,
+                "_UseSelfShadow": 1,
+                "_OutlineScale": 0.187,
+                "renderQueue": 2020,
+                "_EnableLUT": 1.0,
+                "_OutlineZOff": 1.0
+            },
+            "Hair": {
+                "variant_selector": 3,
+                "_BaseMaterial": 0,
+                "_HairMaterial": 1,
+                "_FaceMaterial": 0,
+                "_EyeShadowMat": 0,
+                "_CullMode": 0,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_EnableStencil": 0,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "_OutlineScale": 0.187,
+                "_RimWidth": 1,
+                "_UseSelfShadow": 1,
+                "renderQueue": 2000,
+                "_EnableLUT": 1.0,
+                "_OutlineZOff": 1.0
+            },
+            "Default": {
+                "variant_selector": 0,
+                "_BaseMaterial": 1,
+                "_HairMaterial": 0,
+                "_FaceMaterial": 0,
+                "_EyeShadowMat": 0,
+                "_CullMode": 0,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_EnableStencil": 0,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRefA": 0,
+                "_StencilRefB": 0,
+                "_OutlineScale": 0.187,
+                "_RimWidth": 1,
+                "_UseSelfShadow": 1,
+                "renderQueue": 2000,
+                "_EnableLUT": 1.0,
+                "_OutlineZOff": 1.0
+            }
+        },
+        "HoyoToon/Genshin/Character": {
+            "Face": {
+                "variant_selector": 1,
+                "_UseEyeStencil": 1,
+                "_UseFaceMapNew": 1,
+                "_UseHairShadow": 1,
+                "_UseSelfShadow": 0,
+                "_ZTest": 4,
+                "_ZWrite": 1,
+                "_StencilChannelCount": 0,
+                "_StencilCompA": 8,
+                "_StencilCompB": 8,
+                "_StencilConditional": 1,
+                "_StencilConditionThresh": 0.5,
+                "_StencilFilter": 0,
+                "_StencilLayer0": 0,
+                "_StencilLayer1": 0,
+                "_StencilLayer1Op": 0,
+                "_StencilLayer2": 0,
+                "_StencilLayer2Op": 0,
+                "_StencilLayer3": 0,
+                "_StencilLayer3Op": 0,
+                "_StencilMaskSource": 0,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilRefA": 5,
+                "_StencilRefB": 26,
+                "_StencilType": 0,
+                "_sdwColorMask": 0,
+                "_sdwComp": 7,
+                "_sdwDst": 0,
+                "_sdwPass": 2,
+                "_sdwRef": 20,
+                "_sdwSrc": 1,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 1,
+                "renderQueue": 2002,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Bang": {
+                "variant_selector": 4,
+                "_UseEyeStencil": 1,
+                "_UseFaceMapNew": 0,
+                "_UseHairShadow": 1,
+                "_UseSelfShadow": 0,
+                "_ZTest": 4,
+                "_ZWrite": 1,
+                "_StencilChannelCount": 0,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilConditional": 1,
+                "_StencilConditionThresh": 0,
+                "_StencilFilter": 0,
+                "_StencilLayer0": 0,
+                "_StencilLayer1": 0,
+                "_StencilLayer1Op": 0,
+                "_StencilLayer2": 0,
+                "_StencilLayer2Op": 0,
+                "_StencilLayer3": 0,
+                "_StencilLayer3Op": 0,
+                "_StencilMaskSource": 3,
+                "_StencilPassA": 0,
+                "_StencilPassB": 0,
+                "_StencilRefA": 25,
+                "_StencilRefB": 27,
+                "_StencilType": 2,
+                "_sdwColorMask": 16,
+                "_sdwComp": 3,
+                "_sdwDst": 5,
+                "_sdwPass": 0,
+                "_sdwRef": 20,
+                "_sdwSrc": 2,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 0,
+                "renderQueue": 2004,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Brow": {
+                "variant_selector": 1,
+                "_UseEyeStencil": 1,
+                "_UseFaceMapNew": 1,
+                "_UseHairShadow": 1,
+                "_UseSelfShadow": 0,
+                "_ZTest": 4,
+                "_ZWrite": 1,
+                "_StencilChannelCount": 0,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilConditional": 1,
+                "_StencilConditionThresh": 0,
+                "_StencilFilter": 0,
+                "_StencilLayer0": 0,
+                "_StencilLayer1": 0,
+                "_StencilLayer1Op": 0,
+                "_StencilLayer2": 0,
+                "_StencilLayer2Op": 0,
+                "_StencilLayer3": 0,
+                "_StencilLayer3Op": 0,
+                "_StencilMaskSource": 3,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilRefA": 25,
+                "_StencilRefB": 26,
+                "_StencilType": 1,
+                "_sdwColorMask": 0,
+                "_sdwComp": 8,
+                "_sdwDst": 1,
+                "_sdwPass": 0,
+                "_sdwRef": 0,
+                "_sdwSrc": 1,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 1,
+                "renderQueue": 2002,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Pupil": {
+                "variant_selector": 0,
+                "_UseEyeStencil": 1,
+                "_UseFaceMapNew": 1,
+                "_UseHairShadow": 1,
+                "_UseSelfShadow": 0,
+                "_ToggleEyeGlow": 1.0,
+                "_ZTest": 4,
+                "_ZWrite": 1,
+                "_StencilChannelCount": 0,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilConditional": 1,
+                "_StencilConditionThresh": 0,
+                "_StencilFilter": 0,
+                "_StencilLayer0": 0,
+                "_StencilLayer1": 0,
+                "_StencilLayer1Op": 0,
+                "_StencilLayer2": 0,
+                "_StencilLayer2Op": 0,
+                "_StencilLayer3": 0,
+                "_StencilLayer3Op": 0,
+                "_StencilMaskSource": 3,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilRefA": 27,
+                "_StencilRefB": 26,
+                "_StencilType": 1,
+                "_sdwColorMask": 0,
+                "_sdwComp": 8,
+                "_sdwDst": 1,
+                "_sdwPass": 0,
+                "_sdwRef": 0,
+                "_sdwSrc": 1,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 1,
+                "renderQueue": 2002,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Hair": {
+                "_ToggleEyeGlow": 1.0,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Equip": {
+                "variant_selector": 2,
+                "_UseWeapon": 1,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Glass_Eff": {
+                "_SrcBlend": "_SrcBlendMode",
+                "_DstBlend": "_DstBlendMode",
+                "variant_selector": 3,
+                "_UseGlassSpecularToggle": 1,
+                "renderQueue": 2005,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Helmet_Glass": {
+                "_SrcBlend": "_SrcBlendMode",
+                "_DstBlend": "_DstBlendMode",
+                "variant_selector": 3,
+                "_UseGlassSpecularToggle": 1,
+                "renderQueue": 2005,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Eff_Mavuika_Hair1": {
+                "_VertexAnimType": 1,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Eff_Mavuika_VAT1": {
+                "_VertexAnimType": 2,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            },
+            "Default": {
+                "variant_selector": 0,
+                "_EnableTonemapping": 1.0,
+                "_DisableFOVScalingOL": 1.0,
+                "_DisableZShift": 1.0,
+                "_DisableDepthScaling": 1.0,
+                "_MaxOutlineZOffset": 0.1
+            }
+        },
+        "HoyoToon/Honkai Impact/Character Part 1": {
+            "Face": {
+                "variant_selector": 1,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 6,
+                "_StencilCompB": 8,
+                "_StencilRef": 16,
+                "renderQueue": 2000
+            },
+            "Hair": {
+                "variant_selector": 2,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 6,
+                "_StencilCompB": 8,
+                "_StencilRef": 16,
+                "renderQueue": 2002
+            },
+            "Eye": {
+                "variant_selector": 3,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 6,
+                "_StencilCompB": 8,
+                "_StencilRef": 16,
+                "renderQueue": 2001
+            },
+            "Alpha": {
+                "_AlphaType": 1,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "renderQueue": 2003
+            }
+        },
+        "HoyoToon/Honkai Impact/Character Part 2": {
+            "Face": {
+                "variant_selector": 1,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 6,
+                "_StencilCompB": 8,
+                "_StencilRef": 16,
+                "renderQueue": 2000
+            },
+            "Hair": {
+                "variant_selector": 2,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 6,
+                "_StencilCompB": 8,
+                "_StencilRef": 16,
+                "renderQueue": 2002
+            },
+            "Eye": {
+                "variant_selector": 3,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 6,
+                "_StencilCompB": 8,
+                "_StencilRef": 16,
+                "renderQueue": 2001
+            }
+        },
+        "HoyoToon/Wuthering Waves/Character": {
+            "Bangs": {
+                "_MaterialType": 3,
+                "_UseToneMapping": 1,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_StencilPassA": 0,
+                "_StencilPassB": 0,
+                "_StencilCompA": 5,
+                "_StencilCompB": 8,
+                "_StencilRefA": 25,
+                "_StencilRefB": 27,
+                "_sdwColorMask": 16,
+                "_sdwComp": 3,
+                "_sdwDst": 3,
+                "_sdwPass": 0,
+                "_sdwRef": 20,
+                "_sdwSrc": 2,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 0,
+                "_EnableHairShadow": 1.0,
+                "renderQueue": 2020
+            },
+            "Eye": {
+                "_MaterialType": 2,
+                "_UseToneMapping": 1,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilRefA": 25,
+                "_StencilRefB": 26,
+                "_sdwColorMask": 0,
+                "_sdwComp": 8,
+                "_sdwDst": 1,
+                "_sdwPass": 0,
+                "_sdwRef": 0,
+                "_sdwSrc": 1,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 1,
+                "renderQueue": 2012
+            },
+            "Face": {
+                "_MaterialType": 1,
+                "_UseToneMapping": 1,
+                "_EnableHairShadow": 1.0,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_StencilPassA": 0,
+                "_StencilPassB": 2,
+                "_StencilCompA": 5,
+                "_StencilCompB": 5,
+                "_StencilRefA": 25,
+                "_StencilRefB": 26,
+                "_sdwColorMask": 0,
+                "_sdwComp": 7,
+                "_sdwDst": 0,
+                "_sdwPass": 2,
+                "_sdwRef": 20,
+                "_sdwSrc": 1,
+                "_sdwZTest": 2,
+                "_sdwZWrite": 1,
+                "renderQueue": 2010
+            },
+            "Hair": {
+                "_MaterialType": 4,
+                "_UseToneMapping": 1,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "renderQueue": 2030
+            },
+            "Glass": {
+                "_MaterialType": 5,
+                "_UseToneMapping": 1,
+                "_AlphaMode": 2,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "renderQueue": 2030
+            },
+            "XingStar": {
+                "_MaterialType": 6,
+                "_UseToneMapping": 1,
+                "_AlphaMode": 2,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "renderQueue": 2050
+            },
+            "Alpha": {
+                "_MaterialType": 0,
+                "_UseToneMapping": 1,
+                "_UseTranslucent": 1,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "renderQueue": 2010
+            },
+            "Default": {
+                "_MaterialType": 0,
+                "_UseToneMapping": 1,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_StencilPassA": 2,
+                "_StencilPassB": 0,
+                "_StencilCompA": 0,
+                "_StencilCompB": 0,
+                "_StencilRef": 0,
+                "renderQueue": 2000
+            }
+        },
+        "HoyoToon/Zenless Zone Zero/Character": {
+            "Face": {
+                "_MaterialType": 1,
+                "_UseAlpha": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 2,
+                "_StencilCompA": 8,
+                "_StencilPassB": 0,
+                "_StencilCompB": 8,
+                "_StencilRef": 1,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_ZWrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2001,
+                "_EnableLUT": 1.0
+            },
+            "HairShadow": {
+                "_MaterialType": 3,
+                "_UseAlpha": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 2,
+                "_StencilCompA": 3,
+                "_StencilPassB": 0,
+                "_StencilCompB": 8,
+                "_StencilRef": 1,
+                "_SrcBlend": 2,
+                "_DstBlend": 0,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_ZWrite": 0,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2002,
+                "_EnableLUT": 1.0
+            },
+            "Eyebrows": {
+                "_MaterialType": 1,
+                "_UseAlpha": 0,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilCompA": 5,
+                "_StencilPassB": 2,
+                "_StencilCompB": 7,
+                "_StencilRef": 5,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2005,
+                "_EnableLUT": 1.0
+            },
+            "EyeHi": {
+                "_MaterialType": 5,
+                "_UseAlpha": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 0,
+                "_StencilCompA": 5,
+                "_StencilPassB": 2,
+                "_StencilCompB": 7,
+                "_StencilRef": 6,
+                "_SrcBlend": 1,
+                "_DstBlend": 2,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2007,
+                "_EnableLUT": 1.0
+            },
+            "EyeShadow": {
+                "_MaterialType": 6,
+                "_UseAlpha": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 0,
+                "_StencilCompA": 5,
+                "_StencilPassB": 2,
+                "_StencilCompB": 7,
+                "_StencilRef": 6,
+                "_SrcBlend": 2,
+                "_DstBlend": 10,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2008,
+                "_EnableLUT": 1.0
+            },
+            "Eye": {
+                "_MaterialType": 2,
+                "_UseAlpha": 0,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilCompA": 5,
+                "_StencilPassB": 2,
+                "_StencilCompB": 7,
+                "_StencilRef": 6,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2006,
+                "_EnableLUT": 1.0
+            },
+            "Hair_T": {
+                "_MaterialType": 4,
+                "_UseAlpha": 0,
+                "_EnableStencil": 1,
+                "_StencilPassA": 0,
+                "_StencilCompA": 5,
+                "_StencilPassB": 2,
+                "_StencilCompB": 8,
+                "_StencilRef": 5,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_SrcBlendB": 5,
+                "_DstBlendB": 10,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2009,
+                "_EnableLUT": 1.0
+            },
+            "_T": {
+                "_MaterialType": 0,
+                "_UseAlpha": 1,
+                "_EnableStencil": 0,
+                "_StencilPassA": 0,
+                "_StencilCompA": 8,
+                "_StencilPassB": 0,
+                "_StencilCompB": 8,
+                "_StencilRef": 1,
+                "_SrcBlend": 5,
+                "_DstBlend": 10,
+                "_SrcBlendB": 5,
+                "_DstBlendB": 10,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2010,
+                "_EnableLUT": 1.0
+            },
+            "Default": {
+                "_MaterialType": 0,
+                "_UseAlpha": 0,
+                "_EnableStencil": 0,
+                "_StencilPassA": 0,
+                "_StencilCompA": 8,
+                "_StencilPassB": 0,
+                "_StencilCompB": 8,
+                "_StencilRef": 1,
+                "_SrcBlend": 1,
+                "_DstBlend": 0,
+                "_SrcBlendB": 1,
+                "_DstBlendB": 0,
+                "_Zwrite": 1,
+                "_ZTesting": 2,
+                "_ZClip": 1,
+                "renderQueue": 2000,
+                "_EnableLUT": 1.0
+            }
+        }
+    },
+    "PropertyNameMappings": {
+        "Global": {},
+        "HSRShader": {},
+        "GIShader": {},
+        "WuWaShader": {
+            "Rotation Angle (0-1) (S)": "_RotationAngle"
+        },
+        "ZZZShader": {}
+    },
+    "SkipMeshes": {
+        "HSRShader": [],
+        "GIShader": [],
+        "HI3Shader": [],
+        "HI3P2Shader": [],
+        "WuWaShader": [
+            "Eyes",
+            "Eye"
+        ],
+        "ZZZShader": [
+            "*"
+        ]
     }
-  },
-  "SkipMeshes": [
-    "Eyes",
-    "Eye"
-  ]
 }
