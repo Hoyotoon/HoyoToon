@@ -1,6 +1,6 @@
 <br>
 <p align="center">
-    <a href="https://github.com/HoyoToon/HoyoToon"><img src="https://github.com/user-attachments/assets/249a06ae-784e-49cf-aaec-2d9367f07cc1" alt="HoyoToon"/></a>
+    <a href="https://github.com/HoyoToon/HoyoToon"><img src="https://github.com/user-attachments/assets/3362e9b1-c411-40d3-9acf-ba4dcf22fa93" alt="HoyoToon"/></a>
 </p><br>
 
 ---
@@ -8,16 +8,16 @@
 ## Features
 
 - A shader designed for the Built-in Pipeline, aiming to accurately reproduce the shading style of Hoyoverse games and now Wuthering waves too.
-- The shader is based on the latest version of each game. (no beta or old code)
-- Supports Genshin Impact
+- The shader is based on the latest version of each game.
+- Supports Genshin Impact (Weapons too)
 - Supports Honkai Impact (Part 1 and 2)
 - Supports Honkai Star Rail
+- Supports Zenless Zone Zero
+- Supports Wuthering Waves
 - Supports both Real-time and Baked Lighting
-- Provides support for stencils in Honkai Star Rail and Honkai Impact (Part 1 and 2), specifically for hair transparency features.
-- Includes a weapon shader compatible with all the aforementioned games
+- Provides support for stencils and self casted shadows.
 - Includes Visual Effects (VFX) Shaders like those used for Paimon, Dainlief, Asmoday, and Skirk.
 - Includes scripts for automated setup.
-- Comprehensive documentation of the shader, including its logic and features
 - Auto updater for seamless updates of the shader and accompanying scripts.
 
 ## How to Install
@@ -76,5 +76,4 @@ All of this wouldn't be possible if it weren't for:
 
 - [Meliodas](https://github.com/HoyoToon)
 - [Manashiku](https://github.com/Manashiku)
-- [Chips](https://github.com/Elysia-simp)
 - [Razmoth](https://github.com/Razmoth)
