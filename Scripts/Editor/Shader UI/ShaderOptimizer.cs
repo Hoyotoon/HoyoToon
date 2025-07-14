@@ -2090,7 +2090,7 @@ namespace HoyoToon
             {
                 if(Application.isPlaying) return true;
                 List<Material> materials = avatarGameObject.GetComponentsInChildren<Renderer>(true).SelectMany(r => r.sharedMaterials).ToList();
-#if VRC_SDK_VRCSDK3  && !UDON
+#if VRC_SDK_VRCSDK3 && !UDON
                 VRCAvatarDescriptor descriptor = avatarGameObject.GetComponent<VRCAvatarDescriptor>();
                 if(descriptor != null)
                 {
