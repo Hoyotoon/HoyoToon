@@ -12,17 +12,80 @@ namespace HoyoToon
 {
     public class HoyoToonMeshManager : AssetPostprocessor
     {
-        private static readonly List<string> SkipTangentMeshes = new List<string>(HoyoToonDataManager.Data.SkipMeshes);
         private static Dictionary<string, Dictionary<string, (string guid, string meshName)>> originalMeshPaths = new Dictionary<string, Dictionary<string, (string guid, string meshName)>>();
         private static readonly string HoyoToonFolder = Path.Combine(Directory.GetParent(Application.dataPath).FullName, "HoyoToon");
         private static readonly string OriginalMeshPathsFile = Path.Combine(HoyoToonFolder, "OriginalMeshPaths.json");
         private static bool isProcessingHumanoid = false;
         private static string processingPath = null;
+        private static HoyoToonParseManager.BodyType storedBodyType = HoyoToonParseManager.BodyType.WuWa;
+        
+        /// <summary>
+        /// Maps body types to their corresponding shader keys
+        /// </summary>
+        /// <param name="bodyType">The body type to map</param>
+        /// <returns>The corresponding shader key</returns>
+        private static string GetShaderKeyFromBodyType(HoyoToonParseManager.BodyType bodyType)
+        {
+            switch (bodyType)
+            {
+                // Honkai Star Rail variants
+                case HoyoToonParseManager.BodyType.HSRMaid:
+                case HoyoToonParseManager.BodyType.HSRKid:
+                case HoyoToonParseManager.BodyType.HSRLad:
+                case HoyoToonParseManager.BodyType.HSRMale:
+                case HoyoToonParseManager.BodyType.HSRLady:
+                case HoyoToonParseManager.BodyType.HSRGirl:
+                case HoyoToonParseManager.BodyType.HSRBoy:
+                case HoyoToonParseManager.BodyType.HSRMiss:
+                    return "HSRShader";
+                
+                // Genshin Impact variants
+                case HoyoToonParseManager.BodyType.GIBoy:
+                case HoyoToonParseManager.BodyType.GIGirl:
+                case HoyoToonParseManager.BodyType.GILady:
+                case HoyoToonParseManager.BodyType.GIMale:
+                case HoyoToonParseManager.BodyType.GILoli:
+                    return "GIShader";
+                
+                // Honkai Impact variants
+                case HoyoToonParseManager.BodyType.HI3P1:
+                    return "HI3Shader";
+                case HoyoToonParseManager.BodyType.HI3P2:
+                    return "HI3P2Shader";
+                
+                // Wuthering Waves
+                case HoyoToonParseManager.BodyType.WuWa:
+                    return "WuWaShader";
+                
+                // Zenless Zone Zero
+                case HoyoToonParseManager.BodyType.ZZZ:
+                    return "ZZZShader";
+                
+                default:
+                    return "WuWaShader"; // Default fallback
+            }
+        }
+        
+        /// <summary>
+        /// Checks if a mesh should be skipped for the current body type
+        /// </summary>
+        /// <param name="meshName">Name of the mesh to check</param>
+        /// <returns>True if the mesh should be skipped, false otherwise</returns>
+        private static bool ShouldSkipMesh(string meshName)
+        {
+            string shaderKey = GetShaderKeyFromBodyType(HoyoToonParseManager.currentBodyType);
+            return HoyoToonDataManager.Data.ShouldSkipMesh(shaderKey, meshName);
+        }
         
         #region FBX Setup
 
-        public static void SetFBXImportSettings(IEnumerable<string> paths)
+                public static void SetFBXImportSettings(IEnumerable<string> paths)
         {
+            // Load HoyoToon data and determine body type once at the beginning
+            HoyoToonDataManager.GetHoyoToonData();
+            HoyoToonParseManager.DetermineBodyType();
+            storedBodyType = HoyoToonParseManager.currentBodyType;
+            
             AssetDatabase.StartAssetEditing();
             try
             {
@@ -110,45 +173,16 @@ namespace HoyoToon
             // Remove unwanted bones
             modified |= human.RemoveAll(bone => bone.humanName == "Jaw") > 0;
 
-            // Update eye bones in human mapping
-            for (int i = 0; i < human.Count; i++)
-            {
-                var bone = human[i];
-                if (bone.humanName == "LeftEye" && bone.boneName != "+EyeBoneLA02" && bone.boneName != "Eye_L")
-                {
-                    // Try to find the appropriate eye bone name
-                    var leftEyeBone = FindRecursive(root.transform, "+EyeBoneLA02");
-                    bone.boneName = leftEyeBone != null ? "+EyeBoneLA02" : "Eye_L";
-                    human[i] = bone;
-                    HoyoToonLogs.LogDebug($"Updated LeftEye mapping to {bone.boneName}");
-                    modified = true;
-                }
-                else if (bone.humanName == "RightEye" && bone.boneName != "+EyeBoneRA02" && bone.boneName != "Eye_R")
-                {
-                    // Try to find the appropriate eye bone name
-                    var rightEyeBone = FindRecursive(root.transform, "+EyeBoneRA02");
-                    bone.boneName = rightEyeBone != null ? "+EyeBoneRA02" : "Eye_R";
-                    human[i] = bone;
-                    HoyoToonLogs.LogDebug($"Updated RightEye mapping to {bone.boneName}");
-                    modified = true;
-                }
-            }
+            // Always map eye bones
+            modified |= MapEyeBones(human, root);
 
+            // Fix leg bone rotations
+            modified |= FixLegBoneRotations(human, skeleton);
 
-            // Update specific leg bone rotations in skeleton
-            for (int i = 0; i < skeleton.Count; i++)
+            // Fix WuWa finger bones if needed
+            if (storedBodyType == HoyoToonParseManager.BodyType.WuWa)
             {
-                var bone = skeleton[i];
-                // Find the corresponding human bone
-                var humanBone = human.FirstOrDefault(h => h.boneName == bone.name);
-                if (humanBone.humanName == "LeftUpperLeg" || humanBone.humanName == "RightUpperLeg")
-                {
-                    // Update the skeleton data for the upper leg bone
-                    bone.rotation = Quaternion.Euler(180f, 0f, 0f);
-                    skeleton[i] = bone;
-                    HoyoToonLogs.LogDebug($"Modified rotation for upper leg bone: {humanBone.humanName}");
-                    modified = true;
-                }
+                modified |= FixWuWaFingerBones(human, root);
             }
 
             if (modified)
@@ -166,6 +200,186 @@ namespace HoyoToon
             // Reset processing flags after we're done
             isProcessingHumanoid = false;
             processingPath = null;
+            storedBodyType = HoyoToonParseManager.BodyType.WuWa;
+        }
+
+        private bool MapEyeBones(List<HumanBone> human, GameObject root)
+        {
+            bool modified = false;
+
+            // Find the Left Eye and Right Eye transforms
+            Transform leftEyeBone = FindRecursive(root.transform, "Left Eye");
+            Transform rightEyeBone = FindRecursive(root.transform, "Right Eye");
+
+            HoyoToonLogs.LogDebug($"Found Left Eye transform: {leftEyeBone != null}");
+            HoyoToonLogs.LogDebug($"Found Right Eye transform: {rightEyeBone != null}");
+            HoyoToonLogs.LogDebug($"Total human bones: {human.Count}");
+
+            // Update existing eye bone mappings
+            for (int i = 0; i < human.Count; i++)
+            {
+                var bone = human[i];
+                
+                if (bone.humanName == "LeftEye")
+                {
+                    HoyoToonLogs.LogDebug($"Found Left Eye slot with boneName: '{bone.boneName}' (empty: {string.IsNullOrEmpty(bone.boneName)})");
+                    if (leftEyeBone != null)
+                    {
+                        bone.boneName = "Left Eye";
+                        human[i] = bone;
+                        HoyoToonLogs.LogDebug("Updated Left Eye slot to: Left Eye");
+                        modified = true;
+                    }
+                }
+                else if (bone.humanName == "RightEye")
+                {
+                    HoyoToonLogs.LogDebug($"Found Right Eye slot with boneName: '{bone.boneName}' (empty: {string.IsNullOrEmpty(bone.boneName)})");
+                    if (rightEyeBone != null)
+                    {
+                        bone.boneName = "Right Eye";
+                        human[i] = bone;
+                        HoyoToonLogs.LogDebug("Updated Right Eye slot to: Right Eye");
+                        modified = true;
+                    }
+                }
+            }
+
+            return modified;
+        }
+
+
+
+        private bool FixLegBoneRotations(List<HumanBone> human, List<SkeletonBone> skeleton)
+        {
+            bool modified = false;
+
+            // Find the human bones for upper legs
+            var leftUpperLeg = human.FirstOrDefault(h => h.humanName == "LeftUpperLeg");
+            var rightUpperLeg = human.FirstOrDefault(h => h.humanName == "RightUpperLeg");
+
+            // Fix left upper leg rotation
+            if (!string.IsNullOrEmpty(leftUpperLeg.boneName))
+            {
+                for (int i = 0; i < skeleton.Count; i++)
+                {
+                    if (skeleton[i].name == leftUpperLeg.boneName)
+                    {
+                        var bone = skeleton[i];
+                        bone.rotation = Quaternion.Euler(180f, 0f, 0f);
+                        skeleton[i] = bone;
+                        HoyoToonLogs.LogDebug($"Fixed rotation for Left Upper Leg: {leftUpperLeg.boneName}");
+                        modified = true;
+                        break;
+                    }
+                }
+            }
+
+            // Fix right upper leg rotation
+            if (!string.IsNullOrEmpty(rightUpperLeg.boneName))
+            {
+                for (int i = 0; i < skeleton.Count; i++)
+                {
+                    if (skeleton[i].name == rightUpperLeg.boneName)
+                    {
+                        var bone = skeleton[i];
+                        bone.rotation = Quaternion.Euler(180f, 0f, 0f);
+                        skeleton[i] = bone;
+                        HoyoToonLogs.LogDebug($"Fixed rotation for Right Upper Leg: {rightUpperLeg.boneName}");
+                        modified = true;
+                        break;
+                    }
+                }
+            }
+
+            return modified;
+        }
+
+        private bool FixWuWaFingerBones(List<HumanBone> human, GameObject root)
+        {
+            // Check if WuWa finger remapping is needed
+            bool needsRemapping = human.Any(bone => 
+                (bone.boneName == "Left Thumb" || bone.boneName == "Right Thumb") && 
+                (bone.humanName.Contains("Thumb") || bone.humanName.Contains("Index") || 
+                 bone.humanName.Contains("Middle") || bone.humanName.Contains("Ring") || 
+                 bone.humanName.Contains("Little")));
+
+            if (!needsRemapping)
+                return false;
+
+            HoyoToonLogs.LogDebug("Fixing WuWa finger bone mappings");
+
+            // Remove all finger bones to start fresh
+            human.RemoveAll(bone => 
+                bone.humanName.Contains("Thumb") || 
+                bone.humanName.Contains("Index") || 
+                bone.humanName.Contains("Middle") || 
+                bone.humanName.Contains("Ring") || 
+                bone.humanName.Contains("Little"));
+
+            // Define proper finger bone mapping
+            var fingerMappings = new Dictionary<string, string[]>
+            {
+                { "Left Thumb Proximal", new[] { "Thumb1_L", "thumb1_l", "LeftThumb1" } },
+                { "Left Thumb Intermediate", new[] { "Thumb2_L", "thumb2_l", "LeftThumb2" } },
+                { "Left Thumb Distal", new[] { "Thumb3_L", "thumb3_l", "LeftThumb3" } },
+                { "Left Index Proximal", new[] { "Index1_L", "index1_l", "LeftIndex1" } },
+                { "Left Index Intermediate", new[] { "Index2_L", "index2_l", "LeftIndex2" } },
+                { "Left Index Distal", new[] { "Index3_L", "index3_l", "LeftIndex3" } },
+                { "Left Middle Proximal", new[] { "Middle1_L", "middle1_l", "LeftMiddle1" } },
+                { "Left Middle Intermediate", new[] { "Middle2_L", "middle2_l", "LeftMiddle2" } },
+                { "Left Middle Distal", new[] { "Middle3_L", "middle3_l", "LeftMiddle3" } },
+                { "Left Ring Proximal", new[] { "Ring1_L", "ring1_l", "LeftRing1" } },
+                { "Left Ring Intermediate", new[] { "Ring2_L", "ring2_l", "LeftRing2" } },
+                { "Left Ring Distal", new[] { "Ring3_L", "ring3_l", "LeftRing3" } },
+                { "Left Little Proximal", new[] { "Little1_L", "little1_l", "LeftLittle1", "Pinky1_L" } },
+                { "Left Little Intermediate", new[] { "Little2_L", "little2_l", "LeftLittle2", "Pinky2_L" } },
+                { "Left Little Distal", new[] { "Little3_L", "little3_l", "LeftLittle3", "Pinky3_L" } },
+                { "Right Thumb Proximal", new[] { "Thumb1_R", "thumb1_r", "RightThumb1" } },
+                { "Right Thumb Intermediate", new[] { "Thumb2_R", "thumb2_r", "RightThumb2" } },
+                { "Right Thumb Distal", new[] { "Thumb3_R", "thumb3_r", "RightThumb3" } },
+                { "Right Index Proximal", new[] { "Index1_R", "index1_r", "RightIndex1" } },
+                { "Right Index Intermediate", new[] { "Index2_R", "index2_r", "RightIndex2" } },
+                { "Right Index Distal", new[] { "Index3_R", "index3_r", "RightIndex3" } },
+                { "Right Middle Proximal", new[] { "Middle1_R", "middle1_r", "RightMiddle1" } },
+                { "Right Middle Intermediate", new[] { "Middle2_R", "middle2_r", "RightMiddle2" } },
+                { "Right Middle Distal", new[] { "Middle3_R", "middle3_r", "RightMiddle3" } },
+                { "Right Ring Proximal", new[] { "Ring1_R", "ring1_r", "RightRing1" } },
+                { "Right Ring Intermediate", new[] { "Ring2_R", "ring2_r", "RightRing2" } },
+                { "Right Ring Distal", new[] { "Ring3_R", "ring3_r", "RightRing3" } },
+                { "Right Little Proximal", new[] { "Little1_R", "little1_r", "RightLittle1", "Pinky1_R" } },
+                { "Right Little Intermediate", new[] { "Little2_R", "little2_r", "RightLittle2", "Pinky2_R" } },
+                { "Right Little Distal", new[] { "Little3_R", "little3_r", "RightLittle3", "Pinky3_R" } }
+            };
+
+            int mappedCount = 0;
+            foreach (var mapping in fingerMappings)
+            {
+                Transform bone = FindBoneByPatterns(root.transform, mapping.Value);
+                if (bone != null)
+                {
+                    human.Add(new HumanBone
+                    {
+                        humanName = mapping.Key,
+                        boneName = bone.name,
+                        limit = new HumanLimit { useDefaultValues = true }
+                    });
+                    mappedCount++;
+                }
+            }
+
+            HoyoToonLogs.LogDebug($"Mapped {mappedCount} WuWa finger bones");
+            return mappedCount > 0;
+        }
+
+        private Transform FindBoneByPatterns(Transform root, string[] patterns)
+        {
+            foreach (string pattern in patterns)
+            {
+                Transform bone = FindRecursive(root, pattern);
+                if (bone != null)
+                    return bone;
+            }
+            return null;
         }
 
         private void OnPostprocessAvatar(GameObject root)
@@ -250,7 +464,7 @@ namespace HoyoToon
             }
             else
             {
-                if (SkipTangentMeshes.Contains(componentName))
+                if (ShouldSkipMesh(componentName))
                 {
                     return mesh;
                 }
@@ -497,19 +711,24 @@ namespace HoyoToon
 
         #endregion
 
-        // Add this helper method to find transforms recursively
-        private Transform FindRecursive(Transform parent, string name)
+        #region Helper Methods
+
+        private static Transform FindRecursive(Transform parent, string name)
         {
-            if (parent.name == name) return parent;
+            if (parent.name == name) 
+                return parent;
             
             foreach (Transform child in parent)
             {
                 Transform found = FindRecursive(child, name);
-                if (found != null) return found;
+                if (found != null) 
+                    return found;
             }
             
             return null;
         }
+
+        #endregion
     }
 }
 #endif
