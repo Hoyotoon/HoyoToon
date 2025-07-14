@@ -74,8 +74,8 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
     #if defined(use_shadow)
         if(variant_selector == 0)
         {
-            shaded_area = shadow_area_body(lightmap.y, ndotl);
-            shadow_color = (_EnableStocking) ? shadow_base(dot(normal, light), lightmap.w, 0.5f) : shadow_base(shaded_area.x, lightmap.w, lightmap.y);
+            shaded_area = (_EnableStocking && (lightmap.r <= 0.1)) ? shadow_area_body(1.0, ndotl) :shadow_area_body(lightmap.y, ndotl);
+            shadow_color = (_EnableStocking && (lightmap.r <= 0.1)) ? shadow_base(dot(normal, light), lightmap.w,  lightmap.y) : shadow_base(shaded_area.x, lightmap.w, lightmap.y);
             shadow_color = saturate(shadow_color);
         }
         else if(variant_selector == 1 && _EnableFaceMap)
@@ -138,9 +138,9 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
             color.xyz = color.xyz * shadow;
         #endif
 
-        if(_EnableStocking && !metal_area)
+        if(_EnableStocking && (!metal_area) && (lightmap.r <= 0.1))
         {
-            color.xyz = tights(normal, light, view, bitangent, tangent, uv, lightmap.x, color.xyz);
+            color.xyz = tights(normal, light, view, bitangent, tangent, uv, lightmap, color.xyz);
         }
 
         color.xyz = color.xyz * float3(0.891f, 0.919f, 0.942f) + specular;

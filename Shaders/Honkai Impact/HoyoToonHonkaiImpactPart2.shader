@@ -10,6 +10,8 @@ Shader "HoyoToon/Honkai Impact/Character Part 2"
         //[HideInInspector] shader_master_label ("✧<b><i><color=#C69ECE>HoyoToon Honkai Impact Part 2</color></i></b>✧", Float) = 0
         [HideInInspector] ShaderBG ("UI/background", Float) = 0
         [HideInInspector] ShaderLogo ("UI/hi3p2logo", Float) = 0
+        [HideInInspector] CharacterLeft ("UI/hi3p2l", Float) = 0
+        [HideInInspector] CharacterRight ("UI/hi3p2r", Float) = 0
         [HideInInspector] shader_is_using_hoyeditor ("", Float) = 0
         [HideInInspector] footer_github ("{texture:{name:hoyogithub},action:{type:URL,data:https://github.com/HoyoToon/HoyoToon},hover:Github}", Float) = 0
         [HideInInspector] footer_discord ("{texture:{name:hoyodiscord},action:{type:URL,data:https://discord.gg/hoyotoon},hover:Discord}", Float) = 0
@@ -475,19 +477,10 @@ Shader "HoyoToon/Honkai Impact/Character Part 2"
             Cull Front
             Stencil
             {
-				Comp Always
-				Pass Replace
-				Fail Keep
-				ZFail Keep
-				CompFront Always
-				PassFront Replace
-				FailFront Keep
-				ZFailFront Keep
-				CompBack Always
-				PassBack Replace
-				FailBack Keep
-				ZFailBack Keep
-			}
+				ref 255
+                Comp Always
+                Pass Keep
+            }
             Blend SrcAlpha OneMinusSrcAlpha
             HLSLPROGRAM
             

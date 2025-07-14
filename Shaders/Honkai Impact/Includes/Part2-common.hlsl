@@ -243,7 +243,7 @@ float3 shadow_hair(float2 shadow_area, float lightmap_shadow)
 
         // sample ramp texture 
         float2 ramp_uv = _RampTexV;
-        ramp_uv.x = shadow_area.x;
+        ramp_uv.x = shadow_area.x * 0.5 + 0.5;
 
         float3 ramp_shadow = _RampTex.Sample(sampler_linear_clamp, ramp_uv);
 
