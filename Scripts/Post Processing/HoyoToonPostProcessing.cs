@@ -39,7 +39,7 @@ namespace HoyoToon
             {
                 if (_starRailLUT == null)
                 {
-                    _starRailLUT = Resources.Load<Texture2D>("StarRail/Textures/LUTSR");
+                    _starRailLUT = Resources.Load<Texture2D>("HSR/Textures/LUTS/LUT_HSR");
                 }
                 return _starRailLUT;
             }
@@ -54,7 +54,7 @@ namespace HoyoToon
             {
                 if (_wuwaLUT == null)
                 {
-                    _wuwaLUT = Resources.Load<Texture2D>("Wuwa/Textures/LUTS/LUTWUWA");
+                    _wuwaLUT = Resources.Load<Texture2D>("Wuwa/Textures/LUTS/LUT_WUWA");
                 }
                 return _wuwaLUT;
             }
@@ -96,6 +96,7 @@ namespace HoyoToon
             EditorApplication.update += CheckEditorState;
             SceneView.duringSceneGui += OnSceneGUI;
 #endif
+            ValidateAndLoadLUTTextures();
         }
 
         private void OnDisable()
@@ -163,6 +164,7 @@ namespace HoyoToon
         private void OnValidate()
         {
             SetMaterialProperties();
+            ValidateAndLoadLUTTextures();
         }
 
         private void OnCameraPreRender(Camera cam)
@@ -380,6 +382,9 @@ namespace HoyoToon
             // Check if the tone mapping type has changed   
             if (gameType != previousGameType)
             {
+                // Validate and load LUT textures for the new game type
+                ValidateAndLoadLUTTextures();
+
                 // Reset values based on the new tone mapping type
                 if (gameType == GameType.Off)
                 {
@@ -444,8 +449,26 @@ namespace HoyoToon
 
             // depending on gametype set the lut2D texture
             Texture2D lut2DTex = null;
-            if (gameType == GameType.StarRail) lut2DTex = StarRailLUT;
-            else if (gameType == GameType.WutheringWaves) lut2DTex = WuwaLUT;
+            if (gameType == GameType.StarRail)
+            {
+                lut2DTex = StarRailLUT;
+                if (lut2DTex == null)
+                {
+                    Debug.LogWarning("HoyoToonPostProcessing: StarRail LUT texture is null. Attempting to reload...");
+                    ValidateAndLoadLUTTextures();
+                    lut2DTex = StarRailLUT;
+                }
+            }
+            else if (gameType == GameType.WutheringWaves)
+            {
+                lut2DTex = WuwaLUT;
+                if (lut2DTex == null)
+                {
+                    Debug.LogWarning("HoyoToonPostProcessing: Wuwa LUT texture is null. Attempting to reload...");
+                    ValidateAndLoadLUTTextures();
+                    lut2DTex = WuwaLUT;
+                }
+            }
 
             _bloomMaterial.SetTexture("_Lut2DTex", lut2DTex);
 
@@ -474,6 +497,96 @@ namespace HoyoToon
             _bloomMaterial.SetFloat("_Sharpening", sharpening);
             _bloomMaterial.SetColor("_Vignette_Params1", vignetteColor);
             _bloomMaterial.SetVector("_Vignette_Params2", vignetteParams);
+        }
+
+        /// <summary>
+        /// Validates and ensures LUT textures are loaded for the current game type
+        /// </summary>
+        private void ValidateAndLoadLUTTextures()
+        {
+            switch (gameType)
+            {
+                case GameType.StarRail:
+                    if (_starRailLUT == null)
+                    {
+                        _starRailLUT = Resources.Load<Texture2D>("HSR/Textures/LUTS/LUT_HSR");
+                        if (_starRailLUT == null)
+                        {
+                            Debug.LogWarning("HoyoToonPostProcessing: StarRail LUT texture not found at 'HSR/Textures/LUTS/LUT_HSR'. Please ensure the texture is in the correct Resources folder.");
+                        }
+                        else
+                        {
+                            Debug.Log("HoyoToonPostProcessing: StarRail LUT texture loaded successfully.");
+                        }
+                    }
+                    break;
+
+                case GameType.WutheringWaves:
+                    if (_wuwaLUT == null)
+                    {
+                        _wuwaLUT = Resources.Load<Texture2D>("Wuwa/Textures/LUTS/LUT_WUWA");
+                        if (_wuwaLUT == null)
+                        {
+                            Debug.LogWarning("HoyoToonPostProcessing: Wuthering Waves LUT texture not found at 'Wuwa/Textures/LUTS/LUT_WUWA'. Please ensure the texture is in the correct Resources folder.");
+                        }
+                        else
+                        {
+                            Debug.Log("HoyoToonPostProcessing: Wuthering Waves LUT texture loaded successfully.");
+                        }
+                    }
+                    break;
+
+                case GameType.Genshin:
+                case GameType.Off:
+                    // Genshin and Off modes don't use LUT textures
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// Forces reload of all LUT textures (useful for debugging or when resources change)
+        /// </summary>
+        [ContextMenu("Reload LUT Textures")]
+        public void ReloadLUTTextures()
+        {
+            _starRailLUT = null;
+            _wuwaLUT = null;
+            ValidateAndLoadLUTTextures();
+        }
+
+        /// <summary>
+        /// Validates LUT texture setup and logs current status
+        /// </summary>
+        [ContextMenu("Validate LUT Setup")]
+        public void ValidateLUTSetup()
+        {
+            Debug.Log($"HoyoToonPostProcessing LUT Status Report:");
+            Debug.Log($"Current Game Type: {gameType}");
+
+            switch (gameType)
+            {
+                case GameType.StarRail:
+                    Debug.Log($"StarRail LUT Required: YES");
+                    Debug.Log($"StarRail LUT Loaded: {(_starRailLUT != null ? "YES" : "NO")}");
+                    if (_starRailLUT != null)
+                        Debug.Log($"StarRail LUT Path: HSR/Textures/LUTS/LUT_HSR");
+                    break;
+
+                case GameType.WutheringWaves:
+                    Debug.Log($"Wuwa LUT Required: YES");
+                    Debug.Log($"Wuwa LUT Loaded: {(_wuwaLUT != null ? "YES" : "NO")}");
+                    if (_wuwaLUT != null)
+                        Debug.Log($"Wuwa LUT Path: Wuwa/Textures/LUTS/LUT_WUWA");
+                    break;
+
+                case GameType.Genshin:
+                    Debug.Log($"LUT Required: NO (Genshin uses built-in tonemapping)");
+                    break;
+
+                case GameType.Off:
+                    Debug.Log($"LUT Required: NO (Post-processing disabled)");
+                    break;
+            }
         }
 
 #if UNITY_EDITOR
