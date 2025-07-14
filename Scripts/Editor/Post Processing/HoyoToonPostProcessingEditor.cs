@@ -108,6 +108,9 @@ namespace HoyoToon
                 DrawTonemappingSettings();
                 DrawSharpeningSettings();
                 DrawVignetteSettings();
+
+                EditorGUILayout.Space(10);
+                DrawLUTUtilities();
             }
 
             serializedObject.ApplyModifiedProperties();
@@ -172,12 +175,35 @@ namespace HoyoToon
                     }
                     EditorGUI.indentLevel--;
 
-                    if (postProcessing.IsGameTypeStarRail() || postProcessing.IsGameTypeWutheringWaves())
+                    if (postProcessing.IsGameTypeStarRail())
                     {
-                        EditorGUILayout.PropertyField(
-                            postProcessing.IsGameTypeStarRail() ? _starRailLUT : _wuwaLUT,
-                            new GUIContent("LUT Texture")
-                        );
+                        EditorGUILayout.PropertyField(_starRailLUT, new GUIContent("StarRail LUT Texture"));
+
+                        // Show status and help text
+                        if (postProcessing.StarRailLUT == null)
+                        {
+                            EditorGUILayout.HelpBox("StarRail LUT texture is missing! It should auto-load from 'HSR/Textures/LUTS/LUT_HSR'. " +
+                                                  "Click 'Reload LUT Textures' below if the texture exists.", MessageType.Warning);
+                        }
+                        else
+                        {
+                            EditorGUILayout.HelpBox("StarRail LUT texture loaded successfully.", MessageType.Info);
+                        }
+                    }
+                    else if (postProcessing.IsGameTypeWutheringWaves())
+                    {
+                        EditorGUILayout.PropertyField(_wuwaLUT, new GUIContent("Wuwa LUT Texture"));
+
+                        // Show status and help text
+                        if (postProcessing.WuwaLUT == null)
+                        {
+                            EditorGUILayout.HelpBox("Wuthering Waves LUT texture is missing! It should auto-load from 'Wuwa/Textures/LUTS/LUT_WUWA'. " +
+                                                  "Click 'Reload LUT Textures' below if the texture exists.", MessageType.Warning);
+                        }
+                        else
+                        {
+                            EditorGUILayout.HelpBox("Wuthering Waves LUT texture loaded successfully.", MessageType.Info);
+                        }
                     }
                 }
 
@@ -209,6 +235,45 @@ namespace HoyoToon
                 EditorGUILayout.PropertyField(_vignetteParams.FindPropertyRelative("w"), new GUIContent("Vignette Smoothness"));
                 EditorGUI.indentLevel--;
             }
+        }
+
+        private void DrawLUTUtilities()
+        {
+            EditorGUILayout.LabelField("LUT Utilities", EditorStyles.boldLabel);
+            EditorGUI.indentLevel++;
+
+            HoyoToonPostProcessing postProcessing = (HoyoToonPostProcessing)target;
+
+            // Show LUT status
+            if (postProcessing.IsGameTypeStarRail())
+            {
+                bool hasLUT = postProcessing.StarRailLUT != null;
+                EditorGUILayout.LabelField("StarRail LUT Status:", hasLUT ? "✓ Loaded" : "❌ Missing", hasLUT ? EditorStyles.label : EditorStyles.helpBox);
+            }
+            else if (postProcessing.IsGameTypeWutheringWaves())
+            {
+                bool hasLUT = postProcessing.WuwaLUT != null;
+                EditorGUILayout.LabelField("Wuwa LUT Status:", hasLUT ? "✓ Loaded" : "❌ Missing", hasLUT ? EditorStyles.label : EditorStyles.helpBox);
+            }
+            else if (postProcessing.IsGameTypeGenshin())
+            {
+                EditorGUILayout.LabelField("LUT Status:", "Not required for Genshin", EditorStyles.helpBox);
+            }
+
+            // Manual reload button
+            if (GUILayout.Button("Reload LUT Textures"))
+            {
+                postProcessing.ReloadLUTTextures();
+                EditorUtility.SetDirty(target);
+            }
+
+            // Validation button
+            if (GUILayout.Button("Validate LUT Setup"))
+            {
+                postProcessing.ValidateLUTSetup();
+            }
+
+            EditorGUI.indentLevel--;
         }
 
         private void DrawLogo()
