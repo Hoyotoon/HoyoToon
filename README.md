@@ -56,7 +56,7 @@ You can install HoyoToon through 3 methods.
 - [Discord server](https://discord.gg/hoyotoon)
 - [Meliodas's Twitter](https://twitter.com/Meliodas7DL)
 - [Manashiku's Twitter](https://twitter.com/Manashiku)
-- [Chip's Twitter](https://twitter.com/CBTDWG)
+- [Tay's Twitter](https://twitter.com/tayposting)
 
 ## Issues
 
@@ -76,4 +76,5 @@ All of this wouldn't be possible if it weren't for:
 
 - [Meliodas](https://github.com/HoyoToon)
 - [Manashiku](https://github.com/Manashiku)
+- [Tay](https://github.com/tay-lv)
 - [Razmoth](https://github.com/Razmoth)
