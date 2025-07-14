@@ -106,8 +106,9 @@ namespace HoyoToon
             Texture2D hsrLogo = Resources.Load<Texture2D>("UI/hsrlogo");
             Texture2D gilogo = Resources.Load<Texture2D>("UI/gilogo");
             Texture2D hi3p1Logo = Resources.Load<Texture2D>("UI/hi3p1logo");
-            Texture2D HI3P2Logo = Resources.Load<Texture2D>("UI/HI3P2logo");
+            Texture2D HI3P2Logo = Resources.Load<Texture2D>("UI/hi3p2logo");
             Texture2D wuwalogo = Resources.Load<Texture2D>("UI/wuwalogo");
+            Texture2D zzzlogo = Resources.Load<Texture2D>("UI/zzzlogo");
             Texture2D scriptslogo = Resources.Load<Texture2D>("UI/scriptslogo");
             Texture2D uilogo = Resources.Load<Texture2D>("UI/uilogo");
             Texture2D resourceslogo = Resources.Load<Texture2D>("UI/resourceslogo");
@@ -118,11 +119,11 @@ namespace HoyoToon
             {
                 if (line.StartsWith("<h1>"))
                 {
-                    if (line.Contains("Star Rail") && hsrLogo != null)
+                    if (line.Contains("Honkai Star Rail") && hsrLogo != null)
                     {
                         DrawHeaderImage(hsrLogo);
                     }
-                    else if (line.Contains("Genshin") && gilogo != null)
+                    else if (line.Contains("Genshin Impact") && gilogo != null)
                     {
                         DrawHeaderImage(gilogo);
                     }
@@ -137,6 +138,10 @@ namespace HoyoToon
                     else if (line.Contains("Wuthering Waves") && wuwalogo != null)
                     {
                         DrawHeaderImage(wuwalogo);
+                    }
+                    else if (line.Contains("Zenless Zone Zero") && zzzlogo != null)
+                    {
+                        DrawHeaderImage(zzzlogo);
                     }
                     else if (line.Contains("Scripts") && scriptslogo != null)
                     {
