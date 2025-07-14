@@ -214,6 +214,25 @@ vs_out vs_model(vs_in v)
     float4 pos_ws  = mul(unity_ObjectToWorld, v.vertex);
     float4 pos_wvp = mul(UNITY_MATRIX_VP, pos_ws);
     o.pos = pos_wvp;
+    #if defined(_is_shadow)
+    if(_UseHairShadow && (variant_selector == 4)) // if material type is bangs
+    {
+        // this shifts the bangs around so they appear to be moving like a shadow
+        float4 ws_pos = mul(unity_ObjectToWorld, v.vertex);
+        float3 vl = mul(_WorldSpaceLightPos0.xyz, UNITY_MATRIX_V) * (1.f / ws_pos.w);
+        float3 offset_pos = ((vl * .001f) * float3(7,-1,5)) + v.vertex.xyz;
+        v.vertex.xyz = offset_pos;
+        o.pos = UnityObjectToClipPos(v.vertex);
+    }
+    else if(_UseHairShadow && (variant_selector == 1)) // if material type is face
+    {
+        o.pos = pos_wvp;
+    }
+    else
+    {
+        o.pos = float4(-90,-90,-90,1.0f); // if shadow pass, set position to a negative value so it doesn't render
+    }
+    #endif
     o.uv_a.xy = v.uv_0.xy;
     o.uv_a.zw = v.uv_1.xy;
     o.uv_b.xy = v.uv_2.xy;
@@ -225,6 +244,7 @@ vs_out vs_model(vs_in v)
     o.n_view.xyz = -mul(unity_ObjectToWorld, v.vertex).xyz + unity_ObjectToWorld[3].xyz;
     o.n_view = float4(_DummyFixedForNormal ? o.n_view : o.view, 1.0f);
     o.ws_pos =  v.vertex;
+    o.ppos = o.pos;
     o.ss_pos = ComputeScreenPos(o.pos);
     o.v_col = v.v_col;
     o.light_pos = mul(_LightMatrix0, o.ws_pos);
@@ -254,8 +274,6 @@ vs_out vs_model(vs_in v)
         parallax = bitangent * view.zzz + parallax;
         o.parallax = parallax; 
     }
-
-
 
     TRANSFER_SHADOW(o)
 
@@ -304,15 +322,17 @@ vs_out vs_edge(vs_in v)
         float3 ws_normal = mul(outline_normal, (float3x3)unity_ObjectToWorld);
 
         outline_normal = mul((float3x3)UNITY_MATRIX_MV, outline_normal);
-        outline_normal.z = 0.01f;
+        if(!_DisableZShift)outline_normal.z = 0.01f;
         outline_normal.xy = normalize(outline_normal.xyz).xy;
 
         if(!_FallbackOutlines)
         {
             float fov_matrix = unity_CameraProjection[1].y;
 
-            float fov = 2.414f / fov_matrix; // may need to come back in and change this back to 1.0f
+            float fov = _DisableFOVScalingOL ? 1.0f : 2.414f / fov_matrix; // may need to come back in and change this back to 1.0f
             // can't remember in what vrchat mode this was messing up 
+
+
 
             float depth = -wv_pos.z * fov;
 
@@ -325,6 +345,7 @@ vs_out vs_edge(vs_in v)
             z_scale = z_scale / z_something.x;
             z_scale = saturate(z_scale);
             z_scale = z_scale * z_something.y + scales.x;
+            z_scale = _DisableDepthScaling ? 0.1f : z_scale;
 
             // the next 5 or so lines could be written in one line like the above 
             float outline_scale = (_OutlineWidth * 1.5f) * z_scale;
@@ -332,6 +353,7 @@ vs_out vs_edge(vs_in v)
             outline_scale = outline_scale * _Scale;
             outline_scale = outline_scale * 0.414f;
             outline_scale = outline_scale * outlineWidth;
+            // if(_DisableDepthScaling) outline_scale = 0.1f * outline_scale;
             #if defined(faceishadow)
                 if(_UseFaceMapNew) outline_scale = outline_scale * _FaceMapTex.SampleLevel(sampler_linear_repeat, v.uv_0.xy, 0.0f).z;
             #endif
@@ -429,6 +451,8 @@ vs_out vs_nyx(vs_in v)
         o.pos.xyz = outline_normal * outline_width + o.pos.xyz;
 
         o.ss_pos = ComputeScreenPos(o.pos);
+
+        o.uv_a.xy = v.uv_0;
     }
     o.pos = mul(UNITY_MATRIX_P, o.pos);
     #endif
@@ -479,15 +503,30 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
     float4 out_color = (float4)1.0f; 
     // INITIALIZE VERTEX INPUTS: 
     float3 normal = normalize(i.normal);
+    float3 tangent = normal;
+    float3 bitangent = normal;
     normal = (vface) ? normal : -normal; // check if back facing and invert the normals 
     float3 view   = normalize(i.view);
     float2 uv_a = (!vface && _UseBackFaceUV2) ? i.uv_a.zw : i.uv_a.xy; 
     float4 uv_b = i.uv_b;
     float3 light = _WorldSpaceLightPos0.xyz;
+    float night_shift = auto_night_shift();
+
+    float unity_shadow = SHADOW_ATTENUATION(i);
+    unity_shadow = smoothstep(0.5f, 1.f, unity_shadow);
+
+    if(!_EnableShadow || !_EnableSelfShadow) 
+    {
+        unity_shadow = 1.f;
+    }
 
     // SAMPLE TEXTURES : 
     float4 diffuse = _MainTex.Sample(sampler_MainTex, uv_a);
     float4 lightmap = _LightMapTex.Sample(sampler_linear_repeat, uv_a);
+
+    // MATERIAL REGION 
+    float material_id = materialID(lightmap.w);
+
     #if defined(use_shadow)
         float2 ao_uv[3] =
         {
@@ -495,12 +534,33 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         };
         float2 final_uv =  ao_uv[_CustomAOUV % 3] * _CustomAO_ST.xy + _CustomAO_ST.zw;
         float customao  = _AOSamplerType == 0 ? _CustomAO.Sample(sampler_linear_repeat, final_uv).x : _CustomAO.Sample(sampler_linear_clamp, final_uv).x ; // loop through array if number is greater than 3 or less than 0
+        // customao = customao * unity_shadow;
     #endif
     #if defined(use_bump)
         float4 normalmap = _BumpMap.Sample(sampler_linear_repeat, uv_a);
     #endif
     #if defined(faceishadow)
         float4 facemap = _FaceMapTex.Sample(sampler_linear_repeat, uv_a);
+    #endif
+
+    #if defined(_is_shadow)
+        if(_UseHairShadow && variant_selector == 4) // if material type is bangs
+        {  
+            float4 hair_color = lerp(_HairShadowColor, _CoolHairShadowColor, night_shift);
+            hair_color.w = 0.07f;
+            diffuse = hair_color;
+            return diffuse;
+        }
+        else if(_UseHairShadow && variant_selector == 1) // if material type is face
+        {
+            float shadow_mask = shadow_area_face(uv_a, light).x;
+            clip(shadow_mask - 0.1f);
+            return shadow_mask;
+        }
+        else
+        {
+            clip(-1);
+        }
     #endif
 
     #ifdef _IS_PASS_BASE // Basic character shading pass, should only include the basic enviro light stuff + debug rendering shit
@@ -583,16 +643,43 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         metalspec.x = lightmap.x < 0.50f;
         metalspec.y = lightmap.x < 0.90f; // if metal area
 
+
+        
+
         half bump_enable = _UseBumpMap;
         half isMainNormal = _isNativeMainNormal;
         half isLine = _TextureLineUse;
+        float fixNormal = _DummyFixedForNormal;
 
         // adding support for new normal mapping boolean
         #if defined(use_bump)
-            if(bump_enable || isMainNormal) normal = normal_mapping(normalmap, _gameVersion == 1 ? i.n_view : ws_pos, uv_a, normal);
+            if(bump_enable || isMainNormal) normal_mapping(normalmap, _DummyFixedForNormal ? ws_pos.xyz : i.view, _BumpScale, uv_a, normal, tangent, bitangent);
         #if defined(sdf_line)
             if((bump_enable || isMainNormal) && _TextureLineUse && ((_TextureLineMultiplier.x + _TextureLineMultiplier.y + _TextureLineMultiplier.z) > 0)) detail_line(i.ss_pos.zw, normalmap.z, diffuse.xyz);
         #endif
+        #endif
+
+        float3 normal_stock = normalize(i.normal);
+
+        #if defined(use_stockings)
+            if(_UseCharacterStockings && (material_id  == 4)) 
+            {
+                float2 stocking_uv = uv_b.xy * _StockingsDetailTilingNear; 
+                // stocking normal logic
+                float3 stocking_normal;
+                stocking_normal.z = 1.0f;
+                stocking_normal.xy = _StockingsDetailTex.Sample(sampler_linear_repeat, stocking_uv).xy * 2 - 1;
+                stocking_normal.xy *= _StockingsDetailScale;
+
+                // normal_stock = normalize(mul(float3x3(tangent, bitangent, normal), stocking_normal));
+
+                float3 normal_stock = normalize(i.normal); 
+                float3 tangent_stock; 
+                float3 bitangent_stock;
+                normal_mapping(stocking_normal, normalize(i.view), _StockingsDetailScale, uv_b.xy, normal_stock, tangent, bitangent);
+
+                // normal = normalize(normal_stock);
+            }
         #endif
         // do this after the bump mapping to ensure that the normals are updated 
         // INITIALIZE INPUT VECTORS :
@@ -610,8 +697,6 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         float GI_intensity = 0.299f * GI_color.r + 0.587f * GI_color.g + 0.114f * GI_color.b;
         GI_intensity = GI_intensity < 1 ? GI_intensity : 1.0f;
 
-        // MATERIAL REGION 
-        float material_id = materialID(lightmap.w);
 
         // COLOR SHIT 
         #if defined(use_texTint)
@@ -650,14 +735,7 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         if(_StarCloakEnable && _StarCockEmis) mask = 1.0f;
         if((_StarCloakEnable && _StarCockEmis) && (_StarCockType == 2) && (!emis_check)) mask = diffuse.w;
         emis_check = _TogglePulse ? emis_check * pulsate(_PulseSpeed, _PulseMinStrength, _PulseMaxStrength, 0.0f) : emis_check; 
-        #if defined(use_stockings)
-        if(_UseCharacterStockings && (material_id  == 4))
-        {
-            float stocking_area_check = 0;
-            character_stocking(normal, view, uv_a, material_id, stocking_area_check, diffuse);
-            return float4(diffuse.xyz, 1.0f);
-        }
-        #endif
+        
 
         if(_UseFaceMapNew)
         {
@@ -671,7 +749,7 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         float3 s_color = (float3)1.0f;
         float3 leather = (float3)0;
         #if defined(use_shadow)
-            if(_EnableShadow) shadow_color(lightmap.y, i.v_col.x, customao, i.v_col.y, ndotl, material_id, i.uv_a.xy, shadow, metalshadow, s_color, light);
+            if(_EnableShadow) shadow_color(lightmap.y, i.v_col.x, customao, unity_shadow, i.v_col.y, ndotl, material_id, i.uv_a.xy, shadow, metalshadow, s_color, light);
         #endif
            // SPECULAR : 
         float3 specular = (float3)0.0f;
@@ -682,7 +760,7 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         #endif
         // METALIC :
         #if defined(use_metal)
-            if(_MetalMaterial) metalics(metalshadow, normal, ndoth, lightmap.x, vface, diffuse.xyz);
+            if(_MetalMaterial && !(_UseCharacterStockings * (material_id == 4))) metalics(metalshadow, normal, ndoth, lightmap.x, vface, diffuse.xyz);
             if(_DebugMode && (_DebugMetal == 1)) return float4(diffuse.xyz, 1.0f);
             // moving these after the metal so the metal can also be recolored
         #endif
@@ -703,6 +781,27 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         #endif
         out_color = diffuse;
         out_color.w = 1.0f;
+
+        #if defined(use_stockings)
+            if(_UseCharacterStockings && (material_id  == 4)) 
+            {
+                float2 stocking_uv[4] = 
+                {
+                    i.uv_a.xy, i.uv_a.zw, i.uv_b.xy, i.uv_b.zw
+                };
+                character_stocking(normal_stock, view, light, stocking_uv[_StockingUV % 4], lightmap, out_color);
+            }
+        #endif
+
+        #if defined(use_nbrbase)
+        if(_UseCharacterNbrBase)
+        {
+            if(lightmap.x < 0.85f && lightmap.x > 0.5f)
+            {
+                nbr(normal, view, light, lightmap, out_color);  
+            }
+        }
+        #endif
 
         #if defined(asmogay_arm)
             if(_HandEffectEnable)
@@ -725,7 +824,7 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         #endif
 
         #if defined(is_cock)
-            if(_StarCloakEnable) star_cocks(float4(out_color.xyz, diffuse.w), i.uv_a.xy, i.uv_a.zw, i.uv_b.xy, i.ss_pos, ndotv, light, i.parallax);
+            if(_StarCloakEnable) star_cocks(float4(out_color.xyz, diffuse.w), i.uv_a.xy, i.uv_a.zw, i.uv_b.xy, _ScreenIsWorld ? i.ppos : i.ss_pos, ndotv, light, i.parallax);
         #endif
         // apply specular opacity
         float3 spec_color = 0.0f;
@@ -742,23 +841,7 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
 
         out_color.xyz = out_color.xyz * s_color + (spec_color);
         
-        float4 emis_color = out_color.xyzz;
-        float4 emis_color_eye = out_color.xyzz;
-        emis_color = emission_color(emis_color, material_id);
-        emis_color_eye = emission_color_eyes(emis_color, material_id);
-        #if defined(can_shift)
-            if(_EnableEmissionHue) emis_color.xyz = hue_shift(emis_color.xyz, material_id, _EmissionHue, _EmissionHue2, _EmissionHue3, _EmissionHue4, _EmissionHue5, _GlobalEmissionHue, _AutomaticEmissionShift, _ShiftEmissionSpeed, emission_mask);
-            if(_EnableEmissionHue) emis_color_eye.xyz = hue_shift(emis_color_eye.xyz, material_id, _EmissionHue, _EmissionHue2, _EmissionHue3, _EmissionHue4, _EmissionHue5, _GlobalEmissionHue, _AutomaticEmissionShift, _ShiftEmissionSpeed, emission_mask);
-        #endif
-        #if defined(is_cock)
-            if(_StarCloakEnable && _StarCockEmis)
-            {
-                emis_color.xyz = emis_color.xyz;
-                emis_color.w = _EmissionScaler;
-                mask = _StarCockType == 2 ? diffuse.w : 1.0f;
-                emis_check = 1.0f;
-            }
-        #endif
+        
                 
 
         // New 5.0 content shit
@@ -769,15 +852,9 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
             if(_EnableNyxBody && _BodyAffected) nyx_state_marking(out_color.xyz, uv_a.xy, i.uv_a.zw, uv_b.xy, uv_b.zw, normal, view, i.ss_pos);
         // #endif
         // Apply scene light color, only taking the main directional light color * ambient color settings
-        out_color.xyz = out_color.xyz * light_color;
-        
-        // 
-        // if(_UseFaceMapNew) normal = float3(0.5f, 0.5f, 1.0f);
-       
-        out_color.xyz = out_color.xyz + (GI_color * GI_intensity * _GI_Intensity * smoothstep(1.0f ,0.0f, GI_intensity / 2.0f));
+        CalcLighting(normal, out_color.xyz);
 
-        out_color.xyz = lerp(out_color.xyz, emis_color, ((mask * emis_color.w) * emis_check));
-        out_color.xyz = lerp(out_color.xyz, emis_color_eye, (eye_mask * emis_check_eye) * emis_color_eye.w);
+        
         
         // #if defined(nyx_body)
             if(_EnableNyxBody && !_BodyAffected) nyx_state_marking(out_color.xyz, uv_a.xy, i.uv_a.zw, uv_b.xy, uv_b.zw, normal, view, i.ss_pos);
@@ -807,20 +884,54 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
             out_color.w = diffuse.w;      
             if(_EnableDithering) ditherClip(ws_pos.xy, out_color.w);
         }
-
+        if(_EnableAvatarDie && !_ApplyOnlyNyx)
+        {
+            avatar_death(i.uv_a.xy, diffuse.a, vface, out_color);
+        }
+        // stencils
         #if defined(is_stencil)
             if(_UseEyeStencil)
             {
-                stencil_mask(i.ws_pos, out_color, lightmap, view);
+                stencil_mask(i.ws_pos, out_color, lightmap, view, i.uv_a.xy);
             }
             else
             {
                 discard;
             }
         #endif
+
+        if(_EnableTonemapping) out_color = tonemapping(out_color);
+
+        float4 emis_color = diffuse.xyzz;
+        float4 emis_color_eye = diffuse.xyzz;
+        emis_color = emission_color(emis_color, material_id);
+        emis_color_eye = emission_color_eyes(emis_color, material_id);
+        #if defined(can_shift)
+            if(_EnableEmissionHue) emis_color.xyz = hue_shift(emis_color.xyz, material_id, _EmissionHue, _EmissionHue2, _EmissionHue3, _EmissionHue4, _EmissionHue5, _GlobalEmissionHue, _AutomaticEmissionShift, _ShiftEmissionSpeed, emission_mask);
+            if(_EnableEmissionHue) emis_color_eye.xyz = hue_shift(emis_color_eye.xyz, material_id, _EmissionHue, _EmissionHue2, _EmissionHue3, _EmissionHue4, _EmissionHue5, _GlobalEmissionHue, _AutomaticEmissionShift, _ShiftEmissionSpeed, emission_mask);
+        #endif
+        #if defined(is_cock)
+            if(_StarCloakEnable && _StarCockEmis)
+            {
+                emis_color.xyz = emis_color.xyz;
+                emis_color.w = _EmissionScaler;
+                mask = _StarCockType == 2 ? diffuse.w : 1.0f;
+                emis_check = 1.0f;
+            }
+        #endif
+        
+        out_color.xyz = lerp(out_color.xyz, emis_color, ((mask * emis_color.w) * emis_check));
+        out_color.xyz = lerp(out_color.xyz, emis_color_eye, (eye_mask * emis_check_eye) * emis_color_eye.w);
+
+
+
         #if defined(can_debug)  
             if(_DebugMode) // debuuuuuug
             {
+                if(_DebugLighting == 1) return float4(ndotl.xxx, 1.0f);
+                if(_DebugLighting == 2) return float4(ndotv.xxx, 1.0f);
+                if(_DebugLighting == 3) return float4(ndoth.xxx, 1.0f);
+                if(_DebugLighting == 4) return float4(shadow.xxx, 1.0f);
                 if(_DebugDiffuse == 1) return float4(diffuse.xyz, 1.0f);
                 if(_DebugDiffuse == 2) return float4(diffuse.www, 1.0f);
                 if(_DebugLightMap == 1) return float4(lightmap.xxx, 1.0f);
@@ -892,6 +1003,7 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
                 if(_DebugLights == 1) return float4((float3)0.0f, 1.0f);
             }
         #endif
+
         
     #endif
     #ifdef _IS_PASS_LIGHT // Lighting shading pass, should only include the necessary lighting things needed
@@ -899,13 +1011,10 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         #if defined(POINT) || defined(SPOT)
         light = normalize(_WorldSpaceLightPos0.xyz - ws_pos.xyz);
         #endif
-        
-        // MATERIAL ID: 
-        float material_id = materialID(lightmap.w);
 
         // SHADOW
         // since this pass doesnt want the colors of the shadows, just use the shadow only functions: 
-        float ndotl = dot(normal, light);
+        float ndotl = dot(normal, light) * unity_shadow;
 
         float3 shadow_area = (float3)1.0f;
         shadow_area = shadow_area_transition(lightmap.y, i.v_col.x, ndotl, material_id);
@@ -937,15 +1046,6 @@ float4 ps_edge(vs_out i, bool vface : SV_ISFRONTFACE) : SV_TARGET
         outline_mask = _UseHueMask ? outline_mask : 1.0f;
     #endif
 
-     // lighting
-    float3 ambient_color = max(half3(0.05f, 0.05f, 0.05f), max(ShadeSH9(half4(0.0, 0.0, 0.0, 1.0)),ShadeSH9(half4(0.0, -1.0, 0.0, 1.0)).rgb));
-    float3 light_color = max(ambient_color, _LightColor0.rgb);  
-    float3 GI_color = DecodeLightProbe(normalize(i.normal));
-    GI_color = GI_color < float3(1,1,1) ? GI_color : float3(1,1,1);
-    float GI_intensity = 0.299f * GI_color.r + 0.587f * GI_color.g + 0.114f * GI_color.b;
-    GI_intensity = GI_intensity < 1 ? GI_intensity : 1.0f;
-    GI_color = (GI_color * GI_intensity * _GI_Intensity * smoothstep(1.0f ,0.0f, GI_intensity / 2.0f));
-
 
     float4 diffuse = _MainTex.Sample(sampler_MainTex, i.uv_a.xy);
     float4 lightmap = _LightMapTex.Sample(sampler_linear_repeat, i.uv_a.xy);
@@ -960,7 +1060,8 @@ float4 ps_edge(vs_out i, bool vface : SV_ISFRONTFACE) : SV_TARGET
     float3 emission;
     out_color.xyz = outline_color[material_ID - 1].w * (diffuse.xyz * (float3)0.203f + (-outline_color[material_ID - 1].xyz)) + outline_color[material_ID - 1].xyz;
     
-    out_color.xyz = out_color.xyz * light_color + GI_color;
+    // out_color.xyz = out_color.xyz * light_color + GI_color;
+    CalcLighting(normalize(i.normal), out_color.xyz);
 
     if(_EnableOutlineGlow)
     {
@@ -977,7 +1078,10 @@ float4 ps_edge(vs_out i, bool vface : SV_ISFRONTFACE) : SV_TARGET
         if(_EnableOutlineHue) out_color.xyz = hue_shift(out_color.xyz, material_ID, _OutlineHue, _OutlineHue2, _OutlineHue3, _OutlineHue4, _OutlineHue5, _GlobalOutlineHue, _AutomaticOutlineShift, _ShiftOutlineSpeed, 1.0f);
     #endif
     if(_MultiLight && !_EnableOutlineGlow) out_color.xyz = out_color.xyz  * (UNITY_LIGHTMODEL_AMBIENT.xyz + _LightColor0.xyz);
-    
+    if(_EnableAvatarDie && !_ApplyOnlyNyx)
+    {
+        avatar_death(i.uv_a.xy, diffuse.w, !vface, out_color);
+    }
     return out_color;
 }
 
@@ -1039,6 +1143,10 @@ float4 ps_nyx(vs_out i, bool vface : SV_ISFRONTFACE) : SV_TARGET
             // if disabled, all pixels are clipped, this is to catch any weird issues with the nyx mode shader feature
             if(!_EnableNyxOutline) clip(-1);
             // color.xyz = nyx_noise;
+            if(_EnableAvatarDie)
+            {
+                avatar_death(i.uv_a.xy, alpha, !vface, color);
+            }
             return color;
         }
         else

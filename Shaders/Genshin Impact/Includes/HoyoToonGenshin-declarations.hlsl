@@ -79,27 +79,40 @@ Texture2D _ClipAlphaTex;
 #endif
 #if defined(use_vat)
     Texture2D _LerpTexture;
-    float4 _LerpTextureST;
     Texture2D _VertexTex;
-    float4 _VertexTexST;
     Texture2D _VertTex;
-    float4 _VertTexST;
     Texture2D _PosTex_A;
-    float4 _PosTex_A_ST;
     Texture2D _VerticalRampTex;
-    float4 _VerticalRampTex_ST;
     Texture2D _VerticalRampTex2;
-    float4 _VerticalRampTex2_ST;
     Texture2D _HighlightMaskTex;
-    float4 _HighlightMaskTex_ST;
     Texture2D _HighlightMaskTex2;
+    float4 _LerpTextureST;
+    float4 _VertexTexST;
+    float4 _VertTexST;
+    float4 _PosTex_A_ST;
+    float4 _VerticalRampTex_ST;
+    float4 _VerticalRampTex2_ST;
+    float4 _HighlightMaskTex_ST;
     float4 _HighlightMaskTex2_ST;
 #endif
+
+
+Texture2D _EyeMask;
+Texture2D _EyeMaskCustom;
 
 
 Texture2D _FakePointNoiseTex;
 Texture2D _FakePointNoiseTex2;
 Texture2D _FakePointNoiseTex3;
+
+Texture2D _DissolveNoise;
+
+#if defined(use_nbrbase)
+    Texture2D _NbrRefTex; 
+#endif
+
+// apparently this was never defined 
+float variant_selector;
 
 
 float4 _MainTex_ST; // scale and translation offsets for main texture
@@ -228,7 +241,9 @@ float  _TextureLineThickness;
 float  _TextureLineSmoothness;
 
 // shadow properties
+float _EnableSelfShadow;
 float _DayOrNight;
+float _AutomaticNight;
 float _MultiLight;
 float _EnvironmentLightingStrength;
 float _UseShadowRamp;
@@ -321,6 +336,7 @@ float _LeatherSpecularDetailScale;
 float _LeatherSpecularDetailSharpe;
 
 // stockings :
+float _StockingUV;
 float _UseCharacterStockings;
 float _StockingCenterX;
 float _StockingCenterY;
@@ -450,6 +466,7 @@ float _RampPointPos2;
 
 // outline properties 
 float  _OutlineType;
+float _DisableZShift;
 float _OutlineOffsetBlockBChannel;
 float _UseOutlineTex;
 float _OutlineWidthChannel;
@@ -458,6 +475,8 @@ float _FallbackOutlines;
 float _OutlineWidth;
 float _OutlineCorrectionWidth;
 float _Scale;
+float _DisableDepthScaling;
+float _DisableFOVScalingOL;
 
 float _OutLineIntensity;
 float _OutLineIntensity2;
@@ -481,7 +500,9 @@ float _StarCloakEnable;
 int _StarCockType;
 
 // skirk specific
+float _Skirktype;
 float _UseScreenUV;
+float _ScreenIsWorld;
 float _StarTiling;
 float4 _StarTexSpeed;
 float4 _StarColor;
@@ -610,6 +631,7 @@ float _RimHue5;
 
 // debug
 float _DebugMode;
+float _DebugLighting;
 float _DebugDiffuse;
 float _DebugLightMap;
 float _DebugFaceMap;
@@ -696,6 +718,15 @@ float _VerticalFadeOffset;
 float _VerticalFadeRange;
 
 
+float _UseHairShadow;
+float _HairShadowExtrusion;
+float _HairShadowLightShift;
+float4 _HairShadowStencilShift;
+float4 _HairShadowVerticalRemap;
+float4 _HairShadowColor;
+float4 _CoolHairShadowColor;
+
+
 float4 _FakePointColor;
 float4 _FakePointPosition;
 float _UseFakePoint;
@@ -729,12 +760,46 @@ float _FakePointFrequencyMin3;
 float _FakePointSkinIntensity3;
 float _FakePointSkinSaturate3;
 
+float _UseCharacterNbrBase;
+float _NbrRefBlur;
+float _NbrRefScale;
+float _NbrRefTiling;
+float _NbrRoughness;
+float _NbrScale;
+float4 _NbrBaseColor;
+
 float _UseEyeStencil;
 float _HairZOffset;
 float _StencilType;
 float _StencilFilter;
 float _HairBlendUse;
-float _HairBlendSilhouette;
+float _HairTransparentValue;
+float _StencilMaskSource;
+float _StencilChannelCount;
+float _StencilLayer0;
+float _StencilLayer1;
+float _StencilLayer2;
+float _StencilLayer3;
+float _StencilLayer1Op;
+float _StencilLayer2Op;
+float _StencilLayer3Op;
+float _StencilConditional;
+float _StencilConditionThresh;
+float _AlphaYZ;
+float _AlphaXZ;
+float _InvertMask;
+
+// avatar death
+float _EnableAvatarDie;
+float _ApplyOnlyNyx;
+float4 _DissolveNoiseST;
+float _DissolveValue;
+float _DissolveEdgeWidth;
+float4 _DissolveColor;
+float _DissolveColorScaler;
+float4 _DeathTintColor;
 
 uniform float _GI_Intensity;
 uniform float4x4 _LightMatrix0;
+
+float _EnableTonemapping;

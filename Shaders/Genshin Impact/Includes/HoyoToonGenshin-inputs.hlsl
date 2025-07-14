@@ -24,6 +24,7 @@ struct vs_out
     float3 parallax  : TEXCOORD5;
     float4 light_pos : TEXCOORD6;
     float4 n_view    : TEXCOORD8;
+    float4 ppos      : TEXCOORD9;
     float4 v_col     : COLOR0; // vertex color 
     UNITY_VERTEX_OUTPUT_STEREO
     SHADOW_COORDS(7)
@@ -63,4 +64,3 @@ struct light_out
     float3 view   : TEXCOORD2;
     SHADOW_COORDS(5)
 };
- 

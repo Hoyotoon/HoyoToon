@@ -57,6 +57,20 @@ float3 DecodeLightProbe( float3 N )
     return ShadeSH9(float4(N,1));
 }
 
+void CalcLighting(in float3 normal, inout float3 color)
+{
+    float3 ambient_color = max(half3(0.05f, 0.05f, 0.05f), max(ShadeSH9(half4(0.0, 0.0, 0.0, 1.0)),ShadeSH9(half4(0.0, -1.0, 0.0, 1.0)).rgb));
+    float3 light_color = max(ambient_color, _LightColor0.rgb);
+
+    float3 GI_color = DecodeLightProbe(normal);
+    GI_color = GI_color < float3(1,1,1) ? GI_color : float3(1,1,1);
+    float GI_intensity = 0.299f * GI_color.r + 0.587f * GI_color.g + 0.114f * GI_color.b;
+    GI_intensity = GI_intensity < 1 ? GI_intensity : 1.0f;
+
+    color.xyz = color.xyz * light_color;
+    color.xyz = color.xyz + (GI_color * GI_intensity * _GI_Intensity * smoothstep(1.0f ,0.0f, GI_intensity / 2.0f));
+}
+
 float4 maintint(float4 diffuse)
 {
     // Store the input diffuse color
@@ -119,6 +133,50 @@ float4 material_mask_coloring(float4 mask)
 
 }
 
+bool greater_than(float a, float b)
+{
+    return a > b;
+}
+
+bool less_than(float a, float b)
+{
+    return a < b;
+}
+
+bool equal_to(float a, float b)
+{
+    return a == b;
+}
+
+bool greater_equal(float a, float b)
+{
+    return a >= b;
+}
+
+bool less_equal(float a, float b)
+{
+    return a <= b;
+}
+
+bool conditional_picker(float a, float b, float conditional)
+{
+    switch(conditional)
+    {
+        case 0: // less than
+            return less_than(a,b);
+        case 1: // greater than
+            return greater_than(a,b);
+        case 2: // equal to
+            return equal_to(a,b);
+        case 3: // less than or equal to
+            return less_equal(a,b);
+        case 4: // greater than or equal to
+            return greater_equal(a,b);
+        default:
+            return false;
+    }
+}
+
 float packed_channel_picker(SamplerState texture_sampler, Texture2D texture_2D, float2 uv, float channel)
 {
     float4 packed = texture_2D.SampleLevel(texture_sampler, uv, 0);
@@ -130,6 +188,145 @@ float packed_channel_picker(SamplerState texture_sampler, Texture2D texture_2D, 
     else if(channel == 3) {choice = packed.w;}
 
     return choice;
+}
+
+float packed_channel_picker(float4 sampled, float channel)
+{
+    float choice;
+    if(channel == 0) {choice = sampled.x;}
+    else if(channel == 1) {choice = sampled.y;}
+    else if(channel == 2) {choice = sampled.z;}
+    else if(channel == 3) {choice = sampled.w;}
+
+    return choice;
+}
+
+float operation_picker(in float A, in float B, in float operation)
+{
+    
+    [forcecase] switch(operation)
+    {
+        case 0: // add
+            return saturate(A + B);
+        case 1: // mul
+            return saturate(A * B);
+        case 2: // sub
+            return saturate(A - B);
+        case 3: // sub
+            return saturate(A / B);
+        default: // default to addition
+            return saturate(A + B);
+    }
+}
+
+float2 operation_picker(in float2 A, in float2 B, in float operation)
+{
+    
+    [forcecase] switch(operation)
+    {
+        case 0: // add
+            return saturate(A + B);
+        case 1: // mul
+            return saturate(A * B);
+        case 2: // sub
+            return saturate(A - B);
+        case 3: // sub
+            return saturate(A / B);
+        default: // default to addition
+            return saturate(A + B);
+    }
+}
+
+float3 operation_picker(in float3 A, in float3 B, in float operation)
+{
+    
+    [forcecase] switch(operation)
+    {
+        case 0: // add
+            return saturate(A + B);
+        case 1: // mul
+            return saturate(A * B);
+        case 2: // sub
+            return saturate(A - B);
+        case 3: // sub
+            return saturate(A / B);
+        default: // default to addition
+            return saturate(A + B);
+    }
+}
+
+float4 operation_picker(in float4 A, in float4 B, in float operation)
+{
+    
+    [forcecase] switch(operation)
+    {
+        case 0: // add
+            return saturate(A + B);
+        case 1: // mul
+            return saturate(A * B);
+        case 2: // sub
+            return saturate(A - B);
+        case 3: // sub
+            return saturate(A / B);
+        default: // default to addition
+            return saturate(A + B);
+    }
+}
+
+float extract_fov()
+{
+    return 2.0f * atan((1.0f / unity_CameraProjection[1][1]))* (180.0f / 3.14159265f);
+}
+
+float fov_range(float old_min, float old_max, float value)
+{
+    float new_value = (value - old_min) / (old_max - old_min);
+    return new_value; 
+}
+
+float get_color_brightness(float3 color)
+{
+    return (color.r * 0.33f) + (color.g * 0.5f) + (color.b * 0.16f);
+}
+float get_color_temperature(float3 color) // this is a quick and dirty method
+{
+    // idea is that since temperature is based on warm vs cool, simply determining what the value b - r as the score will get a quick and cheap result
+    // while not perfect, its good enough. 
+    // in the case of of colors that are 1,1,1 or 0,0,0 the result will be 0.5 (neutral)
+
+    float score = (color.b - color.r);
+    // normalize the score to a range of 0.0 to 1.0
+    float temperature = (score + 1.0) / 2.0;
+
+    return saturate(temperature);
+}
+
+float get_lightamb_brightness()
+{
+    // copy of the same code from the CalcLighting function:
+    float3 ambient_color = max(half3(0.05f, 0.05f, 0.05f), max(ShadeSH9(half4(0.0, 0.0, 0.0, 1.0)),ShadeSH9(half4(0.0, -1.0, 0.0, 1.0)).rgb));
+    float3 light_color = max(ambient_color, _LightColor0.rgb);
+
+    return get_color_brightness(light_color);
+}
+
+float get_lightamb_temperature()
+{
+    // copy of the same code from the CalcLighting function:
+    float3 ambient_color = max(half3(0.05f, 0.05f, 0.05f), max(ShadeSH9(half4(0.0, 0.0, 0.0, 1.0)),ShadeSH9(half4(0.0, -1.0, 0.0, 1.0)).rgb));
+    float3 light_color = max(ambient_color, _LightColor0.rgb);
+
+    return get_color_temperature(light_color);
+}
+
+float get_light_brightness()
+{
+    return get_color_brightness(_LightColor0.rgb);
+}
+
+float get_light_temperature()
+{
+    return get_color_temperature(_LightColor0.rgb);
 }
 
 float3 hue_shift(float3 in_color, float material_id, float shift1, float shift2, float shift3, float shift4, float shift5, float shiftglobal, float autobool, float autospeed, float mask)
@@ -151,7 +348,6 @@ float3 hue_shift(float3 in_color, float material_id, float shift1, float shift2,
     {
         shift_all = shift[get_index(material_id)] + auto_shift;
     }
-     
     
     auto_shift = (_Time.y * autospeed) * autobool; 
     if(shiftglobal > 0)
@@ -171,17 +367,17 @@ float3 hue_shift(float3 in_color, float material_id, float shift1, float shift2,
     return lerp(in_color, adjusted_color, mask);
 }
 
-float3 normal_mapping(float3 normalmap, float4 vertexws, float2 uv, float3 normal)
+void normal_mapping(float3 normalmap, float3 vertexws, float scale, float2 uv, inout float3 normal, out float3 tangent, out float3 bitangent)
 {
     float3 bumpmap = normalmap.xyz;
     bumpmap.xy = bumpmap.xy * 2.0f - 1.0f;
 
-    bumpmap.z = max(-min(_BumpScale, 0.5f) + 1.0f, 0.001f);
-    bumpmap.xyz = _DummyFixedForNormal ? bumpmap : normalize(bumpmap);   // why why why
+    bumpmap.z = max(-min(scale, 0.5f) + 1.0f, 0.001f);
+    bumpmap.xyz = normalize(bumpmap);
 
     // world space position derivative
-    float3 p_dx = ddx(vertexws);
-    float3 p_dy = ddy(vertexws);  
+    float3 p_dx = ddx(vertexws.yzx);
+    float3 p_dy = ddy(vertexws.zxy);  
     // texture coord derivative
     float3 uv_dx;
     uv_dx.xy = ddx(uv);
@@ -197,17 +393,16 @@ float3 normal_mapping(float3 normalmap, float4 vertexws, float2 uv, float3 norma
     // useful for the two sided dresses and what not... 
     float3 corrected_normal = normal;   
     float2 tangent_direction = uv_det.xy * uv_dy.yz;
-    float3 tangent = (tangent_direction.y * p_dy.xyz) + (p_dx * tangent_direction.x);
-    tangent = normalize(tangent);
-    float3 bitangent = cross(corrected_normal.xyz, tangent.xyz);
-    bitangent = bitangent * -uv_det;    
+    tangent = normalize((tangent_direction.y * p_dy.xyz) + (p_dx * tangent_direction.x));
+    bitangent = cross(corrected_normal.xyz, tangent.xyz) * -uv_det;
     
     float3x3 tbn = {tangent, bitangent, corrected_normal};  
     float3 mapped_normals = mul(bumpmap.xyz, tbn);
     mapped_normals = normalize(mapped_normals); // for some reason, this normalize messes things up in mmd  
     mapped_normals = (0.99f >= bumpmap.z) ? mapped_normals : corrected_normal;  
-    return mapped_normals; 
+    normal = mapped_normals;
 }
+
 
 void detail_line(float2 sspos, float sdf, inout float3 diffuse)
 {
@@ -355,11 +550,37 @@ float shadow_area_transition(float lightmapao, float vertexao, float ndotl, floa
     return shadow;
 }
 
-void shadow_color(in float lightmapao, in float vertexao, in float customao, in float vertexwidth, in float ndotl, in float material_id, in float2 uv, inout float3 shadow, inout float3 metalshadow, inout float3 color, float3 light)
+float auto_night_shift()
+{
+    // save the current night shift value
+    float night_shift = _DayOrNight;
+
+    // get light brightness and temperature using quick and dirty functions:
+
+    float light_brightness = saturate(get_light_brightness()); 
+    float light_tempature = get_light_temperature();
+    
+    // remap from [0,1] to [1,0] and multiply by automatic night shift
+    light_brightness = saturate(smoothstep(1,0,light_brightness) * _AutomaticNight);
+
+    // add the temperature score to the brightness
+    // light_brightness = saturate(light_brightness + light_tempature);
+    light_brightness = max(saturate(light_brightness + light_tempature), light_tempature);
+
+    // check if automatic is enabled and apply the auto shifting or not
+    return _AutomaticNight ? saturate(light_brightness + night_shift) : night_shift;
+}
+
+void shadow_color(in float lightmapao, in float vertexao, in float customao, in float casted, in float vertexwidth, in float ndotl, in float material_id, in float2 uv, inout float3 shadow, inout float3 metalshadow, inout float3 color, float3 light)
 {   
     #if defined(use_shadow)
         float ao = 1.0f;
         if(_CustomAOEnable) ao = customao;
+        #if defined(is_stencil)
+            casted = 1.0f;
+        #endif
+        if(lightmapao > 0.8f) casted = 1.0f;
+        if(!_UseFaceMapNew) ao = ao * casted;
         float3 outcolor = (float3)1.0f;
         float4 warm_shadow_array[5] = 
         {
@@ -377,7 +598,11 @@ void shadow_color(in float lightmapao, in float vertexao, in float customao, in 
             _CoolShadowMultColor4,
             _CoolShadowMultColor5,
         };
-        outcolor = lerp(warm_shadow_array[get_index(material_id)], cool_shadow_array[get_index(material_id)], _DayOrNight);
+
+        // automatic night shifting
+        float night_shift = auto_night_shift();
+
+        outcolor = lerp(warm_shadow_array[get_index(material_id)], cool_shadow_array[get_index(material_id)], night_shift);
         
         float3 outshadow = (float3)1.0f;
         if(_UseShadowRamp) outshadow = shadow_area_ramp(lightmapao, vertexao, vertexwidth, ndotl, material_id);
@@ -403,7 +628,7 @@ void shadow_color(in float lightmapao, in float vertexao, in float customao, in 
             night_ramp_coords.x = shadow.x * ao;
             float3 dayramp = _PackedShadowRampTex.SampleLevel(sampler_linear_clamp, day_ramp_coords, 0.0f).xyz;
             float3 nightramp = _PackedShadowRampTex.SampleLevel(sampler_linear_clamp, night_ramp_coords, 0.0f);
-            float3 ramp = lerp(dayramp, nightramp, _DayOrNight);
+            float3 ramp = lerp(dayramp, nightramp, night_shift);
             color = lerp(1.0f, ramp, saturate(shadow.y + (1.0f - ao)));
             #endif
         }
@@ -701,17 +926,6 @@ void fresnel_hit(in float ndotv, inout float3 color)
         float3 rim_color = max(_ElementRimColor.xyz, _HitColor.xyz);
         color = (rim_color * ndotv) * (float3)_HitColorScaler + color;
     #endif
-}
-
-float extract_fov()
-{
-    return 2.0f * atan((1.0f / unity_CameraProjection[1][1]))* (180.0f / 3.14159265f);
-}
-
-float fov_range(float old_min, float old_max, float value)
-{
-    float new_value = (value - old_min) / (old_max - old_min);
-    return new_value; 
 }
 
 float outlinelerp(float start_scale, float end_scale, float start_z, float end_z, float z)
@@ -1097,17 +1311,18 @@ void star_cocks(inout float4 diffuse_color, float2 uv0, float2 uv1, float2 uv2, 
                 float2 screen_uv = sspos.xy / sspos.w;
                 screen_uv = screen_uv * 2.0f - 1.0f;
                 screen_uv.x = screen_uv.x * (_ScreenParams.x / _ScreenParams.y);
-
-                screen_uv = screen_uv * weird_view.x;
+                if(!_ScreenIsWorld) screen_uv = screen_uv * weird_view.x;
                 screen_uv = screen_uv * (float2)_StarTiling + (-star_uv);
                 star_uv = (float2)_UseScreenUV * screen_uv + star_uv;
-                star_uv = star_uv + frac(_Time.yy * _StarTexSpeed.xy);
+                float2 starspeed = _Skirktype ? -_StarTexSpeed : _StarTexSpeed;
+                star_uv = star_uv + frac(_Time.yy * starspeed);
 
                 float3 star_tex = _StarTex.Sample(sampler_linear_repeat, star_uv);
+                star_tex = _Skirktype ? star_tex.zzz : star_tex;
                 float star_grey =  dot(star_tex, float3(0.03968f, 0.4580f, 0.006f));
                 float star_flick = star_grey >= _StarFlickRange;
 
-                float2 star_mask = _StarMask.Sample(sampler_linear_repeat, uv).xy;
+                float2 star_mask = _StarMask.Sample(sampler_linear_repeat, uv);
                 float mask_red = -star_mask.x + 1.0f;
 
                 float3 flicker_color = lerp(0.0f, star_flicker.y * _StarFlickColor.xyz, star_flick);
@@ -1133,7 +1348,8 @@ void star_cocks(inout float4 diffuse_color, float2 uv0, float2 uv1, float2 uv2, 
                 float2 blocks = blockhighmask.xy * block_light.xy;
 
                 float2 brightuv = uv.xy + frac(_Time.yy * _BrightLineMaskSpeed.xy);
-                float brightmask = _BrightLineMask.Sample(sampler_linear_repeat, brightuv).x;
+                float4 brightmask = _BrightLineMask.Sample(sampler_linear_repeat, brightuv);
+                brightmask = _Skirktype ? brightmask.wwww : brightmask.xxxx;
                 brightmask = pow(brightmask, _BrightLineMaskContrast) * _BrightLineColor;
 
                 float3 block_thing = blocks.y + blocks.x;
@@ -1143,7 +1359,7 @@ void star_cocks(inout float4 diffuse_color, float2 uv0, float2 uv1, float2 uv2, 
 
                 float3 everything = star_color * mask_red + block_thing;
 
-                everything.xyz = diffuse_color.w * brightmask + everything.xyz; 
+                everything.xyz = diffuse_color.w * brightmask.x + everything.xyz; 
                 everything.xyz = _Color.xyz * diffuse_color.xyz + everything.xyz; 
                 diffuse_color.xyz = everything;
             #endif
@@ -1363,16 +1579,45 @@ void mavuika_vat_ps(inout float4 diffuse, in float4 uv, in float3 normal, in flo
     #endif   
 }
 
-int bitFieldInsert(int base, int insert, int start, int num)
-// the fact i had to write this function myself is stupid
+void stencil_mask(float4 pos, inout float4 color, float4 lightmap, float3 view, float2 uv)
 {
-    int mask = ~(0xffffffff < num) << start;
-    return (base & ~mask) | (insert << start);
-}
+        //  sample the textures depending on the source mode
+        float4 stencil_mask_texture = (float4)0.0f;
+        if(_StencilMaskSource == 0 || _StencilMaskSource == 2) // if eyemask or eye custom mask
+        {
+            stencil_mask_texture = _StencilMaskSource == 0 ? saturate(_EyeMask.Sample(sampler_linear_repeat, uv)) : _EyeMaskCustom.Sample(sampler_linear_repeat, uv);
+            if(_InvertMask) stencil_mask_texture += -1;
+        }
+        else if(_StencilMaskSource == 1) // if lightmap
+        {
+            stencil_mask_texture = lightmap;
+        }
+        else // only other option is none Ob
+        {
+            stencil_mask_texture = (float4)1.0f;
+        }
 
-void stencil_mask(float4 pos, inout float4 color, float4 lightmap, float3 view)
-{
-    // #if defined (is_stencil) 
+        // get base layer: 
+        float tmp;
+        float final_mask = packed_channel_picker(stencil_mask_texture, _StencilLayer0);
+
+        // dynamically create the other layers:
+        if(_StencilChannelCount > 0)
+        {
+            tmp = packed_channel_picker(stencil_mask_texture, _StencilLayer1);
+            final_mask = operation_picker(final_mask, tmp, _StencilLayer1Op);
+        }
+        if(_StencilChannelCount > 1)
+        {
+            tmp = packed_channel_picker(stencil_mask_texture, _StencilLayer2);
+            final_mask = operation_picker(final_mask, tmp, _StencilLayer2Op);
+        }
+        if(_StencilChannelCount > 2)
+        {
+            tmp = packed_channel_picker(stencil_mask_texture, _StencilLayer3);
+            final_mask = operation_picker(final_mask, tmp, _StencilLayer3Op);
+        }
+
         float filterMask = 1.0f;
         if(_StencilFilter > 0)
         {
@@ -1380,7 +1625,7 @@ void stencil_mask(float4 pos, inout float4 color, float4 lightmap, float3 view)
             if(_StencilFilter == 2) filterMask = saturate(step(pos.x, 0));
         }
 
-        filterMask = filterMask * _HairBlendSilhouette;
+        filterMask = filterMask * _HairTransparentValue;
         filterMask = max(0, filterMask);
 
         if(_StencilType == 2) // hair
@@ -1391,11 +1636,11 @@ void stencil_mask(float4 pos, inout float4 color, float4 lightmap, float3 view)
 
             float3 view_xz = normalize(view - dot(view, up) * up);
             float cosxz    = max(0.0f, dot(view_xz, forward));
-            float alpha_a  = saturate((1.0f - cosxz) / 0.658f);
+            float alpha_a  = saturate((1.0f - cosxz) / _AlphaXZ);
 
             float3 view_yz = normalize(view - dot(view, right) * right);
             float cosyz    = max(0.0f, dot(view_yz, forward));
-            float alpha_b  = saturate((1.0f - cosyz) / 0.293f);
+            float alpha_b  = saturate((1.0f - cosyz) / _AlphaYZ);
             float hair_alpha;
             hair_alpha = max(alpha_a, alpha_b);
 
@@ -1404,46 +1649,205 @@ void stencil_mask(float4 pos, inout float4 color, float4 lightmap, float3 view)
             // color.xyz = hair_alpha;
             color.w = hair_alpha;
         }
-        else if(_StencilType == 1) // eye
-        {
-            color.w = filterMask;
-            clip(color.w - 0.01f);
-        }
-        else if(_StencilType == 0) // face
+        else if(_StencilType == 0 || _StencilType == 1) // face
         {     
-            color.w = ( (lightmap.x - lightmap.w) <= 0) * saturate(step(0.0, pos.y - 0.01f)) * filterMask;
+            color.w = conditional_picker(final_mask, _StencilConditionThresh, _StencilConditional) * filterMask;
             clip(color.w - 0.01f);
         }
         else
         {
             discard;
         }
-    // #endif
+}
+
+void nbr (in float3 normal, in float3 view, in float3 light, in float4 lightmap, inout float4 color)
+{
+    #if defined(use_nbrbase)
+    float3 half_vector = normalize(light + view);
+
+    float ndoth = max(dot(normal, half_vector), 0.0001f);
+    float ldoth = max(dot(light, half_vector), 0.0001f);
+
+    float roughness = _NbrRoughness * 0.5f;
+
+    float d = ndoth * ndoth * (roughness * roughness - 1.0f) + 1.00001f;
+    float ldoth2 = ldoth * ldoth;
+    float3 specular = (roughness * roughness) / ((d * d) * max(0.1, ldoth2) * 4.0f);
+    specular.x = clamp(specular.x, 0.0, 1000.0) * _NbrScale;
+
+    specular = lerp(_NbrBaseColor, 1.0f, specular.xxx);
+
+
+
+    float2 sphere_uv = mul(normal, (float3x3)UNITY_MATRIX_I_V ).xy;
+    sphere_uv.x = sphere_uv.x * _NbrRefTiling; 
+    sphere_uv = sphere_uv * 0.5f + 0.5f;  
+
+    float3 sphere = (_NbrRefTex.SampleLevel(sampler_linear_repeat, sphere_uv, (_NbrRefBlur - 0.15) * 10, 0).xyz * 5) * _NbrRefScale;
+
+    float3 reflection = (sphere + specular) * (color.xyz * 5.0f); 
+
+
+    color.xyz = color + reflection;
+    #endif
 }
 
 // even if i dont push this for the january update, id like to get the back end started
-void character_stocking(in float3 normal, in float3 view, in float2 uv, in float materialRegion, in float check, inout float4 color)
-// initial implementation based on how I know mihoyo likes to implement stockings 
-// thanks to star rail and hi3p2
+void character_stocking(in float3 normal, in float3 view, in float3 light, in float2 uv, in float4 lightmap, inout float4 color)
 {
     // need to make sure the logic doesnt escape at all
     #if defined(use_stockings) 
     if(_UseCharacterStockings)
     {
-        float2 detailUV = uv;
-        float2 decalUV = uv;
+        float4 stocking_color = 1.0f;
+        float3 stock_view = normalize(view + float3(0.0f, _StockingsSpecularShift, 0.0f));
+        float3 half_vector = normalize(stock_view + light);
 
-        float4 lightmap = _LightMapTex.Sample(sampler_linear_clamp, uv);
+        float ndoth = max(dot(normal, half_vector), 0.0001f);
+        float3 stocking_specular = pow(ndoth, _StockingsSpecularRange);
+        stocking_specular = smoothstep(0.5f, _StockingsSpecularSharpe, stocking_specular) * _StockingsSpecularScale;
 
-        float3 shifted_view = (view.xzy + float3(0.0f, 0.0f, _StockingsSpecularShift));
+        float3 detail_specular = pow(ndoth, _StockingsSpecularDetailRange);
+        detail_specular = smoothstep(0.5f, _StockingsSpecularDetailSharpe, detail_specular) * _StockingsSpecularDetailScale;
+        detail_specular = detail_specular * _StockingsSpecularDetailColor;
 
-        float3 half_vector = normalize(shifted_view + _WorldSpaceLightPos0);
+        float ndotv = max(dot(normal, stock_view), 0.0001f);
+        float stocking_shadow = pow(ndotv, _StockingsShadowRange);
+        float stocking_light  = pow(ndotv, _StockingsLightRange);
+        stocking_shadow = 1.0f - min(stocking_shadow, 1.0f);
+        stocking_light  = min(stocking_light, 1.0f);
 
-        float ndoth = dot(normal, half_vector);
+        float specular_dist = saturate(pow(length(view) + -_StockingsSpecularDistance, 2.0f)) * (_StockingsSpecularFade + -1.0) + 1.0f;
 
-        // color.xyz = ndoth;
+        // the shit that shows up on escoffiers tights now: 
+        float2 shining_uv = uv * _StockingShiningTiling;
+        float2 cell = floor(shining_uv);
+        float2 frac_uv = frac(shining_uv);
 
+        // Generate pseudo-random values for cell
+        float4 cell_rand = frac(cell.xxyy * float4(0.0973, 0.103, 0.0973, 0.1031));
+        float4 cell_rand2 = frac(cell_rand.zxwy + 33.33);
+        float cell_dot = dot(cell_rand.wyxz, cell_rand2);
+        float4 cell_mix = frac((cell_rand + cell_dot) * (cell_rand + cell_dot + cell_rand.wwyx));
+        float cell_phase = cell_mix.z + 0.5;
+        float cell_size = _StockingShiningSize * cell_phase;
+        float2 cell_offset = frac_uv - cell_mix.xy;
+        float dist = dot(cell_offset, cell_offset);
+        float shining = max((cell_size - dist) / (cell_size), 0.0);
 
+        // Density/animation
+        float density_rand = (1.0 - cell_mix.w) / _StockingShiningDensity;
+        float cam_dist = length(_WorldSpaceCameraPos.xyz * float3(2.5, 2.5, 1.0));
+        float phase = (density_rand + cam_dist) * 6.2831855 + (_Time.y * _StockingShiningFrequencncy);
+        shining *= max(sin(phase), 0.0);
+
+        // Density cutoff
+        float density_cut = 1.0 - _StockingShiningDensity;
+        shining *= (cell_mix.w >= density_cut);
+
+        // Repeat for 3 more neighbor cells (offsets: (1,0), (0,1), (1,1))
+        float3 shining_sum = shining * frac(cell_rand.xyw + cell_rand2.yzw);
+        for (int i = 0; i < 3; ++i) {
+            float2 offset = float2((i == 0), (i == 1));
+            float2 n_cell = cell + offset;
+            float4 n_cell_rand = frac(n_cell.xxyy * float4(0.0973, 0.103, 0.0973, 0.1031));
+            float4 n_cell_rand2 = frac(n_cell_rand.zxwy + 33.33);
+            float n_cell_dot = dot(n_cell_rand.wyxz, n_cell_rand2);
+            float4 n_cell_mix = frac((n_cell_rand + n_cell_dot) * (n_cell_rand + n_cell_dot + n_cell_rand.wwyx));
+            float n_cell_phase = n_cell_mix.z + 0.5;
+            float n_cell_size = _StockingShiningSize * n_cell_phase;
+            float2 n_frac_uv = frac_uv - (offset + n_cell_mix.xy);
+            float n_dist = dot(n_frac_uv, n_frac_uv);
+            float n_shining = max((n_cell_size - n_dist) / (n_cell_size), 0.0);
+            float n_density_rand = (1.0 - n_cell_mix.w) / _StockingShiningDensity;
+            float n_phase = (n_density_rand + cam_dist) * 6.2831855 + (_Time.y * _StockingShiningFrequencncy);
+            n_shining *= max(sin(n_phase), 0.0);
+            n_shining *= (n_cell_mix.w >= density_cut);
+            shining_sum += n_shining * frac(n_cell_rand.xyw + n_cell_rand2.yzw);
+        }
+
+        // Final color
+        float3 shine_color = _StockingShiningIntensity * _StockingShiningColor.xyz;
+        shine_color *= _StockingsSpecularScale * _StockingsSpecularColor.xyz;
+        shine_color *= shine_color * stocking_light;
+        shine_color *= _StockingShiningColorBlend;
+        float3 stocking_shine = shining_sum * shine_color;
+
+        // sample the pattern texture
+        float2 pattern_uv = uv * _StockingsDetailPattenTiling;
+        float pattern_tex = _StockingsDetailTex.Sample(sampler_linear_repeat, pattern_uv).z;  
+        float blend_tex = _StockingsDetailTex.Sample(sampler_linear_repeat, uv).w;
+        
+        float pattern = lerp(1.0f, pattern_tex, _StockingsDetailPattenScale);
+        pattern = -blend_tex + pattern;
+        pattern = saturate(pattern + 1.0f); 
+
+        float3 pattern_color = lerp(_StockingsDetailPattenColor, 1.0f, pattern);
+        float s_light = stocking_light * ((-lightmap.z) + 1.0); 
+
+        float3 stock_light = lerp(color.xyz, saturate((color.xyz * _StockingsLightColor.xyz) * _StockingsLightScale), s_light); 
+
+        float3 something = pattern_color * stock_light; 
+
+        float3 stockL_shadow = saturate(something + _StockingsShadowColor.xyz);
+        float3 stock_shadow = something * _StockingsShadowColor.xyz; 
+        stock_shadow = _StockingsWHite ? stockL_shadow : stock_shadow; 
+        stock_light = -stock_light * pattern_color + stock_shadow;
+        
+        pattern_color = stocking_shadow *  stock_light  + pattern_color;
+
+        float3 specular = (lightmap.xxx * (stocking_specular * _StockingsSpecularColor.xyz + detail_specular)) * specular_dist; 
+
+        color.xyz = color * pattern_color + (stocking_shine + specular);
     }
     #endif
+}
+
+void avatar_death(in float2 uv, in float diffuse_alpha, in bool isFront, inout float4 color)
+{
+    bool check_alpha = diffuse_alpha > 0.00999f;
+    float2 dissolve_uv = uv.xy * _DissolveNoiseST.xy + _DissolveNoiseST.zw;
+    float dissolve_tex = _DissolveNoise.Sample(sampler_linear_repeat, dissolve_uv.xy).x;
+    float dissolve_threshhold = (_DissolveValue * 1.2f + -0.1f);
+    float dissolve_edge_thresh = dissolve_threshhold * _DissolveEdgeWidth;
+
+    bool dissolve_check = dissolve_edge_thresh <= dissolve_tex;
+
+    float death_edge = dissolve_check ? 1.0f : float(0.0f);
+    float alpha = max(death_edge, dissolve_tex);
+    float3 death_color = _DissolveColor.xyz * (float3)(_DissolveColorScaler);
+    float edge = saturate(color.w + death_edge);
+
+    bool dissolvable = alpha == 1.0f;
+    // color.xyz = dissolve_tex<=dissolve_threshhold;
+    death_color.xyz = ((float3)(death_edge) * death_color.xyz) + (-color.xyz);
+    death_color.xyz = ((float3)(edge) * death_color.xyz) + color.xyz;
+    color.xyz = (dissolvable) ? death_color.xyz : color.xyz;
+    // color.xyz = death_color.xyz;
+    clip(isFront-0.1);
+    if(((int)(dissolve_threshhold >= dissolve_tex) * int(0xffffffffu))==0){discard;}
+}
+
+float4 tonemapping(float4 color)
+{
+    float4 final = color;
+    float3 bloom =  max(color - 0.6, 0.0f) * 0.7;
+    final.xyz = bloom * 1 + color;
+    final.xyz = final * 1;
+    
+    float3 tmp = final.xyz;
+    float3 f0 = (1.36 * final + 0.047) * final;
+    float3 f1 = (0.93 * final + 0.56) * final + 0.14;
+    final.xyz = saturate(f0 / f1);
+
+    float3x3 whiteBalanceMatrix = float3x3(
+            1.0,0.021,-0.019,
+            0.001,1.03999996,0.00999999978,
+            -0.0,-0.00,0.951
+        );
+    float3 balanced = mul(whiteBalanceMatrix, final.rgb); 
+
+    final.xyz = balanced;
+
+    return final;
 }
