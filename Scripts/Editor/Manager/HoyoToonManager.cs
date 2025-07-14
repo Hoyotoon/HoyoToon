@@ -11,15 +11,23 @@ namespace HoyoToon
         [MenuItem("Assets/HoyoToon/Full Setup", priority = 0)]
         private static void FullSetup()
         {
+            // Check if resources are available before proceeding
+            if (!HoyoToonResourceManager.ValidateResourcesAvailable())
+            {
+                return;
+            }
+
             HoyoToonDataManager.GetHoyoToonData();
             HoyoToonMaterialManager.GenerateMaterialsFromJson();
+            
+            // Setup FBX with integrated humanoid configuration
             SetupFBX();
+            
             GameObject selectedObject = HoyoToonSceneManager.AddSelectedObjectToScene();
             if (selectedObject != null)
             {
                 HoyoToonMeshManager.GenTangents(selectedObject);
             }
-
         }
 
         [MenuItem("Assets/HoyoToon/Mesh/Setup FBX", priority = 10)]
@@ -27,6 +35,8 @@ namespace HoyoToon
         {
             HoyoToonMeshManager.SetFBXImportSettings(HoyoToonParseManager.GetAssetSelectionPaths());
         }
+
+        // Humanoid configuration is now integrated into FBX setup
 
         [MenuItem("GameObject/HoyoToon/Mesh/Generate Tangents", priority = 21)]
         private static void GenerateTangents()
@@ -75,13 +85,13 @@ namespace HoyoToon
             Application.OpenURL("https://discord.gg/hoyotoon");
         }
 
-        // [MenuItem("HoyoToon/Resources/Documentation", priority = 10)]
+        // [MenuItem("HoyoToon/Socials/Documentation", priority = 10)]
         // private static void OpenDocumentation()
         // {
         //     Application.OpenURL("https://docs.hoyotoon.com");
         // }
 
-        [MenuItem("HoyoToon/Resources/Asset Repo", priority = 11)]
+        [MenuItem("HoyoToon/Socials/Asset Repo", priority = 11)]
         private static void OpenAssetRepo()
         {
             Application.OpenURL("https://github.com/HoyoToon/HoyoToon-Assets");
