@@ -8,7 +8,7 @@ Shader "HoyoToon/Genshin/Particles"
         [HideInInspector] ShaderLogo ("UI/gilogo", Float) = 0
         [HideInInspector] shader_is_using_hoyeditor ("", Float) = 0
 		[HideInInspector] footer_github ("{texture:{name:hoyogithub},action:{type:URL,data:https://github.com/Melioli/HoyoToon},hover:Github}", Float) = 0
-		[HideInInspector] footer_discord ("{texture:{name:hoyodiscord},action:{type:URL,data:https://discord.gg/meliverse},hover:Discord}", Float) = 0
+		[HideInInspector] footer_discord ("{texture:{name:hoyodiscord},action:{type:URL,data:https://discord.gg/hoyotoon},hover:Discord}", Float) = 0
         
         [HoyoToonWideEnum(One Channel, 0, UV Move, 1, Liquid Common, 2, Lightning Bolt, 3, Line Renderer, 4)] _ParticleType ("Particle Type", Float) = 0
 
