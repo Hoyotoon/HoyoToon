@@ -7,7 +7,7 @@
 
 ## Features
 
-- A shader designed for the Built-in Pipeline, aiming to accurately reproduce the shading style of Hoyoverse games and now Wuthering waves too.
+- A shader designed for the Built-in Pipeline, aiming to accurately reproduce the shading style of Hoyoverse games and now Wuthering Waves too.
 - The shader is based on the latest version of each game.
 - Supports Genshin Impact (Weapons too)
 - Supports Honkai Impact (Part 1 and 2)
