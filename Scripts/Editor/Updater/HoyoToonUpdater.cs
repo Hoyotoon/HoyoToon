@@ -71,10 +71,13 @@ namespace HoyoToon
             {
                 yield return webRequest.SendWebRequest();
 
-                string remoteVersion = webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError
-                    ? null
-                    : JsonConvert.DeserializeObject<Dictionary<string, object>>(webRequest.downloadHandler.text)?.TryGetValue("version", out var version) == true ? version.ToString() : null;
-
+                string remoteVersion = null;
+                if (!(webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError))
+                {
+                    var dict = JsonConvert.DeserializeObject<Dictionary<string, object>>(webRequest.downloadHandler.text);
+                    if (dict != null && dict.TryGetValue("version", out var version)) remoteVersion = version?.ToString();
+                }
+                
                 if (remoteVersion == null)
                 {
                     HoyoToonLogs.ErrorDebug($"Error fetching remote package.json: {webRequest.error}");
