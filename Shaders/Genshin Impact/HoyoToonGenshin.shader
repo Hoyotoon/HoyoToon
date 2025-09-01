@@ -1,8 +1,8 @@
 Shader "HoyoToon/Genshin/Character"
 {
     Properties 
-  { 
-      [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0 
+    { 
+        [HideInInspector] shader_is_using_HoyoToon_editor("", Float)=0 
         //Header
         //[HideInInspector] shader_master_label ("✧<b><i><color=#C69ECE>HoyoToon Genshin Impact</color></i></b>✧", Float) = 0
 		[HideInInspector] ShaderBG ("UI/background", Float) = 0
@@ -501,6 +501,11 @@ Shader "HoyoToon/Genshin/Character"
                 [Vector3]  _OutlineWidthAdjustScales ("Scale at Distances", Vector) = (0.01, 0.245, 0.6, 0.0)
                 _MaxOutlineZOffset ("Max Z-Offset", Float) = 1.0
             [HideInInspector] end_outlinesoffset ("", Float) = 0
+            [HideInInspector] start_outlinestencil("Outline Stencil", Float) = 0
+                _StencilRefO ("Ref", Int) = 244
+                _StencilCompO ("Comparison", Int) = 8 // Always
+                _StencilPassO ("Pass", Int) = 0 // Keep
+            [HideInInspector] end_outlinestencil ("", Float) = 0
         [HideInInspector] end_outlines ("", Float) = 0
         //endex
         //Outlines End
@@ -808,8 +813,8 @@ Shader "HoyoToon/Genshin/Character"
                 [HideInInspector] start_nyxoutline ("Outline", Float) = 0
                     [Helpbox] _NyxOutlineHelpBox("This effect is incompatible with the Eye Stencils as it introduces conflicting Stencil States.", Float) = 0
                     [Toggle(ENABLE_NYX)] _EnableNyxOutline ("Enable Outline--{on_value_actions:[
-                    {value:1,actions:[{type:SET_PROPERTY,data:_StencilPassA=2}, {type:SET_PROPERTY,data:_StencilPassNyx=0}, {type:SET_PROPERTY,data:_StencilCompA=8}]},
-                    {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompNyx=6}, {type:SET_PROPERTY,data:_StencilRef=10}, {type:SET_PROPERTY,data:_StencilRefNyx=10}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]}]}", Float) = 0
+                    {value:1,actions:[{type:SET_PROPERTY,data:_StencilPassA=2},{type:SET_PROPERTY,data:_StencilPassB=2},{type:SET_PROPERTY,data:_sdwPass=2}, {type:SET_PROPERTY,data:_StencilPassNyx=0}, {type:SET_PROPERTY,data:_sdwComp=8}, {type:SET_PROPERTY,data:_StencilCompA=8},{type:SET_PROPERTY,data:_StencilCompB=8}]},
+                    {value:1,actions:[{type:SET_PROPERTY,data:_StencilCompNyx=6}, {type:SET_PROPERTY,data:_StencilRefA=10}, {type:SET_PROPERTY,data:_sdwRef=10}, {type:SET_PROPERTY,data:_StencilRefB=10}, {type:SET_PROPERTY,data:_StencilRefNyx=10}, {type:SET_PROPERTY,data:render_queue=2000}, {type:SET_PROPERTY,data:render_type=Opaque}]}]}", Float) = 0
                     [Toggle] _LineAffected ("Affected by Light", Float) = 0
                     _NyxStateOutlineColor ("Color", Color) =  (1,1,1,1)
                     _NyxStateOutlineColorScale ("Color Intensity", Float) = 1
@@ -1176,7 +1181,7 @@ Shader "HoyoToon/Genshin/Character"
         #include "Includes/HoyoToonGenshin-common.hlsl"
 
         ENDHLSL
-
+        //ifex _EnableNyxOutline == 1
         Pass // Character Pass, the only REQUIRED pass
         {
             Name "HairShadow Pass"
@@ -1204,7 +1209,7 @@ Shader "HoyoToon/Genshin/Character"
             #include "Includes/HoyoToonGenshin-program.hlsl"
             ENDHLSL
         }      
-        
+        //endex
         Pass // Character Pass, the only REQUIRED pass
         {
             Name "Character Pass"
@@ -1287,9 +1292,9 @@ Shader "HoyoToon/Genshin/Character"
             Cull Front
             Stencil
             {
-				ref 255
-                Comp Always
-                Pass Keep
+				ref [_StencilRefO]
+                Comp [_StencilCompO]
+                Pass [_StencilPassO]
             }
             HLSLPROGRAM
             #pragma multi_compile_fwdbase
@@ -1328,7 +1333,7 @@ Shader "HoyoToon/Genshin/Character"
 				Ref [_StencilRefNyx]
 				Comp [_StencilCompNyx]
 				Pass [_StencilPassNyx]
-				Fail [_StencilPassNyx]
+				// Fail [_StencilPassNyx]
 			}
             HLSLPROGRAM
             #pragma multi_compile_fwdbase

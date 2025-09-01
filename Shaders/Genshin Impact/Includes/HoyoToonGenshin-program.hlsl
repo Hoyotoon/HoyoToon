@@ -544,23 +544,28 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
     #endif
 
     #if defined(_is_shadow)
-        if(_UseHairShadow && variant_selector == 4) // if material type is bangs
-        {  
-            float4 hair_color = lerp(_HairShadowColor, _CoolHairShadowColor, night_shift);
-            hair_color.w = 0.07f;
-            diffuse = hair_color;
-            return diffuse;
-        }
-        else if(_UseHairShadow && variant_selector == 1) // if material type is face
+        if(!_EnableNyxOutline)
         {
-            float shadow_mask = shadow_area_face(uv_a, light).x;
-            clip(shadow_mask - 0.1f);
-            return shadow_mask;
+            if(_UseHairShadow && variant_selector == 4) // if material type is bangs
+            {  
+                float4 hair_color = lerp(_HairShadowColor, _CoolHairShadowColor, night_shift);
+                hair_color.w = 0.07f;
+                diffuse = hair_color;
+                return diffuse;
+            }
+            else if(_UseHairShadow && variant_selector == 1) // if material type is face
+            {
+                float shadow_mask = shadow_area_face(uv_a, light).x;
+                clip(shadow_mask - 0.1f);
+                return shadow_mask;
+            }
+            else
+            {
+                clip(-1);
+            }
         }
         else
-        {
-            clip(-1);
-        }
+        {return diffuse;} // if shadow pass, clip everything so it doesn't render
     #endif
 
     #ifdef _IS_PASS_BASE // Basic character shading pass, should only include the basic enviro light stuff + debug rendering shit
@@ -901,9 +906,10 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         #endif
 
         if(_EnableTonemapping) out_color = tonemapping(out_color);
-
-        float4 emis_color = diffuse.xyzz;
-        float4 emis_color_eye = diffuse.xyzz;
+        
+        float4 emis_color = float4(diffuse.xyz, 1.0f);
+        float4 emis_color_eye = float4(diffuse.xyz, 1.0f);
+        
         emis_color = emission_color(emis_color, material_id);
         emis_color_eye = emission_color_eyes(emis_color, material_id);
         #if defined(can_shift)
@@ -922,7 +928,6 @@ float4 ps_model(vs_out i,  bool vface : SV_ISFRONTFACE) : SV_TARGET
         
         out_color.xyz = lerp(out_color.xyz, emis_color, ((mask * emis_color.w) * emis_check));
         out_color.xyz = lerp(out_color.xyz, emis_color_eye, (eye_mask * emis_check_eye) * emis_color_eye.w);
-
 
 
         #if defined(can_debug)  

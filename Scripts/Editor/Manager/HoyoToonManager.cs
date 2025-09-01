@@ -27,6 +27,13 @@ namespace HoyoToon
             if (selectedObject != null)
             {
                 HoyoToonMeshManager.GenTangents(selectedObject);
+                EditorUtility.DisplayDialog("Full Setup Complete", 
+                    "Model has been fully configured and added to the scene with all optimizations applied!", "OK");
+            }
+            else
+            {
+                EditorUtility.DisplayDialog("Setup Complete", 
+                    "Model configuration completed. You can now manually add the model to the scene.", "OK");
             }
         }
 

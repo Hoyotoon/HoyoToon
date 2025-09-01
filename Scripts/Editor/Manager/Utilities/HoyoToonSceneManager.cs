@@ -17,6 +17,22 @@ namespace HoyoToon
                 return;
             }
 
+            AddAvatarLight(selectedObject);
+        }
+
+        /// <summary>
+        /// Adds AvatarLight to a specific target GameObject
+        /// </summary>
+        /// <param name="targetObject">The GameObject to add AvatarLight to</param>
+        public static void AddAvatarLight(GameObject targetObject)
+        {
+            if (targetObject == null)
+            {
+                EditorUtility.DisplayDialog("Error", "No target object provided for AvatarLight.", "OK");
+                HoyoToonLogs.WarningDebug("No target object provided for AvatarLight.");
+                return;
+            }
+
 #if VRC_SDK_VRCSDK3
             var avatarLightPrefab = Resources.Load<GameObject>("Prefabs/AvatarLight VRC");
             if (avatarLightPrefab == null)
@@ -35,7 +51,7 @@ namespace HoyoToon
             }
 #endif
 
-            var avatarLight = UnityEngine.Object.Instantiate(avatarLightPrefab, selectedObject.transform);
+            var avatarLight = UnityEngine.Object.Instantiate(avatarLightPrefab, targetObject.transform);
             avatarLight.name = "AvatarLight";
             avatarLight.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             avatarLight.transform.localScale = Vector3.one;

@@ -409,6 +409,14 @@ namespace HoyoToon
             HoyoToonParseManager.DetermineBodyType();
 
             GameObject rootObject = GetRootParent(selectedObject);
+            
+            // Check if any meshes already have tangents generated
+            if (HasTangentsGenerated(selectedObject))
+            {
+                HoyoToonLogs.LogDebug("Tangents already exist. Automatically resetting before regenerating...");
+                ResetTangents(selectedObject);
+            }
+
             StoreOriginalMeshes(rootObject);
 
             bool processAllChildren = selectedObject == rootObject;
@@ -417,7 +425,12 @@ namespace HoyoToon
             {
                 if (meshFilter.sharedMesh != null)
                 {
-                    meshFilter.sharedMesh = ProcessAndSaveMesh(meshFilter.sharedMesh, meshFilter.name);
+                    // Only process if mesh doesn't come from Meshes folder (not already processed)
+                    string meshPath = AssetDatabase.GetAssetPath(meshFilter.sharedMesh);
+                    if (!IsTangentMesh(meshPath))
+                    {
+                        meshFilter.sharedMesh = ProcessAndSaveMesh(meshFilter.sharedMesh, meshFilter.name);
+                    }
                 }
             });
 
@@ -425,7 +438,12 @@ namespace HoyoToon
             {
                 if (skinMeshRender.sharedMesh != null)
                 {
-                    skinMeshRender.sharedMesh = ProcessAndSaveMesh(skinMeshRender.sharedMesh, skinMeshRender.name);
+                    // Only process if mesh doesn't come from Meshes folder (not already processed)
+                    string meshPath = AssetDatabase.GetAssetPath(skinMeshRender.sharedMesh);
+                    if (!IsTangentMesh(meshPath))
+                    {
+                        skinMeshRender.sharedMesh = ProcessAndSaveMesh(skinMeshRender.sharedMesh, skinMeshRender.name);
+                    }
                 }
             });
 
@@ -457,6 +475,14 @@ namespace HoyoToon
         {
             if (mesh == null) return null;
 
+            // Check if this mesh is already a processed tangent mesh
+            string currentMeshPath = AssetDatabase.GetAssetPath(mesh);
+            if (IsTangentMesh(currentMeshPath))
+            {
+                HoyoToonLogs.LogDebug($"Skipping already processed tangent mesh: {mesh.name}");
+                return mesh;
+            }
+
             Mesh newMesh;
             if (HoyoToonParseManager.currentBodyType == HoyoToonParseManager.BodyType.HI3P2)
             {
@@ -466,6 +492,7 @@ namespace HoyoToon
             {
                 if (ShouldSkipMesh(componentName))
                 {
+                    HoyoToonLogs.LogDebug($"Skipping mesh due to skip rules: {componentName}");
                     return mesh;
                 }
                 else
@@ -483,12 +510,14 @@ namespace HoyoToon
             }
             path = folderPath + "/" + newMesh.name + ".asset";
 
+            // Remove existing asset if it exists
             if (AssetDatabase.LoadAssetAtPath<Mesh>(path) != null)
             {
                 AssetDatabase.DeleteAsset(path);
             }
 
             AssetDatabase.CreateAsset(newMesh, path);
+            HoyoToonLogs.LogDebug($"Created tangent mesh: {path}");
             return newMesh;
         }
 
@@ -624,12 +653,23 @@ namespace HoyoToon
             }
 
             bool processAllChildren = selectedObject == rootObject;
+            bool anyMeshesReset = false;
 
             ProcessMeshComponents<MeshFilter>(selectedObject, processAllChildren, (meshFilter) =>
             {
                 if (meshFilter.sharedMesh != null)
                 {
-                    meshFilter.sharedMesh = RestoreOriginalMesh(modelName, meshFilter.sharedMesh.name);
+                    // Check if this mesh is a tangent mesh (from Meshes folder)
+                    string currentMeshPath = AssetDatabase.GetAssetPath(meshFilter.sharedMesh);
+                    if (IsTangentMesh(currentMeshPath) || HasOriginalMeshStored(modelName, meshFilter.sharedMesh.name))
+                    {
+                        Mesh restoredMesh = RestoreOriginalMesh(modelName, meshFilter.sharedMesh.name);
+                        if (restoredMesh != null)
+                        {
+                            meshFilter.sharedMesh = restoredMesh;
+                            anyMeshesReset = true;
+                        }
+                    }
                 }
             });
 
@@ -637,9 +677,25 @@ namespace HoyoToon
             {
                 if (skinMeshRender.sharedMesh != null)
                 {
-                    skinMeshRender.sharedMesh = RestoreOriginalMesh(modelName, skinMeshRender.sharedMesh.name);
+                    // Check if this mesh is a tangent mesh (from Meshes folder)
+                    string currentMeshPath = AssetDatabase.GetAssetPath(skinMeshRender.sharedMesh);
+                    if (IsTangentMesh(currentMeshPath) || HasOriginalMeshStored(modelName, skinMeshRender.sharedMesh.name))
+                    {
+                        Mesh restoredMesh = RestoreOriginalMesh(modelName, skinMeshRender.sharedMesh.name);
+                        if (restoredMesh != null)
+                        {
+                            skinMeshRender.sharedMesh = restoredMesh;
+                            anyMeshesReset = true;
+                        }
+                    }
                 }
             });
+
+            // Clean up Meshes folder after reset
+            if (anyMeshesReset)
+            {
+                CleanupMeshesFolder(rootObject);
+            }
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
@@ -650,13 +706,21 @@ namespace HoyoToon
             if (originalMeshPaths[modelName].TryGetValue(meshName, out var meshInfo))
             {
                 string assetPath = AssetDatabase.GUIDToAssetPath(meshInfo.guid);
-                Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
-                foreach (Object asset in assets)
+                if (!string.IsNullOrEmpty(assetPath))
                 {
-                    if (asset is Mesh originalMesh && originalMesh.name == meshInfo.meshName)
+                    Object[] assets = AssetDatabase.LoadAllAssetsAtPath(assetPath);
+                    foreach (Object asset in assets)
                     {
-                        return originalMesh;
+                        if (asset is Mesh originalMesh && originalMesh.name == meshInfo.meshName)
+                        {
+                            HoyoToonLogs.LogDebug($"Successfully restored original mesh: {meshName}");
+                            return originalMesh;
+                        }
                     }
+                }
+                else
+                {
+                    HoyoToonLogs.ErrorDebug($"Asset path not found for GUID: {meshInfo.guid} (mesh: {meshName})");
                 }
             }
 
@@ -666,11 +730,26 @@ namespace HoyoToon
 
         private static GameObject GetRootParent(GameObject obj)
         {
-            while (obj.transform.parent != null)
+            if (obj == null) return null;
+            
+            GameObject current = obj;
+            while (current.transform.parent != null)
             {
-                obj = obj.transform.parent.gameObject;
+                current = current.transform.parent.gameObject;
             }
-            return obj;
+            
+            // For scene instances, make sure we're getting the actual root
+            // Check if this is a prefab instance in the scene
+            if (PrefabUtility.IsPartOfPrefabInstance(current))
+            {
+                GameObject prefabRoot = PrefabUtility.GetOutermostPrefabInstanceRoot(current);
+                if (prefabRoot != null)
+                {
+                    current = prefabRoot;
+                }
+            }
+            
+            return current;
         }
 
         private static void LoadOriginalMeshPaths()
@@ -713,6 +792,153 @@ namespace HoyoToon
 
         #region Helper Methods
 
+        /// <summary>
+        /// Check if a mesh path indicates it's a tangent mesh (from Meshes folder)
+        /// </summary>
+        private static bool IsTangentMesh(string meshPath)
+        {
+            return !string.IsNullOrEmpty(meshPath) && meshPath.Contains("/Meshes/") && meshPath.EndsWith(".asset");
+        }
+
+        /// <summary>
+        /// Check if any meshes in the selected object have tangents generated
+        /// </summary>
+        private static bool HasTangentsGenerated(GameObject selectedObject)
+        {
+            bool hasAnyTangents = false;
+            bool processAllChildren = selectedObject == GetRootParent(selectedObject);
+
+            ProcessMeshComponents<MeshFilter>(selectedObject, processAllChildren, (meshFilter) =>
+            {
+                if (meshFilter.sharedMesh != null)
+                {
+                    string meshPath = AssetDatabase.GetAssetPath(meshFilter.sharedMesh);
+                    if (IsTangentMesh(meshPath))
+                    {
+                        hasAnyTangents = true;
+                    }
+                }
+            });
+
+            if (!hasAnyTangents)
+            {
+                ProcessMeshComponents<SkinnedMeshRenderer>(selectedObject, processAllChildren, (skinnedMeshRenderer) =>
+                {
+                    if (skinnedMeshRenderer.sharedMesh != null)
+                    {
+                        string meshPath = AssetDatabase.GetAssetPath(skinnedMeshRenderer.sharedMesh);
+                        if (IsTangentMesh(meshPath))
+                        {
+                            hasAnyTangents = true;
+                        }
+                    }
+                });
+            }
+
+            return hasAnyTangents;
+        }
+
+        /// <summary>
+        /// Check if we have an original mesh stored for a given mesh name
+        /// </summary>
+        private static bool HasOriginalMeshStored(string modelName, string meshName)
+        {
+            LoadOriginalMeshPaths();
+            return originalMeshPaths.ContainsKey(modelName) && 
+                   originalMeshPaths[modelName].ContainsKey(meshName);
+        }
+
+        /// <summary>
+        /// Clean up the Meshes folder after resetting tangents
+        /// </summary>
+        private static void CleanupMeshesFolder(GameObject rootObject)
+        {
+            try
+            {
+                // Find the first mesh to determine the base path
+                MeshFilter[] meshFilters = rootObject.GetComponentsInChildren<MeshFilter>();
+                SkinnedMeshRenderer[] skinnedMeshRenderers = rootObject.GetComponentsInChildren<SkinnedMeshRenderer>();
+
+                string meshesFolder = null;
+
+                // Try to find Meshes folder from MeshFilters first
+                foreach (var meshFilter in meshFilters)
+                {
+                    if (meshFilter.sharedMesh != null)
+                    {
+                        string originalMeshPath = AssetDatabase.GetAssetPath(meshFilter.sharedMesh);
+                        if (!string.IsNullOrEmpty(originalMeshPath))
+                        {
+                            string potentialMeshesFolder = Path.GetDirectoryName(originalMeshPath) + "/Meshes";
+                            if (Directory.Exists(potentialMeshesFolder))
+                            {
+                                meshesFolder = potentialMeshesFolder;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Try SkinnedMeshRenderers if not found
+                if (string.IsNullOrEmpty(meshesFolder))
+                {
+                    foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
+                    {
+                        if (skinnedMeshRenderer.sharedMesh != null)
+                        {
+                            string originalMeshPath = AssetDatabase.GetAssetPath(skinnedMeshRenderer.sharedMesh);
+                            if (!string.IsNullOrEmpty(originalMeshPath))
+                            {
+                                string potentialMeshesFolder = Path.GetDirectoryName(originalMeshPath) + "/Meshes";
+                                if (Directory.Exists(potentialMeshesFolder))
+                                {
+                                    meshesFolder = potentialMeshesFolder;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Clean up the Meshes folder if found
+                if (!string.IsNullOrEmpty(meshesFolder) && Directory.Exists(meshesFolder))
+                {
+                    // Get all .asset files in the Meshes folder
+                    string[] meshAssets = Directory.GetFiles(meshesFolder, "*.asset");
+                    
+                    foreach (string assetPath in meshAssets)
+                    {
+                        // Convert to Unity asset path format
+                        string unityPath = assetPath.Replace('\\', '/');
+                        if (unityPath.StartsWith(Application.dataPath))
+                        {
+                            unityPath = "Assets" + unityPath.Substring(Application.dataPath.Length);
+                        }
+                        
+                        // Delete the asset
+                        AssetDatabase.DeleteAsset(unityPath);
+                    }
+
+                    // Try to remove the folder if it's empty
+                    if (Directory.GetFiles(meshesFolder).Length == 0 && Directory.GetDirectories(meshesFolder).Length == 0)
+                    {
+                        string unityFolderPath = meshesFolder.Replace('\\', '/');
+                        if (unityFolderPath.StartsWith(Application.dataPath))
+                        {
+                            unityFolderPath = "Assets" + unityFolderPath.Substring(Application.dataPath.Length);
+                        }
+                        AssetDatabase.DeleteAsset(unityFolderPath);
+                    }
+
+                    HoyoToonLogs.LogDebug($"Cleaned up Meshes folder: {meshesFolder}");
+                }
+            }
+            catch (System.Exception ex)
+            {
+                HoyoToonLogs.ErrorDebug($"Failed to cleanup Meshes folder: {ex.Message}");
+            }
+        }
+
         private static Transform FindRecursive(Transform parent, string name)
         {
             if (parent.name == name) 
@@ -726,6 +952,189 @@ namespace HoyoToon
             }
             
             return null;
+        }
+
+        public static void ResetModel(GameObject selectedObject)
+        {
+            if (selectedObject == null) return;
+
+            string assetPath = AssetDatabase.GetAssetPath(selectedObject);
+            if (string.IsNullOrEmpty(assetPath)) return;
+
+            ModelImporter importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
+            if (importer == null) return;
+
+            // Reset to default import settings
+            importer.globalScale = 1;
+            importer.isReadable = false; // Default Unity setting
+            importer.animationType = ModelImporterAnimationType.Generic; // Default
+            importer.avatarSetup = ModelImporterAvatarSetup.NoAvatar; // Default
+            
+            // Reset material settings to default
+            importer.materialImportMode = ModelImporterMaterialImportMode.ImportViaMaterialDescription;
+            importer.materialLocation = ModelImporterMaterialLocation.InPrefab;
+            importer.materialSearch = ModelImporterMaterialSearch.Local;
+            importer.materialName = ModelImporterMaterialName.BasedOnTextureName;
+            
+            // Reset the legacy compute normals property to default (false)
+            string pName = "legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes";
+            PropertyInfo prop = importer.GetType().GetProperty(pName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+            if (prop != null)
+            {
+            prop.SetValue(importer, false);
+            }
+
+            // Apply the reset settings and reimport
+            importer.SaveAndReimport();
+            
+            HoyoToonLogs.LogDebug($"Reset import settings for: {assetPath}");
+        }
+
+        #endregion
+
+        #region UI-Driven Methods for Modular System
+
+        /// <summary>
+        /// Setup FBX from UI with proper feedback - UI-driven version
+        /// </summary>
+        /// <param name="selectedModel">The model to setup</param>
+        /// <param name="onComplete">Callback for completion with success status and message</param>
+        public static void SetupFBXFromUI(GameObject selectedModel, System.Action<bool, string> onComplete)
+        {
+            if (selectedModel == null)
+            {
+                onComplete?.Invoke(false, "No model selected");
+                return;
+            }
+
+            try
+            {
+                // Get asset path and validate
+                string assetPath = AssetDatabase.GetAssetPath(selectedModel);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    onComplete?.Invoke(false, "Selected object is not an asset");
+                    return;
+                }
+
+                // Use existing FBX setup logic
+                SetFBXImportSettings(new[] { assetPath });
+                
+                onComplete?.Invoke(true, "FBX setup completed successfully!");
+            }
+            catch (System.Exception e)
+            {
+                HoyoToonLogs.ErrorDebug($"FBX setup failed: {e.Message}");
+                onComplete?.Invoke(false, $"FBX setup failed: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Generate tangents from UI with proper feedback - UI-driven version
+        /// </summary>
+        /// <param name="selectedModel">The model to generate tangents for</param>
+        /// <param name="onComplete">Callback for completion with success status and message</param>
+        public static void GenerateTangentsFromUI(GameObject selectedModel, System.Action<bool, string> onComplete)
+        {
+            if (selectedModel == null)
+            {
+                onComplete?.Invoke(false, "No model selected");
+                return;
+            }
+
+            try
+            {
+                // Use existing tangent generation logic
+                GenTangents(selectedModel);
+                
+                onComplete?.Invoke(true, "Tangents generated successfully!");
+            }
+            catch (System.Exception e)
+            {
+                HoyoToonLogs.ErrorDebug($"Tangent generation failed: {e.Message}");
+                onComplete?.Invoke(false, $"Tangent generation failed: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Reimport model from UI with proper feedback - UI-driven version
+        /// </summary>
+        /// <param name="selectedModel">The model to reimport</param>
+        /// <param name="onComplete">Callback for completion with success status and message</param>
+        public static void ReimportModelFromUI(GameObject selectedModel, System.Action<bool, string> onComplete)
+        {
+            if (selectedModel == null)
+            {
+                onComplete?.Invoke(false, "No model selected");
+                return;
+            }
+
+            try
+            {
+                string assetPath = AssetDatabase.GetAssetPath(selectedModel);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    onComplete?.Invoke(false, "Selected object is not an asset");
+                    return;
+                }
+
+                AssetDatabase.ImportAsset(assetPath, ImportAssetOptions.ForceUpdate);
+                
+                onComplete?.Invoke(true, "Model reimported successfully!");
+            }
+            catch (System.Exception e)
+            {
+                HoyoToonLogs.ErrorDebug($"Model reimport failed: {e.Message}");
+                onComplete?.Invoke(false, $"Model reimport failed: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Reset model from UI with proper feedback - UI-driven version with UI refresh
+        /// </summary>
+        /// <param name="selectedModel">The model to reset</param>
+        /// <param name="onComplete">Callback for completion with success status and message</param>
+        public static void ResetModelFromUI(GameObject selectedModel, System.Action<bool, string> onComplete)
+        {
+            if (selectedModel == null)
+            {
+                onComplete?.Invoke(false, "No model selected");
+                return;
+            }
+
+            try
+            {
+                // Use existing reset logic
+                ResetModel(selectedModel);
+
+                // Force immediate asset database refresh to ensure reimport is complete
+                AssetDatabase.Refresh();
+
+                // Use delayed call to ensure Unity finishes processing the reimport
+                EditorApplication.delayCall += () =>
+                {
+                    // Force scene view repaint as well
+                    SceneView.RepaintAll();
+                    onComplete?.Invoke(true, "Model reset successfully!");
+                };
+            }
+            catch (System.Exception e)
+            {
+                HoyoToonLogs.ErrorDebug($"Model reset failed: {e.Message}");
+                onComplete?.Invoke(false, $"Failed to reset model: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Select model in project - UI utility method
+        /// </summary>
+        /// <param name="selectedModel">The model to select</param>
+        public static void SelectModelInProject(GameObject selectedModel)
+        {
+            if (selectedModel == null) return;
+
+            Selection.activeObject = selectedModel;
+            EditorGUIUtility.PingObject(selectedModel);
         }
 
         #endregion

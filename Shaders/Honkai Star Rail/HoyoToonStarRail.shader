@@ -374,6 +374,19 @@ Shader "HoyoToon/Star Rail/Character"
             [HideInInspector] end_specularintensity("", Float) = 0
         [HideInInspector] end_specular("", Float) = 0
         //endex
+
+        // fake reflection
+        [HideInInspector] start_fakereflection("Fake Reflection", float) = 0
+            _ReflectionRoughness ("Fake Reflection Roughness", Range(0.01, 16)) = 1
+            _ReflectionThreshold ("Fake Reflection Threshold", Range(0, 1)) = 0.5
+            _ReflectionSoftness ("Fake Reflection Softness", Range(0, 1)) = 0.05
+            _ReflectionBlendThreshold ("Fake Reflection Threshold", Range(0, 1)) = 0.1
+            _ReflectionReversedThreshold ("Fake Reflection Threshold", Range(0, 1)) = 0.1
+            _FakeRefBlendIntensity ("Fake Reflection Threshold", Range(0, 1)) = 0.1
+            _FakeRefAddIntensity ("Fake Reflection Threshold", Range(0, 1)) = 0.25
+            _ReflectionColor ("", Color) = (1,1,1,1)
+            _ReflectionBlendColor ("", Color) = (1,1,1,1)
+        [HideInInspector] end_fakereflection("", float) = 0
         
         //ifex _EnableMatcap == 0
         [HideInInspector] start_matcap("Matcap--{reference_property:_UseMatcap}", Float) = 0
@@ -408,6 +421,7 @@ Shader "HoyoToon/Star Rail/Character"
         //ifex _EnableOutline == 0
         [HideInInspector] start_outlines("Outlines--{reference_property:_EnableOutline}", Float) = 0
             [Toggle] _EnableOutline ("Enable Outlines", Float) = 1 // on by default
+            _OutlineColorTex ("Outline Color Texture", 2D) = "white" {}
             _AlphaCutoff ("Outline Alpha Cutoff", Range(0,1)) = 0.0
             [Toggle]_EnableFOVWidth ("Enable FOV Scaling", Float) = 1
             [Toggle]_OutlineZOff ("Outline Z Offset Disable", Float) = 0

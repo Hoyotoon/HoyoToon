@@ -15,7 +15,7 @@ namespace HoyoToon
         #region Constants
         public static readonly string HSRShader = HoyoToonDataManager.HSRShader;
         public static readonly string GIShader = HoyoToonDataManager.GIShader;
-        public static readonly string Hi3Shader = HoyoToonDataManager.Hi3Shader;
+        public static readonly string HI3Shader = HoyoToonDataManager.HI3Shader;
         public static readonly string HI3P2Shader = HoyoToonDataManager.HI3P2Shader;
         public static readonly string WuWaShader = HoyoToonDataManager.WuWaShader;
         public static readonly string ZZZShader = HoyoToonDataManager.ZZZShader;
@@ -42,46 +42,7 @@ namespace HoyoToon
         #region Performance Optimized Material Generation
 
         /// <summary>
-        /// Advanced high-performance material generation system with comprehensive caching optimizations.
-        /// 
-        /// Performance Optimizations Implemented:
-        /// 1. BATCHED ASSET DATABASE OPERATIONS
-        ///    - Single SaveAssets() and Refresh() call at the end instead of per-material
-        ///    - AssetDatabase.StartAssetEditing/StopAssetEditing wrapper for all operations
-        /// 
-        /// 2. TEXTURE GUID PRE-CACHING
-        ///    - Pre-populate all texture GUIDs at startup to eliminate FindAssets() calls
-        ///    - Fast dictionary lookups instead of expensive asset database searches
-        /// 
-        /// 3. PROPERTY NAME RESOLUTION CACHING
-        ///    - Cache all HoyoToonDataManager.Data.ResolvePropertyName() results
-        ///    - Eliminates repeated dictionary lookups and string operations
-        /// 
-        /// 4. MATERIAL PROPERTY EXISTENCE CACHING
-        ///    - Pre-cache all material.HasProperty() results per shader
-        ///    - Eliminates expensive shader introspection calls
-        /// 
-        /// 5. SHADER DETERMINATION CACHING
-        ///    - Cache shader determination results based on material structure
-        ///    - Avoids re-running complex shader detection logic
-        /// 
-        /// 6. JSON CONTENT CACHING
-        ///    - Cache deserialized JSON structures to avoid re-parsing identical files
-        ///    - Uses content hash for efficient duplicate detection
-        /// 
-        /// 7. PROGRESS REPORTING & ERROR HANDLING
-        ///    - Real-time progress bars with detailed status information
-        ///    - Graceful error handling that continues processing other materials
-        /// 
-        /// 8. DEFERRED SCRIPTED SETTINGS APPLICATION
-        ///    - ApplyScriptedSettingsToMaterial deferred until after all materials are created
-        ///    - Materials in current batch are passed directly to avoid asset database dependencies
-        ///    - Fixes cross-material references (Face->Bang, Outline->Base, etc.) in batch mode
-        /// 
-        /// Expected Performance Improvements:
-        /// - Small projects (5-10 materials): 3-5x faster
-        /// - Medium projects (20-50 materials): 5-10x faster
-        /// - Large projects (100+ materials): 10-20x faster
+        /// Generate materials from selected JSON files in the project.
         /// </summary>
         [MenuItem("Assets/HoyoToon/Materials/Generate Materials", priority = 20)]
         public static void GenerateMaterialsFromJson()
@@ -324,7 +285,7 @@ namespace HoyoToon
                     }
                     else
                     {
-                        HoyoToonLogs.WarningDebug($"Material '{material.name}' does not have texture property '{kvp.Key}'");
+                        HoyoToonLogs.LogDebug($"Material '{material.name}' does not have texture property '{kvp.Key}', skipping");
                     }
                 }
             }
@@ -345,7 +306,7 @@ namespace HoyoToon
         {
             if (shader == null) return;
 
-            string shaderKey = GetShaderKeyFromMaterial(material);
+            string shaderKey = HoyoToonDataManager.GetShaderKey(material);
             if (string.IsNullOrEmpty(shaderKey) || shaderKey == "Global") return;
 
             var assignmentData = HoyoToonDataManager.Data.GetTextureAssignmentForShader(shaderKey);
@@ -435,7 +396,7 @@ namespace HoyoToon
         private static void ProcessUnrealMaterialProperties(MaterialJsonStructure materialData, Material material, List<string> loadedTexturePaths)
         {
             var parameters = materialData.Parameters;
-            string shaderKey = GetShaderKeyFromMaterial(material);
+            string shaderKey = HoyoToonDataManager.GetShaderKey(material);
 
             // Process colors
             if (parameters.Colors != null)
@@ -450,7 +411,7 @@ namespace HoyoToon
                     }
                     else
                     {
-                        HoyoToonLogs.WarningDebug($"Material does not have color property: {unityPropertyName} (from {kvp.Key})");
+                        HoyoToonLogs.LogDebug($"Material does not have color property: {unityPropertyName} (from {kvp.Key}), skipping");
                     }
                 }
             }
@@ -468,7 +429,7 @@ namespace HoyoToon
                     }
                     else
                     {
-                        HoyoToonLogs.WarningDebug($"Material does not have float property: {unityPropertyName} (from {kvp.Key})");
+                        HoyoToonLogs.LogDebug($"Material does not have float property: {unityPropertyName} (from {kvp.Key}), skipping");
                     }
                 }
             }
@@ -486,7 +447,7 @@ namespace HoyoToon
                     }
                     else
                     {
-                        HoyoToonLogs.WarningDebug($"Material does not have switch property: {unityPropertyName} (from {kvp.Key})");
+                        HoyoToonLogs.LogDebug($"Material does not have switch property: {unityPropertyName} (from {kvp.Key}), skipping");
                     }
                 }
             }
@@ -532,7 +493,7 @@ namespace HoyoToon
                     }
                     else
                     {
-                        HoyoToonLogs.WarningDebug($"Material does not have texture property: {unityPropertyName} (from {kvp.Key})");
+                        HoyoToonLogs.LogDebug($"Material does not have texture property: {unityPropertyName} (from {kvp.Key}), skipping");
                     }
                 }
             }
@@ -562,7 +523,7 @@ namespace HoyoToon
                     loadedTexturePaths.Add(texturePath);
                     
                     // Apply shader-specific texture import settings immediately
-                    HoyoToonTextureManager.SetTextureImportSettings(new[] { texturePath }, GetShaderKeyFromMaterial(material));
+                    HoyoToonTextureManager.SetTextureImportSettings(new[] { texturePath }, HoyoToonDataManager.GetShaderKey(material));
                 }
 
                 material.SetTextureScale(propertyName, textureInfo.m_Scale.ToVector2());
@@ -688,6 +649,159 @@ namespace HoyoToon
             }
             
             HoyoToonLogs.LogDebug("=== END DEBUG ===");
+        }
+
+        #endregion
+
+        #region Public Helper Methods for UI
+
+        /// <summary>
+        /// Public wrapper for shader detection from material data (for UI usage)
+        /// </summary>
+        /// <param name="materialData">Material JSON structure</param>
+        /// <returns>Detected shader path or null if not found</returns>
+        public static string DetectShaderFromMaterialData(MaterialJsonStructure materialData)
+        {
+            Shader shader = DetermineShader(materialData);
+            return shader?.name;
+        }
+
+        /// <summary>
+        /// Validate JSON structure and provide error message
+        /// </summary>
+        /// <param name="jsonPath">Path to JSON file</param>
+        /// <param name="errorMessage">Output error message if invalid</param>
+        /// <returns>True if valid, false if invalid</returns>
+        public static bool ValidateJsonStructure(string jsonPath, out string errorMessage)
+        {
+            errorMessage = null;
+            
+            try
+            {
+                var jsonText = File.ReadAllText(jsonPath);
+                var materialData = JsonConvert.DeserializeObject<MaterialJsonStructure>(jsonText);
+
+                // Check for outdated JSON structure
+                bool isOutdated = IsOutdatedJsonStructure(materialData, jsonText);
+                if (isOutdated)
+                {
+                    errorMessage = "This JSON file uses an outdated structure. Please download the latest assets from assets.hoyotoon.com for up-to-date JSON files.";
+                    return false;
+                }
+
+                // Check if we can detect a valid shader
+                Shader detectedShader = DetermineShader(materialData);
+                if (detectedShader == null)
+                {
+                    errorMessage = "Could not detect a compatible shader from this JSON file.";
+                    return false;
+                }
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                errorMessage = $"Failed to parse JSON: {ex.Message}";
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Check if JSON file is a valid material JSON
+        /// </summary>
+        /// <param name="jsonPath">Path to JSON file</param>
+        /// <returns>True if valid material JSON</returns>
+        public static bool IsValidMaterialJson(string jsonPath)
+        {
+            try
+            {
+                var jsonText = File.ReadAllText(jsonPath);
+
+                // Enhanced check for material JSON files
+                // Check for Unity material properties
+                if (jsonText.Contains("m_Shader") || jsonText.Contains("m_SavedProperties"))
+                    return true;
+
+                // Check for Hoyo2VRC material format
+                if (jsonText.Contains("Parameters") && jsonText.Contains("Textures"))
+                    return true;
+
+                // Check for material-related keywords
+                var materialKeywords = new[] { "material", "_MainTex", "_Color", "_BaseMap", "_Diffuse", "shader" };
+                var keywordCount = materialKeywords.Count(keyword => jsonText.ToLower().Contains(keyword.ToLower()));
+
+                // If it contains multiple material-related keywords, likely a material JSON
+                return keywordCount >= 2;
+            }
+            catch (Exception e)
+            {
+                HoyoToonLogs.WarningDebug($"Could not read JSON file {jsonPath}: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Check if JSON file uses outdated structure (extracted from UI for reuse)
+        /// </summary>
+        private static bool IsOutdatedJsonStructure(MaterialJsonStructure materialData, string jsonText)
+        {
+            // Modern JSON structure MUST have Name fields - this is how we distinguish 
+            // current supported format from old outdated formats that should be rejected
+            
+            try
+            {
+                // Critical check 1: m_Shader must have a Name field (indicates modern format)
+                bool hasShaderName = materialData.m_Shader?.Name != null && !string.IsNullOrEmpty(materialData.m_Shader.Name);
+                if (!hasShaderName)
+                {
+                    HoyoToonLogs.WarningDebug("JSON has outdated format - m_Shader missing Name field. This format is no longer supported.");
+                    return true;
+                }
+
+                // Critical check 2: Root level must have a Name field (indicates modern format)
+                bool hasRootName = false;
+                try
+                {
+                    var jsonObject = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonText);
+                    hasRootName = jsonObject.ContainsKey("Name") && jsonObject["Name"] != null;
+                }
+                catch
+                {
+                    // If we can't parse as dictionary, fall back to string search
+                    hasRootName = jsonText.Contains("\"Name\":");
+                }
+                
+                if (!hasRootName)
+                {
+                    HoyoToonLogs.WarningDebug("JSON has outdated format - missing root Name field. This format is no longer supported.");
+                    return true;
+                }
+
+                // Critical check 3: Texture entries should have Name fields (modern format indicator)
+                // Only reject if texture is NOT null but missing Name field - empty names are valid for unused slots
+                if (materialData.m_SavedProperties?.m_TexEnvs != null)
+                {
+                    foreach (var texEnv in materialData.m_SavedProperties.m_TexEnvs)
+                    {
+                        if (texEnv.Value?.m_Texture != null && 
+                            !texEnv.Value.m_Texture.IsNull && 
+                            texEnv.Value.m_Texture.Name == null)
+                        {
+                            HoyoToonLogs.WarningDebug($"JSON has outdated format - non-null texture reference '{texEnv.Key}' missing Name field. This format is no longer supported.");
+                            return true;
+                        }
+                    }
+                }
+
+                // If we get here, all required Name fields are present - this is the modern supported format
+                HoyoToonLogs.LogDebug("JSON format validation passed - all required Name fields present");
+                return false;
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogs.ErrorDebug($"Error validating JSON format: {ex.Message}");
+                return true; // Consider it outdated if we can't validate it
+            }
         }
 
         #endregion
@@ -1012,6 +1126,265 @@ namespace HoyoToon
             HoyoToonLogs.LogDebug($"Successfully generated {selectedMaterials.Length} JSON files.");
         }
 
+        /// <summary>
+        /// Safely clear only generated material files from the Materials folder without affecting the FBX or embedded materials
+        /// </summary>
+        /// <param name="fbxModel">The FBX model to clear generated materials from</param>
+        public static void ClearGeneratedMaterials(GameObject fbxModel)
+        {
+            if (fbxModel == null)
+            {
+                EditorUtility.DisplayDialog("Error", "No model provided to clear materials from.", "OK");
+                return;
+            }
+
+            string modelPath = AssetDatabase.GetAssetPath(fbxModel);
+            if (string.IsNullOrEmpty(modelPath) || !modelPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+            {
+                EditorUtility.DisplayDialog("Error", "The provided object is not a valid FBX model.", "OK");
+                return;
+            }
+
+            string modelDirectory = Path.GetDirectoryName(modelPath);
+            string materialsDirectory = Path.Combine(modelDirectory, "Materials");
+
+            // Check if Materials folder exists
+            if (!Directory.Exists(materialsDirectory))
+            {
+                EditorUtility.DisplayDialog("Info", "No Materials folder found. Nothing to clear.", "OK");
+                return;
+            }
+
+            try
+            {
+                // Find all .mat files in the Materials folder
+                string[] materialFiles = Directory.GetFiles(materialsDirectory, "*.mat", SearchOption.TopDirectoryOnly);
+                
+                if (materialFiles.Length == 0)
+                {
+                    EditorUtility.DisplayDialog("Info", "No material files found in Materials folder.", "OK");
+                    return;
+                }
+
+                AssetDatabase.StartAssetEditing();
+
+                List<string> deletedMaterials = new List<string>();
+
+                foreach (string materialPath in materialFiles)
+                {
+                    // Convert to relative path for AssetDatabase
+                    string relativePath = materialPath.Replace(Application.dataPath, "Assets").Replace('\\', '/');
+                    
+                    HoyoToonLogs.LogDebug($"Deleting generated material: {relativePath}");
+                    
+                    if (AssetDatabase.DeleteAsset(relativePath))
+                    {
+                        deletedMaterials.Add(Path.GetFileNameWithoutExtension(relativePath));
+                    }
+                    else
+                    {
+                        HoyoToonLogs.WarningDebug($"Failed to delete material: {relativePath}");
+                    }
+                }
+
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+
+                HoyoToonLogs.LogDebug($"Successfully deleted {deletedMaterials.Count} generated material files from Materials folder");
+                
+                // Note: We don't clear material assignments from renderers because:
+                // 1. If they were using the deleted materials, Unity will show them as missing (pink)
+                // 2. If they were using embedded materials, those remain untouched
+                // 3. The user can re-generate materials to fix missing references
+
+                EditorUtility.DisplayDialog("Success", 
+                    $"Successfully deleted {deletedMaterials.Count} generated material files from the Materials folder.\n\n" +
+                    "Note: Material assignments on renderers were not changed. You may need to re-generate materials to fix any missing references.", 
+                    "OK");
+            }
+            catch (System.Exception e)
+            {
+                HoyoToonLogs.ErrorDebug($"Error clearing generated materials: {e.Message}");
+                EditorUtility.DisplayDialog("Error", $"Failed to clear generated materials: {e.Message}", "OK");
+            }
+        }
+
+        /// <summary>
+        /// Clear all materials from selected FBX models and optionally delete the material assets
+        /// </summary>
+        [MenuItem("Assets/HoyoToon/Materials/Clear All Materials", priority = 22)]
+        public static void ClearAllMaterials()
+        {
+            UnityEngine.Object[] selectedObjects = Selection.objects;
+            List<GameObject> fbxModels = new List<GameObject>();
+
+            // Collect all FBX models from selection
+            foreach (var selectedObject in selectedObjects)
+            {
+                string selectedPath = AssetDatabase.GetAssetPath(selectedObject);
+                
+                if (selectedObject is GameObject gameObject && selectedPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                {
+                    fbxModels.Add(gameObject);
+                }
+            }
+
+            if (fbxModels.Count == 0)
+            {
+                EditorUtility.DisplayDialog("Info", "No FBX models selected. Please select one or more FBX models to clear materials from.", "OK");
+                return;
+            }
+
+            // For menu-driven access, give user a choice
+            ClearMaterialsFromModels(fbxModels.ToArray(), true);
+        }
+
+        /// <summary>
+        /// Clear all materials from a specific FBX model and optionally delete the material assets
+        /// </summary>
+        /// <param name="fbxModel">The FBX model to clear materials from</param>
+        public static void ClearAllMaterials(GameObject fbxModel)
+        {
+            if (fbxModel == null)
+            {
+                EditorUtility.DisplayDialog("Error", "No model provided to clear materials from.", "OK");
+                return;
+            }
+
+            string modelPath = AssetDatabase.GetAssetPath(fbxModel);
+            if (string.IsNullOrEmpty(modelPath) || !modelPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+            {
+                EditorUtility.DisplayDialog("Error", "The provided object is not a valid FBX model.", "OK");
+                return;
+            }
+
+            // For programmatic access, always do both operations without asking
+            ClearMaterialsFromModels(new GameObject[] { fbxModel }, false);
+        }
+
+        /// <summary>
+        /// Internal method to clear materials from an array of FBX models
+        /// </summary>
+        /// <param name="fbxModels">Array of FBX models to clear materials from</param>
+        /// <param name="showDialog">Whether to show user choice dialog</param>
+        private static void ClearMaterialsFromModels(GameObject[] fbxModels, bool showDialog)
+        {
+            List<Material> materialsToDelete = new List<Material>();
+
+            bool deleteMaterialAssets;
+            
+            if (showDialog)
+            {
+                // For menu-driven access, give user a choice
+                deleteMaterialAssets = EditorUtility.DisplayDialog("Clear Materials", 
+                    $"Clear materials from {fbxModels.Length} FBX model(s)?\n\n" +
+                    "This will:\n" +
+                    "• Remove material assignments from renderers\n" +
+                    "• Optionally delete material asset files\n\n" +
+                    "Choose your action:", 
+                    "Clear & Delete Assets", "Clear Assignments Only");
+            }
+            else
+            {
+                // For programmatic access (like Materials tab), always do both
+                deleteMaterialAssets = true;
+            }
+
+            int processedCount = 0;
+            int deletedAssetsCount = 0;
+
+            try
+            {
+                AssetDatabase.StartAssetEditing();
+
+                foreach (var fbxModel in fbxModels)
+                {
+                    string modelPath = AssetDatabase.GetAssetPath(fbxModel);
+                    string modelDirectory = Path.GetDirectoryName(modelPath);
+
+                    HoyoToonLogs.LogDebug($"Clearing materials from model: {fbxModel.name}");
+
+                    // Find all renderers in the model
+                    var renderers = fbxModel.GetComponentsInChildren<Renderer>(true);
+                    
+                    foreach (var renderer in renderers)
+                    {
+                        if (renderer.sharedMaterials != null && renderer.sharedMaterials.Length > 0)
+                        {
+                            // Collect materials for deletion if they're in the same directory
+                            if (deleteMaterialAssets)
+                            {
+                                foreach (var material in renderer.sharedMaterials)
+                                {
+                                    if (material != null)
+                                    {
+                                        string materialPath = AssetDatabase.GetAssetPath(material);
+                                        string materialDirectory = Path.GetDirectoryName(materialPath);
+                                        
+                                        // Only delete materials that are in the same directory as the model
+                                        if (materialDirectory.Equals(modelDirectory, StringComparison.OrdinalIgnoreCase))
+                                        {
+                                            if (!materialsToDelete.Contains(material))
+                                            {
+                                                materialsToDelete.Add(material);
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                            // Clear material assignments
+                            Material[] emptyMaterials = new Material[renderer.sharedMaterials.Length];
+                            for (int i = 0; i < emptyMaterials.Length; i++)
+                            {
+                                emptyMaterials[i] = null;
+                            }
+                            renderer.sharedMaterials = emptyMaterials;
+                        }
+                    }
+
+                    processedCount++;
+                }
+
+                // Delete material assets if requested
+                if (deleteMaterialAssets && materialsToDelete.Count > 0)
+                {
+                    foreach (var material in materialsToDelete)
+                    {
+                        string materialPath = AssetDatabase.GetAssetPath(material);
+                        if (!string.IsNullOrEmpty(materialPath))
+                        {
+                            HoyoToonLogs.LogDebug($"Deleting material asset: {materialPath}");
+                            AssetDatabase.DeleteAsset(materialPath);
+                            deletedAssetsCount++;
+                        }
+                    }
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            // Show completion message
+            string message = $"Successfully cleared materials from {processedCount} FBX model(s).";
+            if (deleteMaterialAssets)
+            {
+                message += $" Deleted {deletedAssetsCount} material asset(s).";
+            }
+
+            HoyoToonLogs.LogDebug(message);
+            
+            // Only show dialog for menu-driven access
+            if (showDialog)
+            {
+                EditorUtility.DisplayDialog("Success", message, "OK");
+            }
+        }
+
         private static void GenerateJsonFromMaterial(Material material, string outputPath)
         {
             JObject jsonObject = new JObject();
@@ -1085,80 +1458,141 @@ namespace HoyoToon
 
         private static Shader DetermineShader(MaterialJsonStructure materialData)
         {
-            // If shader is directly specified in the Unity format
+            // If shader is directly specified in the Unity format and it's a HoyoToon shader
             if (materialData.m_Shader?.Name != null && !string.IsNullOrEmpty(materialData.m_Shader.Name))
             {
-                Shader shader = Shader.Find(materialData.m_Shader.Name);
-                if (shader != null)
+                string shaderName = materialData.m_Shader.Name;
+                if (HoyoToonDataManager.IsHoyoToonShader(shaderName))
                 {
-                    HoyoToonLogs.LogDebug($"Found shader '{materialData.m_Shader.Name}' in JSON");
-                    return shader;
+                    Shader shader = Shader.Find(shaderName);
+                    if (shader != null)
+                    {
+                        HoyoToonLogs.LogDebug($"Found HoyoToon shader '{shaderName}' directly specified in JSON");
+                        return shader;
+                    }
                 }
             }
 
             var shaderKeywords = HoyoToonDataManager.Data.ShaderKeywords;
             var shaderPaths = HoyoToonDataManager.Data.Shaders;
 
-            // Build shader keyword mapping
-            Dictionary<string, string> shaderKeys = new Dictionary<string, string>();
-            foreach (var shader in shaderKeywords)
+            if (shaderKeywords == null || shaderPaths == null)
             {
-                foreach (var keyword in shader.Value)
-                {
-                    shaderKeys[keyword] = shader.Key;
-                }
+                HoyoToonLogs.WarningDebug("Shader data not available from API");
+                return null;
             }
 
-            // Check for shader keywords in both Unity and Unreal formats
-            foreach (var shaderKey in shaderKeys)
+            // Fast keyword detection - check each shader type until we find a match
+            foreach (var shaderType in shaderKeywords)
             {
-                if (materialData.IsUnityFormat)
+                string shaderKey = shaderType.Key;
+                var keywords = shaderType.Value;
+                int matchCount = 0;
+
+                // Count how many keywords from this shader type are present
+                foreach (var keyword in keywords)
                 {
-                    var properties = materialData.m_SavedProperties;
-                    bool hasKeywordInTexEnvs = properties.m_TexEnvs?.ContainsKey(shaderKey.Key) ?? false;
-                    bool hasKeywordInFloats = properties.m_Floats?.ContainsKey(shaderKey.Key) ?? false;
-
-                    if (hasKeywordInTexEnvs || hasKeywordInFloats)
+                    bool hasKeyword = false;
+                    
+                    if (materialData.IsUnityFormat)
                     {
-                        if (shaderKey.Value == "Hi3Shader")
+                        var properties = materialData.m_SavedProperties;
+                        hasKeyword = (properties.m_TexEnvs?.ContainsKey(keyword) ?? false) ||
+                                   (properties.m_Floats?.ContainsKey(keyword) ?? false) ||
+                                   (properties.m_Ints?.ContainsKey(keyword) ?? false) ||
+                                   (properties.m_Colors?.ContainsKey(keyword) ?? false);
+                    }
+                    else if (materialData.IsUnrealFormat)
+                    {
+                        // Special check for WuWa shader which uses ShadingModel
+                        if (keyword == "ShadingModel" && materialData.Parameters?.ShadingModel != null)
                         {
-                            // Special handling for Hi3 shaders
-                            bool isPart2Shader = shaderKeywords["HI3P2Shader"].Any(keyword =>
-                                (properties.m_TexEnvs?.ContainsKey(keyword) ?? false) ||
-                                (properties.m_Floats?.ContainsKey(keyword) ?? false));
-
-                            string shaderKeyToUse = isPart2Shader ? "HI3P2Shader" : "Hi3Shader";
-                            return Shader.Find(shaderPaths[shaderKeyToUse][0]);
+                            hasKeyword = true;
                         }
+                        else
+                        {
+                            hasKeyword = (materialData.Textures?.ContainsKey(keyword) ?? false) ||
+                                       (materialData.Parameters?.Scalars?.ContainsKey(keyword) ?? false) ||
+                                       (materialData.Parameters?.Switches?.ContainsKey(keyword) ?? false) ||
+                                       (materialData.Parameters?.Properties?.ContainsKey(keyword) ?? false);
+                        }
+                    }
+
+                    if (hasKeyword)
+                    {
+                        matchCount++;
+                        HoyoToonLogs.LogDebug($"Found shader keyword '{keyword}' for '{shaderKey}'");
                         
-                        return Shader.Find(shaderPaths[shaderKey.Value][0]);
+                        // For efficiency: if we find ANY unique keyword, we can be confident about the shader
+                        // This is much faster than counting all keywords
+                        break;
                     }
                 }
-                else if (materialData.IsUnrealFormat)
-                {
-                    bool hasKeywordInTextures = materialData.Textures?.ContainsKey(shaderKey.Key) ?? false;
-                    bool hasKeywordInScalars = materialData.Parameters?.Scalars?.ContainsKey(shaderKey.Key) ?? false;
-                    bool hasKeywordInSwitches = materialData.Parameters?.Switches?.ContainsKey(shaderKey.Key) ?? false;
-                    bool hasKeywordInProperties = materialData.Parameters?.Properties?.ContainsKey(shaderKey.Key) ?? false;
 
-                    // Special check for WuWa shader which uses ShadingModel
-                    if (shaderKey.Key == "ShadingModel")
+                // If we found keyword matches for this shader type
+                if (matchCount > 0)
+                {
+                    // Special handling for Hi3 shaders - check for Part 2 specific keywords
+                    if (shaderKey == "HI3Shader")
                     {
-                        if (materialData.Parameters?.ShadingModel != null)
+                        // Check if we have HI3P2 specific keywords too
+                        var hi3p2Keywords = shaderKeywords.ContainsKey("HI3P2Shader") ? shaderKeywords["HI3P2Shader"] : null;
+                        if (hi3p2Keywords != null)
                         {
-                            HoyoToonLogs.LogDebug("Found WuWa shader through ShadingModel parameter");
-                            return Shader.Find(shaderPaths["WuWaShader"][0]);
+                            foreach (var p2Keyword in hi3p2Keywords)
+                            {
+                                bool hasP2Keyword = false;
+                                if (materialData.IsUnityFormat)
+                                {
+                                    var properties = materialData.m_SavedProperties;
+                                    hasP2Keyword = (properties.m_TexEnvs?.ContainsKey(p2Keyword) ?? false) ||
+                                                 (properties.m_Floats?.ContainsKey(p2Keyword) ?? false) ||
+                                                 (properties.m_Ints?.ContainsKey(p2Keyword) ?? false) ||
+                                                 (properties.m_Colors?.ContainsKey(p2Keyword) ?? false);
+                                }
+                                else if (materialData.IsUnrealFormat)
+                                {
+                                    hasP2Keyword = (materialData.Textures?.ContainsKey(p2Keyword) ?? false) ||
+                                                 (materialData.Parameters?.Scalars?.ContainsKey(p2Keyword) ?? false) ||
+                                                 (materialData.Parameters?.Switches?.ContainsKey(p2Keyword) ?? false) ||
+                                                 (materialData.Parameters?.Properties?.ContainsKey(p2Keyword) ?? false);
+                                }
+
+                                if (hasP2Keyword)
+                                {
+                                    HoyoToonLogs.LogDebug($"Detected HI3P2 shader via P2-specific keyword '{p2Keyword}'");
+                                    shaderKey = "HI3P2Shader";
+                                    break;
+                                }
+                            }
                         }
                     }
-
-                    if (hasKeywordInTextures || hasKeywordInScalars || hasKeywordInSwitches || hasKeywordInProperties)
+                    
+                    HoyoToonLogs.LogDebug($"Shader detection result: '{shaderKey}' with {matchCount} keyword matches");
+                    
+                    if (shaderPaths.ContainsKey(shaderKey) && shaderPaths[shaderKey].Length > 0)
                     {
-                        HoyoToonLogs.LogDebug($"Found shader through keyword: {shaderKey.Key} for shader: {shaderKey.Value}");
-                        return Shader.Find(shaderPaths[shaderKey.Value][0]);
+                        string shaderPath = shaderPaths[shaderKey][0];
+                        Shader foundShader = Shader.Find(shaderPath);
+                        
+                        if (foundShader != null)
+                        {
+                            HoyoToonLogs.LogDebug($"Successfully found shader: {shaderPath}");
+                            return foundShader;
+                        }
+                        else
+                        {
+                            HoyoToonLogs.WarningDebug($"Shader path '{shaderPath}' exists in data but shader not found in project");
+                        }
+                    }
+                    else
+                    {
+                        HoyoToonLogs.WarningDebug($"No shader path defined for shader key: {shaderKey}");
                     }
                 }
             }
 
+            HoyoToonLogs.WarningDebug("No matching shader keywords found in material JSON");
             return null;
         }
 
@@ -1193,29 +1627,6 @@ namespace HoyoToon
                 return obj.ContainsKey(key);
             }
             return false;
-        }
-
-        /// <summary>
-        /// Gets the shader key based on the material's shader name
-        /// </summary>
-        /// <param name="material">The material to get shader key for</param>
-        /// <returns>Shader key string (e.g., "HSRShader", "GIShader", etc.)</returns>
-        private static string GetShaderKeyFromMaterial(Material material)
-        {
-            if (material?.shader == null) return "Global";
-
-            string shaderName = material.shader.name;
-
-            // Map shader names to shader keys
-            if (shaderName == HSRShader) return "HSRShader";
-            if (shaderName == GIShader) return "GIShader";
-            if (shaderName == Hi3Shader) return "HI3Shader";
-            if (shaderName == HI3P2Shader) return "HI3P2Shader";
-            if (shaderName == WuWaShader) return "WuWaShader";
-            if (shaderName == ZZZShader) return "ZZZShader";
-
-            // Fallback to global if no specific shader match
-            return "Global";
         }
 
         #endregion

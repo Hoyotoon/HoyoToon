@@ -875,3 +875,50 @@ void LUT_2D(inout float3 color, in float4 lutParams)
     color = lutColor;
     #endif
 }
+
+float4 fake_reflection(float3 normal, float3 view, float2 skymask)
+{
+    float ndotv = dot(normal, view);
+    float3 ref = normal * (ndotv + ndotv) - view;
+    ref = normalize(ref);
+    float ref_value = dot(normal, ref);
+    
+    // float refl = max(ref_value, 0.001);
+    // refl = pow(refl, _ReflectionRoughness);
+    // refl = smoothstep(_ReflectionThreshold, _ReflectionSoftness, refl);
+
+
+    // Calculate reflection blend factor
+    float blendBase = max(ref_value, 0.001f);
+    float blendPow = pow(blendBase, _ReflectionRoughness);
+    float blendThresh = blendPow - _ReflectionThreshold;
+    float blendSoft = blendThresh / _ReflectionSoftness;
+    blendSoft = clamp(blendSoft, 0.0, 1.0);
+    float blendSmooth = blendSoft * blendSoft * (-2.0f * blendSoft + 3.0f);
+
+    // Calculate reversed blend factor
+    float reversedBase = (ref_value - _ReflectionBlendThreshold) * 20.0f;
+    float reversedBlend = clamp(reversedBase, 0.0, 1.0);
+    float reversedSmooth = reversedBlend * reversedBlend * (-2.0f * reversedBlend + 3.0f);
+
+    // Calculate reversed threshold blend
+    float reversedThreshBase = ref_value - (_ReflectionReversedThreshold + 0.05f);
+    float reversedThreshRange = _ReflectionReversedThreshold - (_ReflectionReversedThreshold + 0.05f);
+    float reversedThreshNorm = reversedThreshBase / reversedThreshRange;
+    reversedThreshNorm = clamp(reversedThreshNorm, 0.0, 1.0);
+    float reversedThreshSmooth = reversedThreshNorm * reversedThreshNorm * (-2.0f * reversedThreshNorm + 3.0f);
+
+    // Blend colors
+    float3 blendColor = reversedThreshSmooth * _ReflectionBlendColor.xyz * _FakeRefBlendIntensity;
+    float3 reversedBlendColor = reversedSmooth * _ReflectionBlendColor.xyz * _FakeRefBlendIntensity;
+    float3 reflectionColor = blendSmooth * _ReflectionColor.xyz * _FakeRefAddIntensity;
+
+    // Final reflection value
+    // float refl = dot(blendColor, float3(1.0, 1.0, 1.0)); // If you want a scalar, otherwise use blendColor, reversedBlendColor, reflectionColor as needed
+
+    reflectionColor.xyz = skymask.xxx * reflectionColor.xyz;
+    reversedBlendColor.xyz = reversedBlendColor.xyz * skymask.xxx + reflectionColor.xyz;
+    float3 output = blendColor.xyz * skymask.yyy + reversedBlendColor.xyz;
+
+    return float4(output, 1.0);
+}

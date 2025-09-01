@@ -865,6 +865,8 @@ float4 ps_base(vs_out i, bool vface : SV_IsFrontFace) : SV_Target
         {
             out_color.xyz = out_color.xyz * rimsdw_color.xyz;
         }
+
+        float2 starry_mask = _SkyMask.Sample(sampler_linear_repeat, uv * _SkyMask_ST.xy + _SkyMask_ST.zw).xy + _SkyRange;
         if(_StarrySky) out_color = starry_cloak(i.ss_pos, i.view, uv, i.ws_pos, tangents, out_color);
         increase_bloom(bloom_color, bloom_intensity, out_color.xyz);
         if(!_IsTransparent && !_EnableAlphaCutoff) out_color.w = 1.0f;
@@ -928,8 +930,9 @@ float4 ps_base(vs_out i, bool vface : SV_IsFrontFace) : SV_Target
         float3 light_applied_color = out_color.xyz * light_color;
         light_applied_color.xyz = light_applied_color.xyz + (GI_color * GI_intensity * _GI_Intensity * smoothstep(1.0f ,0.0f, GI_intensity / 2.0f));
         out_color.xyz = lerp(out_color.xyz, light_applied_color, filter);
-        float shadow_mask = (dot(normal, light) * .5 + .5);
-        shadow_mask = smoothstep(0.5, 0.7, shadow_mask);
+        
+        out_color.xyz = out_color.xyz + fake_reflection(normal, view, starry_mask);
+
         #if defined(is_tonemapped)
             if(_EnableLUT)
             {
@@ -1147,6 +1150,8 @@ float4 ps_edge(vs_out i, bool vface : SV_IsFrontFace) : SV_Target
     float4 ws_pos = mul(unity_ObjectToWorld, i.ws_pos);
     float2 uv  = i.uv.xy;
 
+    float4 color_tex = _OutlineColorTex.Sample(sampler_linear_repeat, uv);
+
     #if defined(can_dissolve)
     if(_DissoveON)
     {
@@ -1186,6 +1191,7 @@ float4 ps_edge(vs_out i, bool vface : SV_IsFrontFace) : SV_Target
     if(_UseMaterialValuesLUT) outline_color[material] = _MaterialValuesPackLUT.Load(float4(material_ID, 2, 0, 0));
 
     float4 out_color = outline_color[material];
+    out_color.xyz = out_color.xyz * color_tex;
     if(_FaceMaterial) out_color = _OutlineColor;
     out_color.a = 1.0f;
     #if defined(can_shift)

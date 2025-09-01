@@ -753,7 +753,7 @@ namespace HoyoToon
                 {
                     GameKey = gameConfig.Key,
                     DisplayName = gameConfig.DisplayName,
-                    HasResources = Directory.Exists(localPath) && gameData.Files.Any(),
+                    HasResources = HasResourcesForGame(gameConfig.Key),
                     IsUpToDate = IsGameResourcesUpToDate(gameConfig.Key),
                     LastSync = gameData.LastSync,
                     FileCount = gameData.Files.Count,
@@ -1253,6 +1253,100 @@ namespace HoyoToon
                 return null;
                 
             return Path.Combine(ResourcesBasePath, gameConfig.LocalPath.Replace("Resources/", ""));
+        }
+
+        /// <summary>
+        /// Get all local resource files for all games with detailed information
+        /// </summary>
+        public static List<LocalResourceInfo> GetAllLocalResources()
+        {
+            var resources = new List<LocalResourceInfo>();
+            
+            // Use the actual game keys from the configuration instead of hardcoded folder names
+            var gameKeys = HoyoToonResourceConfig.Games.Keys.ToArray();
+            
+            foreach (var gameKey in gameKeys)
+            {
+                if (HasResourcesForGame(gameKey))
+                {
+                    resources.AddRange(GetLocalResourcesForGame(gameKey));
+                }
+            }
+            
+            return resources;
+        }
+
+        /// <summary>
+        /// Get all local resource files for a specific game
+        /// </summary>
+        public static List<LocalResourceInfo> GetLocalResourcesForGame(string gameKey)
+        {
+            var resources = new List<LocalResourceInfo>();
+            var gamePath = GetGameResourcePath(gameKey);
+            
+            if (string.IsNullOrEmpty(gamePath) || !Directory.Exists(gamePath))
+                return resources;
+                
+            try
+            {
+                var files = Directory.GetFiles(gamePath, "*", SearchOption.AllDirectories)
+                    .Where(f => !f.EndsWith(".meta"))
+                    .ToArray();
+
+                foreach (var filePath in files)
+                {
+                    var relativePath = Path.GetRelativePath(gamePath, filePath);
+                    var fileName = Path.GetFileName(filePath);
+                    var fileInfo = new FileInfo(filePath);
+
+                    var resourceInfo = new LocalResourceInfo
+                    {
+                        FileName = fileName,
+                        RelativePath = relativePath,
+                        FullPath = filePath,
+                        GameKey = gameKey,
+                        FileType = GetFileType(Path.GetExtension(filePath)),
+                        Size = fileInfo.Length,
+                        LastModified = fileInfo.LastWriteTime
+                    };
+
+                    resources.Add(resourceInfo);
+                }
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogs.ErrorDebug($"Failed to scan resources for {gameKey}: {ex.Message}");
+            }
+            
+            return resources;
+        }
+
+        /// <summary>
+        /// Check if resources directory exists and has content
+        /// </summary>
+        public static bool AreResourcesAvailable()
+        {
+            return Directory.Exists(ResourcesBasePath) && 
+                   Directory.GetFileSystemEntries(ResourcesBasePath, "*", SearchOption.AllDirectories).Length > 0;
+        }
+
+        /// <summary>
+        /// Get file type from extension
+        /// </summary>
+        private static string GetFileType(string extension)
+        {
+            return extension.ToLower() switch
+            {
+                ".mat" => "Material",
+                ".prefab" => "Prefab",
+                ".fbx" => "FBX Model",
+                ".png" or ".jpg" or ".jpeg" or ".tga" or ".tiff" => "Texture",
+                ".json" => "JSON Data",
+                ".shader" => "Shader",
+                ".cs" => "Script",
+                ".asset" => "Asset",
+                _ => "Other"
+            };
         }
 
         /// <summary>
@@ -1874,6 +1968,20 @@ namespace HoyoToon
         {
             return GameProgresses.Values.All(p => p.TotalFiles > 0);
         }
+    }
+
+    /// <summary>
+    /// Information about a local resource file
+    /// </summary>
+    public class LocalResourceInfo
+    {
+        public string FileName;
+        public string RelativePath;
+        public string FullPath;
+        public string GameKey;
+        public string FileType;
+        public long Size;
+        public System.DateTime LastModified;
     }
 
     #endregion

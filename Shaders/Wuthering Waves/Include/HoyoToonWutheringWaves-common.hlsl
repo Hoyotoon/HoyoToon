@@ -842,7 +842,7 @@ float3 apply_tacet_decal(float3 color, float2 uv, float2 uv3)
     transformed.y += position.y;
 
     float2 rotated = rotateUV(transformed, _RotationAngle, _XingHenPosition.xx);
-    tacet_uv = (_UseRotation) ? rotated : transformed;
+    tacet_uv = (_UseRotate180UV) ? rotated : transformed;
 
     float4 sdf = _D.Sample(sampler_linear_clamp, tacet_uv).xyzw;
 

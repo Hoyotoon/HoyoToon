@@ -34,6 +34,7 @@ Texture2D _DissolveMask;
 Texture2D _HueMaskTexture;
 #endif
 
+Texture2D _OutlineColorTex;
 float4 _CausTexture_ST;
 
 Texture2D _AlphaTex;
@@ -559,6 +560,16 @@ float _MatCapStrengthInShadow;
 
 float _EnableLUT;
 float4 _Lut2DTexParam;
+
+float _ReflectionRoughness;
+float _ReflectionThreshold;
+float _ReflectionSoftness;
+float _ReflectionBlendThreshold;
+float _ReflectionReversedThreshold;
+float _FakeRefBlendIntensity;
+float _FakeRefAddIntensity;
+float4 _ReflectionColor;
+float4 _ReflectionBlendColor;
 
 
 float _DebugMode;

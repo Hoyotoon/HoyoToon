@@ -1,11 +1,11 @@
 {
   "version": "1.0.0",
-  "lastUpdateCheck": "2025-07-14T22:27:54.4204169Z",
+  "lastUpdateCheck": "2025-09-01T04:23:33.2126519Z",
   "games": {
     "Genshin": {
       "gameKey": "Genshin",
       "webdavUrl": "https://assets.hoyotoon.com/s/TQgY4mkTyZEat2b",
-      "lastSync": "2025-07-03T05:35:37.3812784Z",
+      "lastSync": "2025-08-28T18:35:53.9057535Z",
       "files": {
         "Textures/Eff/Eff_Avatar_NyxState.png": {
           "relativePath": "Textures/Eff/Eff_Avatar_NyxState.png",
@@ -226,6 +226,16 @@
           "downloadDate": "2025-07-03T05:35:37.375691Z",
           "remoteEtag": "cdf5bcb98bb72735b2d068eca024247c",
           "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Male01_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Male01_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\GI\\Textures\\LightMaps\\Avatar_Male01_Tex_FaceLightmap.png",
+          "fileSize": 122444,
+          "checksum": "xN3nVPOe53nQ5qUJp4W8+g==",
+          "lastModified": "2025-08-06T11:49:03.0018114+02:00",
+          "downloadDate": "2025-08-06T09:49:03.0018114Z",
+          "remoteEtag": "abf9f8d348c72970e91d066101bcff50",
+          "isValid": true
         }
       },
       "totalDownloaded": 9506115,
@@ -234,7 +244,7 @@
     "Hi3": {
       "gameKey": "Hi3",
       "webdavUrl": "https://assets.hoyotoon.com/s/Q7KkrB69ny5kTBL",
-      "lastSync": "2025-07-03T05:35:33.4920192Z",
+      "lastSync": "2025-08-06T09:49:03.5516877Z",
       "files": {
         "Textures/Avatar_Boy_Facemap.png": {
           "relativePath": "Textures/Avatar_Boy_Facemap.png",
@@ -285,6 +295,16 @@
           "downloadDate": "2025-07-03T05:35:33.4869853Z",
           "remoteEtag": "272e8d962cce16745eb1d06a926d13cb",
           "isValid": true
+        },
+        "Textures/Avatar_Lady02_Facemap.png": {
+          "relativePath": "Textures/Avatar_Lady02_Facemap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Hi3\\Textures\\Avatar_Lady02_Facemap.png",
+          "fileSize": 57812,
+          "checksum": "UcAWVrUHgVCJRC7SwpAvtQ==",
+          "lastModified": "2025-08-06T11:49:03.5451387+02:00",
+          "downloadDate": "2025-08-06T09:49:03.5451387Z",
+          "remoteEtag": "342e966c835be2d143f2cba2fd96e957",
+          "isValid": true
         }
       },
       "totalDownloaded": 954865,
@@ -293,7 +313,7 @@
     "StarRail": {
       "gameKey": "StarRail",
       "webdavUrl": "https://assets.hoyotoon.com/s/8RaZzPQyLLEFb7o",
-      "lastSync": "2025-07-03T18:21:16.278714Z",
+      "lastSync": "2025-08-26T12:36:22.0247028Z",
       "files": {
         "Materials/Mat_EyeShadow_00.json": {
           "relativePath": "Materials/Mat_EyeShadow_00.json",
@@ -438,21 +458,21 @@
         "Materials/Mat_FaceMask.mat": {
           "relativePath": "Materials/Mat_FaceMask.mat",
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\HSR\\Materials\\Mat_FaceMask.mat",
-          "fileSize": 20876,
-          "checksum": "aMQuDEbOnPJUZ7KWbcYoBw==",
-          "lastModified": "2025-07-03T20:21:11.834997+02:00",
-          "downloadDate": "2025-07-03T18:21:11.8858841Z",
-          "remoteEtag": "5b953eba5a2fa08090a67d15030fa758",
+          "fileSize": 21416,
+          "checksum": "LM+gif9E/BGPd7OFz/vM7Q==",
+          "lastModified": "2025-08-26T14:36:21.7871343+02:00",
+          "downloadDate": "2025-08-26T12:36:21.8333656Z",
+          "remoteEtag": "dacf85af29f5f1c8df728a08b0677389",
           "isValid": true
         },
         "Materials/Mat_FaceMask.mat.meta": {
           "relativePath": "Materials/Mat_FaceMask.mat.meta",
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\HSR\\Materials\\Mat_FaceMask.mat.meta",
-          "fileSize": 188,
-          "checksum": "CXjGmerdj0+aO4GF7Z/ZAA==",
-          "lastModified": "2025-07-03T20:21:12.0895737+02:00",
-          "downloadDate": "2025-07-03T18:21:12.0895737Z",
-          "remoteEtag": "9537cd2790fa53df17c1f340c1c79bb7",
+          "fileSize": 182,
+          "checksum": "5/lSjIbNGCFvFLszUucPyA==",
+          "lastModified": "2025-08-26T14:36:22.0055705+02:00",
+          "downloadDate": "2025-08-26T12:36:22.0055705Z",
+          "remoteEtag": "b159437e6b8aaf695510ed041541d3e6",
           "isValid": true
         },
         "Textures/LightMaps/M_150_Boy_Face_ExpressionMap_00.png": {
@@ -1891,7 +1911,7 @@
     "ZZZ": {
       "gameKey": "ZZZ",
       "webdavUrl": "https://assets.hoyotoon.com/s/BWBcHTK7qmwTnfd",
-      "lastSync": "2025-07-03T05:46:39.2701381Z",
+      "lastSync": "2025-08-25T16:44:56.9120844Z",
       "files": {
         "Textures/LightMaps/Female_Face_Lightmap_02.png": {
           "relativePath": "Textures/LightMaps/Female_Face_Lightmap_02.png",
@@ -2088,9 +2108,9 @@
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_006.png",
           "fileSize": 44460,
           "checksum": "cbveUCE62KgkDpuglTqy+A==",
-          "lastModified": "2025-07-03T07:35:42.2909743+02:00",
-          "downloadDate": "2025-07-03T05:35:42.2909743Z",
-          "remoteEtag": "4dce7ca28f4cb11f3a0ec7c352970015",
+          "lastModified": "2025-08-06T11:49:04.4284406+02:00",
+          "downloadDate": "2025-08-06T09:49:04.4284406Z",
+          "remoteEtag": "73a7bded0141be0317ca3bec5bdb23ea",
           "isValid": true
         },
         "Textures/MatCaps/Eff_MatCap_007.png": {
@@ -2178,9 +2198,9 @@
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_015.png",
           "fileSize": 24742,
           "checksum": "f1PZLpPhKO2IFbQp4oXXlg==",
-          "lastModified": "2025-07-03T07:17:00.0270559+02:00",
-          "downloadDate": "2025-07-03T05:17:00.0270559Z",
-          "remoteEtag": "8e26f335b40e4d8a8b44eb9eb97924f7",
+          "lastModified": "2025-08-06T11:49:04.6164476+02:00",
+          "downloadDate": "2025-08-06T09:49:04.6164476Z",
+          "remoteEtag": "a0e3ae6f309f2b4e638701be8f14229c",
           "isValid": true
         },
         "Textures/MatCaps/Eff_MatCap_016.png": {
@@ -2228,9 +2248,9 @@
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_020.png",
           "fileSize": 32486,
           "checksum": "Rh6AMK/8VL9aZVUALn9ybA==",
-          "lastModified": "2025-07-03T07:17:00.9558182+02:00",
-          "downloadDate": "2025-07-03T05:17:00.9558182Z",
-          "remoteEtag": "1b168a1e03349ce4bfd0b2c292700c80",
+          "lastModified": "2025-08-06T11:49:04.7707588+02:00",
+          "downloadDate": "2025-08-06T09:49:04.7707588Z",
+          "remoteEtag": "c43f5b3b363d8fb76b9ddea86f8b4834",
           "isValid": true
         },
         "Textures/MatCaps/Eff_MatCap_021.png": {
@@ -2238,9 +2258,9 @@
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_021.png",
           "fileSize": 22160,
           "checksum": "3HudNEhaxLRA+ELXWeoLPQ==",
-          "lastModified": "2025-07-03T07:17:01.1593713+02:00",
-          "downloadDate": "2025-07-03T05:17:01.2104166Z",
-          "remoteEtag": "572478849683c316d047aff842cb6291",
+          "lastModified": "2025-08-06T11:49:04.8754542+02:00",
+          "downloadDate": "2025-08-06T09:49:04.9279612Z",
+          "remoteEtag": "5882c589c125fe68fc027f713b97f68f",
           "isValid": true
         },
         "Textures/MatCaps/Eff_MatCap_022.png": {
@@ -2406,11 +2426,11 @@
         "Textures/MatCaps/Eff_MatCap_037.png": {
           "relativePath": "Textures/MatCaps/Eff_MatCap_037.png",
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_037.png",
-          "fileSize": 24476,
-          "checksum": "jXbIEblZg7vDT6QvzKr/fg==",
-          "lastModified": "2025-07-03T07:17:04.5209726+02:00",
-          "downloadDate": "2025-07-03T05:17:04.5209726Z",
-          "remoteEtag": "ccf9139faf180548a48afec90b005fd0",
+          "fileSize": 34100,
+          "checksum": "94HL7np+cBIBCObMSPgb3g==",
+          "lastModified": "2025-08-06T11:49:05.0846286+02:00",
+          "downloadDate": "2025-08-06T09:49:05.0846286Z",
+          "remoteEtag": "760e409d27ee7b21c2f89ca727bfa720",
           "isValid": true
         },
         "Textures/MatCaps/Eff_Matcap_038.png": {
@@ -2538,9 +2558,9 @@
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_Matcap_053.png",
           "fileSize": 90223,
           "checksum": "7MM8EJMLIH/MLWLgZ75bFQ==",
-          "lastModified": "2025-07-03T07:46:28.8719461+02:00",
-          "downloadDate": "2025-07-03T05:46:28.8719461Z",
-          "remoteEtag": "ad5349cf0880c8b1834c7c08ffa83c7c",
+          "lastModified": "2025-08-06T11:49:05.1885052+02:00",
+          "downloadDate": "2025-08-06T09:49:05.2391938Z",
+          "remoteEtag": "d46a82dfdc49004181331b787d7b4a77",
           "isValid": true
         },
         "Textures/MatCaps/Eff_MatCap_054.png": {
@@ -2738,9 +2758,9 @@
           "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_076.png",
           "fileSize": 25194,
           "checksum": "Uw/gXPvoXiZmobs7iH4bWg==",
-          "lastModified": "2025-07-03T07:46:32.4508339+02:00",
-          "downloadDate": "2025-07-03T05:46:32.4508339Z",
-          "remoteEtag": "5153163c72f861cba5af77d83ca15bb2",
+          "lastModified": "2025-08-06T11:49:05.3636086+02:00",
+          "downloadDate": "2025-08-06T09:49:05.3636086Z",
+          "remoteEtag": "7a794154ca5786f0753750340f0b9429",
           "isValid": true
         },
         "Textures/MatCaps/Eff_MatCap_077.png": {
@@ -3211,6 +3231,186 @@
           "lastModified": "2025-07-03T07:46:39.2288113+02:00",
           "downloadDate": "2025-07-03T05:46:39.2625011Z",
           "remoteEtag": "3cff05fa930332da43217bef041bc0cf",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_091.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_091.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_091.png",
+          "fileSize": 62801,
+          "checksum": "kS9TnthTXy9B/dUDopaC8g==",
+          "lastModified": "2025-08-06T11:49:03.9505333+02:00",
+          "downloadDate": "2025-08-06T09:49:04.0091274Z",
+          "remoteEtag": "a0f07dc0182916199dfa94b1a723d0cc",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_107.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_107.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_107.png",
+          "fileSize": 65690,
+          "checksum": "gLX8gTYr0KLZXEC7qqKSoQ==",
+          "lastModified": "2025-08-06T11:49:04.2418364+02:00",
+          "downloadDate": "2025-08-06T09:49:04.2428416Z",
+          "remoteEtag": "6fec4822203de17beee27aa533f48d89",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_030_HZW_01.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_030_HZW_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_Matcap_030_HZW_01.png",
+          "fileSize": 41768,
+          "checksum": "dVW940jJzCRtc78amzGuuQ==",
+          "lastModified": "2025-08-25T18:44:54.4238046+02:00",
+          "downloadDate": "2025-08-25T16:44:54.4248091Z",
+          "remoteEtag": "df0a240026e993af32cbe76d149a7cc2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_098.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_098.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_098.png",
+          "fileSize": 86641,
+          "checksum": "3fWAHqXOsyrrRMOErbCzkA==",
+          "lastModified": "2025-08-25T18:44:54.5356034+02:00",
+          "downloadDate": "2025-08-25T16:44:54.5808001Z",
+          "remoteEtag": "449177eebd6f968e45634a5a70c028e5",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_108.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_108.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\MatCaps\\Eff_MatCap_108.png",
+          "fileSize": 54584,
+          "checksum": "TPZsT5Z2nz8H8G+9QRb3hA==",
+          "lastModified": "2025-08-25T18:44:54.6845158+02:00",
+          "downloadDate": "2025-08-25T16:44:54.7366113Z",
+          "remoteEtag": "cb5a5d723abc31895dd0ce8cf0dc25e1",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Color_025.png": {
+          "relativePath": "Textures/Misc/Eff_Color_025.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Misc\\Eff_Color_025.png",
+          "fileSize": 4392,
+          "checksum": "hvbUVbD17O76M3qFny3ajg==",
+          "lastModified": "2025-08-25T18:44:54.8884608+02:00",
+          "downloadDate": "2025-08-25T16:44:54.8884608Z",
+          "remoteEtag": "31bc32f7d57d6ecd63d6b3a8995534db",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_001_XL_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_001_XL_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Misc\\Eff_Mask_001_XL_01.png",
+          "fileSize": 125568,
+          "checksum": "eyHMoUTaaBJQIx7sAmUVTQ==",
+          "lastModified": "2025-08-25T18:44:55.0418288+02:00",
+          "downloadDate": "2025-08-25T16:44:55.0418288Z",
+          "remoteEtag": "7729844e1ec7cde913be6f210fc05261",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_001_YC_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_001_YC_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Misc\\Eff_Mask_001_YC_01.png",
+          "fileSize": 2158,
+          "checksum": "qYUimR1d6GrbWRaKZ6xB0g==",
+          "lastModified": "2025-08-25T18:44:55.1947503+02:00",
+          "downloadDate": "2025-08-25T16:44:55.1947503Z",
+          "remoteEtag": "1e7d4c92b351f778533e06fe080d905f",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_032.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_032.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Misc\\Eff_Mask_032.png",
+          "fileSize": 922,
+          "checksum": "LpI3AhK5eoSbGsnR4Rk2kg==",
+          "lastModified": "2025-08-25T18:44:55.3465312+02:00",
+          "downloadDate": "2025-08-25T16:44:55.3465312Z",
+          "remoteEtag": "91f1ea9db99509261a00c81a306c39d4",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_163_YK_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_163_YK_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Misc\\Eff_Mask_163_YK_01.png",
+          "fileSize": 13005,
+          "checksum": "BO5begbV7JXyGwks7LlExQ==",
+          "lastModified": "2025-08-25T18:44:55.4498275+02:00",
+          "downloadDate": "2025-08-25T16:44:55.4998897Z",
+          "remoteEtag": "f0f336bdf34a5eb2bb2e5f0153dcc60c",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_016_ZMH_02.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_016_ZMH_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_016_ZMH_02.png",
+          "fileSize": 86141,
+          "checksum": "tokIttREaBCzk9dLO4/ULQ==",
+          "lastModified": "2025-08-25T18:44:55.6010921+02:00",
+          "downloadDate": "2025-08-25T16:44:55.6520812Z",
+          "remoteEtag": "ffe8ffd34ab6054a8d087f2d8852a533",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_018_CZH_06.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_018_CZH_06.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_018_CZH_06.png",
+          "fileSize": 96637,
+          "checksum": "ltBcoYcDK90XoSNzOuUEnw==",
+          "lastModified": "2025-08-25T18:44:55.7600296+02:00",
+          "downloadDate": "2025-08-25T16:44:55.8100842Z",
+          "remoteEtag": "2bc1ee744c264bc51457b78bf8ed179f",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_018_YC_02.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_018_YC_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_018_YC_02.png",
+          "fileSize": 59380,
+          "checksum": "x8/rXuOK7jJDMDCXTCaRYg==",
+          "lastModified": "2025-08-25T18:44:55.9663247+02:00",
+          "downloadDate": "2025-08-25T16:44:55.9663247Z",
+          "remoteEtag": "74007882fd0835770b2d675231db3d5b",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_085_LKJ_01.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_085_LKJ_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_085_LKJ_01.png",
+          "fileSize": 207718,
+          "checksum": "7uSaMNLLXM8gboTy5CRHEw==",
+          "lastModified": "2025-08-25T18:44:56.120088+02:00",
+          "downloadDate": "2025-08-25T16:44:56.120088Z",
+          "remoteEtag": "efa570478314a1b8d6a5d9a50d1f92a0",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_087.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_087.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_087.png",
+          "fileSize": 197277,
+          "checksum": "26sbnPJMCveUHx2sxrXRyw==",
+          "lastModified": "2025-08-25T18:44:56.2753272+02:00",
+          "downloadDate": "2025-08-25T16:44:56.2753272Z",
+          "remoteEtag": "453cde239863adb9cb0d3a25286b1f94",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_105_LWJ_01.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_105_LWJ_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_105_LWJ_01.png",
+          "fileSize": 334987,
+          "checksum": "VDgQ6XA7DPnz3Me4QifBpg==",
+          "lastModified": "2025-08-25T18:44:56.3828404+02:00",
+          "downloadDate": "2025-08-25T16:44:56.4309333Z",
+          "remoteEtag": "039ed1419db9c4426945521d1943241d",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_146.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_146.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_146.png",
+          "fileSize": 157680,
+          "checksum": "AnmpKeUM/q6VUzsLYwNbfw==",
+          "lastModified": "2025-08-25T18:44:56.5853037+02:00",
+          "downloadDate": "2025-08-25T16:44:56.5853037Z",
+          "remoteEtag": "a7465bd5c7ed648aa6ff61ef314d3326",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_211.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_211.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon Avatars\\Packages\\com.meliverse.hoyotoon\\Resources\\ZZZ\\Textures\\Noise\\Eff_Noise_211.png",
+          "fileSize": 5123691,
+          "checksum": "im9836AhwJSO4XpIdCbVOA==",
+          "lastModified": "2025-08-25T18:44:56.8644953+02:00",
+          "downloadDate": "2025-08-25T16:44:56.8938316Z",
+          "remoteEtag": "3c969b8c7dfccd44a5ee2068aefb36f0",
           "isValid": true
         }
       },

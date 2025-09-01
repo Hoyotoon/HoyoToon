@@ -14,29 +14,6 @@ namespace HoyoToon
         #region Data-Driven Texture Management
 
         /// <summary>
-        /// Get shader key from shader path for data lookup
-        /// </summary>
-        /// <param name="shader">Shader instance</param>
-        /// <returns>Shader key or null if not found</returns>
-        private static string GetShaderKeyFromShader(Shader shader)
-        {
-            if (shader == null) return null;
-
-            var shaderData = HoyoToonDataManager.Data.Shaders;
-            if (shaderData == null) return null;
-
-            foreach (var kvp in shaderData)
-            {
-                if (kvp.Value != null && kvp.Value.Contains(shader.name))
-                {
-                    return kvp.Key;
-                }
-            }
-
-            return null;
-        }
-
-        /// <summary>
         /// Find and assign texture to material property based on JSON configuration
         /// </summary>
         /// <param name="newMaterial">Target material</param>
@@ -44,7 +21,7 @@ namespace HoyoToon
         /// <param name="shader">Shader instance</param>
         public static void HardsetTexture(Material newMaterial, string propertyName, Shader shader)
         {
-            string shaderKey = GetShaderKeyFromShader(shader);
+            string shaderKey = HoyoToonDataManager.GetShaderKey(shader);
             if (string.IsNullOrEmpty(shaderKey))
             {
                 HoyoToonLogs.WarningDebug($"No shader key found for shader: {shader.name}");
@@ -540,7 +517,231 @@ namespace HoyoToon
             SetTextureImportSettings(paths, null);
         }
 
+        #endregion
 
+        #region Texture Analysis and Validation API
+
+        /// <summary>
+        /// Analyze multiple textures and get comprehensive optimization recommendations
+        /// </summary>
+        /// <param name="texturePaths">Paths to texture assets</param>
+        /// <param name="shaderKey">Optional shader key for shader-specific requirements</param>
+        /// <returns>List of texture analysis results</returns>
+        public static List<HoyoToonTextureAnalysis> AnalyzeTextures(IEnumerable<string> texturePaths, string shaderKey = null)
+        {
+            var results = new List<HoyoToonTextureAnalysis>();
+
+            foreach (var path in texturePaths)
+            {
+                try
+                {
+                    var analysis = HoyoToonDataManager.AnalyzeTexture(path, shaderKey);
+                    results.Add(analysis);
+                }
+                catch (Exception e)
+                {
+                    HoyoToonLogs.ErrorDebug($"Failed to analyze texture {path}: {e.Message}");
+                    results.Add(new HoyoToonTextureAnalysis
+                    {
+                        TexturePath = path,
+                        TextureName = Path.GetFileNameWithoutExtension(path),
+                        IsValid = false,
+                        Issues = new List<string> { $"Analysis failed: {e.Message}" }
+                    });
+                }
+            }
+
+            return results;
+        }
+
+        /// <summary>
+        /// Get textures that need optimization with priority ordering
+        /// </summary>
+        /// <param name="texturePaths">Paths to texture assets</param>
+        /// <param name="shaderKey">Optional shader key for shader-specific requirements</param>
+        /// <returns>Textures needing optimization, ordered by priority</returns>
+        public static List<HoyoToonTextureAnalysis> GetOptimizationCandidates(IEnumerable<string> texturePaths, string shaderKey = null)
+        {
+            var analyses = AnalyzeTextures(texturePaths, shaderKey);
+            return analyses
+                .Where(a => a.IsValid && a.NeedsOptimization)
+                .OrderByDescending(a => a.OptimizationPriority)
+                .ToList();
+        }
+
+        /// <summary>
+        /// Apply HoyoToon-optimized settings to a texture based on analysis
+        /// </summary>
+        /// <param name="texturePath">Path to texture asset</param>
+        /// <param name="shaderKey">Optional shader key for shader-specific requirements</param>
+        /// <returns>True if optimization was applied successfully</returns>
+        public static bool OptimizeTextureWithAnalysis(string texturePath, string shaderKey = null)
+        {
+            try
+            {
+                var analysis = HoyoToonDataManager.AnalyzeTexture(texturePath, shaderKey);
+                if (!analysis.IsValid || !analysis.NeedsOptimization)
+                {
+                    HoyoToonLogs.LogDebug($"Texture {analysis.TextureName} does not need optimization");
+                    return false;
+                }
+
+                // Apply recommended settings
+                SetTextureImportSettings(new[] { texturePath }, shaderKey);
+                
+                HoyoToonLogs.LogDebug($"Successfully optimized texture: {analysis.TextureName}");
+                return true;
+            }
+            catch (Exception e)
+            {
+                HoyoToonLogs.ErrorDebug($"Failed to optimize texture {texturePath}: {e.Message}");
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Batch optimize multiple textures with comprehensive analysis
+        /// </summary>
+        /// <param name="texturePaths">Paths to texture assets</param>
+        /// <param name="shaderKey">Optional shader key for shader-specific requirements</param>
+        /// <returns>Optimization results summary</returns>
+        public static HoyoToonTextureOptimizationResult BatchOptimizeTextures(IEnumerable<string> texturePaths, string shaderKey = null)
+        {
+            var result = new HoyoToonTextureOptimizationResult();
+            var candidates = GetOptimizationCandidates(texturePaths, shaderKey);
+
+            result.TotalTextures = texturePaths.Count();
+            result.CandidatesForOptimization = candidates.Count;
+
+            AssetDatabase.StartAssetEditing();
+            try
+            {
+                foreach (var candidate in candidates)
+                {
+                    try
+                    {
+                        if (OptimizeTextureWithAnalysis(candidate.TexturePath, shaderKey))
+                        {
+                            result.OptimizedTextures.Add(candidate.TextureName);
+                            result.EstimatedMemorySaved += ExtractMemorySavings(candidate.EstimatedSavings);
+                        }
+                        else
+                        {
+                            result.FailedTextures.Add($"{candidate.TextureName}: Optimization not applied");
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        result.FailedTextures.Add($"{candidate.TextureName}: {e.Message}");
+                    }
+                }
+            }
+            finally
+            {
+                AssetDatabase.StopAssetEditing();
+                AssetDatabase.SaveAssets();
+                AssetDatabase.Refresh();
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Validate if a texture meets HoyoToon standards for a specific shader
+        /// </summary>
+        /// <param name="texturePath">Path to texture asset</param>
+        /// <param name="shaderKey">Shader key for validation</param>
+        /// <returns>Validation result with pass/fail and issues</returns>
+        public static HoyoToonTextureValidationResult ValidateTextureForShader(string texturePath, string shaderKey)
+        {
+            var result = new HoyoToonTextureValidationResult
+            {
+                TexturePath = texturePath,
+                TextureName = Path.GetFileNameWithoutExtension(texturePath),
+                ShaderKey = shaderKey
+            };
+
+            try
+            {
+                var analysis = HoyoToonDataManager.AnalyzeTexture(texturePath, shaderKey);
+                result.IsValid = analysis.IsValid;
+                result.MeetsStandards = analysis.IsValid && !analysis.NeedsOptimization;
+                result.Issues = analysis.Issues.Concat(analysis.Recommendations).ToList();
+                result.Analysis = analysis;
+            }
+            catch (Exception e)
+            {
+                result.IsValid = false;
+                result.MeetsStandards = false;
+                result.Issues.Add($"Validation failed: {e.Message}");
+            }
+
+            return result;
+        }
+
+        private static long ExtractMemorySavings(string estimatedSavings)
+        {
+            try
+            {
+                if (estimatedSavings.Contains("MB"))
+                {
+                    var mbString = estimatedSavings.Replace("~", "").Replace("MB", "").Trim();
+                    if (long.TryParse(mbString, out long mb))
+                    {
+                        return mb * 1024 * 1024;
+                    }
+                }
+                return 0;
+            }
+            catch
+            {
+                return 0;
+            }
+        }
+
+        #endregion
+
+        #region Result Classes
+
+        /// <summary>
+        /// Result of batch texture optimization operation
+        /// </summary>
+        public class HoyoToonTextureOptimizationResult
+        {
+            public int TotalTextures { get; set; }
+            public int CandidatesForOptimization { get; set; }
+            public List<string> OptimizedTextures { get; set; } = new List<string>();
+            public List<string> FailedTextures { get; set; } = new List<string>();
+            public long EstimatedMemorySaved { get; set; }
+
+            public int SuccessCount => OptimizedTextures.Count;
+            public int FailureCount => FailedTextures.Count;
+            public string MemorySavedFormatted => EstimatedMemorySaved > 1024 * 1024 
+                ? $"{EstimatedMemorySaved / (1024 * 1024)}MB" 
+                : $"{EstimatedMemorySaved / 1024}KB";
+
+            public string Summary => $"Optimized {SuccessCount}/{CandidatesForOptimization} textures. " +
+                                   $"Estimated memory saved: {MemorySavedFormatted}. " +
+                                   $"{FailureCount} failed.";
+        }
+
+        /// <summary>
+        /// Result of texture validation for shader compliance
+        /// </summary>
+        public class HoyoToonTextureValidationResult
+        {
+            public string TexturePath { get; set; }
+            public string TextureName { get; set; }
+            public string ShaderKey { get; set; }
+            public bool IsValid { get; set; }
+            public bool MeetsStandards { get; set; }
+            public List<string> Issues { get; set; } = new List<string>();
+            public HoyoToonTextureAnalysis Analysis { get; set; }
+
+            public string StatusMessage => MeetsStandards 
+                ? "Meets HoyoToon standards" 
+                : $"Needs optimization: {string.Join(", ", Issues.Take(3))}";
+        }
 
         #endregion
     }
