@@ -1,0 +1,19 @@
+{
+    "name": "com.meliverse.hoyotoon.Editor",
+    "rootNamespace": "",
+    "references": [
+    "Unity.EditorCoroutines.Editor",
+    "com.vrchat.core.vpm-resolver.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

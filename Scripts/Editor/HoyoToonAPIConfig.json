@@ -1,0 +1,34 @@
+{
+  "resources": [
+    {
+      "Key": "Genshin Impact",
+      "DisplayName": "Genshin Impact",
+      "WebdavUrl": "https://assets.hoyotoon.com/s/TQgY4mkTyZEat2b",
+      "LocalPath": "Resources/Genshin Impact"
+    },
+    {
+      "Key": "Honkai Impact 3rd",
+      "DisplayName": "Honkai Impact 3rd",
+      "WebdavUrl": "https://assets.hoyotoon.com/s/Q7KkrB69ny5kTBL",
+      "LocalPath": "Resources/Honkai Impact 3rd"
+    },
+    {
+      "Key": "Honkai Star Rail",
+      "DisplayName": "Honkai Star Rail",
+      "WebdavUrl": "https://assets.hoyotoon.com/s/8RaZzPQyLLEFb7o",
+      "LocalPath": "Resources/Honkai Star Rail"
+    },
+    {
+      "Key": "Wuthering Waves",
+      "DisplayName": "Wuthering Waves",
+      "WebdavUrl": "https://assets.hoyotoon.com/s/Y6o9agnZ7xP84sS",
+      "LocalPath": "Resources/Wuthering Waves"
+    },
+    {
+      "Key": "Zenless Zone Zero",
+      "DisplayName": "Zenless Zone Zero",
+      "WebdavUrl": "https://assets.hoyotoon.com/s/BWBcHTK7qmwTnfd",
+      "LocalPath": "Resources/Zenless Zone Zero"
+    }
+  ]
+}

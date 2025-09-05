@@ -1,0 +1,3422 @@
+{
+  "version": "1.0.0",
+  "lastUpdateCheck": "2025-09-05T06:28:19.062132Z",
+  "games": {
+    "Genshin Impact": {
+      "gameKey": "Genshin Impact",
+      "webdavUrl": "https://assets.hoyotoon.com/s/TQgY4mkTyZEat2b",
+      "lastSync": "2025-09-05T06:23:47.8633573Z",
+      "files": {
+        "Textures/Eff/Eff_Avatar_NyxState.png": {
+          "relativePath": "Textures/Eff/Eff_Avatar_NyxState.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Eff\\Eff_Avatar_NyxState.png",
+          "fileSize": 325129,
+          "checksum": "vBaC7uYmThjRajozzYaFxA==",
+          "lastModified": "2025-09-05T08:23:42.7630085+02:00",
+          "downloadDate": "2025-09-05T06:23:42.7788647Z",
+          "remoteEtag": "8e9f647df9b469c2fcdaaa2f0af5f00a",
+          "isValid": true
+        },
+        "Textures/Eff/Eff_Gradient_Repeat_01.png": {
+          "relativePath": "Textures/Eff/Eff_Gradient_Repeat_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Eff\\Eff_Gradient_Repeat_01.png",
+          "fileSize": 1090,
+          "checksum": "mqYK0mLneOw2ENxIVehH2A==",
+          "lastModified": "2025-09-05T08:23:43.1000984+02:00",
+          "downloadDate": "2025-09-05T06:23:43.1000984Z",
+          "remoteEtag": "97da325998ac93eab6a58a94bc2da909",
+          "isValid": true
+        },
+        "Textures/Eff/Eff_Mask_171.png": {
+          "relativePath": "Textures/Eff/Eff_Mask_171.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Eff\\Eff_Mask_171.png",
+          "fileSize": 7326,
+          "checksum": "7tl2nqkXsvVvffjx2Jq6Ag==",
+          "lastModified": "2025-09-05T08:23:43.3067346+02:00",
+          "downloadDate": "2025-09-05T06:23:43.3067346Z",
+          "remoteEtag": "0b9566a4ee4c8a70366e0a528786b731",
+          "isValid": true
+        },
+        "Textures/Eff/Eff_WeaponsTotem_Dissolve_00.png": {
+          "relativePath": "Textures/Eff/Eff_WeaponsTotem_Dissolve_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Eff\\Eff_WeaponsTotem_Dissolve_00.png",
+          "fileSize": 338,
+          "checksum": "5j39vQQFQaxCXj2U+T44ZQ==",
+          "lastModified": "2025-09-05T08:23:43.5605941+02:00",
+          "downloadDate": "2025-09-05T06:23:43.5605941Z",
+          "remoteEtag": "090fbf2ce276546595249d52e1fed2e7",
+          "isValid": true
+        },
+        "Textures/Eff/Eff_WeaponsTotem_Grain_00.png": {
+          "relativePath": "Textures/Eff/Eff_WeaponsTotem_Grain_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Eff\\Eff_WeaponsTotem_Grain_00.png",
+          "fileSize": 65449,
+          "checksum": "e62eycfm+K4/O4RWCYFDXw==",
+          "lastModified": "2025-09-05T08:23:43.7741644+02:00",
+          "downloadDate": "2025-09-05T06:23:43.7741644Z",
+          "remoteEtag": "774091f29a3cc2f28e72319951fc1c70",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Boy01_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Boy01_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Boy01_Tex_FaceLightmap.png",
+          "fileSize": 152416,
+          "checksum": "vLZ/HqZQF2y0YQyuZMvh9A==",
+          "lastModified": "2025-09-05T08:23:43.9743991+02:00",
+          "downloadDate": "2025-09-05T06:23:43.9986943Z",
+          "remoteEtag": "71ae4ed85dded03bbce8d5806dd36df8",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Boy_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Boy_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Boy_Tex_FaceLightmap.png",
+          "fileSize": 153544,
+          "checksum": "YKryDl+TYX/iCHWy9/MQcw==",
+          "lastModified": "2025-09-05T08:23:44.1533275+02:00",
+          "downloadDate": "2025-09-05T06:23:44.1779735Z",
+          "remoteEtag": "5ab4d9a35810cb78840ef114b57d8e4f",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Girl01_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Girl01_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Girl01_Tex_FaceLightmap.png",
+          "fileSize": 154672,
+          "checksum": "I8JPnJeN92bOayzXJwXA5g==",
+          "lastModified": "2025-09-05T08:23:44.3341986+02:00",
+          "downloadDate": "2025-09-05T06:23:44.3967651Z",
+          "remoteEtag": "e9e15ec339859f241f76ee7f0cf5592f",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Girl_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Girl_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Girl_Tex_FaceLightmap.png",
+          "fileSize": 152604,
+          "checksum": "cJGleEazqv6LN1CMayWoyw==",
+          "lastModified": "2025-09-05T08:23:44.5951684+02:00",
+          "downloadDate": "2025-09-05T06:23:44.6579865Z",
+          "remoteEtag": "05423a3265be725239b83fff810541b5",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Lady01_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Lady01_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Lady01_Tex_FaceLightmap.png",
+          "fileSize": 123982,
+          "checksum": "J9PQb/mTlmyFyjvP1b+cpg==",
+          "lastModified": "2025-09-05T08:23:44.910711+02:00",
+          "downloadDate": "2025-09-05T06:23:44.910711Z",
+          "remoteEtag": "692a1d2d4a2c4ee539f2f7537a7a4e1e",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Lady_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Lady_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Lady_Tex_FaceLightmap.png",
+          "fileSize": 136125,
+          "checksum": "YScYSQFB5yXLnOhfqTuQaQ==",
+          "lastModified": "2025-09-05T08:23:45.0679394+02:00",
+          "downloadDate": "2025-09-05T06:23:45.1084402Z",
+          "remoteEtag": "c3f5efe2f4929761fa700208e13a1662",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Loli01_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Loli01_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Loli01_Tex_FaceLightmap.png",
+          "fileSize": 127737,
+          "checksum": "gn5KMU78u9MPm0ZE80b5sA==",
+          "lastModified": "2025-09-05T08:23:45.214133+02:00",
+          "downloadDate": "2025-09-05T06:23:45.244213Z",
+          "remoteEtag": "7d184553028733821b92b36e32a8f881",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Loli_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Loli_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Loli_Tex_FaceLightmap.png",
+          "fileSize": 120735,
+          "checksum": "jnzmUkWItZlaoIhuHnGoCA==",
+          "lastModified": "2025-09-05T08:23:45.370611+02:00",
+          "downloadDate": "2025-09-05T06:23:45.4218583Z",
+          "remoteEtag": "3b7ba78a1b073d5cf18b17b3b1f20ad7",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Male01_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Male01_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Male01_Tex_FaceLightmap.png",
+          "fileSize": 122444,
+          "checksum": "xN3nVPOe53nQ5qUJp4W8+g==",
+          "lastModified": "2025-09-05T08:23:45.6279545+02:00",
+          "downloadDate": "2025-09-05T06:23:45.6279545Z",
+          "remoteEtag": "abf9f8d348c72970e91d066101bcff50",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Male_Tex_FaceLightmap.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Male_Tex_FaceLightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Male_Tex_FaceLightmap.png",
+          "fileSize": 138005,
+          "checksum": "Y5Y/GslKpHSdFGwKJGe6JQ==",
+          "lastModified": "2025-09-05T08:23:45.8374626+02:00",
+          "downloadDate": "2025-09-05T06:23:45.892224Z",
+          "remoteEtag": "b3c154ef88e6aaad00b97c3f7a2b7e3e",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Tex_Face01_Shadow.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Tex_Face01_Shadow.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Tex_Face01_Shadow.png",
+          "fileSize": 93009,
+          "checksum": "lHzTi+K88x3mrW5wgH7sWw==",
+          "lastModified": "2025-09-05T08:23:46.0963073+02:00",
+          "downloadDate": "2025-09-05T06:23:46.0963073Z",
+          "remoteEtag": "f657b170770ba53039ed5a2e785880b8",
+          "isValid": true
+        },
+        "Textures/LightMaps/Avatar_Tex_Face_Shadow.png": {
+          "relativePath": "Textures/LightMaps/Avatar_Tex_Face_Shadow.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\LightMaps\\Avatar_Tex_Face_Shadow.png",
+          "fileSize": 92863,
+          "checksum": "3I2Fik0r+QfgXCL27QxWcA==",
+          "lastModified": "2025-09-05T08:23:46.2964967+02:00",
+          "downloadDate": "2025-09-05T06:23:46.2964967Z",
+          "remoteEtag": "b74a35335b0d1b0fcfac78f65fe05f49",
+          "isValid": true
+        },
+        "Textures/Masks/Avatar_Tex_Appear_Face_Mask.png": {
+          "relativePath": "Textures/Masks/Avatar_Tex_Appear_Face_Mask.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Masks\\Avatar_Tex_Appear_Face_Mask.png",
+          "fileSize": 1832,
+          "checksum": "f9/nZtxPpp5ppkmX4QSk9w==",
+          "lastModified": "2025-09-05T08:23:46.7056727+02:00",
+          "downloadDate": "2025-09-05T06:23:46.7056727Z",
+          "remoteEtag": "253d74a503cc50c9acdcdbb9687fc251",
+          "isValid": true
+        },
+        "Textures/Masks/Avatar_Tex_Appear_Pupil_Mask.png": {
+          "relativePath": "Textures/Masks/Avatar_Tex_Appear_Pupil_Mask.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Masks\\Avatar_Tex_Appear_Pupil_Mask.png",
+          "fileSize": 515,
+          "checksum": "qwLdSeaOxUObz87fKfm39g==",
+          "lastModified": "2025-09-05T08:23:46.9169244+02:00",
+          "downloadDate": "2025-09-05T06:23:46.9169244Z",
+          "remoteEtag": "69a19963a41cf67eb4affb74143f358b",
+          "isValid": true
+        },
+        "Textures/MatCap/Avatar_Tex_Leather_Reflectmap.png": {
+          "relativePath": "Textures/MatCap/Avatar_Tex_Leather_Reflectmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\MatCap\\Avatar_Tex_Leather_Reflectmap.png",
+          "fileSize": 36661,
+          "checksum": "6TV1c/YwmUTWm/mMZFczyQ==",
+          "lastModified": "2025-09-05T08:23:47.1267017+02:00",
+          "downloadDate": "2025-09-05T06:23:47.1721772Z",
+          "remoteEtag": "ea16fccafefdbb97efdd33cdda44b7ee",
+          "isValid": true
+        },
+        "Textures/MatCap/Avatar_Tex_MetalMap.png": {
+          "relativePath": "Textures/MatCap/Avatar_Tex_MetalMap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\MatCap\\Avatar_Tex_MetalMap.png",
+          "fileSize": 14599,
+          "checksum": "FtujsyLnQhju7iRs+LKzYg==",
+          "lastModified": "2025-09-05T08:23:47.3834412+02:00",
+          "downloadDate": "2025-09-05T06:23:47.4312609Z",
+          "remoteEtag": "21fd03dc77ac3b8f0a018c087de3152f",
+          "isValid": true
+        },
+        "Textures/Ramp/Avatar_NyxState_Default.png": {
+          "relativePath": "Textures/Ramp/Avatar_NyxState_Default.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Ramp\\Avatar_NyxState_Default.png",
+          "fileSize": 2467,
+          "checksum": "6dOkTRswT2pWyNPBzLCzJw==",
+          "lastModified": "2025-09-05T08:23:47.6931838+02:00",
+          "downloadDate": "2025-09-05T06:23:47.6931838Z",
+          "remoteEtag": "11035d19b6b60e46a426148a80109efd",
+          "isValid": true
+        },
+        "Textures/Ramp/Avatar_Tex_Specular_Ramp.png": {
+          "relativePath": "Textures/Ramp/Avatar_Tex_Specular_Ramp.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Genshin Impact\\Textures\\Ramp\\Avatar_Tex_Specular_Ramp.png",
+          "fileSize": 125,
+          "checksum": "O7dhHvxABpDetG9dCzukhA==",
+          "lastModified": "2025-09-05T08:23:47.8592762+02:00",
+          "downloadDate": "2025-09-05T06:23:47.8592762Z",
+          "remoteEtag": "cdf5bcb98bb72735b2d068eca024247c",
+          "isValid": true
+        }
+      },
+      "totalDownloaded": 2023667,
+      "downloadErrors": []
+    },
+    "Honkai Star Rail": {
+      "gameKey": "Honkai Star Rail",
+      "webdavUrl": "https://assets.hoyotoon.com/s/8RaZzPQyLLEFb7o",
+      "lastSync": "2025-09-05T06:23:52.9753641Z",
+      "files": {
+        "Materials/Mat_EyeShadow_00.json": {
+          "relativePath": "Materials/Mat_EyeShadow_00.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_00.json",
+          "fileSize": 24239,
+          "checksum": "AJRhFSe6ckOUOpYB979Vdg==",
+          "lastModified": "2025-09-05T08:23:42.8305235+02:00",
+          "downloadDate": "2025-09-05T06:23:42.8350325Z",
+          "remoteEtag": "82844de428a5a232e50147de8355654a",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_00.json.meta": {
+          "relativePath": "Materials/Mat_EyeShadow_00.json.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_00.json.meta",
+          "fileSize": 158,
+          "checksum": "yD802az/3xwOdi3JxNdZiQ==",
+          "lastModified": "2025-09-05T08:23:43.0944845+02:00",
+          "downloadDate": "2025-09-05T06:23:43.0944845Z",
+          "remoteEtag": "633b31a8c997e06bbecca76768bdf161",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_00.mat": {
+          "relativePath": "Materials/Mat_EyeShadow_00.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_00.mat",
+          "fileSize": 20878,
+          "checksum": "i95TA9B59Gk09sgOgY4Yxg==",
+          "lastModified": "2025-09-05T08:23:43.2873132+02:00",
+          "downloadDate": "2025-09-05T06:23:43.3012801Z",
+          "remoteEtag": "2b46833404a4fd1eb8e170631146d1c6",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_00.mat.meta": {
+          "relativePath": "Materials/Mat_EyeShadow_00.mat.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_00.mat.meta",
+          "fileSize": 188,
+          "checksum": "8TXGWD7Kvpu0+/SwjYrmDA==",
+          "lastModified": "2025-09-05T08:23:43.5661026+02:00",
+          "downloadDate": "2025-09-05T06:23:43.5661026Z",
+          "remoteEtag": "553d107e56b67e899b6b1355e06198e0",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_01.json": {
+          "relativePath": "Materials/Mat_EyeShadow_01.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_01.json",
+          "fileSize": 24239,
+          "checksum": "AJRhFSe6ckOUOpYB979Vdg==",
+          "lastModified": "2025-09-05T08:23:43.7676528+02:00",
+          "downloadDate": "2025-09-05T06:23:43.7676528Z",
+          "remoteEtag": "1e917ab9748fe03e7d2e914423daa58a",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_01.json.meta": {
+          "relativePath": "Materials/Mat_EyeShadow_01.json.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_01.json.meta",
+          "fileSize": 158,
+          "checksum": "mxQpz2vYZv46b+0U+w0siQ==",
+          "lastModified": "2025-09-05T08:23:43.9921909+02:00",
+          "downloadDate": "2025-09-05T06:23:43.9921909Z",
+          "remoteEtag": "76cc14ce882b817764a6340b7fcb653d",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_01.mat": {
+          "relativePath": "Materials/Mat_EyeShadow_01.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_01.mat",
+          "fileSize": 20878,
+          "checksum": "9/JXRgU1O6QKMHfaLSc7AQ==",
+          "lastModified": "2025-09-05T08:23:44.1262202+02:00",
+          "downloadDate": "2025-09-05T06:23:44.1427407Z",
+          "remoteEtag": "8719e3de787a04612ac3573865f1b30c",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow_01.mat.meta": {
+          "relativePath": "Materials/Mat_EyeShadow_01.mat.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow_01.mat.meta",
+          "fileSize": 188,
+          "checksum": "TflPKbGvPqlY3VeDkPhT9Q==",
+          "lastModified": "2025-09-05T08:23:44.3907486+02:00",
+          "downloadDate": "2025-09-05T06:23:44.3907486Z",
+          "remoteEtag": "0920cad17fb9ad04cc8772c825a4feca",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow.json": {
+          "relativePath": "Materials/Mat_EyeShadow.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow.json",
+          "fileSize": 24239,
+          "checksum": "AJRhFSe6ckOUOpYB979Vdg==",
+          "lastModified": "2025-09-05T08:23:44.5941191+02:00",
+          "downloadDate": "2025-09-05T06:23:44.6514542Z",
+          "remoteEtag": "7f6553cbb34bc35c21b3a81380c78444",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow.json.meta": {
+          "relativePath": "Materials/Mat_EyeShadow.json.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow.json.meta",
+          "fileSize": 158,
+          "checksum": "NrT/3w5WKyURu/YLOvmpvA==",
+          "lastModified": "2025-09-05T08:23:44.8533218+02:00",
+          "downloadDate": "2025-09-05T06:23:44.8533218Z",
+          "remoteEtag": "70e70c06d7756e3e1173e3a701129cae",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow.mat": {
+          "relativePath": "Materials/Mat_EyeShadow.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow.mat",
+          "fileSize": 20875,
+          "checksum": "aar9pySck01i92JDAP9drw==",
+          "lastModified": "2025-09-05T08:23:45.005959+02:00",
+          "downloadDate": "2025-09-05T06:23:45.0577947Z",
+          "remoteEtag": "146254ed274112db9a5b3e0f64fab0a0",
+          "isValid": true
+        },
+        "Materials/Mat_EyeShadow.mat.meta": {
+          "relativePath": "Materials/Mat_EyeShadow.mat.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_EyeShadow.mat.meta",
+          "fileSize": 188,
+          "checksum": "9Z6TtmuXQc2C5cFusCDUeQ==",
+          "lastModified": "2025-09-05T08:23:45.2381717+02:00",
+          "downloadDate": "2025-09-05T06:23:45.2381717Z",
+          "remoteEtag": "ab6251d16fe0682034a3cfacbf3c48ab",
+          "isValid": true
+        },
+        "Materials/Mat_FaceMask.json": {
+          "relativePath": "Materials/Mat_FaceMask.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_FaceMask.json",
+          "fileSize": 24886,
+          "checksum": "G8TGmRnBTdY/rtq93u6qaA==",
+          "lastModified": "2025-09-05T08:23:45.4288888+02:00",
+          "downloadDate": "2025-09-05T06:23:45.4744577Z",
+          "remoteEtag": "08826e579a92a10a9796aa8c63e14a85",
+          "isValid": true
+        },
+        "Materials/Mat_FaceMask.json.meta": {
+          "relativePath": "Materials/Mat_FaceMask.json.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_FaceMask.json.meta",
+          "fileSize": 158,
+          "checksum": "tYJBB8eIp386Up5KTU2kdA==",
+          "lastModified": "2025-09-05T08:23:45.6799937+02:00",
+          "downloadDate": "2025-09-05T06:23:45.6799937Z",
+          "remoteEtag": "ac88f824b491462cddf10e413b7db71a",
+          "isValid": true
+        },
+        "Materials/Mat_FaceMask.mat": {
+          "relativePath": "Materials/Mat_FaceMask.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_FaceMask.mat",
+          "fileSize": 21416,
+          "checksum": "LM+gif9E/BGPd7OFz/vM7Q==",
+          "lastModified": "2025-09-05T08:23:45.8354627+02:00",
+          "downloadDate": "2025-09-05T06:23:45.8857177Z",
+          "remoteEtag": "dacf85af29f5f1c8df728a08b0677389",
+          "isValid": true
+        },
+        "Materials/Mat_FaceMask.mat.meta": {
+          "relativePath": "Materials/Mat_FaceMask.mat.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Materials\\Mat_FaceMask.mat.meta",
+          "fileSize": 182,
+          "checksum": "5/lSjIbNGCFvFLszUucPyA==",
+          "lastModified": "2025-09-05T08:23:46.0898009+02:00",
+          "downloadDate": "2025-09-05T06:23:46.0898009Z",
+          "remoteEtag": "b159437e6b8aaf695510ed041541d3e6",
+          "isValid": true
+        },
+        "Textures/LightMaps/M_150_Boy_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/M_150_Boy_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\M_150_Boy_Face_ExpressionMap_00.png",
+          "fileSize": 78164,
+          "checksum": "ObQDXFSBmqdbIvF8ONA8Jg==",
+          "lastModified": "2025-09-05T08:23:46.3044233+02:00",
+          "downloadDate": "2025-09-05T06:23:46.3465803Z",
+          "remoteEtag": "85c37f952a6f7a26148c29529597a925",
+          "isValid": true
+        },
+        "Textures/LightMaps/M_150_Boy_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/M_150_Boy_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\M_150_Boy_FaceMap_00.png",
+          "fileSize": 120777,
+          "checksum": "PGQD81nT1w+jpua77wmJbQ==",
+          "lastModified": "2025-09-05T08:23:46.6636003+02:00",
+          "downloadDate": "2025-09-05T06:23:46.7120144Z",
+          "remoteEtag": "5f2e79d31869fdcc78f577a4a454c4ec",
+          "isValid": true
+        },
+        "Textures/LightMaps/M_170_Lad_Face_ExpressionMap.png": {
+          "relativePath": "Textures/LightMaps/M_170_Lad_Face_ExpressionMap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\M_170_Lad_Face_ExpressionMap.png",
+          "fileSize": 69473,
+          "checksum": "QFrl+RRIZj4c6hWb3yJ1vQ==",
+          "lastModified": "2025-09-05T08:23:46.9245235+02:00",
+          "downloadDate": "2025-09-05T06:23:46.9674483Z",
+          "remoteEtag": "215605579e51f4ceb17d108fabe350f7",
+          "isValid": true
+        },
+        "Textures/LightMaps/M_170_Lad_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/M_170_Lad_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\M_170_Lad_FaceMap_00.png",
+          "fileSize": 120820,
+          "checksum": "Dq8QVSfAMlprUzq4CfNq0A==",
+          "lastModified": "2025-09-05T08:23:47.1277029+02:00",
+          "downloadDate": "2025-09-05T06:23:47.1766837Z",
+          "remoteEtag": "be083df3649110e3c237a5404bd7cb88",
+          "isValid": true
+        },
+        "Textures/LightMaps/M_180_Male_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/M_180_Male_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\M_180_Male_Face_ExpressionMap_00.png",
+          "fileSize": 70268,
+          "checksum": "Djau9qbSzis5WPvz09kiOA==",
+          "lastModified": "2025-09-05T08:23:47.3334076+02:00",
+          "downloadDate": "2025-09-05T06:23:47.3780451Z",
+          "remoteEtag": "1757d25d3137277cb2e627fb1e421f85",
+          "isValid": true
+        },
+        "Textures/LightMaps/M_180_Male_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/M_180_Male_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\M_180_Male_FaceMap_00.png",
+          "fileSize": 102549,
+          "checksum": "lwr/9xfx9wFwCt7Fzr1lVQ==",
+          "lastModified": "2025-09-05T08:23:47.5454658+02:00",
+          "downloadDate": "2025-09-05T06:23:47.5883447Z",
+          "remoteEtag": "eb78b9a9bc5dcef238d88531ec10398a",
+          "isValid": true
+        },
+        "Textures/LightMaps/NPC_Special_Pam_00_FaceMap.png": {
+          "relativePath": "Textures/LightMaps/NPC_Special_Pam_00_FaceMap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\NPC_Special_Pam_00_FaceMap.png",
+          "fileSize": 28551,
+          "checksum": "j1PKbGrWlx9By+bPpPjmWQ==",
+          "lastModified": "2025-09-05T08:23:47.7464973+02:00",
+          "downloadDate": "2025-09-05T06:23:47.7977819Z",
+          "remoteEtag": "dc3e97e11b5a42e651c331698989c073",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_120_Kid_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_120_Kid_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_120_Kid_Face_ExpressionMap_00.png",
+          "fileSize": 66131,
+          "checksum": "rBVFvhYodc7/cFMQi3v7qQ==",
+          "lastModified": "2025-09-05T08:23:48.0033265+02:00",
+          "downloadDate": "2025-09-05T06:23:48.0033265Z",
+          "remoteEtag": "208c0a10c75e86b8ecbfa745f52f4c7d",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_120_Kid_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_120_Kid_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_120_Kid_FaceMap_00.png",
+          "fileSize": 99987,
+          "checksum": "82bQKE6Qr1nIEtL72Qfo4Q==",
+          "lastModified": "2025-09-05T08:23:48.2679817+02:00",
+          "downloadDate": "2025-09-05T06:23:48.2679817Z",
+          "remoteEtag": "8feace4c4ff0b09ba3682273ced0a2d2",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_140_Girl_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_140_Girl_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_140_Girl_Face_ExpressionMap_00.png",
+          "fileSize": 53695,
+          "checksum": "S5yPoWtKRey8jzob0sVRSA==",
+          "lastModified": "2025-09-05T08:23:48.5816806+02:00",
+          "downloadDate": "2025-09-05T06:23:48.6318359Z",
+          "remoteEtag": "89e827addca766484c1cb33001283290",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_140_Girl_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_140_Girl_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_140_Girl_FaceMap_00.png",
+          "fileSize": 80258,
+          "checksum": "+1nwN/qumHXGg4DHy18Z1g==",
+          "lastModified": "2025-09-05T08:23:48.7856253+02:00",
+          "downloadDate": "2025-09-05T06:23:48.8439892Z",
+          "remoteEtag": "d37ef9a4d8f5652d12cde32bf195c261",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_140_Girl_FaceMap_01.png": {
+          "relativePath": "Textures/LightMaps/W_140_Girl_FaceMap_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_140_Girl_FaceMap_01.png",
+          "fileSize": 80483,
+          "checksum": "7JmN8khSwxXmmG00CAD4dg==",
+          "lastModified": "2025-09-05T08:23:48.9979743+02:00",
+          "downloadDate": "2025-09-05T06:23:49.0479404Z",
+          "remoteEtag": "01fa2b1c2c6c65f90e28775267888faa",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_160_Maid_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_160_Maid_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_160_Maid_Face_ExpressionMap_00.png",
+          "fileSize": 63332,
+          "checksum": "IQc5yKUZ4O8APSNanB8D7Q==",
+          "lastModified": "2025-09-05T08:23:49.2589576+02:00",
+          "downloadDate": "2025-09-05T06:23:49.3010072Z",
+          "remoteEtag": "1e84e84b49a59c4ac248e16729fe116a",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_160_Maid_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_160_Maid_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_160_Maid_FaceMap_00.png",
+          "fileSize": 79757,
+          "checksum": "ISOkptQEO4vAPNAIGL8rmg==",
+          "lastModified": "2025-09-05T08:23:49.4669826+02:00",
+          "downloadDate": "2025-09-05T06:23:49.5114013Z",
+          "remoteEtag": "303da999c7baa8a685b4a69c7141859f",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_160_Maid_FaceMap_01.png": {
+          "relativePath": "Textures/LightMaps/W_160_Maid_FaceMap_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_160_Maid_FaceMap_01.png",
+          "fileSize": 77954,
+          "checksum": "37q3CEt2DMZ7C6eH/vDIAg==",
+          "lastModified": "2025-09-05T08:23:49.6778789+02:00",
+          "downloadDate": "2025-09-05T06:23:49.7201238Z",
+          "remoteEtag": "4e015f44c29bac77e2487b3e18f2d97d",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_160_Maid_FaceMap_02.png": {
+          "relativePath": "Textures/LightMaps/W_160_Maid_FaceMap_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_160_Maid_FaceMap_02.png",
+          "fileSize": 102212,
+          "checksum": "vF0aPs2deIH86AEpGKLoAg==",
+          "lastModified": "2025-09-05T08:23:49.9330705+02:00",
+          "downloadDate": "2025-09-05T06:23:49.9802382Z",
+          "remoteEtag": "a0e4e54782f83fdc318edd62febed3cf",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_168_Miss_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_168_Miss_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_168_Miss_Face_ExpressionMap_00.png",
+          "fileSize": 62691,
+          "checksum": "0+zKzGBQ4hOO0tQgxKjDYg==",
+          "lastModified": "2025-09-05T08:23:50.1343393+02:00",
+          "downloadDate": "2025-09-05T06:23:50.1889249Z",
+          "remoteEtag": "ec10b4e652f13998fab007359e5deb82",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_168_Miss_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_168_Miss_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_168_Miss_FaceMap_00.png",
+          "fileSize": 112929,
+          "checksum": "ZCFjSrSczxb1/ZoZS88lCg==",
+          "lastModified": "2025-09-05T08:23:50.3409735+02:00",
+          "downloadDate": "2025-09-05T06:23:50.3967384Z",
+          "remoteEtag": "a497513aa71ccca54a6fa03efc5636f3",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_170_Lady_Face_ExpressionMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_170_Lady_Face_ExpressionMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_170_Lady_Face_ExpressionMap_00.png",
+          "fileSize": 66600,
+          "checksum": "Dgq/9hMMA8r6vLb4dHiKrg==",
+          "lastModified": "2025-09-05T08:23:50.6275993+02:00",
+          "downloadDate": "2025-09-05T06:23:50.6275993Z",
+          "remoteEtag": "909ed5e87c24f3d12e6c9da5c920bc2e",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_170_Lady_Face_ExpressionMap_01.png": {
+          "relativePath": "Textures/LightMaps/W_170_Lady_Face_ExpressionMap_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_170_Lady_Face_ExpressionMap_01.png",
+          "fileSize": 65205,
+          "checksum": "/HPsJ7/jrn2Qda20e7qKeg==",
+          "lastModified": "2025-09-05T08:23:50.8705331+02:00",
+          "downloadDate": "2025-09-05T06:23:50.8705331Z",
+          "remoteEtag": "f6c081c8caed072586633c05c7b5f02b",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_170_Lady_Face_ExpressionMap_02.png": {
+          "relativePath": "Textures/LightMaps/W_170_Lady_Face_ExpressionMap_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_170_Lady_Face_ExpressionMap_02.png",
+          "fileSize": 81346,
+          "checksum": "ZaqsLiJoywil+j/O1IgHCw==",
+          "lastModified": "2025-09-05T08:23:51.0650503+02:00",
+          "downloadDate": "2025-09-05T06:23:51.1251503Z",
+          "remoteEtag": "375ae7b6125640650074937d87144d28",
+          "isValid": true
+        },
+        "Textures/LightMaps/W_170_Lady_FaceMap_00.png": {
+          "relativePath": "Textures/LightMaps/W_170_Lady_FaceMap_00.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LightMaps\\W_170_Lady_FaceMap_00.png",
+          "fileSize": 75150,
+          "checksum": "tlVYq439PUuN4Go9FdWVLg==",
+          "lastModified": "2025-09-05T08:23:51.4249842+02:00",
+          "downloadDate": "2025-09-05T06:23:51.4249842Z",
+          "remoteEtag": "dd9460109c0c4ab9fd9d74d7070cad01",
+          "isValid": true
+        },
+        "Textures/LUTs/LUT_HSR.png": {
+          "relativePath": "Textures/LUTs/LUT_HSR.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LUTs\\LUT_HSR.png",
+          "fileSize": 1496,
+          "checksum": "Nok1IQyQVRAI9WEps5OiEg==",
+          "lastModified": "2025-09-05T08:23:51.7852769+02:00",
+          "downloadDate": "2025-09-05T06:23:51.7852769Z",
+          "remoteEtag": "668cc54b32e353c377c1970516792ec6",
+          "isValid": true
+        },
+        "Textures/LUTs/LUT_HSR.png.meta": {
+          "relativePath": "Textures/LUTs/LUT_HSR.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\LUTs\\LUT_HSR.png.meta",
+          "fileSize": 2947,
+          "checksum": "RrVEormF//P6u9cqo1w04w==",
+          "lastModified": "2025-09-05T08:23:51.9933269+02:00",
+          "downloadDate": "2025-09-05T06:23:51.9933269Z",
+          "remoteEtag": "f10337b91fba8a28e9e999ae3a1d95a0",
+          "isValid": true
+        },
+        "Textures/Noise/1x1.png": {
+          "relativePath": "Textures/Noise/1x1.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\Noise\\1x1.png",
+          "fileSize": 95,
+          "checksum": "caUNu6RMeBKLIht997tR8Q==",
+          "lastModified": "2025-09-05T08:23:52.202371+02:00",
+          "downloadDate": "2025-09-05T06:23:52.202371Z",
+          "remoteEtag": "e1a91b6853afba13c56a83532536cd0c",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_607 1.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_607 1.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\Noise\\Eff_Noise_607 1.png",
+          "fileSize": 86779,
+          "checksum": "dwZWEEVOrxUtha+UzleWPw==",
+          "lastModified": "2025-09-05T08:23:52.3341628+02:00",
+          "downloadDate": "2025-09-05T06:23:52.3644491Z",
+          "remoteEtag": "512ccfc488ea237ba9e9325d577a28a8",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_607.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_607.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\Noise\\Eff_Noise_607.png",
+          "fileSize": 75059,
+          "checksum": "vMIXGPMFZRu6HjubCk7Itw==",
+          "lastModified": "2025-09-05T08:23:52.6715669+02:00",
+          "downloadDate": "2025-09-05T06:23:52.6715669Z",
+          "remoteEtag": "c55a3c255f8ac7b32dc917287ae2c0c3",
+          "isValid": true
+        },
+        "Textures/Noise/UI_Noise_29.png": {
+          "relativePath": "Textures/Noise/UI_Noise_29.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Star Rail\\Textures\\Noise\\UI_Noise_29.png",
+          "fileSize": 40268,
+          "checksum": "TcSVloFMqGNz9WElR05dZA==",
+          "lastModified": "2025-09-05T08:23:52.9161082+02:00",
+          "downloadDate": "2025-09-05T06:23:52.9697836Z",
+          "remoteEtag": "1315b0ce91bc3c3673efe919946af943",
+          "isValid": true
+        }
+      },
+      "totalDownloaded": 2148004,
+      "downloadErrors": []
+    },
+    "Wuthering Waves": {
+      "gameKey": "Wuthering Waves",
+      "webdavUrl": "https://assets.hoyotoon.com/s/Y6o9agnZ7xP84sS",
+      "lastSync": "2025-09-05T06:24:14.6359256Z",
+      "files": {
+        "Materials/Tacet Marks/MI_3XingStar_Bailian.json": {
+          "relativePath": "Materials/Tacet Marks/MI_3XingStar_Bailian.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_3XingStar_Bailian.json",
+          "fileSize": 1976,
+          "checksum": "nWJqoHIpB9qFYeFndmXzog==",
+          "lastModified": "2025-09-05T08:23:44.3832372+02:00",
+          "downloadDate": "2025-09-05T06:23:44.3832372Z",
+          "remoteEtag": "e83b1c7ce6a575cf856c0f262e17e91d",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_3XingStar_Bailian.mat": {
+          "relativePath": "Materials/Tacet Marks/MI_3XingStar_Bailian.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_3XingStar_Bailian.mat",
+          "fileSize": 9631,
+          "checksum": "HGmCm/m/HXpSGBedxOiQ0A==",
+          "lastModified": "2025-09-05T08:23:44.6444936+02:00",
+          "downloadDate": "2025-09-05T06:23:44.6444936Z",
+          "remoteEtag": "72b3b66c8090d3dfcfab386c2fa381ff",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_3XingStar.json": {
+          "relativePath": "Materials/Tacet Marks/MI_3XingStar.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_3XingStar.json",
+          "fileSize": 2790,
+          "checksum": "AZmQuYpy/83UUyZreAYhzg==",
+          "lastModified": "2025-09-05T08:23:44.9041308+02:00",
+          "downloadDate": "2025-09-05T06:23:44.9041308Z",
+          "remoteEtag": "e3cd9d2d4c69fe79c3785facc8dccab8",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_3XingStar.mat": {
+          "relativePath": "Materials/Tacet Marks/MI_3XingStar.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_3XingStar.mat",
+          "fileSize": 9625,
+          "checksum": "5tkd7wxk+fyl0Kd92z7STQ==",
+          "lastModified": "2025-09-05T08:23:45.1604549+02:00",
+          "downloadDate": "2025-09-05T06:23:45.1604549Z",
+          "remoteEtag": "85f8a3901cd5801c5974b586f137b338",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_5XingStar.json": {
+          "relativePath": "Materials/Tacet Marks/MI_5XingStar.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_5XingStar.json",
+          "fileSize": 3015,
+          "checksum": "FnyjD6PXjEb9CefTqYOfCA==",
+          "lastModified": "2025-09-05T08:23:45.3423557+02:00",
+          "downloadDate": "2025-09-05T06:23:45.3433552Z",
+          "remoteEtag": "2b9a71c032a55214bf66f863e3e7b5d5",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_5XingStar.json.meta": {
+          "relativePath": "Materials/Tacet Marks/MI_5XingStar.json.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_5XingStar.json.meta",
+          "fileSize": 158,
+          "checksum": "HtTtPoyZ187R3bqUv8KHfA==",
+          "lastModified": "2025-09-05T08:23:45.5756234+02:00",
+          "downloadDate": "2025-09-05T06:23:45.5756234Z",
+          "remoteEtag": "c962222cf5c6aec7ccb0b264f2889a12",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_5XingStar.mat": {
+          "relativePath": "Materials/Tacet Marks/MI_5XingStar.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_5XingStar.mat",
+          "fileSize": 9672,
+          "checksum": "S/rHad/Zh3D6AlZCNocAug==",
+          "lastModified": "2025-09-05T08:23:45.7578037+02:00",
+          "downloadDate": "2025-09-05T06:23:45.7583199Z",
+          "remoteEtag": "7b2fbd24b03986ee30c513d4671da505",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_5XingStar.mat.meta": {
+          "relativePath": "Materials/Tacet Marks/MI_5XingStar.mat.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_5XingStar.mat.meta",
+          "fileSize": 182,
+          "checksum": "E93pCp/m9pnE3eF9IIMBEA==",
+          "lastModified": "2025-09-05T08:23:45.9353628+02:00",
+          "downloadDate": "2025-09-05T06:23:45.9363636Z",
+          "remoteEtag": "428ef325695c9e234c4b69541bc6dcb6",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_6XingStar.json": {
+          "relativePath": "Materials/Tacet Marks/MI_6XingStar.json",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_6XingStar.json",
+          "fileSize": 2154,
+          "checksum": "lDD5VjnGDq+qZHsALmzz2w==",
+          "lastModified": "2025-09-05T08:23:46.1921658+02:00",
+          "downloadDate": "2025-09-05T06:23:46.1921658Z",
+          "remoteEtag": "ee32071b8ab0d4fab16d092c416f39c2",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_6XingStar.json.meta": {
+          "relativePath": "Materials/Tacet Marks/MI_6XingStar.json.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_6XingStar.json.meta",
+          "fileSize": 158,
+          "checksum": "GYEskPeJq6ZiKDYRBqLIVw==",
+          "lastModified": "2025-09-05T08:23:46.6554618+02:00",
+          "downloadDate": "2025-09-05T06:23:46.6554618Z",
+          "remoteEtag": "ae3728ca95d344596599d03a0988fbc3",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_6XingStar.mat": {
+          "relativePath": "Materials/Tacet Marks/MI_6XingStar.mat",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_6XingStar.mat",
+          "fileSize": 9670,
+          "checksum": "2Xe/Vb8rd+IXW2ENoAnkIg==",
+          "lastModified": "2025-09-05T08:23:46.8634797+02:00",
+          "downloadDate": "2025-09-05T06:23:46.8634797Z",
+          "remoteEtag": "759815cdac4f1774d8055ef9facaeefc",
+          "isValid": true
+        },
+        "Materials/Tacet Marks/MI_6XingStar.mat.meta": {
+          "relativePath": "Materials/Tacet Marks/MI_6XingStar.mat.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Materials\\Tacet Marks\\MI_6XingStar.mat.meta",
+          "fileSize": 182,
+          "checksum": "kA0DBOMWabRyVZBQhLysrw==",
+          "lastModified": "2025-09-05T08:23:47.1198457+02:00",
+          "downloadDate": "2025-09-05T06:23:47.1198457Z",
+          "remoteEtag": "dea85e07a7b7e7223841eccdcb9ef21d",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorBlack_D.png": {
+          "relativePath": "Textures/Defaults/T_DefaultColorBlack_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorBlack_D.png",
+          "fileSize": 86,
+          "checksum": "KWF/JLmH7nHjDWG4WzznJA==",
+          "lastModified": "2025-09-05T08:23:47.3260036+02:00",
+          "downloadDate": "2025-09-05T06:23:47.3260036Z",
+          "remoteEtag": "4dee7ddc35e3fa0054978dd08df38196",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorBlack_D.png.meta": {
+          "relativePath": "Textures/Defaults/T_DefaultColorBlack_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorBlack_D.png.meta",
+          "fileSize": 3074,
+          "checksum": "/oQKVUcV+Tdrum1w6GRQZw==",
+          "lastModified": "2025-09-05T08:23:47.5365067+02:00",
+          "downloadDate": "2025-09-05T06:23:47.5365067Z",
+          "remoteEtag": "6c2fdd6013cccc5ca0fe7aecb9e079d8",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorBlack_Linear_D.png": {
+          "relativePath": "Textures/Defaults/T_DefaultColorBlack_Linear_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorBlack_Linear_D.png",
+          "fileSize": 86,
+          "checksum": "KWF/JLmH7nHjDWG4WzznJA==",
+          "lastModified": "2025-09-05T08:23:47.7444967+02:00",
+          "downloadDate": "2025-09-05T06:23:47.7444967Z",
+          "remoteEtag": "d8a61aeaff4a460db577acbd3db6e1cd",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorBlack_Linear_D.png.meta": {
+          "relativePath": "Textures/Defaults/T_DefaultColorBlack_Linear_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorBlack_Linear_D.png.meta",
+          "fileSize": 3074,
+          "checksum": "OjTJUBoeaZOnEkIJycO4Eg==",
+          "lastModified": "2025-09-05T08:23:47.9024774+02:00",
+          "downloadDate": "2025-09-05T06:23:47.9024774Z",
+          "remoteEtag": "e45af61265c86db7fc61387eb4d051b3",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorWhite_D.png": {
+          "relativePath": "Textures/Defaults/T_DefaultColorWhite_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorWhite_D.png",
+          "fileSize": 84,
+          "checksum": "WX77mtwjPNPwUFEH85I1OQ==",
+          "lastModified": "2025-09-05T08:23:48.111197+02:00",
+          "downloadDate": "2025-09-05T06:23:48.111197Z",
+          "remoteEtag": "6de6e763f5523c1a924269e4e80a1200",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorWhite_D.png.meta": {
+          "relativePath": "Textures/Defaults/T_DefaultColorWhite_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorWhite_D.png.meta",
+          "fileSize": 3074,
+          "checksum": "I/oS+fAvYwRfOHI/QGBnFg==",
+          "lastModified": "2025-09-05T08:23:48.4454689+02:00",
+          "downloadDate": "2025-09-05T06:23:48.4464688Z",
+          "remoteEtag": "e663570669a909de8de426fb8a1283e4",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorWhite_Linear_D.png": {
+          "relativePath": "Textures/Defaults/T_DefaultColorWhite_Linear_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorWhite_Linear_D.png",
+          "fileSize": 84,
+          "checksum": "WX77mtwjPNPwUFEH85I1OQ==",
+          "lastModified": "2025-09-05T08:23:48.630836+02:00",
+          "downloadDate": "2025-09-05T06:23:48.630836Z",
+          "remoteEtag": "a7ce56b93d9d56022cddd948ec1cc876",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultColorWhite_Linear_D.png.meta": {
+          "relativePath": "Textures/Defaults/T_DefaultColorWhite_Linear_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultColorWhite_Linear_D.png.meta",
+          "fileSize": 3074,
+          "checksum": "PuWkXKQefGOhSfTe6tuOqg==",
+          "lastModified": "2025-09-05T08:23:48.8359748+02:00",
+          "downloadDate": "2025-09-05T06:23:48.8359748Z",
+          "remoteEtag": "fb5c6113d2456a83021715c35d60b552",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultMaskGreen_M.png": {
+          "relativePath": "Textures/Defaults/T_DefaultMaskGreen_M.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultMaskGreen_M.png",
+          "fileSize": 86,
+          "checksum": "YdnjjhO4jROFGChGf0nVYA==",
+          "lastModified": "2025-09-05T08:23:49.0434295+02:00",
+          "downloadDate": "2025-09-05T06:23:49.0434295Z",
+          "remoteEtag": "b07861bf0ec9236513fb830d7f31faa1",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultMaskGreen_M.png.meta": {
+          "relativePath": "Textures/Defaults/T_DefaultMaskGreen_M.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultMaskGreen_M.png.meta",
+          "fileSize": 3074,
+          "checksum": "CMVwTdTw+LZLvN53N3bEaw==",
+          "lastModified": "2025-09-05T08:23:49.2509447+02:00",
+          "downloadDate": "2025-09-05T06:23:49.2509447Z",
+          "remoteEtag": "5ab8fd38d5cf6dc5248a6520e1d421fc",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultNormalMask_M.png": {
+          "relativePath": "Textures/Defaults/T_DefaultNormalMask_M.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultNormalMask_M.png",
+          "fileSize": 86,
+          "checksum": "IrlgguFF4zpjn0s0nDC05Q==",
+          "lastModified": "2025-09-05T08:23:49.4601806+02:00",
+          "downloadDate": "2025-09-05T06:23:49.4601806Z",
+          "remoteEtag": "21c8972f6c0988068cb156cf254e151b",
+          "isValid": true
+        },
+        "Textures/Defaults/T_DefaultNormalMask_M.png.meta": {
+          "relativePath": "Textures/Defaults/T_DefaultNormalMask_M.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Defaults\\T_DefaultNormalMask_M.png.meta",
+          "fileSize": 3074,
+          "checksum": "uW9kSzQKOmhESL9lRaTenA==",
+          "lastModified": "2025-09-05T08:23:49.668847+02:00",
+          "downloadDate": "2025-09-05T06:23:49.668847Z",
+          "remoteEtag": "23b748639013e7f538312c6d20998f15",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight02_EG.png": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight02_EG.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight02_EG.png",
+          "fileSize": 55175,
+          "checksum": "WdsGl3SgUOO9VlkCjsRXkg==",
+          "lastModified": "2025-09-05T08:23:49.8718944+02:00",
+          "downloadDate": "2025-09-05T06:23:49.9254362Z",
+          "remoteEtag": "4506ccce9b84a01bb3b64dbf8a832951",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight02_EG.png.meta": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight02_EG.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight02_EG.png.meta",
+          "fileSize": 3444,
+          "checksum": "gjZlhHhg8GkVqHVCyqwUYw==",
+          "lastModified": "2025-09-05T08:23:50.1097588+02:00",
+          "downloadDate": "2025-09-05T06:23:50.1097588Z",
+          "remoteEtag": "b617f5858c509ff28577707cf6567a0a",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight03_EG.png": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight03_EG.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight03_EG.png",
+          "fileSize": 39180,
+          "checksum": "z/7ekVFV70qae4DY6EuOGg==",
+          "lastModified": "2025-09-05T08:23:50.2355793+02:00",
+          "downloadDate": "2025-09-05T06:23:50.2873088Z",
+          "remoteEtag": "6f9933078a35a3d2b34d4a41b1104035",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight03_EG.png.meta": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight03_EG.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight03_EG.png.meta",
+          "fileSize": 3444,
+          "checksum": "rWvxMmf074DrXVLkgitWYA==",
+          "lastModified": "2025-09-05T08:23:50.4514119+02:00",
+          "downloadDate": "2025-09-05T06:23:50.4514119Z",
+          "remoteEtag": "1a30b4ac42a034e11f1675463744b39c",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight04_EG.png": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight04_EG.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight04_EG.png",
+          "fileSize": 8681,
+          "checksum": "av6O5rTn1hrV4S8Mch8Ocg==",
+          "lastModified": "2025-09-05T08:23:50.6509078+02:00",
+          "downloadDate": "2025-09-05T06:23:50.6509078Z",
+          "remoteEtag": "d60dbbf6c90b22d7ed9e2279db485049",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight04_EG.png.meta": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight04_EG.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight04_EG.png.meta",
+          "fileSize": 3812,
+          "checksum": "qvfW0YpgMsoMSsOsQUdNdg==",
+          "lastModified": "2025-09-05T08:23:50.8600066+02:00",
+          "downloadDate": "2025-09-05T06:23:50.8600066Z",
+          "remoteEtag": "edea340e12f2c527932e6886d9062980",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight05_EG.png": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight05_EG.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight05_EG.png",
+          "fileSize": 9165,
+          "checksum": "6FycRkK0wTkenIEii+yxww==",
+          "lastModified": "2025-09-05T08:23:51.1141396+02:00",
+          "downloadDate": "2025-09-05T06:23:51.1141396Z",
+          "remoteEtag": "cc351eca58fd35a7f4257ea577a062d9",
+          "isValid": true
+        },
+        "Textures/Eyes/T_EyesSecondHeightLight06_EG.png": {
+          "relativePath": "Textures/Eyes/T_EyesSecondHeightLight06_EG.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_EyesSecondHeightLight06_EG.png",
+          "fileSize": 13372,
+          "checksum": "Cis2UVRwJTQPneXvyCMf6A==",
+          "lastModified": "2025-09-05T08:23:51.3219809+02:00",
+          "downloadDate": "2025-09-05T06:23:51.3796431Z",
+          "remoteEtag": "fc11db9604cb42a595715e9fa01517da",
+          "isValid": true
+        },
+        "Textures/Eyes/T_HDMF02_EM.png": {
+          "relativePath": "Textures/Eyes/T_HDMF02_EM.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_HDMF02_EM.png",
+          "fileSize": 126127,
+          "checksum": "cEEAlmT1+bf2ig/rQu9UOA==",
+          "lastModified": "2025-09-05T08:23:51.6900425+02:00",
+          "downloadDate": "2025-09-05T06:23:51.7350662Z",
+          "remoteEtag": "f35b02d9940924f825f315cf35ddb72d",
+          "isValid": true
+        },
+        "Textures/Eyes/T_HDMF02_EM.png.meta": {
+          "relativePath": "Textures/Eyes/T_HDMF02_EM.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_HDMF02_EM.png.meta",
+          "fileSize": 3444,
+          "checksum": "paBzB/PkA/a95EbJ7m9cPQ==",
+          "lastModified": "2025-09-05T08:23:51.9407362+02:00",
+          "downloadDate": "2025-09-05T06:23:51.9407362Z",
+          "remoteEtag": "b86f5fc059f07e0e14e1bc372bec5d3d",
+          "isValid": true
+        },
+        "Textures/Eyes/T_HDMF_EM.png": {
+          "relativePath": "Textures/Eyes/T_HDMF_EM.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_HDMF_EM.png",
+          "fileSize": 130093,
+          "checksum": "J70tpwdzBpRz3nU5EizHgg==",
+          "lastModified": "2025-09-05T08:23:52.1034904+02:00",
+          "downloadDate": "2025-09-05T06:23:52.1481793Z",
+          "remoteEtag": "5588c52f25c6c14a0e92d2aa0362d7ce",
+          "isValid": true
+        },
+        "Textures/Eyes/T_HDMF_EM.png.meta": {
+          "relativePath": "Textures/Eyes/T_HDMF_EM.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Eyes\\T_HDMF_EM.png.meta",
+          "fileSize": 3074,
+          "checksum": "Isvkbe5gWLiRgoC8g+XwNQ==",
+          "lastModified": "2025-09-05T08:23:52.357938+02:00",
+          "downloadDate": "2025-09-05T06:23:52.357938Z",
+          "remoteEtag": "bf46079b1d21de3bc5dfa0a3c1097ca8",
+          "isValid": true
+        },
+        "Textures/Glass/T_GlassHeightLight_D.png": {
+          "relativePath": "Textures/Glass/T_GlassHeightLight_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Glass\\T_GlassHeightLight_D.png",
+          "fileSize": 319428,
+          "checksum": "liuqsJL6OkcEQ68TVvsSFA==",
+          "lastModified": "2025-09-05T08:23:52.6474009+02:00",
+          "downloadDate": "2025-09-05T06:23:52.6474009Z",
+          "remoteEtag": "ac981be4ffba5623f21394de2df61343",
+          "isValid": true
+        },
+        "Textures/Glass/T_GlassHeightLight_D.png.meta": {
+          "relativePath": "Textures/Glass/T_GlassHeightLight_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Glass\\T_GlassHeightLight_D.png.meta",
+          "fileSize": 3444,
+          "checksum": "roCgljQh5xyLb7D4WexWVg==",
+          "lastModified": "2025-09-05T08:23:52.8242033+02:00",
+          "downloadDate": "2025-09-05T06:23:52.8252024Z",
+          "remoteEtag": "970f66fd26a19e496e4e0ba58192c3e4",
+          "isValid": true
+        },
+        "Textures/LUTS/LUT_WUWA.png": {
+          "relativePath": "Textures/LUTS/LUT_WUWA.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\LUTS\\LUT_WUWA.png",
+          "fileSize": 17396,
+          "checksum": "kNlXRxCjJmJR7sRrIzZyRw==",
+          "lastModified": "2025-09-05T08:23:53.0208157+02:00",
+          "downloadDate": "2025-09-05T06:23:53.0218182Z",
+          "remoteEtag": "f38051633fed7731a38e8fd16f5ffb3d",
+          "isValid": true
+        },
+        "Textures/LUTS/LUT_WUWA.png.meta": {
+          "relativePath": "Textures/LUTS/LUT_WUWA.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\LUTS\\LUT_WUWA.png.meta",
+          "fileSize": 2947,
+          "checksum": "kbfvOJfwoD4HVc9OEaUs2g==",
+          "lastModified": "2025-09-05T08:23:53.1746464+02:00",
+          "downloadDate": "2025-09-05T06:23:53.1746464Z",
+          "remoteEtag": "5bae975cd403f6fbf35a4b8cb9b273e4",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake02_D.png": {
+          "relativePath": "Textures/Matcap/T_MC_premake02_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake02_D.png",
+          "fileSize": 346730,
+          "checksum": "JWW4YXg/B6yMlCTxS1bSTw==",
+          "lastModified": "2025-09-05T08:23:53.3347653+02:00",
+          "downloadDate": "2025-09-05T06:23:53.3732447Z",
+          "remoteEtag": "166f75dba85b60665af69a65d35b5b16",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake02_D.png.meta": {
+          "relativePath": "Textures/Matcap/T_MC_premake02_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake02_D.png.meta",
+          "fileSize": 3304,
+          "checksum": "QRkRfcAtRyHgKsIfxfC6Ng==",
+          "lastModified": "2025-09-05T08:23:53.6876092+02:00",
+          "downloadDate": "2025-09-05T06:23:53.6906187Z",
+          "remoteEtag": "e442636b02e7f4bdc81981081febffef",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake03_D.png": {
+          "relativePath": "Textures/Matcap/T_MC_premake03_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake03_D.png",
+          "fileSize": 374572,
+          "checksum": "d601O7ZJ/TGHmBHifElWUw==",
+          "lastModified": "2025-09-05T08:23:53.9124485+02:00",
+          "downloadDate": "2025-09-05T06:23:54.0143554Z",
+          "remoteEtag": "6f9aca1f79de37fc6e593f4fbed59d86",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake03_D.png.meta": {
+          "relativePath": "Textures/Matcap/T_MC_premake03_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake03_D.png.meta",
+          "fileSize": 3304,
+          "checksum": "R47lu9NuAEYyCb32omSBrg==",
+          "lastModified": "2025-09-05T08:23:54.2697827+02:00",
+          "downloadDate": "2025-09-05T06:23:54.2697827Z",
+          "remoteEtag": "8c3d0d21ad030e79474f4016dc8d8ddb",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake04_D.png": {
+          "relativePath": "Textures/Matcap/T_MC_premake04_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake04_D.png",
+          "fileSize": 352760,
+          "checksum": "oBll3pAbgLlA6e528BJYZQ==",
+          "lastModified": "2025-09-05T08:23:54.5318471+02:00",
+          "downloadDate": "2025-09-05T06:23:54.5318471Z",
+          "remoteEtag": "6920b0eab575d4e4bc478dd1a978d73a",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake04_D.png.meta": {
+          "relativePath": "Textures/Matcap/T_MC_premake04_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake04_D.png.meta",
+          "fileSize": 3304,
+          "checksum": "/oo0IaywxyH4zfd2w0g6bQ==",
+          "lastModified": "2025-09-05T08:23:54.7280505+02:00",
+          "downloadDate": "2025-09-05T06:23:54.7280505Z",
+          "remoteEtag": "198d4a79d116af53d9b944fe6420283b",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake05_D.png": {
+          "relativePath": "Textures/Matcap/T_MC_premake05_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake05_D.png",
+          "fileSize": 303959,
+          "checksum": "afCNI+Wk5BbzHqp7To9ocg==",
+          "lastModified": "2025-09-05T08:23:54.8895214+02:00",
+          "downloadDate": "2025-09-05T06:23:54.8895214Z",
+          "remoteEtag": "3b8500210b3a53016e355ac58eb0ea88",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake05_D.png.meta": {
+          "relativePath": "Textures/Matcap/T_MC_premake05_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake05_D.png.meta",
+          "fileSize": 3304,
+          "checksum": "urgH8o+fWXR8FGBvFIQw0Q==",
+          "lastModified": "2025-09-05T08:23:55.2534825+02:00",
+          "downloadDate": "2025-09-05T06:23:55.2534825Z",
+          "remoteEtag": "8f5ec02de103587e589f5577b93cc258",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake_D.png": {
+          "relativePath": "Textures/Matcap/T_MC_premake_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake_D.png",
+          "fileSize": 404819,
+          "checksum": "VqCO1JxOl7TgOJUKuuv1Vw==",
+          "lastModified": "2025-09-05T08:23:55.3730881+02:00",
+          "downloadDate": "2025-09-05T06:23:55.4699422Z",
+          "remoteEtag": "6daddb95772551656bb30983c4eefba3",
+          "isValid": true
+        },
+        "Textures/Matcap/T_MC_premake_D.png.meta": {
+          "relativePath": "Textures/Matcap/T_MC_premake_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Matcap\\T_MC_premake_D.png.meta",
+          "fileSize": 3444,
+          "checksum": "rz2HJ3+BwWFF1ChwFEvDhg==",
+          "lastModified": "2025-09-05T08:23:55.7956757+02:00",
+          "downloadDate": "2025-09-05T06:23:55.7956757Z",
+          "remoteEtag": "07ec13f6cac0278f43735bb2daf75548",
+          "isValid": true
+        },
+        "Textures/Ramps/CV_RampLinearColorAtlas.png": {
+          "relativePath": "Textures/Ramps/CV_RampLinearColorAtlas.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Ramps\\CV_RampLinearColorAtlas.png",
+          "fileSize": 882,
+          "checksum": "RzBz40S5PiOg3IcXpWaYcA==",
+          "lastModified": "2025-09-05T08:23:56.0143075+02:00",
+          "downloadDate": "2025-09-05T06:23:56.0143075Z",
+          "remoteEtag": "1494dc9e9b8a07d25eccb90a35e82715",
+          "isValid": true
+        },
+        "Textures/Ramps/CV_RampLinearColorAtlas.png.meta": {
+          "relativePath": "Textures/Ramps/CV_RampLinearColorAtlas.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Ramps\\CV_RampLinearColorAtlas.png.meta",
+          "fileSize": 3444,
+          "checksum": "r+p3/NXQy+xAnGJO5Sg1Qg==",
+          "lastModified": "2025-09-05T08:23:56.3290202+02:00",
+          "downloadDate": "2025-09-05T06:23:56.3290202Z",
+          "remoteEtag": "45fe1e478f21d0a568a3a4fc7323c48c",
+          "isValid": true
+        },
+        "Textures/Ramps/CV_RampLinearColorAtlas_UI.png": {
+          "relativePath": "Textures/Ramps/CV_RampLinearColorAtlas_UI.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Ramps\\CV_RampLinearColorAtlas_UI.png",
+          "fileSize": 1167,
+          "checksum": "NW+SwU3/fq+Pso46uKfslQ==",
+          "lastModified": "2025-09-05T08:23:56.5455774+02:00",
+          "downloadDate": "2025-09-05T06:23:56.5455774Z",
+          "remoteEtag": "45060f1c2c0b33cdff4c26fee7c301fd",
+          "isValid": true
+        },
+        "Textures/Ramps/CV_RampLinearColorAtlas_UI.png.meta": {
+          "relativePath": "Textures/Ramps/CV_RampLinearColorAtlas_UI.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Ramps\\CV_RampLinearColorAtlas_UI.png.meta",
+          "fileSize": 3444,
+          "checksum": "1tDUHVqER9X0FYEGg3LEww==",
+          "lastModified": "2025-09-05T08:23:56.7613078+02:00",
+          "downloadDate": "2025-09-05T06:23:56.7613078Z",
+          "remoteEtag": "60bf7afb00d0a0682abfc62be801d99c",
+          "isValid": true
+        },
+        "Textures/SDF/T_FemaleMFace01_SDF.png": {
+          "relativePath": "Textures/SDF/T_FemaleMFace01_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_FemaleMFace01_SDF.png",
+          "fileSize": 1176305,
+          "checksum": "egPLc0r6jq8BGJwH3G78Dg==",
+          "lastModified": "2025-09-05T08:23:56.8950911+02:00",
+          "downloadDate": "2025-09-05T06:23:56.9801422Z",
+          "remoteEtag": "f425c4b961114632e25cb9db50b17a80",
+          "isValid": true
+        },
+        "Textures/SDF/T_FemaleMFace01_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_FemaleMFace01_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_FemaleMFace01_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "eppQodsmugwsNv0HyOXeJg==",
+          "lastModified": "2025-09-05T08:23:57.2993803+02:00",
+          "downloadDate": "2025-09-05T06:23:57.2993803Z",
+          "remoteEtag": "ef39dc1437eaaa955fd12ea70dde6ade",
+          "isValid": true
+        },
+        "Textures/SDF/T_FemaleMFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_FemaleMFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_FemaleMFace_SDF.png",
+          "fileSize": 2239109,
+          "checksum": "BPU6OSgnSg2pDHrlFhi5zg==",
+          "lastModified": "2025-09-05T08:23:57.4730969+02:00",
+          "downloadDate": "2025-09-05T06:23:57.5169699Z",
+          "remoteEtag": "c9133236563fdf159474a6d70c04337a",
+          "isValid": true
+        },
+        "Textures/SDF/T_FemaleMFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_FemaleMFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_FemaleMFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "NaicxW4UJRxB5QZDaWd2qA==",
+          "lastModified": "2025-09-05T08:23:57.7330788+02:00",
+          "downloadDate": "2025-09-05T06:23:57.7330788Z",
+          "remoteEtag": "b7cdf7dbcfe85f95c664419e7da81102",
+          "isValid": true
+        },
+        "Textures/SDF/T_HL_E001Face_SDF.png": {
+          "relativePath": "Textures/SDF/T_HL_E001Face_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_HL_E001Face_SDF.png",
+          "fileSize": 25871,
+          "checksum": "JMGr335kB73dMp6M19GEBg==",
+          "lastModified": "2025-09-05T08:23:57.8469028+02:00",
+          "downloadDate": "2025-09-05T06:23:57.9566983Z",
+          "remoteEtag": "7c4bff3c2d670aa6cf5ba4b675ef119e",
+          "isValid": true
+        },
+        "Textures/SDF/T_HL_E001Face_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_HL_E001Face_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_HL_E001Face_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "G4pS71uuB0/HTa7+yyMdyQ==",
+          "lastModified": "2025-09-05T08:23:58.1888413+02:00",
+          "downloadDate": "2025-09-05T06:23:58.1888413Z",
+          "remoteEtag": "3356f7a8431c16c983b80fccfc26e5b2",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleMFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_MaleMFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleMFace_SDF.png",
+          "fileSize": 1135965,
+          "checksum": "oAdXgR3hyl5rkBy1cgzqlw==",
+          "lastModified": "2025-09-05T08:23:58.4288623+02:00",
+          "downloadDate": "2025-09-05T06:23:58.5156064Z",
+          "remoteEtag": "43ff921056e080eceddeaaef75fe314b",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleMFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_MaleMFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleMFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "oCT/zhAs0f61u0VIRpkFXA==",
+          "lastModified": "2025-09-05T08:23:58.749858+02:00",
+          "downloadDate": "2025-09-05T06:23:58.749858Z",
+          "remoteEtag": "e42afbcf3bf45cc9c1e4f1788c17e296",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleXLFace01_SDF.png": {
+          "relativePath": "Textures/SDF/T_MaleXLFace01_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleXLFace01_SDF.png",
+          "fileSize": 2730734,
+          "checksum": "fywTEKoeZ7PxgZXfM8osbQ==",
+          "lastModified": "2025-09-05T08:24:00.0963925+02:00",
+          "downloadDate": "2025-09-05T06:24:00.1054213Z",
+          "remoteEtag": "bfa9a18ff2fc53a2f0cb449c09a14f2c",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleXLFace01_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_MaleXLFace01_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleXLFace01_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "mrw/IdhM2/6frpYr+k1LGA==",
+          "lastModified": "2025-09-05T08:24:00.3393856+02:00",
+          "downloadDate": "2025-09-05T06:24:00.3393856Z",
+          "remoteEtag": "ba9dd749a8963bf4f57f19a46a6616e5",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleXLFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_MaleXLFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleXLFace_SDF.png",
+          "fileSize": 1120021,
+          "checksum": "7XtPfKHBK+QysBMo74L0Eg==",
+          "lastModified": "2025-09-05T08:24:00.4934116+02:00",
+          "downloadDate": "2025-09-05T06:24:00.5695677Z",
+          "remoteEtag": "812e82d724cd4b9fe5a39456cd604bec",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleXLFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_MaleXLFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleXLFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "dDEHgWxmSC9sB+vRMCQVlA==",
+          "lastModified": "2025-09-05T08:24:00.7563948+02:00",
+          "downloadDate": "2025-09-05T06:24:00.7563948Z",
+          "remoteEtag": "9992dff875164d4d210531539322a37b",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleXLLFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_MaleXLLFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleXLLFace_SDF.png",
+          "fileSize": 1749693,
+          "checksum": "NmUeKkVnsydF2Q/DL4xJxg==",
+          "lastModified": "2025-09-05T08:24:00.9340934+02:00",
+          "downloadDate": "2025-09-05T06:24:00.9464692Z",
+          "remoteEtag": "11300a7131acfde69c2065fa7fb9fdf7",
+          "isValid": true
+        },
+        "Textures/SDF/T_MaleXLLFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_MaleXLLFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_MaleXLLFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "ky7ocp9NVGRTN79MQznMlA==",
+          "lastModified": "2025-09-05T08:24:01.2079261+02:00",
+          "downloadDate": "2025-09-05T06:24:01.2079261Z",
+          "remoteEtag": "434617955eca9bed3b7643e0134e8760",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC121Face_A_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPC121Face_A_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC121Face_A_SDF.png",
+          "fileSize": 217698,
+          "checksum": "7RT9edcVy4/cYDHj2zShUg==",
+          "lastModified": "2025-09-05T08:24:01.3889399+02:00",
+          "downloadDate": "2025-09-05T06:24:01.4000336Z",
+          "remoteEtag": "7fa3733edf5e8342093f3830914b1df7",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC121Face_A_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPC121Face_A_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC121Face_A_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "7lCshtkx0dI8NWm3Y2TF6A==",
+          "lastModified": "2025-09-05T08:24:01.6288598+02:00",
+          "downloadDate": "2025-09-05T06:24:01.6288598Z",
+          "remoteEtag": "2474ef42f3826670a32735b003987c5e",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCFemaleMFace_A_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPCFemaleMFace_A_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCFemaleMFace_A_SDF.png",
+          "fileSize": 276888,
+          "checksum": "2WvEEPITkeVvdR17dRPeIw==",
+          "lastModified": "2025-09-05T08:24:01.7409096+02:00",
+          "downloadDate": "2025-09-05T06:24:01.8065322Z",
+          "remoteEtag": "51efb800e2acff081746f040a4d5c450",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCFemaleMFace_A_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPCFemaleMFace_A_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCFemaleMFace_A_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "jrk3cVzlNZqgpw4JTkrSLQ==",
+          "lastModified": "2025-09-05T08:24:02.1418327+02:00",
+          "downloadDate": "2025-09-05T06:24:02.1418327Z",
+          "remoteEtag": "b6029a71682e5275e1e1720fdd6e08a5",
+          "isValid": true
+        },
+        "Textures/SDF/T_NpcFemaleMFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NpcFemaleMFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NpcFemaleMFace_SDF.png",
+          "fileSize": 1333444,
+          "checksum": "vEx29Pe+R15jXlQQGtI8og==",
+          "lastModified": "2025-09-05T08:24:02.4404473+02:00",
+          "downloadDate": "2025-09-05T06:24:02.4878495Z",
+          "remoteEtag": "076cdefd46e3f211f518d947bb09339f",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_FemaleMFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPC_FemaleMFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_FemaleMFace_SDF.png",
+          "fileSize": 252124,
+          "checksum": "1JAokoLOZx7FVpYiCi8efQ==",
+          "lastModified": "2025-09-05T08:24:02.7210078+02:00",
+          "downloadDate": "2025-09-05T06:24:02.8320556Z",
+          "remoteEtag": "9afb4b1abf793ae44895aaafe44d9af4",
+          "isValid": true
+        },
+        "Textures/SDF/T_NpcFemaleMFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NpcFemaleMFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NpcFemaleMFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "/SZt2ia9Xn+sPcWkaJ2GXw==",
+          "lastModified": "2025-09-05T08:24:05.2079655+02:00",
+          "downloadDate": "2025-09-05T06:24:05.2089664Z",
+          "remoteEtag": "bdc58f868438e59d30483ad759fff685",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_FemaleMFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPC_FemaleMFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_FemaleMFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "J5TtzvtVo0TDazZ/1q4hKQ==",
+          "lastModified": "2025-09-05T08:24:05.4133308+02:00",
+          "downloadDate": "2025-09-05T06:24:05.4133308Z",
+          "remoteEtag": "0ff4367f50c6a1de3eda5930e1b98697",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_FemaleSFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPC_FemaleSFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_FemaleSFace_SDF.png",
+          "fileSize": 233706,
+          "checksum": "dhVftrXzupuz5nQOoCwHkA==",
+          "lastModified": "2025-09-05T08:24:05.7121334+02:00",
+          "downloadDate": "2025-09-05T06:24:05.7542183Z",
+          "remoteEtag": "cbaac70efee6123879c4d039c1364595",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCFemaleSFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPCFemaleSFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCFemaleSFace_SDF.png",
+          "fileSize": 1213052,
+          "checksum": "p0rejvMCOt6bmualWcEOAA==",
+          "lastModified": "2025-09-05T08:24:05.959392+02:00",
+          "downloadDate": "2025-09-05T06:24:05.959392Z",
+          "remoteEtag": "512eb5bdca11655638257ea711e8d62d",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_FemaleSFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPC_FemaleSFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_FemaleSFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "wJnOfUGJgCjfvKqgL7DBOA==",
+          "lastModified": "2025-09-05T08:24:06.2479602+02:00",
+          "downloadDate": "2025-09-05T06:24:06.2479602Z",
+          "remoteEtag": "ee7a545680d7a470b45e3b8cc4c9e381",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCFemaleSFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPCFemaleSFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCFemaleSFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "NUxbzRLVBtIffHidDXUeNw==",
+          "lastModified": "2025-09-05T08:24:06.5054093+02:00",
+          "downloadDate": "2025-09-05T06:24:06.5054093Z",
+          "remoteEtag": "1771afbd05c034b1fc9a27203e53fb7e",
+          "isValid": true
+        },
+        "Textures/SDF/T_NpcFemaleXLFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NpcFemaleXLFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NpcFemaleXLFace_SDF.png",
+          "fileSize": 1165144,
+          "checksum": "aDdf4OdsIBdMRhm6s/SJ1g==",
+          "lastModified": "2025-09-05T08:24:06.740878+02:00",
+          "downloadDate": "2025-09-05T06:24:06.740878Z",
+          "remoteEtag": "1b83676b01804e157f375f59ac6b0707",
+          "isValid": true
+        },
+        "Textures/SDF/T_NpcFemaleXLFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NpcFemaleXLFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NpcFemaleXLFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "WnmPp+vmZ4bRjGDXgbsq6Q==",
+          "lastModified": "2025-09-05T08:24:06.970325+02:00",
+          "downloadDate": "2025-09-05T06:24:06.970325Z",
+          "remoteEtag": "87c88cd24c7f31380b896e876277bdbd",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCMaleMFace_A_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPCMaleMFace_A_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCMaleMFace_A_SDF.png",
+          "fileSize": 327340,
+          "checksum": "6dj7xqrNJA1jKZJaeNyTIw==",
+          "lastModified": "2025-09-05T08:24:07.2890065+02:00",
+          "downloadDate": "2025-09-05T06:24:07.2890065Z",
+          "remoteEtag": "fd75bda7a4bf1dc07a928121edf1cfb5",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCMaleMFace_A_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPCMaleMFace_A_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCMaleMFace_A_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "764Fc2awNK7dN++77l9q7g==",
+          "lastModified": "2025-09-05T08:24:07.5774062+02:00",
+          "downloadDate": "2025-09-05T06:24:07.5784596Z",
+          "remoteEtag": "74ec95f6c7ae0bf72fc56403c147cf22",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_MaleMFace_Fat_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPC_MaleMFace_Fat_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_MaleMFace_Fat_SDF.png",
+          "fileSize": 231022,
+          "checksum": "0xmq8clqa0YV0N34czq96Q==",
+          "lastModified": "2025-09-05T08:24:07.9035585+02:00",
+          "downloadDate": "2025-09-05T06:24:07.9035585Z",
+          "remoteEtag": "9254ba9fe449fc5d322a58f63509be58",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_MaleMFace_Fat_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPC_MaleMFace_Fat_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_MaleMFace_Fat_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "ipx5M3PVyvO4knGxy/d+ZA==",
+          "lastModified": "2025-09-05T08:24:08.1383336+02:00",
+          "downloadDate": "2025-09-05T06:24:08.1388468Z",
+          "remoteEtag": "cb440e893db9202b79c6d2a25dc0779f",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCMaleMFace_New_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPCMaleMFace_New_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCMaleMFace_New_SDF.png",
+          "fileSize": 1216322,
+          "checksum": "1Rcp6xQ8dKu8moxc3BFPhA==",
+          "lastModified": "2025-09-05T08:24:08.4323678+02:00",
+          "downloadDate": "2025-09-05T06:24:08.473206Z",
+          "remoteEtag": "7da40939717ad172085ce862bad9cd94",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCMaleMFace_New_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPCMaleMFace_New_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCMaleMFace_New_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "2rNmsLziQnUpinrxHYYJUw==",
+          "lastModified": "2025-09-05T08:24:09.1843082+02:00",
+          "downloadDate": "2025-09-05T06:24:09.1843082Z",
+          "remoteEtag": "1d01297572502977dbc875b9e4bffe5b",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_MaleMFace_Old_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPC_MaleMFace_Old_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_MaleMFace_Old_SDF.png",
+          "fileSize": 458490,
+          "checksum": "sUiwX3WBpZuThxM3tNGiMQ==",
+          "lastModified": "2025-09-05T08:24:09.8542491+02:00",
+          "downloadDate": "2025-09-05T06:24:09.8542491Z",
+          "remoteEtag": "b48b08ab9956f9130cf1e6ae0f2cbc7e",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_MaleMFace_Old_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPC_MaleMFace_Old_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_MaleMFace_Old_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "JPIBDuMKYyAAX3j0li3aPA==",
+          "lastModified": "2025-09-05T08:24:10.0606772+02:00",
+          "downloadDate": "2025-09-05T06:24:10.0606772Z",
+          "remoteEtag": "26058b5a8000d52fcf98e0f93f32a56a",
+          "isValid": true
+        },
+        "Textures/SDF/T_NpcMaleMFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NpcMaleMFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NpcMaleMFace_SDF.png",
+          "fileSize": 1333444,
+          "checksum": "vEx29Pe+R15jXlQQGtI8og==",
+          "lastModified": "2025-09-05T08:24:10.2332975+02:00",
+          "downloadDate": "2025-09-05T06:24:10.2666724Z",
+          "remoteEtag": "28850cb97120de70a3ddc4dddc55f1c4",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_MaleMFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPC_MaleMFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_MaleMFace_SDF.png",
+          "fileSize": 254085,
+          "checksum": "xE+RJBaMAbGk/gqFCZ+S0g==",
+          "lastModified": "2025-09-05T08:24:10.436237+02:00",
+          "downloadDate": "2025-09-05T06:24:10.436237Z",
+          "remoteEtag": "3f12df3d0884ebfbaa23a8a947b245cc",
+          "isValid": true
+        },
+        "Textures/SDF/T_NpcMaleMFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NpcMaleMFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NpcMaleMFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "93LacyjkZCzmEMjG/sYX/Q==",
+          "lastModified": "2025-09-05T08:24:10.6745127+02:00",
+          "downloadDate": "2025-09-05T06:24:10.6745127Z",
+          "remoteEtag": "926389b6cb259d9b605e75ec2fac8372",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPC_MaleMFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPC_MaleMFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPC_MaleMFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "EkQnkRnn4qSNLZ0JBbNlKw==",
+          "lastModified": "2025-09-05T08:24:10.8809379+02:00",
+          "downloadDate": "2025-09-05T06:24:10.8809379Z",
+          "remoteEtag": "b61a1d3a9fe2b31381a68b538908251a",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCMaleXLFace_SDF.png": {
+          "relativePath": "Textures/SDF/T_NPCMaleXLFace_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCMaleXLFace_SDF.png",
+          "fileSize": 1225943,
+          "checksum": "KEU/MXV+3ghHrcir5+9qqA==",
+          "lastModified": "2025-09-05T08:24:11.0464591+02:00",
+          "downloadDate": "2025-09-05T06:24:11.0629837Z",
+          "remoteEtag": "21e932e0c0d98993f4887aadf90fb567",
+          "isValid": true
+        },
+        "Textures/SDF/T_NPCMaleXLFace_SDF.png.meta": {
+          "relativePath": "Textures/SDF/T_NPCMaleXLFace_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\SDF\\T_NPCMaleXLFace_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "hk2C+7eDgkGwe3D9JtOrKQ==",
+          "lastModified": "2025-09-05T08:24:11.2299395+02:00",
+          "downloadDate": "2025-09-05T06:24:11.2299395Z",
+          "remoteEtag": "8ae6249b2f68d1bb81c5b6adc4c4222e",
+          "isValid": true
+        },
+        "Textures/Star/T_3XingStar_D.png": {
+          "relativePath": "Textures/Star/T_3XingStar_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_3XingStar_D.png",
+          "fileSize": 158890,
+          "checksum": "b6ho+x9d7uUl7CA/cSISQQ==",
+          "lastModified": "2025-09-05T08:24:11.4732028+02:00",
+          "downloadDate": "2025-09-05T06:24:11.4732028Z",
+          "remoteEtag": "138bc1aad95d5971d45b8726939375bc",
+          "isValid": true
+        },
+        "Textures/Star/T_3XingStar_D.png.meta": {
+          "relativePath": "Textures/Star/T_3XingStar_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_3XingStar_D.png.meta",
+          "fileSize": 3812,
+          "checksum": "k+76RZbVkucNFCkrhL5x0w==",
+          "lastModified": "2025-09-05T08:24:11.6778257+02:00",
+          "downloadDate": "2025-09-05T06:24:11.6788312Z",
+          "remoteEtag": "e0eb95c4b91f94bc6ad9f79bc8ba8762",
+          "isValid": true
+        },
+        "Textures/Star/T_3XingStar_SDF.png": {
+          "relativePath": "Textures/Star/T_3XingStar_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_3XingStar_SDF.png",
+          "fileSize": 106417,
+          "checksum": "/NNpx3DZ6+R6q8jKqbfdkg==",
+          "lastModified": "2025-09-05T08:24:11.8533219+02:00",
+          "downloadDate": "2025-09-05T06:24:11.8533219Z",
+          "remoteEtag": "e90619afcd4a85d131eb9b1e85435f19",
+          "isValid": true
+        },
+        "Textures/Star/T_3XingStar_SDF.png.meta": {
+          "relativePath": "Textures/Star/T_3XingStar_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_3XingStar_SDF.png.meta",
+          "fileSize": 3812,
+          "checksum": "Q4XgraSySc1PjmjfP2Gm3A==",
+          "lastModified": "2025-09-05T08:24:12.0352226+02:00",
+          "downloadDate": "2025-09-05T06:24:12.0352226Z",
+          "remoteEtag": "f9add9c0112eb24ad241f65f6762ccdc",
+          "isValid": true
+        },
+        "Textures/Star/T_5XingStar_D.png": {
+          "relativePath": "Textures/Star/T_5XingStar_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_5XingStar_D.png",
+          "fileSize": 136005,
+          "checksum": "HXG1f1i9LhvehbBRe0oLVQ==",
+          "lastModified": "2025-09-05T08:24:12.2073089+02:00",
+          "downloadDate": "2025-09-05T06:24:12.214841Z",
+          "remoteEtag": "f7720816962206e707aba5a487f97df4",
+          "isValid": true
+        },
+        "Textures/Star/T_5XingStar_D.png.meta": {
+          "relativePath": "Textures/Star/T_5XingStar_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_5XingStar_D.png.meta",
+          "fileSize": 3659,
+          "checksum": "5Rf52B2V7LWlB5pBzvUplw==",
+          "lastModified": "2025-09-05T08:24:12.3722055+02:00",
+          "downloadDate": "2025-09-05T06:24:12.3732055Z",
+          "remoteEtag": "69816fb9fd991cbf82676cce66f89a8b",
+          "isValid": true
+        },
+        "Textures/Star/T_5XingStar_SDF.png": {
+          "relativePath": "Textures/Star/T_5XingStar_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_5XingStar_SDF.png",
+          "fileSize": 96786,
+          "checksum": "eDWmTf77t+Lv8X1rl39FEg==",
+          "lastModified": "2025-09-05T08:24:12.5271687+02:00",
+          "downloadDate": "2025-09-05T06:24:12.5768526Z",
+          "remoteEtag": "0f326e04271a3fe856b5ab0498b41f57",
+          "isValid": true
+        },
+        "Textures/Star/T_5XingStar_SDF.png.meta": {
+          "relativePath": "Textures/Star/T_5XingStar_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_5XingStar_SDF.png.meta",
+          "fileSize": 3812,
+          "checksum": "H2+uFhJQMfrrYm4gUs5ecA==",
+          "lastModified": "2025-09-05T08:24:12.7320817+02:00",
+          "downloadDate": "2025-09-05T06:24:12.7320817Z",
+          "remoteEtag": "e977d63e712dd517249134c9dfda5f13",
+          "isValid": true
+        },
+        "Textures/Star/T_6XingStar_D.png": {
+          "relativePath": "Textures/Star/T_6XingStar_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_6XingStar_D.png",
+          "fileSize": 111065,
+          "checksum": "RR89ZunyoRgQ8V9BbPuAig==",
+          "lastModified": "2025-09-05T08:24:12.8901466+02:00",
+          "downloadDate": "2025-09-05T06:24:12.9408221Z",
+          "remoteEtag": "acf6aac2eec7630e840aa826a0a96fe8",
+          "isValid": true
+        },
+        "Textures/Star/T_6XingStar_D.png.meta": {
+          "relativePath": "Textures/Star/T_6XingStar_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_6XingStar_D.png.meta",
+          "fileSize": 3812,
+          "checksum": "lbIO4zBzOGWYLAgY0sXwLg==",
+          "lastModified": "2025-09-05T08:24:13.1472806+02:00",
+          "downloadDate": "2025-09-05T06:24:13.1472806Z",
+          "remoteEtag": "f36d6065ec38ea3373c8647d7bd5c9e1",
+          "isValid": true
+        },
+        "Textures/Star/T_6XingStar_SDF.png": {
+          "relativePath": "Textures/Star/T_6XingStar_SDF.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_6XingStar_SDF.png",
+          "fileSize": 85476,
+          "checksum": "PZjEkrBNTK2vEhb+54RHcw==",
+          "lastModified": "2025-09-05T08:24:13.2997806+02:00",
+          "downloadDate": "2025-09-05T06:24:13.2997806Z",
+          "remoteEtag": "f4bf5fc5b3273ca9d3753b91299b5338",
+          "isValid": true
+        },
+        "Textures/Star/T_6XingStar_SDF.png.meta": {
+          "relativePath": "Textures/Star/T_6XingStar_SDF.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_6XingStar_SDF.png.meta",
+          "fileSize": 3444,
+          "checksum": "ATK/uAhJyd4ZVKvFN7OexQ==",
+          "lastModified": "2025-09-05T08:24:13.4518459+02:00",
+          "downloadDate": "2025-09-05T06:24:13.4518459Z",
+          "remoteEtag": "3ba62e8e772353bb4b852d8ac991cfa7",
+          "isValid": true
+        },
+        "Textures/Star/T_XingHenShakeNoise_D.png": {
+          "relativePath": "Textures/Star/T_XingHenShakeNoise_D.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_XingHenShakeNoise_D.png",
+          "fileSize": 82323,
+          "checksum": "Q4enIjfebzOyuNXXyQz9mQ==",
+          "lastModified": "2025-09-05T08:24:13.580999+02:00",
+          "downloadDate": "2025-09-05T06:24:13.6045567Z",
+          "remoteEtag": "50b62250adb151976cf93d96116a0e21",
+          "isValid": true
+        },
+        "Textures/Star/T_XingHenShakeNoise_D.png.meta": {
+          "relativePath": "Textures/Star/T_XingHenShakeNoise_D.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_XingHenShakeNoise_D.png.meta",
+          "fileSize": 3444,
+          "checksum": "d1XHZC+gSNjzV+p6Xw7SgA==",
+          "lastModified": "2025-09-05T08:24:13.8092176+02:00",
+          "downloadDate": "2025-09-05T06:24:13.8102246Z",
+          "remoteEtag": "e8143c173cb8bdf603c967f32fecaff2",
+          "isValid": true
+        },
+        "Textures/Star/T_XingHenSoundNoise02.png": {
+          "relativePath": "Textures/Star/T_XingHenSoundNoise02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_XingHenSoundNoise02.png",
+          "fileSize": 1378,
+          "checksum": "lWgMX/CKiaNKHlh9CHwOBQ==",
+          "lastModified": "2025-09-05T08:24:13.9529024+02:00",
+          "downloadDate": "2025-09-05T06:24:13.9529024Z",
+          "remoteEtag": "157f70f20666932eec3f2478c216fd80",
+          "isValid": true
+        },
+        "Textures/Star/T_XingHenSoundNoise02.png.meta": {
+          "relativePath": "Textures/Star/T_XingHenSoundNoise02.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_XingHenSoundNoise02.png.meta",
+          "fileSize": 3444,
+          "checksum": "02xZRF2EMFnxWuZ6HhWLdA==",
+          "lastModified": "2025-09-05T08:24:14.170046+02:00",
+          "downloadDate": "2025-09-05T06:24:14.170046Z",
+          "remoteEtag": "5b7ebcaeb28d8b4e0632b6526b81b2d3",
+          "isValid": true
+        },
+        "Textures/Star/T_XingHenSoundNoise.png": {
+          "relativePath": "Textures/Star/T_XingHenSoundNoise.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_XingHenSoundNoise.png",
+          "fileSize": 1035,
+          "checksum": "8KcNYnmJhPLjQvqPXIoBXw==",
+          "lastModified": "2025-09-05T08:24:14.476324+02:00",
+          "downloadDate": "2025-09-05T06:24:14.476324Z",
+          "remoteEtag": "99663e021f4be18e26e0e2e1b3e4ecb0",
+          "isValid": true
+        },
+        "Textures/Star/T_XingHenSoundNoise.png.meta": {
+          "relativePath": "Textures/Star/T_XingHenSoundNoise.png.meta",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Wuthering Waves\\Textures\\Star\\T_XingHenSoundNoise.png.meta",
+          "fileSize": 3444,
+          "checksum": "CDkKlGnrTup1OZVKrjHQHg==",
+          "lastModified": "2025-09-05T08:24:14.6304179+02:00",
+          "downloadDate": "2025-09-05T06:24:14.6304179Z",
+          "remoteEtag": "98a75cc99c143a29c6e1ccdef9bb8041",
+          "isValid": true
+        }
+      },
+      "totalDownloaded": 23419614,
+      "downloadErrors": []
+    },
+    "Honkai Impact 3rd": {
+      "gameKey": "Honkai Impact 3rd",
+      "webdavUrl": "https://assets.hoyotoon.com/s/Q7KkrB69ny5kTBL",
+      "lastSync": "2025-09-05T06:23:44.0285689Z",
+      "files": {
+        "Textures/Avatar_Boy_Facemap.png": {
+          "relativePath": "Textures/Avatar_Boy_Facemap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Impact 3rd\\Textures\\Avatar_Boy_Facemap.png",
+          "fileSize": 51762,
+          "checksum": "pNL6lDxaOtPuJh4FLZbGeQ==",
+          "lastModified": "2025-09-05T08:23:42.8230099+02:00",
+          "downloadDate": "2025-09-05T06:23:42.8240139Z",
+          "remoteEtag": "bbd74d30f4bc86a60b60f0e5b0ffee30",
+          "isValid": true
+        },
+        "Textures/Avatar_Girl_Facemap.png": {
+          "relativePath": "Textures/Avatar_Girl_Facemap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Impact 3rd\\Textures\\Avatar_Girl_Facemap.png",
+          "fileSize": 78636,
+          "checksum": "tSuwm2nhUyD5sE4bYtaouw==",
+          "lastModified": "2025-09-05T08:23:43.0436502+02:00",
+          "downloadDate": "2025-09-05T06:23:43.1063472Z",
+          "remoteEtag": "a02ab7a206ebb249a7cfdb203a04b21c",
+          "isValid": true
+        },
+        "Textures/Avatar_Lady02_Facemap.png": {
+          "relativePath": "Textures/Avatar_Lady02_Facemap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Impact 3rd\\Textures\\Avatar_Lady02_Facemap.png",
+          "fileSize": 57812,
+          "checksum": "UcAWVrUHgVCJRC7SwpAvtQ==",
+          "lastModified": "2025-09-05T08:23:43.3538876+02:00",
+          "downloadDate": "2025-09-05T06:23:43.3538876Z",
+          "remoteEtag": "342e966c835be2d143f2cba2fd96e957",
+          "isValid": true
+        },
+        "Textures/Avatar_Loli_Facemap.png": {
+          "relativePath": "Textures/Avatar_Loli_Facemap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Impact 3rd\\Textures\\Avatar_Loli_Facemap.png",
+          "fileSize": 51555,
+          "checksum": "ydNrn943HJPEXk9QEZeQfw==",
+          "lastModified": "2025-09-05T08:23:43.6121912+02:00",
+          "downloadDate": "2025-09-05T06:23:43.6121912Z",
+          "remoteEtag": "b97106a2a34fdabb5796960b957bd442",
+          "isValid": true
+        },
+        "Textures/strips2.png": {
+          "relativePath": "Textures/strips2.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Impact 3rd\\Textures\\strips2.png",
+          "fileSize": 7123,
+          "checksum": "kn9krSBBcUAsvR94ahpOLw==",
+          "lastModified": "2025-09-05T08:23:43.8187401+02:00",
+          "downloadDate": "2025-09-05T06:23:43.8187401Z",
+          "remoteEtag": "234bf7da7b58e7061a0d4a58ddf6c01a",
+          "isValid": true
+        },
+        "Textures/strips.png": {
+          "relativePath": "Textures/strips.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Honkai Impact 3rd\\Textures\\strips.png",
+          "fileSize": 1897,
+          "checksum": "ed7cIgtuQIYRyoQ/td3zpw==",
+          "lastModified": "2025-09-05T08:23:44.0230589+02:00",
+          "downloadDate": "2025-09-05T06:23:44.0230589Z",
+          "remoteEtag": "272e8d962cce16745eb1d06a926d13cb",
+          "isValid": true
+        }
+      },
+      "totalDownloaded": 248785,
+      "downloadErrors": []
+    },
+    "Zenless Zone Zero": {
+      "gameKey": "Zenless Zone Zero",
+      "webdavUrl": "https://assets.hoyotoon.com/s/BWBcHTK7qmwTnfd",
+      "lastSync": "2025-09-05T06:28:30.3009054Z",
+      "files": {
+        "Textures/LightMaps/Female_Face_Lightmap_02.png": {
+          "relativePath": "Textures/LightMaps/Female_Face_Lightmap_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\Female_Face_Lightmap_02.png",
+          "fileSize": 25971,
+          "checksum": "04UFXrKi2czgkUPursEZ5g==",
+          "lastModified": "2025-09-05T08:23:48.1633424+02:00",
+          "downloadDate": "2025-09-05T06:23:48.1633424Z",
+          "remoteEtag": "0eb87037713d1437e75dd59b592b8885",
+          "isValid": true
+        },
+        "Textures/LightMaps/Female_Face_lightmap_FX.png": {
+          "relativePath": "Textures/LightMaps/Female_Face_lightmap_FX.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\Female_Face_lightmap_FX.png",
+          "fileSize": 24406,
+          "checksum": "CalzI5QyYNY2C8eRiDfdPw==",
+          "lastModified": "2025-09-05T08:23:48.5269749+02:00",
+          "downloadDate": "2025-09-05T06:23:48.5269749Z",
+          "remoteEtag": "8049848c272007a271be7c57c6a6ec5b",
+          "isValid": true
+        },
+        "Textures/LightMaps/Female_Face_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/Female_Face_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\Female_Face_Lightmap.png",
+          "fileSize": 25416,
+          "checksum": "BmKQX8aCo2Rz2FrHlrbGHg==",
+          "lastModified": "2025-09-05T08:23:48.7326571+02:00",
+          "downloadDate": "2025-09-05T06:23:48.7326571Z",
+          "remoteEtag": "dee6dfb76c483e5d408321c3493b1e17",
+          "isValid": true
+        },
+        "Textures/LightMaps/Male_Face_01_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/Male_Face_01_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\Male_Face_01_Lightmap.png",
+          "fileSize": 20787,
+          "checksum": "C86jiJY8eIH2leES5J1sAw==",
+          "lastModified": "2025-09-05T08:23:48.8889746+02:00",
+          "downloadDate": "2025-09-05T06:23:48.8957892Z",
+          "remoteEtag": "8f2c89ed0fea0330bed4979093c9cd67",
+          "isValid": true
+        },
+        "Textures/LightMaps/Male_Face_02_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/Male_Face_02_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\Male_Face_02_Lightmap.png",
+          "fileSize": 21738,
+          "checksum": "nVjB4P/OXD7iQWZVCEhwEQ==",
+          "lastModified": "2025-09-05T08:23:49.0544715+02:00",
+          "downloadDate": "2025-09-05T06:23:49.0937333Z",
+          "remoteEtag": "133d08b7955df4f33a8d187fa5c2c436",
+          "isValid": true
+        },
+        "Textures/LightMaps/Monster_Face_01_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/Monster_Face_01_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\Monster_Face_01_Lightmap.png",
+          "fileSize": 33414,
+          "checksum": "cy2IkT0PHV0bUmykSlRweA==",
+          "lastModified": "2025-09-05T08:23:49.3543066+02:00",
+          "downloadDate": "2025-09-05T06:23:49.3543066Z",
+          "remoteEtag": "21d958585e517d2453ae75236a5e696b",
+          "isValid": true
+        },
+        "Textures/LightMaps/NPC_Face_Child_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/NPC_Face_Child_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\NPC_Face_Child_Lightmap.png",
+          "fileSize": 18503,
+          "checksum": "Pmm02S5BywqwBh1gMlPdrQ==",
+          "lastModified": "2025-09-05T08:23:49.5179524+02:00",
+          "downloadDate": "2025-09-05T06:23:49.5635005Z",
+          "remoteEtag": "cb00bffaf28de4c76b0c20e6c39b40c2",
+          "isValid": true
+        },
+        "Textures/LightMaps/NPC_Face_Older_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/NPC_Face_Older_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\NPC_Face_Older_Lightmap.png",
+          "fileSize": 29274,
+          "checksum": "BenbUImOqMmisugxtJmWKg==",
+          "lastModified": "2025-09-05T08:23:49.7264736+02:00",
+          "downloadDate": "2025-09-05T06:23:49.7708686Z",
+          "remoteEtag": "0c26ad9f319f7c1d3d5469861296f7c5",
+          "isValid": true
+        },
+        "Textures/LightMaps/NPC_Furry_Face01_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/NPC_Furry_Face01_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\NPC_Furry_Face01_Lightmap.png",
+          "fileSize": 28277,
+          "checksum": "yrtCFkfI+YNzBCj4Emiazg==",
+          "lastModified": "2025-09-05T08:23:49.9315663+02:00",
+          "downloadDate": "2025-09-05T06:23:49.9767304Z",
+          "remoteEtag": "c9424f5b6957751df6a23a7400b89991",
+          "isValid": true
+        },
+        "Textures/LightMaps/NPC_Furry_Face02_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/NPC_Furry_Face02_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\NPC_Furry_Face02_Lightmap.png",
+          "fileSize": 17039,
+          "checksum": "O/vAmrvuyygssLPWaAic7w==",
+          "lastModified": "2025-09-05T08:23:50.1834109+02:00",
+          "downloadDate": "2025-09-05T06:23:50.1834109Z",
+          "remoteEtag": "f5926b298b67427bb462668079329efc",
+          "isValid": true
+        },
+        "Textures/LightMaps/NPC_Furry_Face03_Lightmap.png": {
+          "relativePath": "Textures/LightMaps/NPC_Furry_Face03_Lightmap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LightMaps\\NPC_Furry_Face03_Lightmap.png",
+          "fileSize": 28724,
+          "checksum": "Keh0lwwKf3SeTbW0e+TQRQ==",
+          "lastModified": "2025-09-05T08:23:50.3399756+02:00",
+          "downloadDate": "2025-09-05T06:23:50.3912286Z",
+          "remoteEtag": "9c59cfa2a1ad46a94eb2dc5f02035522",
+          "isValid": true
+        },
+        "Textures/LUTs/Eye_E_02.png": {
+          "relativePath": "Textures/LUTs/Eye_E_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LUTs\\Eye_E_02.png",
+          "fileSize": 137,
+          "checksum": "qbWOISJlpE4/VUZVBiBf0Q==",
+          "lastModified": "2025-09-05T08:23:50.6215667+02:00",
+          "downloadDate": "2025-09-05T06:23:50.6215667Z",
+          "remoteEtag": "95b01ff83c4a69498a9c4e300d608659",
+          "isValid": true
+        },
+        "Textures/LUTs/Eye_E.png": {
+          "relativePath": "Textures/LUTs/Eye_E.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LUTs\\Eye_E.png",
+          "fileSize": 138,
+          "checksum": "9XjNh91j+80pd0NnjPo9Rw==",
+          "lastModified": "2025-09-05T08:23:50.8665142+02:00",
+          "downloadDate": "2025-09-05T06:23:50.8675148Z",
+          "remoteEtag": "6d0f4dc10746f3c35a2e071aa079a818",
+          "isValid": true
+        },
+        "Textures/LUTs/LUT_ZZZ.png": {
+          "relativePath": "Textures/LUTs/LUT_ZZZ.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LUTs\\LUT_ZZZ.png",
+          "fileSize": 4073,
+          "checksum": "ARjt2U9OlGg1r5SV3F3LmQ==",
+          "lastModified": "2025-09-05T08:23:51.1196431+02:00",
+          "downloadDate": "2025-09-05T06:23:51.1196431Z",
+          "remoteEtag": "07cbfcb43981d0ec1fddd4ce072fd739",
+          "isValid": true
+        },
+        "Textures/LUTs/LUT_ZZZ_Scene.png": {
+          "relativePath": "Textures/LUTs/LUT_ZZZ_Scene.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\LUTs\\LUT_ZZZ_Scene.png",
+          "fileSize": 2066,
+          "checksum": "kv+ueKFcT6OZ++oBBRarrw==",
+          "lastModified": "2025-09-05T08:23:51.373269+02:00",
+          "downloadDate": "2025-09-05T06:23:51.373269Z",
+          "remoteEtag": "492c26a92714b690d8a6cf1e23b8dba2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_001.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_001.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_001.png",
+          "fileSize": 51220,
+          "checksum": "WX8x1HdkQG08YmofGr2cTA==",
+          "lastModified": "2025-09-05T08:23:51.6316128+02:00",
+          "downloadDate": "2025-09-05T06:23:51.6835275Z",
+          "remoteEtag": "433b874aa10ced57af6105608c811b9f",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_002.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_002.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_002.png",
+          "fileSize": 13394,
+          "checksum": "1nd6XhkncWDhriE++43Diw==",
+          "lastModified": "2025-09-05T08:23:51.8363307+02:00",
+          "downloadDate": "2025-09-05T06:23:51.8889366Z",
+          "remoteEtag": "37c3d8053f0c2aefb5cfac8e53c462dd",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_003.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_003.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_003.png",
+          "fileSize": 83988,
+          "checksum": "GIxU+k+IAbNCOobnRp1H4A==",
+          "lastModified": "2025-09-05T08:23:52.0954775+02:00",
+          "downloadDate": "2025-09-05T06:23:52.0954775Z",
+          "remoteEtag": "4bd600cff0b2a1e30a656543ed10a485",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_005.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_005.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_005.png",
+          "fileSize": 54591,
+          "checksum": "gFCWGhe9Cps2o1voXJhAMQ==",
+          "lastModified": "2025-09-05T08:23:52.2565524+02:00",
+          "downloadDate": "2025-09-05T06:23:52.2642683Z",
+          "remoteEtag": "0075d5b39d590c7301c66352a7e95232",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_006.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_006.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_006.png",
+          "fileSize": 44496,
+          "checksum": "Azo3IruYRH3g6sVNbdCzxQ==",
+          "lastModified": "2025-09-05T08:23:52.568578+02:00",
+          "downloadDate": "2025-09-05T06:23:52.568578Z",
+          "remoteEtag": "85314c339f8815fbf920118ae37763f2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_007.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_007.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_007.png",
+          "fileSize": 28367,
+          "checksum": "3AOCuA93imP7+lxkza++3Q==",
+          "lastModified": "2025-09-05T08:23:52.7493353+02:00",
+          "downloadDate": "2025-09-05T06:23:52.7747746Z",
+          "remoteEtag": "02daab2aef06d8104472bfb05435cf94",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_008.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_008.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_008.png",
+          "fileSize": 35758,
+          "checksum": "hQwNpD20vUAcLaNYIE55VQ==",
+          "lastModified": "2025-09-05T08:23:52.977409+02:00",
+          "downloadDate": "2025-09-05T06:23:52.977409Z",
+          "remoteEtag": "f6a83d0a1fb53a24e951ad2b85c4ed39",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_009.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_009.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_009.png",
+          "fileSize": 35590,
+          "checksum": "iXU0r0l869CMwPP82F9D2A==",
+          "lastModified": "2025-09-05T08:23:53.103259+02:00",
+          "downloadDate": "2025-09-05T06:23:53.103259Z",
+          "remoteEtag": "5aac1281b1b0f63dc6ba879137447426",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_010.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_010.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_010.png",
+          "fileSize": 51387,
+          "checksum": "ts7QnqBGIMn7wEVUUidBIw==",
+          "lastModified": "2025-09-05T08:23:53.2667984+02:00",
+          "downloadDate": "2025-09-05T06:23:53.2667984Z",
+          "remoteEtag": "e7d9ff0c9b7ef3b7ddd5f47e85f8befd",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_011.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_011.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_011.png",
+          "fileSize": 19352,
+          "checksum": "53FzPZLPJm/jJ9dOK66lCQ==",
+          "lastModified": "2025-09-05T08:23:53.6951251+02:00",
+          "downloadDate": "2025-09-05T06:23:53.6951251Z",
+          "remoteEtag": "17afb6fa7b57a3febe57b86a5ef98090",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_012.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_012.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_012.png",
+          "fileSize": 17588,
+          "checksum": "ELoCs4Pt+RKNMa5XD2srSg==",
+          "lastModified": "2025-09-05T08:23:53.9059316+02:00",
+          "downloadDate": "2025-09-05T06:23:54.0078426Z",
+          "remoteEtag": "f752cfe58858190633dc729b9ff08c7d",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_013.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_013.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_013.png",
+          "fileSize": 22971,
+          "checksum": "Ld/7EIFAPbXYHG1MnsLTxw==",
+          "lastModified": "2025-09-05T08:23:54.2210631+02:00",
+          "downloadDate": "2025-09-05T06:23:54.2762901Z",
+          "remoteEtag": "cb7853e5d494eb69b7ccbbbedd9c3bc0",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_014.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_014.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_014.png",
+          "fileSize": 10550,
+          "checksum": "H8p0nf9s1ZZ/lXfji2jVMw==",
+          "lastModified": "2025-09-05T08:23:54.5263369+02:00",
+          "downloadDate": "2025-09-05T06:23:54.5263369Z",
+          "remoteEtag": "9f7f262321aead6c083a8d65c1e789f9",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_015.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_015.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_015.png",
+          "fileSize": 24742,
+          "checksum": "f1PZLpPhKO2IFbQp4oXXlg==",
+          "lastModified": "2025-09-05T08:23:54.7352038+02:00",
+          "downloadDate": "2025-09-05T06:23:54.7362048Z",
+          "remoteEtag": "a0e3ae6f309f2b4e638701be8f14229c",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_016.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_016.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_016.png",
+          "fileSize": 7641,
+          "checksum": "nWcHUwgtTvohCe14n+aOCQ==",
+          "lastModified": "2025-09-05T08:23:54.8748382+02:00",
+          "downloadDate": "2025-09-05T06:23:54.8834052Z",
+          "remoteEtag": "7a6e335e41525e0ad568c6839477afe6",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_017.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_017.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_017.png",
+          "fileSize": 19690,
+          "checksum": "bnObFCKr/y4o6v5Zg4rnag==",
+          "lastModified": "2025-09-05T08:23:55.1430363+02:00",
+          "downloadDate": "2025-09-05T06:23:55.1430363Z",
+          "remoteEtag": "7a8f0a2a7a5fdfae0a50061b3ca8d3a0",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_018.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_018.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_018.png",
+          "fileSize": 13492,
+          "checksum": "swRRiwm43H6baSp2JW1daA==",
+          "lastModified": "2025-09-05T08:23:55.2609979+02:00",
+          "downloadDate": "2025-09-05T06:23:55.3612688Z",
+          "remoteEtag": "eee9b31346ad8cf695f8c43de92de305",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_019.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_019.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_019.png",
+          "fileSize": 77549,
+          "checksum": "8x+9738DX6fx1PK1vAX2EQ==",
+          "lastModified": "2025-09-05T08:23:55.4789642+02:00",
+          "downloadDate": "2025-09-05T06:23:55.5788598Z",
+          "remoteEtag": "f65503e6470624a807721871c3359394",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_020.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_020.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_020.png",
+          "fileSize": 32486,
+          "checksum": "Rh6AMK/8VL9aZVUALn9ybA==",
+          "lastModified": "2025-09-05T08:23:55.9070167+02:00",
+          "downloadDate": "2025-09-05T06:23:55.9070167Z",
+          "remoteEtag": "c43f5b3b363d8fb76b9ddea86f8b4834",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_021.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_021.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_021.png",
+          "fileSize": 22196,
+          "checksum": "pqjfaKXTxOtBW/UqxXOndA==",
+          "lastModified": "2025-09-05T08:23:56.1218751+02:00",
+          "downloadDate": "2025-09-05T06:23:56.2233215Z",
+          "remoteEtag": "62bcb0f44fe6327acf7173bf3def0c10",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_022.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_022.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_022.png",
+          "fileSize": 17647,
+          "checksum": "h3JmiSCd2sGO/K3uXr2rLw==",
+          "lastModified": "2025-09-05T08:23:56.438095+02:00",
+          "downloadDate": "2025-09-05T06:23:56.438095Z",
+          "remoteEtag": "0aecfef66926ac5720696c78de537ce4",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_023.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_023.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_023.png",
+          "fileSize": 75922,
+          "checksum": "/yjdvKPOI/hWasqULCGiPQ==",
+          "lastModified": "2025-09-05T08:23:56.553203+02:00",
+          "downloadDate": "2025-09-05T06:23:56.6532632Z",
+          "remoteEtag": "7f54b1adbc9d79335af34858128c3c3c",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_024_LZL_02.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_024_LZL_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_024_LZL_02.png",
+          "fileSize": 39104,
+          "checksum": "BD0LZL978hB6q51yF/7Ijw==",
+          "lastModified": "2025-09-05T08:23:56.7700388+02:00",
+          "downloadDate": "2025-09-05T06:23:56.8720467Z",
+          "remoteEtag": "2945e3756468e7771a7912b92904c077",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_024.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_024.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_024.png",
+          "fileSize": 88050,
+          "checksum": "ZBA6MhAGz3fANlrzaNJq8g==",
+          "lastModified": "2025-09-05T08:23:56.9901605+02:00",
+          "downloadDate": "2025-09-05T06:23:57.0911126Z",
+          "remoteEtag": "ccae16066fe385893fba68c99ed7850f",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_025.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_025.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_025.png",
+          "fileSize": 22053,
+          "checksum": "9IcAtVvuUkf5Xj6/TAft+Q==",
+          "lastModified": "2025-09-05T08:23:57.3074947+02:00",
+          "downloadDate": "2025-09-05T06:23:57.4085613Z",
+          "remoteEtag": "cf01b39d03f9da74d7e9e57a3de00343",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_026.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_026.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_026.png",
+          "fileSize": 23655,
+          "checksum": "Ubd/GBtT5ONPK4GudGdSAw==",
+          "lastModified": "2025-09-05T08:23:57.6312673+02:00",
+          "downloadDate": "2025-09-05T06:23:57.7407677Z",
+          "remoteEtag": "7f4658087f5c227f970d4ff75a0b666a",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_027.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_027.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_027.png",
+          "fileSize": 22714,
+          "checksum": "qzVCOFkfGKNajuio/+cn9g==",
+          "lastModified": "2025-09-05T08:23:57.9632282+02:00",
+          "downloadDate": "2025-09-05T06:23:58.0795231Z",
+          "remoteEtag": "f9d0e57ed396a6c49541caf020517815",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_028.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_028.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_028.png",
+          "fileSize": 21954,
+          "checksum": "GriqFUN2qDu1HPM5fBiH4g==",
+          "lastModified": "2025-09-05T08:23:58.3000336+02:00",
+          "downloadDate": "2025-09-05T06:23:58.4069534Z",
+          "remoteEtag": "556caff5630d9023e81bdbecbf78f10a",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_029.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_029.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_029.png",
+          "fileSize": 15545,
+          "checksum": "Sa+s8U8trJjEgbDERnlsSA==",
+          "lastModified": "2025-09-05T08:23:58.5251533+02:00",
+          "downloadDate": "2025-09-05T06:23:58.6393893Z",
+          "remoteEtag": "0b13767b4ef1bb8bc390daa8bbcdc67d",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_030_HZW_01.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_030_HZW_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_030_HZW_01.png",
+          "fileSize": 41768,
+          "checksum": "dVW940jJzCRtc78amzGuuQ==",
+          "lastModified": "2025-09-05T08:24:00.0507794+02:00",
+          "downloadDate": "2025-09-05T06:24:00.0507794Z",
+          "remoteEtag": "df0a240026e993af32cbe76d149a7cc2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_030.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_030.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_030.png",
+          "fileSize": 52311,
+          "checksum": "4R0NxXo9bYHLW9WIg9JBWw==",
+          "lastModified": "2025-09-05T08:24:00.2762457+02:00",
+          "downloadDate": "2025-09-05T06:24:00.2762457Z",
+          "remoteEtag": "b22c6b51fe429d518b9edf14df505fe7",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_031.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_031.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_031.png",
+          "fileSize": 84497,
+          "checksum": "XBX+LqQ5vlunFpBhbbSNWQ==",
+          "lastModified": "2025-09-05T08:24:00.4621626+02:00",
+          "downloadDate": "2025-09-05T06:24:00.4621626Z",
+          "remoteEtag": "c93c3293320223c6736d4b76fb3e59c0",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_032.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_032.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_032.png",
+          "fileSize": 21403,
+          "checksum": "np06K+qi7zbU4c05vlkVIw==",
+          "lastModified": "2025-09-05T08:24:00.6342148+02:00",
+          "downloadDate": "2025-09-05T06:24:00.6950001Z",
+          "remoteEtag": "8e019092755b87b4312b18bd52aa7596",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_033.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_033.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_033.png",
+          "fileSize": 23318,
+          "checksum": "ZeIwtjkqNjAJU+smuKtU3g==",
+          "lastModified": "2025-09-05T08:24:00.8458455+02:00",
+          "downloadDate": "2025-09-05T06:24:00.8578731Z",
+          "remoteEtag": "d23c93d5628006d3e97504aa4efca695",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_034.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_034.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_034.png",
+          "fileSize": 25173,
+          "checksum": "pamhyl2xXWA7P28CedoKwg==",
+          "lastModified": "2025-09-05T08:24:01.0238976+02:00",
+          "downloadDate": "2025-09-05T06:24:01.0238976Z",
+          "remoteEtag": "2ab2fd7e1d097fe562f3e2e910ad6bdc",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_035.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_035.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_035.png",
+          "fileSize": 62273,
+          "checksum": "BTAAqdlkxAySM6NQbvL47Q==",
+          "lastModified": "2025-09-05T08:24:01.2156864+02:00",
+          "downloadDate": "2025-09-05T06:24:01.2575901Z",
+          "remoteEtag": "2ef657b9f6ff6df3e267d43e28f0a4ed",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_036.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_036.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_036.png",
+          "fileSize": 28965,
+          "checksum": "l80RP+ZVGy2KrkvLTiLShQ==",
+          "lastModified": "2025-09-05T08:24:01.4078118+02:00",
+          "downloadDate": "2025-09-05T06:24:01.4199064Z",
+          "remoteEtag": "8a4a2a3f7d9a0986e925e26406023ace",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_037.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_037.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_037.png",
+          "fileSize": 34100,
+          "checksum": "94HL7np+cBIBCObMSPgb3g==",
+          "lastModified": "2025-09-05T08:24:01.6794437+02:00",
+          "downloadDate": "2025-09-05T06:24:01.6794437Z",
+          "remoteEtag": "760e409d27ee7b21c2f89ca727bfa720",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_038.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_038.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_038.png",
+          "fileSize": 20190,
+          "checksum": "ODJN/4tbow+XhjZb7dURkA==",
+          "lastModified": "2025-09-05T08:24:01.8154196+02:00",
+          "downloadDate": "2025-09-05T06:24:01.9075126Z",
+          "remoteEtag": "f249675ec500579088332a0d90dd75c4",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_039.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_039.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_039.png",
+          "fileSize": 66433,
+          "checksum": "nXCNahnRAfrEgM+PhqoQKw==",
+          "lastModified": "2025-09-05T08:24:02.1499113+02:00",
+          "downloadDate": "2025-09-05T06:24:02.1499113Z",
+          "remoteEtag": "002a507bd44860d9cd5e2009bbb081e2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_040.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_040.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_040.png",
+          "fileSize": 27382,
+          "checksum": "n8CEfsf+mOcWcchAL943yA==",
+          "lastModified": "2025-09-05T08:24:02.4818352+02:00",
+          "downloadDate": "2025-09-05T06:24:02.4818352Z",
+          "remoteEtag": "a17972f31a35f99a251ae417e2f1470b",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_041.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_041.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_041.png",
+          "fileSize": 114817,
+          "checksum": "aDSfoxSqg42nKBYpI1g8PQ==",
+          "lastModified": "2025-09-05T08:24:02.7190141+02:00",
+          "downloadDate": "2025-09-05T06:24:02.8265478Z",
+          "remoteEtag": "7c5c37e73f409096da7c80bc9105a3bf",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_042.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_042.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_042.png",
+          "fileSize": 16764,
+          "checksum": "cvV93Z5VdwjAl7nDhhpGnw==",
+          "lastModified": "2025-09-05T08:24:05.2169077+02:00",
+          "downloadDate": "2025-09-05T06:24:05.2169077Z",
+          "remoteEtag": "9ad16b93a9b165acf440fe3beafc4a88",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_043.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_043.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_043.png",
+          "fileSize": 40282,
+          "checksum": "hDkvbbvDZX8PUJ3/1ffFcA==",
+          "lastModified": "2025-09-05T08:24:05.3635545+02:00",
+          "downloadDate": "2025-09-05T06:24:05.3882164Z",
+          "remoteEtag": "59f3bfdaffdbbd7480aabc23b45aee52",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_047.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_047.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_047.png",
+          "fileSize": 86888,
+          "checksum": "EkxcGshs7flY+LNCO0at5A==",
+          "lastModified": "2025-09-05T08:24:05.6232313+02:00",
+          "downloadDate": "2025-09-05T06:24:05.7036188Z",
+          "remoteEtag": "63bbfaef339514eef100fa4eb315f215",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_048.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_048.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_048.png",
+          "fileSize": 36814,
+          "checksum": "1iZ0by5+H34HTTWx6jiSGg==",
+          "lastModified": "2025-09-05T08:24:05.859086+02:00",
+          "downloadDate": "2025-09-05T06:24:05.909027Z",
+          "remoteEtag": "7dad93ccb575043272bbd4e925766c7e",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_049.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_049.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_049.png",
+          "fileSize": 902,
+          "checksum": "Qh+QfRlAaAQUOvvzUM2Znw==",
+          "lastModified": "2025-09-05T08:24:06.1978209+02:00",
+          "downloadDate": "2025-09-05T06:24:06.1978209Z",
+          "remoteEtag": "6e95bee1a2a1f7fbe4430423ddcf9116",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_050.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_050.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_050.png",
+          "fileSize": 33349,
+          "checksum": "57bmIHTJ9a+1NNaMDRTKcA==",
+          "lastModified": "2025-09-05T08:24:06.4553305+02:00",
+          "downloadDate": "2025-09-05T06:24:06.4553305Z",
+          "remoteEtag": "c970f3ea146b6aa723dee7c6d7a652b1",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_051.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_051.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_051.png",
+          "fileSize": 87525,
+          "checksum": "dyegH6BuWHZJ6rlPBN4t0A==",
+          "lastModified": "2025-09-05T08:24:06.6385294+02:00",
+          "downloadDate": "2025-09-05T06:24:06.658212Z",
+          "remoteEtag": "7b773ea4c17b7c39a6b78445c5929113",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_052.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_052.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_052.png",
+          "fileSize": 19389,
+          "checksum": "Ox0mW1Jceps1J2C+lk7nJA==",
+          "lastModified": "2025-09-05T08:24:06.8452318+02:00",
+          "downloadDate": "2025-09-05T06:24:06.8452318Z",
+          "remoteEtag": "3a0f1aaeacf9cdf4fe1cccf5ced72e7d",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_053.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_053.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_053.png",
+          "fileSize": 90223,
+          "checksum": "7MM8EJMLIH/MLWLgZ75bFQ==",
+          "lastModified": "2025-09-05T08:24:07.0191858+02:00",
+          "downloadDate": "2025-09-05T06:24:07.0191858Z",
+          "remoteEtag": "d46a82dfdc49004181331b787d7b4a77",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_054.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_054.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_054.png",
+          "fileSize": 57497,
+          "checksum": "q12iPwaBJP23DmpCmZ+NJg==",
+          "lastModified": "2025-09-05T08:24:07.2824894+02:00",
+          "downloadDate": "2025-09-05T06:24:07.2824894Z",
+          "remoteEtag": "bed11f133e89092288d6c613e1348bc5",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_055.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_055.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_055.png",
+          "fileSize": 70049,
+          "checksum": "IC6h4QNIbZ+HuZs2axXi6w==",
+          "lastModified": "2025-09-05T08:24:07.4483729+02:00",
+          "downloadDate": "2025-09-05T06:24:07.4915231Z",
+          "remoteEtag": "e13800518630ada1569a8327eedd6502",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_056.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_056.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_056.png",
+          "fileSize": 65217,
+          "checksum": "lwPlViyMZUIRzkcbK/Opqw==",
+          "lastModified": "2025-09-05T08:24:07.6965321+02:00",
+          "downloadDate": "2025-09-05T06:24:07.6965321Z",
+          "remoteEtag": "c2d04228b97328ec298153584dcb53f0",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_057.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_057.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_057.png",
+          "fileSize": 29412,
+          "checksum": "yekjdDUDq44xdDekn7xxAA==",
+          "lastModified": "2025-09-05T08:24:07.9110825+02:00",
+          "downloadDate": "2025-09-05T06:24:07.9546777Z",
+          "remoteEtag": "badcda82147042c0743be9f6969019b2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_058.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_058.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_058.png",
+          "fileSize": 111973,
+          "checksum": "F755elaPlnmQ2wQGQ01lAA==",
+          "lastModified": "2025-09-05T08:24:08.1483887+02:00",
+          "downloadDate": "2025-09-05T06:24:08.1595678Z",
+          "remoteEtag": "88fb2f8067211c7f28876b9b42f7acdd",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_059.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_059.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_059.png",
+          "fileSize": 27595,
+          "checksum": "Vai6r5fMlJaYobQLePn7TA==",
+          "lastModified": "2025-09-05T08:24:08.4676964+02:00",
+          "downloadDate": "2025-09-05T06:24:08.4676964Z",
+          "remoteEtag": "989ef64a1d61ff7ba5c6c857dea709ca",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_060.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_060.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_060.png",
+          "fileSize": 31597,
+          "checksum": "WlXzNpveRIhp5x/nVhEOyg==",
+          "lastModified": "2025-09-05T08:24:08.7768148+02:00",
+          "downloadDate": "2025-09-05T06:24:08.8261479Z",
+          "remoteEtag": "966d34a9092e3550922429aaca52a4c3",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_062.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_062.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_062.png",
+          "fileSize": 41306,
+          "checksum": "Uwp6PVj9BTRSUrtVZykwOg==",
+          "lastModified": "2025-09-05T08:24:09.4450173+02:00",
+          "downloadDate": "2025-09-05T06:24:09.4450173Z",
+          "remoteEtag": "105eb983adb83ce34884be38864b4a80",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_063.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_063.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_063.png",
+          "fileSize": 23138,
+          "checksum": "wYrKrWltuVhIeoDV1Oh5AQ==",
+          "lastModified": "2025-09-05T08:24:09.8833002+02:00",
+          "downloadDate": "2025-09-05T06:24:09.9055639Z",
+          "remoteEtag": "08329f24c0faddec50122452a40656bf",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_065.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_065.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_065.png",
+          "fileSize": 25970,
+          "checksum": "cs/XE+AfA5QDXrlCvMN57Q==",
+          "lastModified": "2025-09-05T08:24:10.1140751+02:00",
+          "downloadDate": "2025-09-05T06:24:10.1140751Z",
+          "remoteEtag": "8451fa509197e6af47915bf47dd280c4",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_066.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_066.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_066.png",
+          "fileSize": 137614,
+          "checksum": "FY97J7tqxnOa68edtIxV0g==",
+          "lastModified": "2025-09-05T08:24:10.2783702+02:00",
+          "downloadDate": "2025-09-05T06:24:10.3177296Z",
+          "remoteEtag": "ebc1924c165aa9d8953c85f647288aea",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_067.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_067.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_067.png",
+          "fileSize": 19238,
+          "checksum": "2ot8zlehnyq1/VkRxsqZfw==",
+          "lastModified": "2025-09-05T08:24:10.5209121+02:00",
+          "downloadDate": "2025-09-05T06:24:10.5209121Z",
+          "remoteEtag": "cf12cd4982909bac05a16caa30323d3c",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_069.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_069.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_069.png",
+          "fileSize": 74860,
+          "checksum": "VKKqWcE2byoI8ouESbKjYQ==",
+          "lastModified": "2025-09-05T08:24:10.7254305+02:00",
+          "downloadDate": "2025-09-05T06:24:10.7254305Z",
+          "remoteEtag": "59febd389cafa36bc6a0b2a838b65008",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_070.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_070.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_070.png",
+          "fileSize": 6316,
+          "checksum": "30KLvc7vWWhr/1n8rj7JRQ==",
+          "lastModified": "2025-09-05T08:24:10.9309946+02:00",
+          "downloadDate": "2025-09-05T06:24:10.9309946Z",
+          "remoteEtag": "4ae365b8944e2fe358e7eacb8d530872",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_071.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_071.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_071.png",
+          "fileSize": 9125,
+          "checksum": "2mHzhE5doJUM7je/xRgkvQ==",
+          "lastModified": "2025-09-05T08:24:11.0965432+02:00",
+          "downloadDate": "2025-09-05T06:24:11.0965432Z",
+          "remoteEtag": "575ad7740dd78ce866ad320f91c17c94",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_072.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_072.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_072.png",
+          "fileSize": 31597,
+          "checksum": "WlXzNpveRIhp5x/nVhEOyg==",
+          "lastModified": "2025-09-05T08:24:11.3309279+02:00",
+          "downloadDate": "2025-09-05T06:24:11.3435439Z",
+          "remoteEtag": "d5024716e3003984120668e05644f6a1",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_073.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_073.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_073.png",
+          "fileSize": 63886,
+          "checksum": "1Rsjnkg1NokK7/7/7TK06w==",
+          "lastModified": "2025-09-05T08:24:11.4495844+02:00",
+          "downloadDate": "2025-09-05T06:24:11.4662676Z",
+          "remoteEtag": "44cb2450de9fb35bc1ee7bf88c46c6be",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_074.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_074.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_074.png",
+          "fileSize": 57552,
+          "checksum": "CCA7N7DDHqMlXe6mOt4KwQ==",
+          "lastModified": "2025-09-05T08:24:11.7509633+02:00",
+          "downloadDate": "2025-09-05T06:24:11.751963Z",
+          "remoteEtag": "a542fc13d3e98694ac563098460581a2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_075.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_075.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_075.png",
+          "fileSize": 47677,
+          "checksum": "j9sdIjm9jjh2+u2hCfC21w==",
+          "lastModified": "2025-09-05T08:24:11.9069229+02:00",
+          "downloadDate": "2025-09-05T06:24:11.9587771Z",
+          "remoteEtag": "bc4f57d25cb60d808096384c7c46e163",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_076.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_076.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_076.png",
+          "fileSize": 25194,
+          "checksum": "Uw/gXPvoXiZmobs7iH4bWg==",
+          "lastModified": "2025-09-05T08:24:12.1031674+02:00",
+          "downloadDate": "2025-09-05T06:24:12.1118453Z",
+          "remoteEtag": "7a794154ca5786f0753750340f0b9429",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_077.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_077.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_077.png",
+          "fileSize": 65293,
+          "checksum": "/SC4ZN4W6U226AWNzf7tyQ==",
+          "lastModified": "2025-09-05T08:24:12.2709698+02:00",
+          "downloadDate": "2025-09-05T06:24:12.2709698Z",
+          "remoteEtag": "c533ce62650209e5179cc2e7634fc7c4",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_078.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_078.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_078.png",
+          "fileSize": 50538,
+          "checksum": "csNW9DN5oVzsz30gkpexLQ==",
+          "lastModified": "2025-09-05T08:24:12.4401987+02:00",
+          "downloadDate": "2025-09-05T06:24:12.4401987Z",
+          "remoteEtag": "8f1acd039b3e295f957f5702c03dcadf",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_079.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_079.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_079.png",
+          "fileSize": 72632,
+          "checksum": "KBqIS+HEkXRYIV2EAVgcpA==",
+          "lastModified": "2025-09-05T08:24:12.6311597+02:00",
+          "downloadDate": "2025-09-05T06:24:12.6808474Z",
+          "remoteEtag": "d5e5e57e75cc9ff3ed25b1c53b704814",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_080.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_080.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_080.png",
+          "fileSize": 11087,
+          "checksum": "ZNDq/1jZIsuI6spRgg+YVg==",
+          "lastModified": "2025-09-05T08:24:12.8348398+02:00",
+          "downloadDate": "2025-09-05T06:24:12.8348398Z",
+          "remoteEtag": "07da8a4878cf7ffcddd573d28c4115a2",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_081.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_081.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_081.png",
+          "fileSize": 38214,
+          "checksum": "Wfy2D2wAlurd/OATfuv3ig==",
+          "lastModified": "2025-09-05T08:24:12.9463334+02:00",
+          "downloadDate": "2025-09-05T06:24:12.9929006Z",
+          "remoteEtag": "d41890b8a6f7487c4fa7ab4416b1d172",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_082.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_082.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_082.png",
+          "fileSize": 25079,
+          "checksum": "9U2sQ5yYkr/JnWNu2rM2eQ==",
+          "lastModified": "2025-09-05T08:24:13.1699782+02:00",
+          "downloadDate": "2025-09-05T06:24:13.1699782Z",
+          "remoteEtag": "788606deb591bdf0e7a2006d04087bb0",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_083.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_083.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_083.png",
+          "fileSize": 70861,
+          "checksum": "n/M/LjpyK13msOe4zCdMsA==",
+          "lastModified": "2025-09-05T08:24:13.3062872+02:00",
+          "downloadDate": "2025-09-05T06:24:13.308795Z",
+          "remoteEtag": "257940b021305ea706027fdf2d0c81d5",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_085.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_085.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_085.png",
+          "fileSize": 26709,
+          "checksum": "2JLXKKbKodkcS9MpXNOsmA==",
+          "lastModified": "2025-09-05T08:24:13.502433+02:00",
+          "downloadDate": "2025-09-05T06:24:13.5029478Z",
+          "remoteEtag": "3fa59d0214ec24234bc960a65812d2f1",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_087.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_087.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_087.png",
+          "fileSize": 41547,
+          "checksum": "KXcruGRlcTKI+FLjwZOOLA==",
+          "lastModified": "2025-09-05T08:24:13.7071467+02:00",
+          "downloadDate": "2025-09-05T06:24:13.7071467Z",
+          "remoteEtag": "2b25a0c03f0e913a56d2422b1785649e",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_088.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_088.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_088.png",
+          "fileSize": 41547,
+          "checksum": "KXcruGRlcTKI+FLjwZOOLA==",
+          "lastModified": "2025-09-05T08:24:13.821333+02:00",
+          "downloadDate": "2025-09-05T06:24:13.8531883Z",
+          "remoteEtag": "c752f1a34d83e542d5956970eba6a9eb",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_090.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_090.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_090.png",
+          "fileSize": 75489,
+          "checksum": "LAVuh5Tug+XNtDCI5c4EBg==",
+          "lastModified": "2025-09-05T08:24:14.0145409+02:00",
+          "downloadDate": "2025-09-05T06:24:14.0145409Z",
+          "remoteEtag": "8a6350ae99c77e1b3e53c2fcf2419381",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_091.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_091.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_091.png",
+          "fileSize": 62801,
+          "checksum": "kS9TnthTXy9B/dUDopaC8g==",
+          "lastModified": "2025-09-05T08:24:14.2221113+02:00",
+          "downloadDate": "2025-09-05T06:24:14.2351499Z",
+          "remoteEtag": "a0f07dc0182916199dfa94b1a723d0cc",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_092.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_092.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_092.png",
+          "fileSize": 36656,
+          "checksum": "olUXnAIMbvHWqZefhyPU2Q==",
+          "lastModified": "2025-09-05T08:24:14.4310692+02:00",
+          "downloadDate": "2025-09-05T06:24:14.4833328Z",
+          "remoteEtag": "df78376326d9f6d1babad521cc840a56",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_094.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_094.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_094.png",
+          "fileSize": 17098,
+          "checksum": "6otqjCZeYafuRcvx9unBtg==",
+          "lastModified": "2025-09-05T08:28:21.6112484+02:00",
+          "downloadDate": "2025-09-05T06:28:21.6112484Z",
+          "remoteEtag": "8bab51efca964f822a3966568e7f1057",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_095.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_095.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_095.png",
+          "fileSize": 66560,
+          "checksum": "iPvUpDj8dr3sOrU985HD5A==",
+          "lastModified": "2025-09-05T08:28:21.8173763+02:00",
+          "downloadDate": "2025-09-05T06:28:21.8173763Z",
+          "remoteEtag": "ff0d2354f904e221032a6eaf31e80063",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_096.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_096.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_096.png",
+          "fileSize": 70631,
+          "checksum": "EA5kkstjHd6oL24O/eJprw==",
+          "lastModified": "2025-09-05T08:28:21.9192062+02:00",
+          "downloadDate": "2025-09-05T06:28:21.970814Z",
+          "remoteEtag": "2e946c1c30a7e4252e932d485a19ade8",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_098.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_098.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_098.png",
+          "fileSize": 86641,
+          "checksum": "3fWAHqXOsyrrRMOErbCzkA==",
+          "lastModified": "2025-09-05T08:28:22.0753583+02:00",
+          "downloadDate": "2025-09-05T06:28:22.1237556Z",
+          "remoteEtag": "449177eebd6f968e45634a5a70c028e5",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_102.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_102.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_102.png",
+          "fileSize": 22536,
+          "checksum": "k28PURePDDkT66zRfjCgZg==",
+          "lastModified": "2025-09-05T08:28:22.2289737+02:00",
+          "downloadDate": "2025-09-05T06:28:22.280097Z",
+          "remoteEtag": "7c719966fcc2b4e05d1adc1e9e83d841",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_107.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_107.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_107.png",
+          "fileSize": 65690,
+          "checksum": "gLX8gTYr0KLZXEC7qqKSoQ==",
+          "lastModified": "2025-09-05T08:28:22.4370361+02:00",
+          "downloadDate": "2025-09-05T06:28:22.4370361Z",
+          "remoteEtag": "6fec4822203de17beee27aa533f48d89",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_108.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_108.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_108.png",
+          "fileSize": 54584,
+          "checksum": "TPZsT5Z2nz8H8G+9QRb3hA==",
+          "lastModified": "2025-09-05T08:28:22.5418995+02:00",
+          "downloadDate": "2025-09-05T06:28:22.591143Z",
+          "remoteEtag": "cb5a5d723abc31895dd0ce8cf0dc25e1",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_Astra_CD_1.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_Astra_CD_1.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_Astra_CD_1.png",
+          "fileSize": 2986,
+          "checksum": "oZ7zfQlJoJvle4tJM5jd5A==",
+          "lastModified": "2025-09-05T08:28:22.7477956+02:00",
+          "downloadDate": "2025-09-05T06:28:22.7477956Z",
+          "remoteEtag": "13dc11ac441caf20a03bd5815f0c9ebd",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_Astra_CD_2.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_Astra_CD_2.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_Astra_CD_2.png",
+          "fileSize": 1749,
+          "checksum": "fLC/zBsK8PmHT/1pTikp1Q==",
+          "lastModified": "2025-09-05T08:28:22.9031761+02:00",
+          "downloadDate": "2025-09-05T06:28:22.9031761Z",
+          "remoteEtag": "f86ba4e125352c45c42a00d7999105e4",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_Energy_02.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_Energy_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_Energy_02.png",
+          "fileSize": 76095,
+          "checksum": "xJVIvprwlduD6ss8XiZMTw==",
+          "lastModified": "2025-09-05T08:28:23.0561396+02:00",
+          "downloadDate": "2025-09-05T06:28:23.0561396Z",
+          "remoteEtag": "ff627a653927b8886203efa3f8b55133",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_Energy.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_Energy.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_Energy.png",
+          "fileSize": 56556,
+          "checksum": "88WqvMZD2y011uq24oJBtg==",
+          "lastModified": "2025-09-05T08:28:23.2126459+02:00",
+          "downloadDate": "2025-09-05T06:28:23.2640234Z",
+          "remoteEtag": "c0a9584045ce58425a3c0b301ec88a54",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_Evelyn_WhiskeyGlass_1.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_Evelyn_WhiskeyGlass_1.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_Evelyn_WhiskeyGlass_1.png",
+          "fileSize": 29646,
+          "checksum": "2p3ZA+IHARGCFbeIez9v2g==",
+          "lastModified": "2025-09-05T08:28:23.3664423+02:00",
+          "downloadDate": "2025-09-05T06:28:23.4175021Z",
+          "remoteEtag": "3b3ec34eb56ac9e26354dc19003ff38e",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_MatCap_Gem.png": {
+          "relativePath": "Textures/MatCaps/Eff_MatCap_Gem.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_MatCap_Gem.png",
+          "fileSize": 125914,
+          "checksum": "l0AtpG0/1YhrVT5zU5GZwQ==",
+          "lastModified": "2025-09-05T08:28:23.6220774+02:00",
+          "downloadDate": "2025-09-05T06:28:23.6220774Z",
+          "remoteEtag": "b30dc63f3e8f75afd666d8114131197f",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_Socks3.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_Socks3.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_Socks3.png",
+          "fileSize": 25621,
+          "checksum": "/WwaUov6G+n7roZ1GZHSKw==",
+          "lastModified": "2025-09-05T08:28:23.7742707+02:00",
+          "downloadDate": "2025-09-05T06:28:23.7742707Z",
+          "remoteEtag": "6ba6d4f01aa7c88370795163321ed2d3",
+          "isValid": true
+        },
+        "Textures/MatCaps/Eff_Matcap_Socks.png": {
+          "relativePath": "Textures/MatCaps/Eff_Matcap_Socks.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Eff_Matcap_Socks.png",
+          "fileSize": 27060,
+          "checksum": "oeAR29JUYncQmIkaj6B3UA==",
+          "lastModified": "2025-09-05T08:28:23.9280537+02:00",
+          "downloadDate": "2025-09-05T06:28:23.9280537Z",
+          "remoteEtag": "821824d2152e91118ec0e7aaf673ed18",
+          "isValid": true
+        },
+        "Textures/MatCaps/HollowChessBoard_Matcap.png": {
+          "relativePath": "Textures/MatCaps/HollowChessBoard_Matcap.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\HollowChessBoard_Matcap.png",
+          "fileSize": 864664,
+          "checksum": "MqrD6H4d7g4y5Xn7e9whrQ==",
+          "lastModified": "2025-09-05T08:28:24.0429044+02:00",
+          "downloadDate": "2025-09-05T06:28:24.0803707Z",
+          "remoteEtag": "958a0bbbeee0fd916a72b4bd8717da96",
+          "isValid": true
+        },
+        "Textures/MatCaps/Matcap_Energy.png": {
+          "relativePath": "Textures/MatCaps/Matcap_Energy.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\MatCaps\\Matcap_Energy.png",
+          "fileSize": 372444,
+          "checksum": "rbqmNZO9nC6x1lkrMetDag==",
+          "lastModified": "2025-09-05T08:28:24.1884095+02:00",
+          "downloadDate": "2025-09-05T06:28:24.2340628Z",
+          "remoteEtag": "6947553e508b541806bad621a1b626c5",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Color_025.png": {
+          "relativePath": "Textures/Misc/Eff_Color_025.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Color_025.png",
+          "fileSize": 4392,
+          "checksum": "hvbUVbD17O76M3qFny3ajg==",
+          "lastModified": "2025-09-05T08:28:24.4371704+02:00",
+          "downloadDate": "2025-09-05T06:28:24.4371704Z",
+          "remoteEtag": "31bc32f7d57d6ecd63d6b3a8995534db",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_001_XL_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_001_XL_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_001_XL_01.png",
+          "fileSize": 125568,
+          "checksum": "eyHMoUTaaBJQIx7sAmUVTQ==",
+          "lastModified": "2025-09-05T08:28:24.5484478+02:00",
+          "downloadDate": "2025-09-05T06:28:24.5948698Z",
+          "remoteEtag": "7729844e1ec7cde913be6f210fc05261",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_001_YC_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_001_YC_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_001_YC_01.png",
+          "fileSize": 2158,
+          "checksum": "qYUimR1d6GrbWRaKZ6xB0g==",
+          "lastModified": "2025-09-05T08:28:24.8576129+02:00",
+          "downloadDate": "2025-09-05T06:28:24.8576129Z",
+          "remoteEtag": "1e7d4c92b351f778533e06fe080d905f",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_023.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_023.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_023.png",
+          "fileSize": 51071,
+          "checksum": "opSX4nQExCwx6PouVPtVZw==",
+          "lastModified": "2025-09-05T08:28:25.1153097+02:00",
+          "downloadDate": "2025-09-05T06:28:25.1153097Z",
+          "remoteEtag": "c2702ae4bf578b38113fdb99351d88ae",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_032.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_032.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_032.png",
+          "fileSize": 922,
+          "checksum": "LpI3AhK5eoSbGsnR4Rk2kg==",
+          "lastModified": "2025-09-05T08:28:25.2698951+02:00",
+          "downloadDate": "2025-09-05T06:28:25.2698951Z",
+          "remoteEtag": "91f1ea9db99509261a00c81a306c39d4",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_034_YZ_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_034_YZ_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_034_YZ_01.png",
+          "fileSize": 20991,
+          "checksum": "m+umrLGW2TKbv8ZOvSXQkg==",
+          "lastModified": "2025-09-05T08:28:25.3721716+02:00",
+          "downloadDate": "2025-09-05T06:28:25.4251272Z",
+          "remoteEtag": "bccd08e50a58748e09c143a3c8872b18",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_034_YZ_03.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_034_YZ_03.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_034_YZ_03.png",
+          "fileSize": 20979,
+          "checksum": "0RS50vWnsEdd0x42d4O+Ow==",
+          "lastModified": "2025-09-05T08:28:25.5833172+02:00",
+          "downloadDate": "2025-09-05T06:28:25.6332413Z",
+          "remoteEtag": "eefed12d7e003b01bcba0d8220886aa9",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_039_YZ_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_039_YZ_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_039_YZ_01.png",
+          "fileSize": 899,
+          "checksum": "zq6aHe9q4lp5kcls4Avvzg==",
+          "lastModified": "2025-09-05T08:28:25.7876796+02:00",
+          "downloadDate": "2025-09-05T06:28:25.7876796Z",
+          "remoteEtag": "a6a0743f682ec6ea9e62fe3c705b38d4",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_064_LZL_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_064_LZL_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_064_LZL_01.png",
+          "fileSize": 999,
+          "checksum": "DEHGr1oqBh1nGlK9oBgn4A==",
+          "lastModified": "2025-09-05T08:28:25.9441124+02:00",
+          "downloadDate": "2025-09-05T06:28:25.9441124Z",
+          "remoteEtag": "845888648cc310cc9a84589446833e29",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_1099.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_1099.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_1099.png",
+          "fileSize": 61253,
+          "checksum": "DWkiS05IeaEXT+5H3qPcZw==",
+          "lastModified": "2025-09-05T08:28:26.047497+02:00",
+          "downloadDate": "2025-09-05T06:28:26.095627Z",
+          "remoteEtag": "fba8aa9945b55cef5493914813d0f5e0",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_163_YK_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_163_YK_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_163_YK_01.png",
+          "fileSize": 13005,
+          "checksum": "BO5begbV7JXyGwks7LlExQ==",
+          "lastModified": "2025-09-05T08:28:26.2522895+02:00",
+          "downloadDate": "2025-09-05T06:28:26.3018696Z",
+          "remoteEtag": "f0f336bdf34a5eb2bb2e5f0153dcc60c",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Mask_245_HZW_01.png": {
+          "relativePath": "Textures/Misc/Eff_Mask_245_HZW_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Mask_245_HZW_01.png",
+          "fileSize": 101183,
+          "checksum": "iSFEavpweepUoh7i2fErBg==",
+          "lastModified": "2025-09-05T08:28:26.4567164+02:00",
+          "downloadDate": "2025-09-05T06:28:26.4567164Z",
+          "remoteEtag": "143da6649789a922b5525872c15edf81",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Others_007.png": {
+          "relativePath": "Textures/Misc/Eff_Others_007.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Others_007.png",
+          "fileSize": 374155,
+          "checksum": "6isI2/hdak8fMCkFqLQ3RA==",
+          "lastModified": "2025-09-05T08:28:26.56492+02:00",
+          "downloadDate": "2025-09-05T06:28:26.609483Z",
+          "remoteEtag": "3fe73f1f9d3de70c6dd5ecb80f88de29",
+          "isValid": true
+        },
+        "Textures/Misc/Eff_Trail_070.png": {
+          "relativePath": "Textures/Misc/Eff_Trail_070.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Misc\\Eff_Trail_070.png",
+          "fileSize": 83048,
+          "checksum": "sctQnunMj5F8FI/0zuQYow==",
+          "lastModified": "2025-09-05T08:28:26.7610405+02:00",
+          "downloadDate": "2025-09-05T06:28:26.7610405Z",
+          "remoteEtag": "355d2e89ef40c683a4f82cd60659188e",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_002.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_002.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_002.png",
+          "fileSize": 78595,
+          "checksum": "kf3XZL7bqWz318NWReMVAw==",
+          "lastModified": "2025-09-05T08:28:26.8675686+02:00",
+          "downloadDate": "2025-09-05T06:28:26.9166707Z",
+          "remoteEtag": "17a65d50a1195251f7794a0ae0623850",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_016_ZMH_02.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_016_ZMH_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_016_ZMH_02.png",
+          "fileSize": 86141,
+          "checksum": "tokIttREaBCzk9dLO4/ULQ==",
+          "lastModified": "2025-09-05T08:28:27.0229394+02:00",
+          "downloadDate": "2025-09-05T06:28:27.0712208Z",
+          "remoteEtag": "ffe8ffd34ab6054a8d087f2d8852a533",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_018_CZH_06.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_018_CZH_06.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_018_CZH_06.png",
+          "fileSize": 96637,
+          "checksum": "ltBcoYcDK90XoSNzOuUEnw==",
+          "lastModified": "2025-09-05T08:28:27.1759698+02:00",
+          "downloadDate": "2025-09-05T06:28:27.2266007Z",
+          "remoteEtag": "2bc1ee744c264bc51457b78bf8ed179f",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_018_YC_02.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_018_YC_02.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_018_YC_02.png",
+          "fileSize": 59380,
+          "checksum": "x8/rXuOK7jJDMDCXTCaRYg==",
+          "lastModified": "2025-09-05T08:28:27.3839308+02:00",
+          "downloadDate": "2025-09-05T06:28:27.3839308Z",
+          "remoteEtag": "74007882fd0835770b2d675231db3d5b",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_027.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_027.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_027.png",
+          "fileSize": 26302,
+          "checksum": "gJMrU9kz8TirqEkuX9PErg==",
+          "lastModified": "2025-09-05T08:28:27.5913025+02:00",
+          "downloadDate": "2025-09-05T06:28:27.5913025Z",
+          "remoteEtag": "a6941ee4719d1cb06cd522ec18a2268d",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_058_HZW_01.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_058_HZW_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_058_HZW_01.png",
+          "fileSize": 31544,
+          "checksum": "hxNn/FNRcdWrsFKy+QeIBw==",
+          "lastModified": "2025-09-05T08:28:27.6951708+02:00",
+          "downloadDate": "2025-09-05T06:28:27.7460651Z",
+          "remoteEtag": "04ef3f3bfdc0f28ad67153f08f945485",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_058.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_058.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_058.png",
+          "fileSize": 30753,
+          "checksum": "W7TYoFgeG5eWtl8i/FKFuA==",
+          "lastModified": "2025-09-05T08:28:27.8523074+02:00",
+          "downloadDate": "2025-09-05T06:28:27.9010733Z",
+          "remoteEtag": "64c042963d2a1157e9bdcdbae58ac2f9",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_076.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_076.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_076.png",
+          "fileSize": 161727,
+          "checksum": "Uup7P7XADzQFjI6n7wtWxQ==",
+          "lastModified": "2025-09-05T08:28:28.0049118+02:00",
+          "downloadDate": "2025-09-05T06:28:28.0547835Z",
+          "remoteEtag": "d80b9138662d8268e828e0a0d81fd179",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_085_LKJ_01.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_085_LKJ_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_085_LKJ_01.png",
+          "fileSize": 207718,
+          "checksum": "7uSaMNLLXM8gboTy5CRHEw==",
+          "lastModified": "2025-09-05T08:28:28.3142936+02:00",
+          "downloadDate": "2025-09-05T06:28:28.3142936Z",
+          "remoteEtag": "efa570478314a1b8d6a5d9a50d1f92a0",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_087.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_087.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_087.png",
+          "fileSize": 197277,
+          "checksum": "26sbnPJMCveUHx2sxrXRyw==",
+          "lastModified": "2025-09-05T08:28:28.52098+02:00",
+          "downloadDate": "2025-09-05T06:28:28.52098Z",
+          "remoteEtag": "453cde239863adb9cb0d3a25286b1f94",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_092.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_092.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_092.png",
+          "fileSize": 57241,
+          "checksum": "mo614Rk0QkKt9V7rmK2sCg==",
+          "lastModified": "2025-09-05T08:28:28.6776806+02:00",
+          "downloadDate": "2025-09-05T06:28:28.6776806Z",
+          "remoteEtag": "c5c2e8f98039b9e0a8cc3cb8747358b8",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_098.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_098.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_098.png",
+          "fileSize": 87055,
+          "checksum": "zwm1GNlLoqH9n/ybSfvMEA==",
+          "lastModified": "2025-09-05T08:28:28.7839123+02:00",
+          "downloadDate": "2025-09-05T06:28:28.8332304Z",
+          "remoteEtag": "a3cf7372f8414bd14288954a95eb367d",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_105_LWJ_01.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_105_LWJ_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_105_LWJ_01.png",
+          "fileSize": 334987,
+          "checksum": "VDgQ6XA7DPnz3Me4QifBpg==",
+          "lastModified": "2025-09-05T08:28:28.9433762+02:00",
+          "downloadDate": "2025-09-05T06:28:28.9903091Z",
+          "remoteEtag": "039ed1419db9c4426945521d1943241d",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_106_LZL_01.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_106_LZL_01.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_106_LZL_01.png",
+          "fileSize": 90370,
+          "checksum": "YmDtkcQDzHUlLCQxuphACg==",
+          "lastModified": "2025-09-05T08:28:29.1461213+02:00",
+          "downloadDate": "2025-09-05T06:28:29.1461213Z",
+          "remoteEtag": "2789c7c30d28c497ee9c7536dbebc3cc",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_107.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_107.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_107.png",
+          "fileSize": 49906,
+          "checksum": "8J06urYwt0FblmoHqyQxIA==",
+          "lastModified": "2025-09-05T08:28:29.2986834+02:00",
+          "downloadDate": "2025-09-05T06:28:29.2986834Z",
+          "remoteEtag": "32a43dd52b9c41d256c859021d48659e",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_114.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_114.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_114.png",
+          "fileSize": 48795,
+          "checksum": "Ob0KrKSnljFSfUePdnp1NA==",
+          "lastModified": "2025-09-05T08:28:29.4116636+02:00",
+          "downloadDate": "2025-09-05T06:28:29.4126701Z",
+          "remoteEtag": "4bac93ecaff26633e50d6b29245e35bb",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_146.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_146.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_146.png",
+          "fileSize": 157680,
+          "checksum": "AnmpKeUM/q6VUzsLYwNbfw==",
+          "lastModified": "2025-09-05T08:28:29.5599687+02:00",
+          "downloadDate": "2025-09-05T06:28:29.6079648Z",
+          "remoteEtag": "a7465bd5c7ed648aa6ff61ef314d3326",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_179.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_179.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_179.png",
+          "fileSize": 2412615,
+          "checksum": "WbYKRJZbic9gK27StDkYvg==",
+          "lastModified": "2025-09-05T08:28:29.7928957+02:00",
+          "downloadDate": "2025-09-05T06:28:29.8139778Z",
+          "remoteEtag": "9eb0e4f39c9bf8999a74b8a251b8582c",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_204.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_204.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_204.png",
+          "fileSize": 651047,
+          "checksum": "zyoL2fNtMrXEQpxpDhH6Ow==",
+          "lastModified": "2025-09-05T08:28:29.9377128+02:00",
+          "downloadDate": "2025-09-05T06:28:29.972746Z",
+          "remoteEtag": "3cff05fa930332da43217bef041bc0cf",
+          "isValid": true
+        },
+        "Textures/Noise/Eff_Noise_211.png": {
+          "relativePath": "Textures/Noise/Eff_Noise_211.png",
+          "localPath": "C:\\Unity Projects\\HoyoToon\\Packages\\com.meliverse.hoyotoon\\Resources\\Zenless Zone Zero\\Textures\\Noise\\Eff_Noise_211.png",
+          "fileSize": 5123691,
+          "checksum": "im9836AhwJSO4XpIdCbVOA==",
+          "lastModified": "2025-09-05T08:28:30.2333503+02:00",
+          "downloadDate": "2025-09-05T06:28:30.2812577Z",
+          "remoteEtag": "3c969b8c7dfccd44a5ee2068aefb36f0",
+          "isValid": true
+        }
+      },
+      "totalDownloaded": 3863687,
+      "downloadErrors": []
+    }
+  },
+  "updateCheckInterval": "06:00:00"
+}
