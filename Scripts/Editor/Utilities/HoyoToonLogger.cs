@@ -50,6 +50,10 @@ namespace HoyoToon.Utilities
         public static void ResourcesWarning(string message) => HoyoToonLogCore.WarnCategory("Resources", message);
         public static void ResourcesError(string message) => HoyoToonLogCore.ErrorCategory("Resources", message);
 
+        public static void UpdaterInfo(string message) => HoyoToonLogCore.LogCategory("Updater", message);
+        public static void UpdaterWarning(string message) => HoyoToonLogCore.WarnCategory("Updater", message);
+        public static void UpdaterError(string message) => HoyoToonLogCore.ErrorCategory("Updater", message);
+
         // Unconditional pass-through if needed
         public static void Always(string message, LogType type = LogType.Log) => HoyoToonLogCore.LogAlways(message, type);
         public static void Always(string category, string message, LogType type) => HoyoToonLogCore.LogAlwaysCategory(category, message, type);

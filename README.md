@@ -1,3 +1,21 @@
+# Branch Switching (Updater)
+
+The editor updater supports switching between branches used for update checks and downloads.
+
+- Default branch: Beta (experimental)
+- Stable branch: main
+
+To switch branches:
+
+1. In Unity, open menu: HoyoToon → Updater → Branch
+2. Choose “Use Beta” or “Use Stable”.
+
+Notes:
+
+- Beta builds are experimental and may be unstable. Unless you're actively testing, you probably don't want to enable this. Issues encountered on Beta are not officially supported.
+- The updater caches state per-branch to keep histories separate.
+- You can open the updater UI via HoyoToon → Updater → Optimized Git Updater.
+
 <br>
 <p align="center">
     <a href="https://github.com/HoyoToon/HoyoToon"><img src="https://github.com/user-attachments/assets/3362e9b1-c411-40d3-9acf-ba4dcf22fa93" alt="HoyoToon"/></a>
@@ -64,7 +82,7 @@ You can install HoyoToon through 3 methods.
 
 ## Rules
 
-- The [HoyoToon Shader License](https://github.com/HoyoToon/HoyoToon/blob/main/LICENSE) applies. 
+- The [HoyoToon Shader License](https://github.com/HoyoToon/HoyoToon/blob/main/LICENSE) applies.
 
 ## Contributing
 

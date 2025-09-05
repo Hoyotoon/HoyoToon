@@ -25,6 +25,7 @@ namespace HoyoToon.Utilities
             { "Material", "#B180FF" }, // violet
             { "Manager",  "#FFD480" }, // peach
             { "Resources", "#FF8080" }, // red
+            { "Updater",  "#40FF40" }, // bright green
         };
 
         public static event Action<string, LogType> OnLog;
