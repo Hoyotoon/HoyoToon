@@ -253,7 +253,7 @@ namespace HoyoToon.Updater
                 completed = total;
                 progressTimer.Cancel(); await tick;
 
-                _status = $"Update complete! Updated to version {_remote?.version}";
+                _status = $"Update complete! Updated to version {_remote?.version}. package.json refreshed.";
                 HoyoToonLogger.Always("Updater", _status, LogType.Log);
                 HoyoToonDialogWindow.ShowInfo("Update Complete", _status);
                 _batch = new UpdateBatch();

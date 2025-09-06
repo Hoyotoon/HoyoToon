@@ -158,7 +158,7 @@ namespace HoyoToon.Updater
 
         public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg)
         {
-            if (batch == null || batch.totalOperations == 0) return;
+                    if (batch == null) return;
 
             // Disable auto-refresh to avoid compile/import churn
             AssetDatabase.DisallowAutoRefresh();
@@ -206,7 +206,9 @@ namespace HoyoToon.Updater
                     }
 
                     int completed = 0;
-                    int total = batch.totalOperations;
+                    int total = Math.Max(1, batch?.totalOperations ?? 0);
+                    if (batch != null)
+                    {
                     foreach (var update in batch.fileUpdates)
                     {
                         var bytes = await api.DownloadRawAsync(update.path);
@@ -244,6 +246,27 @@ namespace HoyoToon.Updater
                         completed++;
                         EditorUtility.DisplayProgressBar("Applying Updates", deletion, (float)completed / total);
                         await Task.Delay(10);
+                    }
+                    }
+
+                    // Always update package.json to the latest from remote so version reflects accurately
+                    try
+                    {
+                        var pkgPath = _settings.packageJsonRelativePath;
+                        var pkgBytes = await api.DownloadRawAsync(pkgPath);
+                        if (pkgBytes != null && pkgBytes.Length > 0)
+                        {
+                            var fullPkg = Path.Combine(_toolRoot, pkgPath);
+                            Directory.CreateDirectory(Path.GetDirectoryName(fullPkg));
+                            await File.WriteAllBytesAsync(fullPkg, pkgBytes);
+                            Debug.Log($"[Updater] Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
+                            // Small progress nudge (doesn't count toward total as it's implicit)
+                            EditorUtility.DisplayProgressBar("Finalizing", "package.json", 1f);
+                        }
+                    }
+                    catch (Exception pkgEx)
+                    {
+                        Debug.LogWarning($"[Updater] package.json update skipped: {pkgEx.Message}");
                     }
                 }
 
