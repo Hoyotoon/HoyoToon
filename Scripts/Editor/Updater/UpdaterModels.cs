@@ -65,6 +65,7 @@ namespace HoyoToon.Updater
     {
         public List<FileUpdate> fileUpdates = new List<FileUpdate>();
         public List<string> filesToDelete = new List<string>();
+        public string sourceCommitSha; // commit used when building this batch
         public int totalOperations => fileUpdates.Count + filesToDelete.Count;
     }
 

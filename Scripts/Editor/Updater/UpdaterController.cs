@@ -64,6 +64,8 @@ namespace HoyoToon.Updater
             var branch = BranchSelector.GetCurrentBranch();
             using (var api = new GitHubApiClient(_settings.repoOwner, _settings.repoName, branch, _settings.githubToken))
             {
+                // Pin to a specific commit to avoid race conditions if branch moves between check and apply
+                var headSha = await api.GetBranchHeadShaAsync();
                 // 1. Fetch remote package.json
                 result.remotePackage = await api.GetPackageInfoAsync(_settings.packageJsonRelativePath);
                 if (result.remotePackage == null)
@@ -148,6 +150,7 @@ namespace HoyoToon.Updater
                 }
 
                 result.tracker.lastTreeSha = tree.sha;
+                result.batch.sourceCommitSha = headSha;
                 result.tracker.lastUpdateCheck = Now();
                 PackageTrackerStore.Save(result.tracker);
                 result.message = result.batch.totalOperations == 0 ? "No file changes detected." : $"Update ready: {result.batch.totalOperations} operations.";
@@ -211,10 +214,12 @@ namespace HoyoToon.Updater
                     {
                     foreach (var update in batch.fileUpdates)
                     {
-                        var bytes = await api.DownloadRawAsync(update.path);
+                        var bytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
+                            ? await api.DownloadRawAtCommitAsync(update.path, batch.sourceCommitSha)
+                            : await api.DownloadRawAsync(update.path);
                         var sha = HashUtil.GitBlobSha(bytes);
                         if (!string.Equals(sha, update.expectedSha, StringComparison.Ordinal))
-                            throw new Exception($"Integrity check failed for {update.path}");
+                            throw new Exception($"Integrity check failed for {update.path} (expected {update.expectedSha}, got {sha}, commit {batch.sourceCommitSha ?? branch})");
 
                         var full = Path.Combine(_toolRoot, update.path);
                         Directory.CreateDirectory(Path.GetDirectoryName(full));
@@ -249,11 +254,13 @@ namespace HoyoToon.Updater
                     }
                     }
 
-                    // Always update package.json to the latest from remote so version reflects accurately
+                    // Always update package.json to the latest from the pinned commit (if available) so version reflects accurately
                     try
                     {
                         var pkgPath = _settings.packageJsonRelativePath;
-                        var pkgBytes = await api.DownloadRawAsync(pkgPath);
+                        var pkgBytes = !string.IsNullOrEmpty(batch?.sourceCommitSha)
+                            ? await api.DownloadRawAtCommitAsync(pkgPath, batch.sourceCommitSha)
+                            : await api.DownloadRawAsync(pkgPath);
                         if (pkgBytes != null && pkgBytes.Length > 0)
                         {
                             var fullPkg = Path.Combine(_toolRoot, pkgPath);

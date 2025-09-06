@@ -47,6 +47,14 @@ namespace HoyoToon.Updater
             return JsonConvert.DeserializeObject<GitTreeResponse>(json);
         }
 
+        public async Task<string> GetBranchHeadShaAsync()
+        {
+            var url = $"https://api.github.com/repos/{_owner}/{_repo}/commits/{_branch}";
+            var json = await _client.GetStringAsync(url);
+            dynamic obj = JsonConvert.DeserializeObject(json);
+            return (string)obj.sha;
+        }
+
         public async Task<byte[]> DownloadRawAsync(string relativePath)
         {
             var url = $"https://raw.githubusercontent.com/{_owner}/{_repo}/{_branch}/{relativePath}";
@@ -57,6 +65,17 @@ namespace HoyoToon.Updater
                 catch when (i < 2) { await Task.Delay(1000 * (i + 1)); }
             }
             throw new HttpRequestException($"Failed to download {relativePath}");
+        }
+
+        public async Task<byte[]> DownloadRawAtCommitAsync(string relativePath, string commitSha)
+        {
+            var url = $"https://raw.githubusercontent.com/{_owner}/{_repo}/{commitSha}/{relativePath}";
+            for (int i = 0; i < 3; i++)
+            {
+                try { return await _client.GetByteArrayAsync(url); }
+                catch when (i < 2) { await Task.Delay(1000 * (i + 1)); }
+            }
+            throw new HttpRequestException($"Failed to download {relativePath} at {commitSha}");
         }
 
         public class ReleaseInfo
