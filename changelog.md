@@ -1,3 +1,1 @@
-This is a test :)
-
-modifying file test 
+final update test, adding a file and changing another 
