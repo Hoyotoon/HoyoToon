@@ -32,7 +32,7 @@ namespace HoyoToon.Updater
                                 MessageType.Info,
                                 new[] { "Open Updater", "Later" },
                                 0, 1,
-                                result => { if (result == 0) OptimizedGitUpdaterWindow.ShowWindow(); });
+                                result => { if (result == 0) UpdaterDialogFlow.Run(); });
                         }
                     }
                 }

@@ -111,7 +111,7 @@ namespace HoyoToon.Utilities
             return ShowProgressWithCustomButtons(title, message, type, onCancel != null ? new[] { "Cancel" } : new string[0], topBar, onCancel != null ? i => onCancel() : null);
         }
 
-        public static HoyoToonDialogWindow ShowProgressWithCustomButtons(string title, string message, MessageType type, string[] buttons, TopBarConfig topBar = null, Action<int> onResultIndex = null)
+    public static HoyoToonDialogWindow ShowProgressWithCustomButtons(string title, string message, MessageType type, string[] buttons, TopBarConfig topBar = null, Action<int> onResultIndex = null, bool keepOpenOnClick = false)
         {
             // Batch-mode/Headless fallback: log and return null
             if (Application.isBatchMode)
@@ -126,6 +126,7 @@ namespace HoyoToon.Utilities
             window._type = type;
             window._topBar = topBar ?? TopBarConfig.Default();
             window._onResultIndex = onResultIndex;
+            window._keepOpenOnClick = keepOpenOnClick;
             window.titleContent = new GUIContent("HoyoToon");
             window.minSize = new Vector2(UiLayout.WINDOW_MIN_WIDTH, UiLayout.WINDOW_MIN_HEIGHT);
             window.maxSize = new Vector2(UiLayout.WINDOW_DEFAULT_WIDTH, UiLayout.WINDOW_MAX_HEIGHT);
@@ -282,6 +283,7 @@ namespace HoyoToon.Utilities
         private TopBarConfig _topBar;
         private List<ButtonDef> _buttons = new List<ButtonDef>();
         private Action<int> _onResultIndex;
+    private bool _keepOpenOnClick; // if true, don't close window automatically on button click
         private Vector2 _scroll;
 
         // Progress bar support
@@ -305,6 +307,34 @@ namespace HoyoToon.Utilities
             _lastMessageSource = null;
             _useMarkdown = LooksLikeMarkdown(_message);
             _pendingResize = true;
+            Repaint();
+        }
+
+        // Dynamically replace buttons and callback
+        public void SetButtons(string[] labels, int defaultIndex = 0, int cancelIndex = -1, Action<int> onResultIndex = null, bool keepOpenOnClick = false)
+        {
+            _buttons.Clear();
+            if (labels != null)
+            {
+                for (int i = 0; i < labels.Length; i++)
+                {
+                    _buttons.Add(new ButtonDef
+                    {
+                        Label = labels[i],
+                        Index = i,
+                        IsDefault = (i == defaultIndex),
+                        IsCancel = (i == cancelIndex)
+                    });
+                }
+            }
+            _onResultIndex = onResultIndex;
+            _keepOpenOnClick = keepOpenOnClick;
+            Repaint();
+        }
+
+        public void SetShowProgressBar(bool enabled)
+        {
+            _showProgressBar = enabled;
             Repaint();
         }
 
@@ -412,7 +442,9 @@ namespace HoyoToon.Utilities
                     DrawProgressBar();
                     GUILayout.Space(UiLayout.PADDING_MID2);
                 }
-                
+                // Divider before buttons for clearer separation
+                DrawDivider(1f, 4f);
+                GUILayout.Space(2f);
                 DrawButtons();
                 GUILayout.Space(UiLayout.PADDING_BOTTOM);
             }
@@ -964,7 +996,8 @@ namespace HoyoToon.Utilities
         {
             try { _onResultIndex?.Invoke(index); }
             catch (Exception ex) { HoyoToonLogger.Always("Manager", $"Dialog callback exception: {ex}", LogType.Exception); }
-            Close();
+            if (!_keepOpenOnClick)
+                Close();
         }
     }
 }

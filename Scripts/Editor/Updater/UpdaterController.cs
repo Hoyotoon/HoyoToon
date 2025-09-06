@@ -159,7 +159,7 @@ namespace HoyoToon.Updater
             return result;
         }
 
-        public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg)
+    public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg, IProgressSink progress = null)
         {
                     if (batch == null) return;
 
@@ -199,10 +199,11 @@ namespace HoyoToon.Updater
                                     var meta = fullPath + ".meta"; if (File.Exists(meta)) File.Delete(meta);
                                 }
                                 removed++;
-                                EditorUtility.DisplayProgressBar("Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
+                                if (progress != null) progress.Report("Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
+                                else EditorUtility.DisplayProgressBar("Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
                             }
                         }
-                        finally { EditorUtility.ClearProgressBar(); }
+                        finally { if (progress == null) EditorUtility.ClearProgressBar(); }
                         // Reset tracker before proceeding
                         var reset = new LocalPackageTracker();
                         PackageTrackerStore.Save(reset);
@@ -225,7 +226,8 @@ namespace HoyoToon.Updater
                         Directory.CreateDirectory(Path.GetDirectoryName(full));
                         await File.WriteAllBytesAsync(full, bytes);
                         completed++;
-                        EditorUtility.DisplayProgressBar("Applying Updates", update.path, (float)completed / total);
+                        if (progress != null) progress.Report("Applying Updates", update.path, (float)completed / total);
+                        else EditorUtility.DisplayProgressBar("Applying Updates", update.path, (float)completed / total);
                         await Task.Delay(10);
                     }
 
@@ -249,7 +251,8 @@ namespace HoyoToon.Updater
                             if (File.Exists(meta)) File.Delete(meta);
                         }
                         completed++;
-                        EditorUtility.DisplayProgressBar("Applying Updates", deletion, (float)completed / total);
+                        if (progress != null) progress.Report("Applying Updates", deletion, (float)completed / total);
+                        else EditorUtility.DisplayProgressBar("Applying Updates", deletion, (float)completed / total);
                         await Task.Delay(10);
                     }
                     }
@@ -268,7 +271,8 @@ namespace HoyoToon.Updater
                             await File.WriteAllBytesAsync(fullPkg, pkgBytes);
                             Debug.Log($"[Updater] Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
                             // Small progress nudge (doesn't count toward total as it's implicit)
-                            EditorUtility.DisplayProgressBar("Finalizing", "package.json", 1f);
+                            if (progress != null) progress.Report("Finalizing", "package.json", 1f);
+                            else EditorUtility.DisplayProgressBar("Finalizing", "package.json", 1f);
                         }
                     }
                     catch (Exception pkgEx)
@@ -285,7 +289,7 @@ namespace HoyoToon.Updater
             }
             finally
             {
-                EditorUtility.ClearProgressBar();
+                if (progress == null) EditorUtility.ClearProgressBar();
                 AssetDatabase.AllowAutoRefresh();
                 AssetDatabase.Refresh();
             }
