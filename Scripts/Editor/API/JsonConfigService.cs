@@ -2,8 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using Newtonsoft.Json;
-using Newtonsoft.Json.Linq;
+using Utf8Json;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon.Utilities;
@@ -20,13 +19,16 @@ namespace HoyoToon.API.Services
         private static readonly string FileName = "HoyoToonAPIConfig.json";
 
         [Serializable]
-        private class APIModel
+        public class APIModel
         {
-            [JsonProperty("resources")] public List<GameConfig> Resources = new List<GameConfig>();        }
+            public List<GameConfig> Resources { get; set; } = new List<GameConfig>();
+            public List<GameMetadata> Games { get; set; } = new List<GameMetadata>();
+        }
 
         private string _configPath;
         private APIModel _modelCache;
         private Dictionary<string, GameConfig> _gamesCache;
+    private Dictionary<string, GameMetadata> _gameMetadataCache;
 
         public string ConfigPath
         {
@@ -54,6 +56,20 @@ namespace HoyoToon.API.Services
             return _gamesCache;
         }
 
+        public IReadOnlyDictionary<string, GameMetadata> GetGameMetadata()
+        {
+            if (_gameMetadataCache != null) return _gameMetadataCache;
+            LoadModel();
+            _gameMetadataCache = new Dictionary<string, GameMetadata>(StringComparer.Ordinal);
+            var list = _modelCache.Games ?? new List<GameMetadata>();
+            foreach (var g in list)
+            {
+                if (string.IsNullOrWhiteSpace(g?.Key)) continue;
+                _gameMetadataCache[g.Key] = g;
+            }
+            return _gameMetadataCache;
+        }
+
         public void SaveGames(IEnumerable<GameConfig> games)
         {
             LoadModel();
@@ -63,10 +79,20 @@ namespace HoyoToon.API.Services
             _gamesCache = null;
         }
 
+        public void SaveGameMetadata(IEnumerable<GameMetadata> games)
+        {
+            LoadModel();
+            var items = new List<GameMetadata>(games ?? Array.Empty<GameMetadata>());
+            _modelCache.Games = items;
+            WriteModel();
+            _gameMetadataCache = null;
+        }
+
         public void Reload()
         {
             _modelCache = null;
             _gamesCache = null;
+            _gameMetadataCache = null;
             LoadModel();
         }
 
@@ -76,15 +102,15 @@ namespace HoyoToon.API.Services
             try
             {
                 var path = ConfigPath;
-                var json = File.Exists(path) ? File.ReadAllText(path) : string.Empty;
-                if (string.IsNullOrWhiteSpace(json))
+                var json = File.Exists(path) ? File.ReadAllBytes(path) : Array.Empty<byte>();
+                if (json == null || json.Length == 0)
                 {
                     _modelCache = new APIModel();
                     WriteModel();
                 }
                 else
                 {
-                    _modelCache = JsonConvert.DeserializeObject<APIModel>(json) ?? new APIModel();
+                    _modelCache = JsonSerializer.Deserialize<APIModel>(json) ?? new APIModel();
                 }
             }
             catch (Exception ex)
@@ -102,7 +128,7 @@ namespace HoyoToon.API.Services
                 var path = ConfigPath;
                 var dir = Path.GetDirectoryName(path);
                 if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
-                var json = JsonConvert.SerializeObject(_modelCache, Formatting.Indented);
+                var json = JsonSerializer.PrettyPrint(JsonSerializer.Serialize(_modelCache));
                 File.WriteAllText(path, json);
                 AssetDatabase.Refresh();
             }
@@ -119,7 +145,7 @@ namespace HoyoToon.API.Services
             if (!File.Exists(path))
             {
                 var model = new APIModel();
-                var json = JsonConvert.SerializeObject(model, Formatting.Indented);
+                var json = JsonSerializer.PrettyPrint(JsonSerializer.Serialize(model));
                 File.WriteAllText(path, json);
                 AssetDatabase.Refresh();
             }

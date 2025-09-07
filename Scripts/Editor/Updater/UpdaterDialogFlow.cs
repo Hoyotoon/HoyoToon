@@ -35,7 +35,7 @@ namespace HoyoToon.Updater
                 message: "Preparing fake update summary...",
                 type: MessageType.Info,
                 buttons: new string[0],
-                topBar: HoyoToonDialogWindow.TopBarConfig.Default(),
+                topBar: HoyoToon.Utilities.BaseHoyoToonWindow.TopBarConfig.Default(),
                 onResultIndex: null,
                 keepOpenOnClick: true
             );
@@ -76,7 +76,8 @@ namespace HoyoToon.Updater
             sb.AppendLine("\n---\n");
             sb.AppendLine("Changelog:");
             sb.AppendLine();
-            sb.AppendLine(Truncate(changelog, 3000));
+            // Show full changelog in debug run for validation
+            sb.AppendLine(changelog);
 
             win.SetTitle("Update Available (Debug)");
             win.SetMessage(sb.ToString());
@@ -152,7 +153,7 @@ namespace HoyoToon.Updater
                 message: "Checking for updates...",
                 type: MessageType.Info,
                 buttons: new string[0],
-                topBar: HoyoToonDialogWindow.TopBarConfig.Default(),
+                topBar: HoyoToon.Utilities.BaseHoyoToonWindow.TopBarConfig.Default(),
                 onResultIndex: null,
                 keepOpenOnClick: true
             );
@@ -216,7 +217,8 @@ namespace HoyoToon.Updater
                     sb.AppendLine("\n---\n");
                     sb.AppendLine("Changelog:");
                     sb.AppendLine();
-                    sb.AppendLine(Truncate(changelog, 1600));
+                    // Show full changelog to avoid cutting off content
+                    sb.AppendLine(changelog);
                 }
 
                 win.SetTitle("Update Available");

@@ -27,6 +27,16 @@ namespace HoyoToon.API
         /// Absolute path to backing config (if applicable) for tooling.
         /// </summary>
         string ConfigPath { get; }
+
+        /// <summary>
+        /// Get per-game metadata entries (new Games section).
+        /// </summary>
+        IReadOnlyDictionary<string, GameMetadata> GetGameMetadata();
+
+        /// <summary>
+        /// Save the entire Games metadata section.
+        /// </summary>
+        void SaveGameMetadata(IEnumerable<GameMetadata> games);
     }
 }
 #endif

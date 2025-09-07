@@ -1,5 +1,5 @@
 {
-  "resources": [
+  "Resources": [
     {
       "Key": "Genshin Impact",
       "DisplayName": "Genshin Impact",
@@ -18,7 +18,7 @@
       "WebdavUrl": "https://assets.hoyotoon.com/s/8RaZzPQyLLEFb7o",
       "LocalPath": "Resources/Honkai Star Rail"
     },
-    {  
+    {
       "Key": "Wuthering Waves",
       "DisplayName": "Wuthering Waves",
       "WebdavUrl": "https://assets.hoyotoon.com/s/Y6o9agnZ7xP84sS",
@@ -29,6 +29,112 @@
       "DisplayName": "Zenless Zone Zero",
       "WebdavUrl": "https://assets.hoyotoon.com/s/BWBcHTK7qmwTnfd",
       "LocalPath": "Resources/Zenless Zone Zero"
+    }
+  ],
+  "Games": [
+    {
+      "Key": "Honkai Star Rail",
+      "GameProperties": ["_mBloomIntensity0"],
+      "DefaultShader": "HoyoToon/Honkai Star Rail/Character/Base",
+      "ShaderKeywords": {
+        "HoyoToon/Honkai Star Rail/Character/Base": ["_UseMoonHalo"],
+        "HoyoToon/Honkai Star Rail/Character/Face": [
+          "_FaceMap",
+          "_FaceExpression",
+          "_LipLineFixMax",
+          "_LipLineFixStart",
+          "_LipLineFixThrd",
+          "_NoseLinePower",
+          "_OutlineFixFront",
+          "_OutlineFixRange1",
+          "_OutlineFixRange2",
+          "_OutlineFixRange3",
+          "_OutlineFixRange4",
+          "_OutlineFixSide",
+          "_ExCheekColor"
+        ],
+        "HoyoToon/Honkai Star Rail/Character/Hair": [
+          "_HairBlendOffset",
+          "_HairBlendWeight",
+          "_HairStencilComp",
+          "_HairStencilMask"
+        ],
+        "HoyoToon/Honkai Star Rail/Character/Transparent": [
+          "_Sunglasses",
+          "_Android_Debug_ToonSpecular",
+          "_BendValue"
+        ],
+        "HoyoToon/Honkai Star Rail/Character/Crystal": [
+          "_ParallaxTex",
+          "_ParallaxAlpha",
+          "_ParallaxScale"
+        ]
+      },
+      "PropertyConversions": {
+        "_Test": "_Test2"
+      },
+      "Tangents": {
+        "Options": ["No Tangents", "Tangent Generation", "Vertex Color"],
+        "Status": "Tangent Generation",
+        "SkipMeshesContaining": [
+          "Test",
+          "test",
+          "TEST",
+          "Test",
+          "Testing",
+          "TangentIgnore"
+        ]
+      },
+      "TextureMappings": {
+        "_Lut2DTex": "LUT_HSR"
+      },
+      "TextureImportSettings": {
+        "NameEquals": {
+          "LUT_HSR": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": "Uncompressed"
+          }
+        },
+        "NameContains": {
+          "ExpressionMap": {
+            "SRGBTexture": false
+          },
+          "FaceMap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false
+          },
+          "LUT": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false
+          },
+          "materialidvalueslut": {
+            "SRGBTexture": false,
+            "NPOTScale": "None"
+          },
+          "Stockings": {
+            "SRGBTexture": false
+          },
+          "Warm_Ramp": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": "Uncompressed"
+          },
+          "Cool_Ramp": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": "Uncompressed"
+          }
+        },
+        "NameEndsWith": {
+          "T_Caustic": {
+            "SRGBTexture": false
+          },
+          "Stockings": {
+            "SRGBTexture": false
+          }
+        }
+      }
     }
   ]
 }

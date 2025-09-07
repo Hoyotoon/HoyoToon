@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using UnityEditor;
 using UnityEngine;
+// Alias the base TopBarConfig so this window uses the shared type
+using TopBarConfig = HoyoToon.Utilities.BaseHoyoToonWindow.TopBarConfig;
 
 namespace HoyoToon.Utilities
 {
@@ -11,58 +13,10 @@ namespace HoyoToon.Utilities
     /// Dialog window for messages, prompts, and progress with optional themed banner.
     /// Static helpers provide common patterns (OK, Yes/No, custom buttons, progress).
     /// </summary>
-    public class HoyoToonDialogWindow : EditorWindow
+    public class HoyoToonDialogWindow : BaseHoyoToonWindow
     {
-        // Global UI sizing/layout constants to keep the window consistent everywhere
-        private static class UiLayout
-        {
-            public const float WINDOW_MIN_WIDTH = 680f;     // Tight but readable
-            public const float WINDOW_DEFAULT_WIDTH = 720f; // Initial width for all dialogs
-            public const float WINDOW_MIN_HEIGHT = 560f;    // Enough for banner + content + buttons
-            public const float WINDOW_MAX_HEIGHT = 880f;    // Avoid overly tall windows
-
-            public const float CARD_MAX_VIEW_HEIGHT = 440f; // Max inner scroll height for text
-            public const float CARD_MIN_VIEW_HEIGHT = 140f; // Min inner scroll height
-
-            // Section paddings (vertical sum must align with auto-resize math)
-            public const float PADDING_TOP = 8f;   // space under top bar
-            public const float PADDING_MID1 = 4f;  // between header and card
-            public const float PADDING_MID2 = 6f;  // between card and progress/buttons
-            public const float PADDING_BOTTOM = 4f;// bottom pad under buttons
-
-            // Controls
-            public const float TOOLBAR_HEIGHT_FALLBACK = 20f;
-            public const float BUTTONS_BLOCK_HEIGHT = 40f;
-        }
-        // Top bar config
-        [Serializable]
-        public class TopBarConfig
-        {
-            public string BackgroundResourcePath; // e.g., "UI/background"
-            public string LogoResourcePath;       // e.g., "UI/hoyotoon"
-            public string LeftCharacterPath;      // e.g., "UI/hsrl"
-            public string RightCharacterPath;     // e.g., "UI/hsrr"
-
-            public static TopBarConfig Default()
-            {
-                return new TopBarConfig
-                {
-                    BackgroundResourcePath = "UI/background",
-                    LogoResourcePath = "UI/hoyotoon",
-                    LeftCharacterPath = "UI/hsrl",
-                    RightCharacterPath = "UI/hsrr"
-                };
-            }
-        }
-
-        // Button definition
-        private class ButtonDef
-        {
-            public string Label;
-            public int Index;
-            public bool IsDefault;
-            public bool IsCancel;
-        }
+        // inherit UiLayout and TopBarConfig from base (aliased above)
+        // inherit ButtonDef from base
 
     // Public API: lightweight wrappers
         public static void ShowInfo(string title, string message, TopBarConfig topBar = null)
@@ -276,29 +230,13 @@ namespace HoyoToon.Utilities
             window.Focus();
         }
 
-    // Internals
-        private string _title;
+    // Internals specific to this dialog
         private string _message;
-        private MessageType _type;
-        private TopBarConfig _topBar;
-        private List<ButtonDef> _buttons = new List<ButtonDef>();
-        private Action<int> _onResultIndex;
-    private bool _keepOpenOnClick; // if true, don't close window automatically on button click
-        private Vector2 _scroll;
-
-        // Progress bar support
-        private bool _showProgressBar;
-        private float _progress;
-        private string _progressText;
+        private string _renderedMessageCache;
+        private string _lastMessageSource;
+        private bool _useMarkdown;
 
     // Runtime setters for persistent progress window
-        public void SetTitle(string title)
-        {
-            _title = title ?? string.Empty;
-            _pendingResize = true;
-            Repaint();
-        }
-
         public void SetMessage(string message)
         {
             _message = message ?? string.Empty;
@@ -310,84 +248,22 @@ namespace HoyoToon.Utilities
             Repaint();
         }
 
-        // Dynamically replace buttons and callback
-        public void SetButtons(string[] labels, int defaultIndex = 0, int cancelIndex = -1, Action<int> onResultIndex = null, bool keepOpenOnClick = false)
-        {
-            _buttons.Clear();
-            if (labels != null)
-            {
-                for (int i = 0; i < labels.Length; i++)
-                {
-                    _buttons.Add(new ButtonDef
-                    {
-                        Label = labels[i],
-                        Index = i,
-                        IsDefault = (i == defaultIndex),
-                        IsCancel = (i == cancelIndex)
-                    });
-                }
-            }
-            _onResultIndex = onResultIndex;
-            _keepOpenOnClick = keepOpenOnClick;
-            Repaint();
-        }
-
-        public void SetShowProgressBar(bool enabled)
-        {
-            _showProgressBar = enabled;
-            Repaint();
-        }
-
-    // Cached styles
-    private GUIStyle _headerTitleStyle;
-    private GUIStyle _cardStyle;
-    private GUIStyle _messageLabelStyle;
-    private GUIStyle _messageContainerStyle;
+    // Styles inherited from base: _headerTitleStyle, _cardStyle, _messageLabelStyle, _messageContainerStyle
     
     // Optional content image (shown inside the message card)
     private string _contentImageResourcePath;
     private Texture2D _contentImage;
     private float _contentImageMaxHeight = 220f;
 
-    // Cached layout data for auto-resize and scrolling
-        private bool _pendingResize = true;
-        private float _cachedContentWidth;
-        private float _cachedHeaderHeight;
         private float _cachedMsgHeight;
         private float _cachedImgHeight;
-        private float _cachedCardContentHeight;
-        private float _cachedCardViewHeight;
-        private bool _cachedNeedsScroll;
 
-    // Markdown
-    private bool _useMarkdown;
-    private string _renderedMessageCache;
-    private string _lastMessageSource;
-
-    // Top bar layout constants
-        private static class TopBarLayout
-        {
-            public const float BANNER_HEIGHT = 150f;
-            public const float LOGO_WIDTH = 348f;
-            public const float LOGO_HEIGHT = 114f;
-            public const float CHARACTER_MAX_WIDTH = 256f;
-            public const float CHARACTER_MAX_HEIGHT = 180f;
-            public const float MIN_LOGO_DISTANCE = 5f;
-        }
-
-        private struct TopBarLayoutData
-        {
-            public Rect contentRect;
-            public Rect bgRect;
-            public Rect logoRect;
-            public float originalY;
-        }
+    // Top bar layout constants/types inherited from base
 
         private void OnEnable()
         {
             // Ensure a default top bar if not provided
-            if (_topBar == null) _topBar = TopBarConfig.Default();
-            _pendingResize = true;
+            base.OnEnable();
             // Auto-detect markdown on first open
             _useMarkdown = LooksLikeMarkdown(_message);
             _renderedMessageCache = null;
@@ -416,149 +292,70 @@ namespace HoyoToon.Utilities
             Repaint();
         }
 
-        private void OnGUI()
+        // GUI pipeline now inherited from base
+
+        protected override void EnsureStyles()
         {
-            EnsureStyles();
-
-            // Draw themed top bar
-            DrawTopBar();
-
-            // Edge padding and body container
-            GUILayout.Space(UiLayout.PADDING_TOP);
-            using (new EditorGUILayout.VerticalScope())
-            {
-                // Measure layout to allow auto-sizing and conditional scroll
-                ComputeLayoutMeasurements();
-                DrawHeaderRow();
-
-                GUILayout.Space(UiLayout.PADDING_MID1);
-                DrawMessageCard();
-
-                GUILayout.Space(UiLayout.PADDING_MID2);
-                
-                // Draw progress bar if enabled
-                if (_showProgressBar)
-                {
-                    DrawProgressBar();
-                    GUILayout.Space(UiLayout.PADDING_MID2);
-                }
-                // Divider before buttons for clearer separation
-                DrawDivider(1f, 4f);
-                GUILayout.Space(2f);
-                DrawButtons();
-                GUILayout.Space(UiLayout.PADDING_BOTTOM);
-            }
-
-            HandleKeyboard();
-
-            MaybeAutoResizeToContent();
-        }
-
-        private void EnsureStyles()
-        {
-            if (_headerTitleStyle == null)
-            {
-                _headerTitleStyle = new GUIStyle(EditorStyles.label)
-                {
-                    fontSize = 14,
-                    fontStyle = FontStyle.Bold,
-                    wordWrap = true,
-                    richText = true
-                };
-            }
-
-            // Message uses word-wrapped label style
-
-            if (_cardStyle == null)
-            {
-                _cardStyle = new GUIStyle("HelpBox")
-                {
-                    padding = new RectOffset(8, 8, 8, 6)
-                };
-            }
-
-            if (_messageLabelStyle == null)
-            {
-                _messageLabelStyle = new GUIStyle(EditorStyles.wordWrappedLabel)
-                {
-                    wordWrap = true
-                };
-            }
+            base.EnsureStyles();
             _messageLabelStyle.richText = _useMarkdown;
+        }
 
-            if (_messageContainerStyle == null)
+        // Header drawing/use inherited from base
+
+        protected override float GetCardToolbarHeight()
+        {
+            return (EditorStyles.toolbar != null && EditorStyles.toolbar.fixedHeight > 0) ? EditorStyles.toolbar.fixedHeight : UiLayout.TOOLBAR_HEIGHT_FALLBACK;
+        }
+
+        protected override void DrawCardToolbar()
+        {
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button("Copy", EditorStyles.toolbarButton, GUILayout.Width(60)))
             {
-                _messageContainerStyle = new GUIStyle("HelpBox")
-                {
-                    padding = new RectOffset(8, 8, 6, 6)
-                };
+                EditorGUIUtility.systemCopyBuffer = _message ?? string.Empty;
             }
         }
 
-        private void DrawHeaderRow()
+        protected override float MeasureBodyContentHeight(float contentWidth)
         {
-            using (new EditorGUILayout.HorizontalScope())
+            if (_messageLabelStyle == null) EnsureStyles();
+            string measureText = GetRenderedMessage();
+            _cachedMsgHeight = string.IsNullOrEmpty(measureText) ? EditorGUIUtility.singleLineHeight : _messageLabelStyle.CalcHeight(new GUIContent(measureText), contentWidth);
+            // Account for the message container's vertical padding and a small fudge to avoid last-line truncation
+            int vpad = _messageContainerStyle != null ? (_messageContainerStyle.padding.top + _messageContainerStyle.padding.bottom) : 0;
+            float msgBlockHeight = Mathf.Ceil(_cachedMsgHeight) + vpad + 2f; // +2f safety margin
+
+            _cachedImgHeight = 0f;
+            if (HasContentImage())
             {
-                var icon = GetIconForType(_type);
-                if (icon != null)
+                var tex = _contentImage;
+                if (tex)
                 {
-                    GUILayout.Label(icon, GUILayout.Width(20), GUILayout.Height(20));
-                    GUILayout.Space(4);
+                    float aspect = tex.height > 0 ? (float)tex.width / tex.height : 1f;
+                    float targetH = contentWidth / Mathf.Max(0.01f, aspect);
+                    _cachedImgHeight = Mathf.Min(_contentImageMaxHeight, targetH);
                 }
-                GUILayout.Label(string.IsNullOrEmpty(_title) ? string.Empty : _title, _headerTitleStyle);
             }
+            float dividerAndSpacing = _cachedImgHeight > 0f ? (6f + 1f + 6f) : 0f;
+            return msgBlockHeight + dividerAndSpacing + _cachedImgHeight;
         }
 
-        private GUIContent GetIconForType(MessageType type)
+        protected override void DrawBodyContent(float contentWidth)
         {
-            string iconName = null;
-            switch (type)
+            // Wrapped, multi-line label inside a bordered area
+            using (new EditorGUILayout.VerticalScope(_messageContainerStyle))
             {
-                case MessageType.Error: iconName = "console.erroricon"; break;
-                case MessageType.Warning: iconName = "console.warnicon"; break;
-                case MessageType.Info: iconName = "console.infoicon"; break;
-                default: iconName = null; break;
+                var msg = GetRenderedMessage();
+                // Reserve the exact measured height so long content isn't clipped
+                GUILayout.Label(msg, _messageLabelStyle, GUILayout.Height(_cachedMsgHeight), GUILayout.ExpandWidth(true));
             }
-            if (string.IsNullOrEmpty(iconName)) return null;
-            var gc = EditorGUIUtility.IconContent(iconName);
-            return gc != null && gc.image != null ? gc : null;
-        }
 
-        private void DrawMessageCard()
-        {
-            using (new EditorGUILayout.VerticalScope(_cardStyle))
+            if (HasContentImage())
             {
-                // Compact toolbar (right aligned)
-                using (new EditorGUILayout.HorizontalScope(EditorStyles.toolbar))
-                {
-                    GUILayout.FlexibleSpace();
-                    if (GUILayout.Button("Copy", EditorStyles.toolbarButton, GUILayout.Width(60)))
-                    {
-                        EditorGUIUtility.systemCopyBuffer = _message ?? string.Empty;
-                    }
-                }
-
-                GUILayout.Space(4);
-
-                // Scrollable content: message first, then optional image
-                _scroll = EditorGUILayout.BeginScrollView(_scroll, GUILayout.Height(_cachedCardViewHeight));
-
-                // Wrapped, multi-line label inside a bordered area
-                using (new EditorGUILayout.VerticalScope(_messageContainerStyle))
-                {
-                    var msg = GetRenderedMessage();
-                    // IMGUI computes label height; measurements drive scroll sizing
-                    EditorGUILayout.LabelField(msg, _messageLabelStyle, GUILayout.ExpandWidth(true));
-                }
-
-                if (HasContentImage())
-                {
-                    GUILayout.Space(6);
-                    DrawDivider(1f, 2f);
-                    GUILayout.Space(6);
-                    DrawContentImage();
-                }
-                EditorGUILayout.EndScrollView();
+                GUILayout.Space(6);
+                DrawDivider(1f, 2f);
+                GUILayout.Space(6);
+                DrawContentImage();
             }
         }
 
@@ -586,8 +383,11 @@ namespace HoyoToon.Utilities
             float aspect = tex.height > 0 ? (float)tex.width / tex.height : 1f;
             float maxH = Mathf.Clamp(_contentImageMaxHeight, 40f, 2000f);
 
-            // Reserve a rect within layout
-            Rect r = GUILayoutUtility.GetRect(_cachedContentWidth, maxH, GUILayout.ExpandWidth(false));
+            // Reserve a rect within layout with safe width fallback
+            float contentWidth = _cachedContentWidth > 0 ? _cachedContentWidth : Mathf.Max(200f, position.width - 48f);
+            // Use the measured image height to match the computed content height
+            float targetMeasuredH = Mathf.Min(_cachedImgHeight > 0 ? _cachedImgHeight : maxH, maxH);
+            Rect r = GUILayoutUtility.GetRect(contentWidth, targetMeasuredH, GUILayout.ExpandWidth(false));
 
             // Fit preserving aspect
             float targetW = r.width;
@@ -607,103 +407,11 @@ namespace HoyoToon.Utilities
             GUI.DrawTexture(new Rect(x, y, targetW, targetH), tex, ScaleMode.ScaleToFit);
         }
 
-        private void DrawDivider(float thickness = 1f, float sidePadding = 0f)
-        {
-            Rect r = GUILayoutUtility.GetRect(1, thickness, GUILayout.ExpandWidth(true));
-            if (sidePadding > 0f)
-            {
-                r.xMin += sidePadding;
-                r.xMax -= sidePadding;
-            }
-            Color c = EditorGUIUtility.isProSkin ? new Color(1f, 1f, 1f, 0.08f) : new Color(0f, 0f, 0f, 0.1f);
-            EditorGUI.DrawRect(r, c);
-        }
+        // Divider helper now comes from base
 
-        private void ComputeLayoutMeasurements()
-        {
-            // Width available for text/image inside the card content
-            // Account for both card and message container paddings
-            int cardPad = _cardStyle != null ? (_cardStyle.padding.left + _cardStyle.padding.right) : 0;
-            int msgPad = _messageContainerStyle != null ? (_messageContainerStyle.padding.left + _messageContainerStyle.padding.right) : 0;
-            float paddingH = cardPad + msgPad;
-            // Account for layout paddings and scrollbar gutter
-            _cachedContentWidth = Mathf.Max(200f, position.width - paddingH - 24f);
+        // Measurement/auto-resize now handled by base via overrides
 
-            // Header height (icon 20 vs wrapped title)
-            float headerTextWidth = _cachedContentWidth - 24f; // icon + spacing
-            if (_headerTitleStyle == null) EnsureStyles();
-            float headerLabelH = string.IsNullOrEmpty(_title) ? 0f : _headerTitleStyle.CalcHeight(new GUIContent(_title), headerTextWidth);
-            _cachedHeaderHeight = Mathf.Max(20f, headerLabelH);
-
-            // Message height with wrapping
-            if (_messageLabelStyle == null) EnsureStyles();
-            string measureText = GetRenderedMessage();
-            _cachedMsgHeight = string.IsNullOrEmpty(measureText) ? EditorGUIUtility.singleLineHeight : _messageLabelStyle.CalcHeight(new GUIContent(measureText), _cachedContentWidth);
-
-            // Image height given content width
-            _cachedImgHeight = 0f;
-            if (HasContentImage())
-            {
-                var tex = _contentImage;
-                if (tex)
-                {
-                    float aspect = tex.height > 0 ? (float)tex.width / tex.height : 1f;
-                    float targetH = _cachedContentWidth / Mathf.Max(0.01f, aspect);
-                    _cachedImgHeight = Mathf.Min(_contentImageMaxHeight, targetH);
-                }
-            }
-
-            float dividerAndSpacing = _cachedImgHeight > 0f ? (6f + 1f + 6f) : 0f;
-            _cachedCardContentHeight = _cachedMsgHeight + dividerAndSpacing + _cachedImgHeight;
-
-            // Determine scroll need and cap view height
-            float maxCardViewHeight = UiLayout.CARD_MAX_VIEW_HEIGHT;
-            float minCardViewHeight = UiLayout.CARD_MIN_VIEW_HEIGHT;
-            _cachedNeedsScroll = _cachedCardContentHeight > maxCardViewHeight;
-            _cachedCardViewHeight = _cachedNeedsScroll ? maxCardViewHeight : _cachedCardContentHeight;
-            if (_cachedCardViewHeight < minCardViewHeight)
-                _cachedCardViewHeight = minCardViewHeight;
-        }
-
-        private void MaybeAutoResizeToContent()
-        {
-            // Re-evaluate after content/markdown changes that affect text size
-            var e = Event.current;
-            if (e.type == EventType.Layout)
-            {
-                // If toggles changed this frame, request a resize on next pass
-            }
-
-            if (_pendingResize && e.type == EventType.Repaint)
-            {
-                // Compose desired total height from pieces
-                float topBar = TopBarLayout.BANNER_HEIGHT;
-                float paddings = UiLayout.PADDING_TOP + UiLayout.PADDING_MID1 + UiLayout.PADDING_MID2 + UiLayout.PADDING_BOTTOM;
-                float toolbarH = (EditorStyles.toolbar != null && EditorStyles.toolbar.fixedHeight > 0) ? EditorStyles.toolbar.fixedHeight : UiLayout.TOOLBAR_HEIGHT_FALLBACK;
-                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT;
-                float cardH = toolbarH + 4f + _cachedCardViewHeight;
-                float desired = topBar + paddings + _cachedHeaderHeight + cardH + buttonsH;
-
-                // Clamp sensible bounds
-                float minH = UiLayout.WINDOW_MIN_HEIGHT;
-                float maxH = UiLayout.WINDOW_MAX_HEIGHT;
-                float newH = Mathf.Clamp(desired, minH, maxH);
-
-                // Resize window height without changing width/position
-                var p = position;
-                if (Mathf.Abs(p.height - newH) > 1f)
-                {
-                    p.height = newH;
-                    position = p;
-                }
-
-                // Keep min/max sizes aligned with desired bounds
-                minSize = new Vector2(Mathf.Max(UiLayout.WINDOW_MIN_WIDTH, minSize.x), newH);
-                maxSize = new Vector2(Mathf.Max(UiLayout.WINDOW_DEFAULT_WIDTH, maxSize.x), UiLayout.WINDOW_MAX_HEIGHT);
-
-                _pendingResize = false;
-            }
-        }
+        // Auto-resize handled by base
 
         private string GetRenderedMessage()
         {
@@ -785,6 +493,8 @@ namespace HoyoToon.Utilities
                 // Message height (use markdown if enabled)
                 string txt = GetRenderedMessage();
                 float msgH = string.IsNullOrEmpty(txt) ? EditorGUIUtility.singleLineHeight : _messageLabelStyle.CalcHeight(new GUIContent(txt), contentWidth);
+                int vpad = _messageContainerStyle != null ? (_messageContainerStyle.padding.top + _messageContainerStyle.padding.bottom) : 0;
+                float msgBlockHeight = Mathf.Ceil(msgH) + vpad + 2f; // mirror MeasureBodyContentHeight
 
                 // Optional image height
                 float imgH = 0f;
@@ -800,7 +510,7 @@ namespace HoyoToon.Utilities
                 }
 
                 float dividerAndSpacing = imgH > 0f ? (6f + 1f + 6f) : 0f;
-                float cardContentH = msgH + dividerAndSpacing + imgH;
+                float cardContentH = msgBlockHeight + dividerAndSpacing + imgH;
                 float maxCardViewHeight = UiLayout.CARD_MAX_VIEW_HEIGHT;
                 float minCardViewHeight = UiLayout.CARD_MIN_VIEW_HEIGHT;
                 float cardViewH = Mathf.Min(cardContentH, maxCardViewHeight);
@@ -811,7 +521,9 @@ namespace HoyoToon.Utilities
                 float toolbarH = (EditorStyles.toolbar != null && EditorStyles.toolbar.fixedHeight > 0) ? EditorStyles.toolbar.fixedHeight : UiLayout.TOOLBAR_HEIGHT_FALLBACK;
                 float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT;
                 float cardH = toolbarH + 4f + cardViewH;
-                float desired = topBar + paddings + headerH + cardH + buttonsH;
+                // Include progress area here as well if enabled.
+                float progressH = _showProgressBar ? (16f + UiLayout.PADDING_MID2) : 0f;
+                float desired = topBar + paddings + headerH + cardH + buttonsH + progressH;
 
                 float newH = Mathf.Clamp(desired, UiLayout.WINDOW_MIN_HEIGHT, UiLayout.WINDOW_MAX_HEIGHT);
 
@@ -820,7 +532,7 @@ namespace HoyoToon.Utilities
                 p.height = newH;
                 position = p;
 
-                minSize = new Vector2(Mathf.Max(UiLayout.WINDOW_MIN_WIDTH, minSize.x, width), newH);
+                minSize = new Vector2(Mathf.Max(UiLayout.WINDOW_MIN_WIDTH, minSize.x, width), Mathf.Max(UiLayout.WINDOW_MIN_HEIGHT, newH));
                 maxSize = new Vector2(Mathf.Max(UiLayout.WINDOW_DEFAULT_WIDTH, maxSize.x, width), UiLayout.WINDOW_MAX_HEIGHT);
             }
             catch { /* non-fatal sizing best-effort */ }
@@ -888,25 +600,44 @@ namespace HoyoToon.Utilities
 
         private Rect CalculateCharacterRect(Texture2D texture, TopBarLayoutData layout, bool isLeftSide)
         {
-            float aspectRatio = (float)texture.width / texture.height;
-            float characterWidth = Mathf.Min(TopBarLayout.CHARACTER_MAX_WIDTH, TopBarLayout.CHARACTER_MAX_HEIGHT * aspectRatio);
-            float characterHeight = Mathf.Min(TopBarLayout.CHARACTER_MAX_HEIGHT, TopBarLayout.CHARACTER_MAX_WIDTH / aspectRatio);
+            // Fit character into available horizontal slot to the left/right of the logo without overlap.
+            float aspect = texture.height > 0 ? (float)texture.width / texture.height : 1f;
 
-            float characterY = layout.originalY + TopBarLayout.BANNER_HEIGHT - characterHeight;
-
-            float characterX;
+            float slotX, slotW;
             if (isLeftSide)
             {
-                float maxAllowedX = layout.logoRect.x - characterWidth - TopBarLayout.MIN_LOGO_DISTANCE;
-                characterX = Mathf.Min(layout.bgRect.x, maxAllowedX);
+                slotX = layout.bgRect.x;
+                slotW = Mathf.Max(0f, layout.logoRect.x - TopBarLayout.MIN_LOGO_DISTANCE - slotX);
             }
             else
             {
-                float minAllowedX = layout.logoRect.xMax + TopBarLayout.MIN_LOGO_DISTANCE;
-                characterX = Mathf.Max(layout.bgRect.xMax - characterWidth, minAllowedX);
+                slotX = layout.logoRect.xMax + TopBarLayout.MIN_LOGO_DISTANCE;
+                slotW = Mathf.Max(0f, layout.bgRect.xMax - slotX);
             }
 
-            return new Rect(characterX, characterY, characterWidth, characterHeight);
+            // Compute target width/height limited by both max constants and slot width
+            float maxW = Mathf.Min(TopBarLayout.CHARACTER_MAX_WIDTH, slotW);
+            float maxH = TopBarLayout.CHARACTER_MAX_HEIGHT;
+            // Maintain aspect: try by width first, clamp height if needed
+            float w = Mathf.Max(0f, maxW);
+            float h = w / Mathf.Max(0.01f, aspect);
+            if (h > maxH)
+            {
+                h = maxH;
+                w = h * aspect;
+                // Re-check slot bounds
+                if (w > maxW) w = maxW;
+            }
+
+            // Baseline positions
+            float y = layout.originalY + TopBarLayout.BANNER_HEIGHT - h; // bottom-align to banner base
+            float x = isLeftSide ? slotX : (slotX + slotW - w);
+
+            // If slot is extremely narrow, allow partial offscreen by clamping to bg rect
+            if (isLeftSide) x = Mathf.Clamp(x, layout.bgRect.x - (w - 1f), layout.logoRect.x - TopBarLayout.MIN_LOGO_DISTANCE - w);
+            else x = Mathf.Clamp(x, layout.logoRect.xMax + TopBarLayout.MIN_LOGO_DISTANCE, layout.bgRect.xMax - 1f);
+
+            return new Rect(x, y, w, h);
         }
 
         private void DrawProgressBar()
