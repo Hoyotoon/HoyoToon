@@ -226,6 +226,19 @@ namespace HoyoToon.Manager.Models
 
             var dto = MapRuleToDto(defaults);
             var changed = TryApplyModelImportSettings(assetPath, dto, reimportIfChanged);
+            try
+            {
+                // After applying settings, optionally perform a search & remap pass if requested by config
+                var importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
+                if (importer != null)
+                {
+                    TrySearchAndRemapMaterials(assetPath, importer, defaults);
+                }
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ModelWarning($"Post-apply material remap failed for '{assetPath}': {ex.Message}");
+            }
             if (changed)
             {
                 HoyoToonLogger.ModelInfo($"Model rules: Applied config defaults for game '{gameKey}' (source: {sourceJson ?? "<auto>"}) to '{assetPath}'.");
@@ -287,10 +300,15 @@ namespace HoyoToon.Manager.Models
             if (rule.ResampleCurves.HasValue) dto.resampleCurves = rule.ResampleCurves.Value;
 
             // MATERIALS
-            if (!string.IsNullOrEmpty(rule.MaterialImportMode) && EnumTryParseIgnoreCase<ModelImporterMaterialImportMode>(rule.MaterialImportMode, out var mim)) dto.materialImportMode = mim;
-            if (!string.IsNullOrEmpty(rule.MaterialSearch) && EnumTryParseIgnoreCase<ModelImporterMaterialSearch>(rule.MaterialSearch, out var mis)) dto.materialSearch = mis;
-            if (!string.IsNullOrEmpty(rule.MaterialName) && EnumTryParseIgnoreCase<ModelImporterMaterialName>(rule.MaterialName, out var min)) dto.materialName = min;
-            if (!string.IsNullOrEmpty(rule.MaterialLocation) && EnumTryParseIgnoreCase<ModelImporterMaterialLocation>(rule.MaterialLocation, out var mil)) dto.materialLocation = mil;
+            var materialImportModeStr = rule.MaterialImportMode;
+            var materialSearchStr = rule.MaterialSearch;
+            var materialNameStr = rule.MaterialName;
+            var materialLocationStr = rule.MaterialLocation;
+
+            if (!string.IsNullOrEmpty(materialImportModeStr) && EnumTryParseIgnoreCase<ModelImporterMaterialImportMode>(materialImportModeStr, out var mim)) dto.materialImportMode = mim;
+            if (!string.IsNullOrEmpty(materialSearchStr) && EnumTryParseIgnoreCase<ModelImporterMaterialSearch>(materialSearchStr, out var mis)) dto.materialSearch = mis;
+            if (!string.IsNullOrEmpty(materialNameStr) && EnumTryParseIgnoreCase<ModelImporterMaterialName>(materialNameStr, out var min)) dto.materialName = min;
+            if (!string.IsNullOrEmpty(materialLocationStr) && EnumTryParseIgnoreCase<ModelImporterMaterialLocation>(materialLocationStr, out var mil)) dto.materialLocation = mil;
 
             // EXTRA
             if (rule.LegacyBlendshapeNormals.HasValue) dto.legacyBlendshapeNormals = rule.LegacyBlendshapeNormals.Value;
@@ -301,6 +319,31 @@ namespace HoyoToon.Manager.Models
         private static bool EnumTryParseIgnoreCase<TEnum>(string value, out TEnum result) where TEnum : struct
         {
             return System.Enum.TryParse(value, true, out result);
+        }
+
+        /// <summary>
+        /// If config requests a search & remap pass, attempt to relink materials after import according to importer settings.
+        /// </summary>
+        private static void TrySearchAndRemapMaterials(string assetPath, ModelImporter importer, HoyoToon.API.ModelImportRule rule)
+        {
+            if (importer == null || rule == null) return;
+            bool doRemap = rule.MaterialSearchAndRemap.HasValue && rule.MaterialSearchAndRemap.Value;
+            if (!doRemap) return;
+
+            try
+            {
+                // Ensure importer uses the desired search/naming before remap
+                // Unity will perform remapping on SaveAndReimport based on these settings; to be safe, we explicitly call SearchAndRemap
+                var search = importer.materialSearch;
+                var name = importer.materialName;
+                // Perform a remap pass using the current importer settings
+                importer.SearchAndRemapMaterials(name, search);
+                HoyoToonLogger.ModelInfo($"Material remap attempted for '{assetPath}' using Name={name}, Search={search}.");
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ModelWarning($"Material remap failed for '{assetPath}': {ex.Message}");
+            }
         }
     }
 }

@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 
 namespace HoyoToon.API
 {
@@ -120,9 +121,16 @@ namespace HoyoToon.API
 
         // MATERIALS TAB
         public string MaterialImportMode { get; set; }   // ModelImporterMaterialImportMode
-        public string MaterialSearch { get; set; }       // ModelImporterMaterialSearch
-        public string MaterialName { get; set; }         // ModelImporterMaterialName
+        public string MaterialSearch { get; set; }       // ModelImporterMaterialSearch (aka "MaterialSearchMethod")
+        public string MaterialName { get; set; }         // ModelImporterMaterialName (aka "MaterialNamingMethod")
         public string MaterialLocation { get; set; }     // ModelImporterMaterialLocation
+
+        // Optional post-import behavior: accept both JSON keys
+        private bool? _materialSearchAndRemap;
+        [DataMember(Name = "MaterialSearchAndRemap")] // canonical
+        public bool? MaterialSearchAndRemap { get => _materialSearchAndRemap; set => _materialSearchAndRemap = value; }
+        [DataMember(Name = "MaterialSearch&Remap")] // legacy/alternate
+        public bool? MaterialSearchAndRemap_Alt { get => _materialSearchAndRemap; set => _materialSearchAndRemap = value; }  // triggers post-import search & external object remap
 
         // Extra (non-public) flag: legacy compute normals when mesh has blendshapes
         public bool? LegacyBlendshapeNormals { get; set; }

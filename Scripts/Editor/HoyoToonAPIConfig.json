@@ -88,7 +88,11 @@
       "ModelImportSettings": {
         "Defaults": {
           "ScaleFactor": 1.0,
-          "LegacyBlendshapeNormals": true
+          "IsReadable": true,
+          "LegacyBlendshapeNormals": true,
+          "MaterialName": "BasedOnMaterialName",
+          "MaterialSearch": "Everywhere",
+          "MaterialSearchAndRemap": true
         }
       },
       "TextureMappings": {
