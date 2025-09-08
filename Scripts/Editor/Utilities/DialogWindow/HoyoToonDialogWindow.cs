@@ -260,7 +260,7 @@ namespace HoyoToon.Utilities
 
     // Top bar layout constants/types inherited from base
 
-        private void OnEnable()
+        protected override void OnEnable()
         {
             // Ensure a default top bar if not provided
             base.OnEnable();
@@ -270,27 +270,7 @@ namespace HoyoToon.Utilities
             _lastMessageSource = null;
         }
 
-        // Progress bar API
-        public void UpdateProgress(float progress, string text = null)
-        {
-            _progress = Mathf.Clamp01(progress);
-            if (!string.IsNullOrEmpty(text))
-                _progressText = text;
-            Repaint();
-        }
-
-        public void SetProgressText(string text)
-        {
-            _progressText = text ?? "";
-            Repaint();
-        }
-
-        public void CompleteProgress(string completionMessage = "Complete")
-        {
-            _progress = 1f;
-            _progressText = completionMessage;
-            Repaint();
-        }
+        // Progress bar API inherited from base (UpdateProgress/SetProgressText/CompleteProgress)
 
         // GUI pipeline now inherited from base
 
@@ -471,7 +451,7 @@ namespace HoyoToon.Utilities
         }
 
     /// <summary>Estimate sizes and set an initial position/minSize before showing.</summary>
-        private void PreSizeBeforeShow(float initialWidth)
+        protected override void PreSizeBeforeShow(float initialWidth)
         {
             try
             {
@@ -640,7 +620,7 @@ namespace HoyoToon.Utilities
             return new Rect(x, y, w, h);
         }
 
-        private void DrawProgressBar()
+        protected override void DrawProgressBar()
         {
             using (new EditorGUILayout.VerticalScope())
             {
@@ -723,13 +703,7 @@ namespace HoyoToon.Utilities
             }
         }
 
-        private void CloseWithResult(int index)
-        {
-            try { _onResultIndex?.Invoke(index); }
-            catch (Exception ex) { HoyoToonLogger.Always("Manager", $"Dialog callback exception: {ex}", LogType.Exception); }
-            if (!_keepOpenOnClick)
-                Close();
-        }
+        // CloseWithResult is inherited from base
     }
 }
 #endif

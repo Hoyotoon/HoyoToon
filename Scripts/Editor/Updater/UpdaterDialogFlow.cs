@@ -43,9 +43,9 @@ namespace HoyoToon.Updater
             _ = RunDebugAsync(win);
         }
 
-        private static async Task RunDebugAsync(HoyoToonDialogWindow win)
+        private static Task RunDebugAsync(HoyoToonDialogWindow win)
         {
-            if (win == null) return;
+            if (win == null) return Task.CompletedTask;
 
             // Fake local/remote versions
             var local = new PackageInfo { version = "1.2.3" };
@@ -118,6 +118,8 @@ namespace HoyoToon.Updater
                 win.SetMessage(done.ToString());
                 win.SetButtons(new[] { "Close" }, 0, 0, _ => { }, keepOpenOnClick: false);
             }, keepOpenOnClick: true);
+
+            return Task.CompletedTask;
         }
 
         private static string BuildLargeMarkdownChangelog(string version, int sections)

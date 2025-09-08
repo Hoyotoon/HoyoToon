@@ -104,6 +104,7 @@ namespace HoyoToon.Updater
                 {
                     if (item.path.Equals(_settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
                     if (item.path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+                    if (IsExcludedPath(item.path)) continue; // skip .github, .gitignore, etc.
                     remoteFiles[item.path] = item;
                 }
 
@@ -142,6 +143,7 @@ namespace HoyoToon.Updater
                 {
                     foreach (var tracked in result.tracker.trackedFiles)
                     {
+                        if (IsExcludedPath(tracked)) continue;
                         if (!remoteFiles.ContainsKey(tracked))
                         {
                             result.batch.filesToDelete.Add(tracked);
@@ -184,6 +186,7 @@ namespace HoyoToon.Updater
                             {
                                 var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
                                 if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
+                                if (IsExcludedPath(rel)) continue; // don't touch excluded artifacts during clean
                                 var assetPathClean = ToAssetPath(fullPath);
                                 if (!string.IsNullOrEmpty(assetPathClean))
                                 {
@@ -215,6 +218,7 @@ namespace HoyoToon.Updater
                     {
                     foreach (var update in batch.fileUpdates)
                     {
+                        if (IsExcludedPath(update.path)) { completed++; if (progress != null) progress.Report("Skipping Excluded", update.path, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping Excluded", update.path, (float)completed / total); continue; }
                         var bytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
                             ? await api.DownloadRawAtCommitAsync(update.path, batch.sourceCommitSha)
                             : await api.DownloadRawAsync(update.path);
@@ -233,6 +237,7 @@ namespace HoyoToon.Updater
 
                     foreach (var deletion in batch.filesToDelete)
                     {
+                        if (IsExcludedPath(deletion)) { completed++; if (progress != null) progress.Report("Skipping Excluded", deletion, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping Excluded", deletion, (float)completed / total); continue; }
                         var fullDel = Path.Combine(_toolRoot, deletion);
                         var assetPathDel = ToAssetPath(fullDel);
                         if (!string.IsNullOrEmpty(assetPathDel))
@@ -316,6 +321,23 @@ namespace HoyoToon.Updater
                 return a > b;
             }
             catch { return string.Compare(newVersion, currentVersion, StringComparison.OrdinalIgnoreCase) > 0; }
+        }
+
+        private static bool IsExcludedPath(string rel)
+        {
+            if (string.IsNullOrEmpty(rel)) return true;
+            var p = rel.Replace("\\", "/");
+            // Exclude top-level dotfiles and known dot-directories
+            if (p.StartsWith(".github/", StringComparison.OrdinalIgnoreCase)) return true;
+            if (p.StartsWith(".git/", StringComparison.OrdinalIgnoreCase)) return true;
+            if (p.StartsWith(".vscode/", StringComparison.OrdinalIgnoreCase)) return true;
+            if (p.StartsWith(".idea/", StringComparison.OrdinalIgnoreCase)) return true;
+            // Exclude common VCS/editor config files at any level (allow .gitignore to pass through)
+            var fileName = System.IO.Path.GetFileName(p);
+            if (fileName.Equals(".gitattributes", StringComparison.OrdinalIgnoreCase)) return true;
+            if (fileName.Equals(".gitmodules", StringComparison.OrdinalIgnoreCase)) return true;
+            if (fileName.Equals(".editorconfig", StringComparison.OrdinalIgnoreCase)) return true;
+            return false;
         }
     }
 }

@@ -191,7 +191,7 @@ namespace HoyoToon.Utilities
 
             if (_cardStyle == null)
             {
-                _cardStyle = new GUIStyle("HelpBox")
+                _cardStyle = new GUIStyle(EditorStyles.helpBox)
                 {
                     padding = new RectOffset(8, 8, 8, 6)
                 };
@@ -207,7 +207,7 @@ namespace HoyoToon.Utilities
 
             if (_messageContainerStyle == null)
             {
-                _messageContainerStyle = new GUIStyle("HelpBox")
+                _messageContainerStyle = new GUIStyle(EditorStyles.helpBox)
                 {
                     padding = new RectOffset(8, 8, 6, 6)
                 };
@@ -383,7 +383,7 @@ namespace HoyoToon.Utilities
         }
 
         /// <summary>Estimate sizes and set an initial position/minSize before showing.</summary>
-        protected void PreSizeBeforeShow(float initialWidth)
+        protected virtual void PreSizeBeforeShow(float initialWidth)
         {
             try
             {
@@ -565,7 +565,7 @@ namespace HoyoToon.Utilities
             EditorGUI.DrawRect(r, c);
         }
 
-        private void DrawProgressBar()
+        protected virtual void DrawProgressBar()
         {
             using (new EditorGUILayout.VerticalScope())
             {

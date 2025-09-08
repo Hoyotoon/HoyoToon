@@ -1,9 +1,8 @@
-# HoyoToon 0.0.6
+# HoyoToon 0.0.7
 
 ## Scripts:
 
-- Early version of `MaterialDetection` utility added for standalone detection of game and shader from JSON data.
-- Updated `IJsonParsingService` and `Utf8JsonParsingService` to use vendored Utf8Json for high-performance JSON parsing.
-- Updated `JsonConfigService` to read `Resources` key in `HoyoToonAPIConfig.json` for game configurations.
-- Menu action added under `HoyoToon/Detect Game Shader` for testing material detection from selected JSON or multiple.
-- Removed Newtonsoft.Json dependency. Utf8Json is now vendored in `Scripts/Editor/Utf8Json.dll`.
+- **MaterialDetection.cs**:
+  - Added high-level method `DetectGameAutoOnly` to detect only the game key and return the source JSON path, useful for context scans.
+  - Streamlined detection methods by introducing high-level auto methods while retaining low-level Try\* methods for explicit control.
+  - Added comments to clarify the purpose of context helpers and recommended usage of `DetectFromContextPathWithSource` to retain provenance.
