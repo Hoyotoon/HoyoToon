@@ -89,10 +89,14 @@
         "_Lut2DTex": "LUT_HSR"
       },
       "TextureImportSettings": {
+        "Defaults": {
+          "SRGBTexture": true,
+          "MipmapEnabled": false,
+          "TextureCompression": "Uncompressed"
+        },
         "NameEquals": {
           "LUT_HSR": {
             "SRGBTexture": false,
-            "MipmapEnabled": false,
             "TextureCompression": "Uncompressed"
           }
         },
@@ -110,19 +114,45 @@
           },
           "materialidvalueslut": {
             "SRGBTexture": false,
-            "NPOTScale": "None"
+            "NPOTScale": "None",
+            "MipmapEnabled": false
           },
           "Stockings": {
             "SRGBTexture": false
           },
           "Warm_Ramp": {
             "SRGBTexture": true,
-            "MipmapEnabled": false,
             "TextureCompression": "Uncompressed"
           },
           "Cool_Ramp": {
             "SRGBTexture": true,
-            "MipmapEnabled": false,
+            "TextureCompression": "Uncompressed"
+          },
+          "Dissolve": {
+            "SRGBTexture": true
+          },
+          "lightmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false
+          },
+          "diffuse": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false
+          },
+          "_Color": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false
+          },
+          "normalmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false
+          },
+          "_Mask": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false
+          },
+          "Weapon_Ramp": {
+            "SRGBTexture": true,
             "TextureCompression": "Uncompressed"
           }
         },

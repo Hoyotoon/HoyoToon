@@ -49,6 +49,8 @@ namespace HoyoToon.API
     [Serializable]
     public class TextureImportSettings
     {
+        // Defaults applied first for all textures before specific matches
+        public TextureImportRule Defaults { get; set; } = new TextureImportRule();
         // Exact name match rules
         public Dictionary<string, TextureImportRule> NameEquals { get; set; } = new Dictionary<string, TextureImportRule>();
         // Substring match rules
@@ -67,6 +69,12 @@ namespace HoyoToon.API
         public string NPOTScale { get; set; } // e.g., None
         public string TextureType { get; set; } // e.g., Default
         public string Compression { get; set; } // optional alternative naming
+
+        // Additional options aligned with legacy manager for parity
+        public bool? StreamingMipmaps { get; set; }
+        public string WrapMode { get; set; } // TextureWrapMode enum name
+        public int? MaxTextureSize { get; set; }
+        public string FilterMode { get; set; } // FilterMode enum name
     }
 }
 #endif

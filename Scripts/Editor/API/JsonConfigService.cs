@@ -27,8 +27,6 @@ namespace HoyoToon.API.Services
 
         private string _configPath;
         private APIModel _modelCache;
-        private Dictionary<string, GameConfig> _gamesCache;
-    private Dictionary<string, GameMetadata> _gameMetadataCache;
 
         public string ConfigPath
         {
@@ -44,30 +42,30 @@ namespace HoyoToon.API.Services
 
         public IReadOnlyDictionary<string, GameConfig> GetGames()
         {
-            if (_gamesCache != null) return _gamesCache;
-            LoadModel();
-            _gamesCache = new Dictionary<string, GameConfig>(StringComparer.Ordinal);
+            // Always reload from disk to ensure latest
+            Reload();
+            var map = new Dictionary<string, GameConfig>(StringComparer.OrdinalIgnoreCase);
             var list = _modelCache.Resources ?? new List<GameConfig>();
             foreach (var g in list)
             {
                 if (string.IsNullOrWhiteSpace(g?.Key)) continue;
-                _gamesCache[g.Key] = g;
+                map[g.Key] = g;
             }
-            return _gamesCache;
+            return map;
         }
 
         public IReadOnlyDictionary<string, GameMetadata> GetGameMetadata()
         {
-            if (_gameMetadataCache != null) return _gameMetadataCache;
-            LoadModel();
-            _gameMetadataCache = new Dictionary<string, GameMetadata>(StringComparer.Ordinal);
+            // Always reload from disk to ensure latest
+            Reload();
+            var map = new Dictionary<string, GameMetadata>(StringComparer.OrdinalIgnoreCase);
             var list = _modelCache.Games ?? new List<GameMetadata>();
             foreach (var g in list)
             {
                 if (string.IsNullOrWhiteSpace(g?.Key)) continue;
-                _gameMetadataCache[g.Key] = g;
+                map[g.Key] = g;
             }
-            return _gameMetadataCache;
+            return map;
         }
 
         public void SaveGames(IEnumerable<GameConfig> games)
@@ -76,7 +74,7 @@ namespace HoyoToon.API.Services
             var items = new List<GameConfig>(games ?? Array.Empty<GameConfig>());
             _modelCache.Resources = items; // write preferred section only
             WriteModel();
-            _gamesCache = null;
+            // no cache retained
         }
 
         public void SaveGameMetadata(IEnumerable<GameMetadata> games)
@@ -85,14 +83,12 @@ namespace HoyoToon.API.Services
             var items = new List<GameMetadata>(games ?? Array.Empty<GameMetadata>());
             _modelCache.Games = items;
             WriteModel();
-            _gameMetadataCache = null;
+            // no cache retained
         }
 
         public void Reload()
         {
             _modelCache = null;
-            _gamesCache = null;
-            _gameMetadataCache = null;
             LoadModel();
         }
 
@@ -112,6 +108,7 @@ namespace HoyoToon.API.Services
                 {
                     _modelCache = JsonSerializer.Deserialize<APIModel>(json) ?? new APIModel();
                 }
+                // timestamp not needed when reloading each call
             }
             catch (Exception ex)
             {
@@ -131,6 +128,7 @@ namespace HoyoToon.API.Services
                 var json = JsonSerializer.PrettyPrint(JsonSerializer.Serialize(_modelCache));
                 File.WriteAllText(path, json);
                 AssetDatabase.Refresh();
+                // timestamp not needed when reloading each call
             }
             catch (Exception ex)
             {

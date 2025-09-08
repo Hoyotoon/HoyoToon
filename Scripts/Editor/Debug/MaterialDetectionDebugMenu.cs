@@ -93,6 +93,44 @@ namespace HoyoToon.Debugging
             HoyoToonDialogWindow.ShowInfo("HoyoToon Detection", report.ToString());
         }
 
+        [MenuItem("Assets/HoyoToon/Detect Game & Shader (All JSONs)", false, 2001)]
+        private static void Menu_DetectForSelection_AllJsons()
+        {
+            var selected = Selection.objects;
+            if (selected == null || selected.Length == 0)
+            {
+                HoyoToonDialogWindow.ShowInfo("HoyoToon Detection (All)", "Select one or more items (folders or assets). We'll scan all nearby Materials JSONs.");
+                return;
+            }
+
+            int ok = 0, total = 0;
+            var report = new StringBuilder();
+            report.AppendLine("# HoyoToon Detection Report (All JSONs)\n");
+            foreach (var obj in selected)
+            {
+                var path = AssetDatabase.GetAssetPath(obj);
+                if (string.IsNullOrEmpty(path)) continue;
+
+                var results = MaterialDetection.DetectGameAndShaderAutoWithSourceMany(obj, null);
+                if (results == null || results.Count == 0)
+                {
+                    report.AppendLine($"- **{obj.name}**: No JSONs detected in context\n");
+                    continue;
+                }
+
+                report.AppendLine($"## {obj.name}\n");
+                foreach (var (game, shaderPath, src) in results)
+                {
+                    total++;
+                    if (!string.IsNullOrEmpty(game)) ok++;
+                    var rel = MakeProjectPathRelative(src);
+                    report.AppendLine($"- JSON: `{rel}`\n  - Game: {game}\n  - Shader: `{shaderPath}`\n");
+                }
+            }
+            report.AppendLine($"\n---\nProcessed {total} JSON(s), detected: {ok}.");
+            HoyoToonDialogWindow.ShowInfo("HoyoToon Detection (All)", report.ToString());
+        }
+
         // Helper: convert absolute path under project to Assets-relative for nicer display
         private static string MakeProjectPathRelative(string fullPath)
         {

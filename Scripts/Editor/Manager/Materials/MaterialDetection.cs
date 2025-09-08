@@ -52,6 +52,100 @@ namespace HoyoToon.API
 
             return (null, null, null);
         }
+
+        /// <summary>
+        /// Overload: optionally return all results discovered; when selectAll=true, the tuple return is the first (closest) result.
+        /// </summary>
+        public static (string gameKey, string shaderPath, string sourceJson) DetectGameAndShaderAutoWithSource(UnityEngine.Object assetOrNull, string pathOrJson, bool selectAll, out IReadOnlyList<(string gameKey, string shaderPath, string sourceJson)> all)
+        {
+            all = DetectGameAndShaderAutoWithSourceMany(assetOrNull, pathOrJson);
+            if (selectAll)
+            {
+                return all != null && all.Count > 0 ? all[0] : (null, null, null);
+            }
+            else
+            {
+                return DetectGameAndShaderAutoWithSource(assetOrNull, pathOrJson);
+            }
+        }
+
+        /// <summary>
+        /// Detect Game/Shader for potentially multiple JSONs discovered from the given context.
+        /// - If a JSON string is provided, returns a single result.
+        /// - If a JSON file path is provided, returns a single result.
+        /// - If a folder/asset path or Unity object is provided, scans nearby Materials for ALL JSON files and returns per-JSON detections.
+        /// </summary>
+        public static IReadOnlyList<(string gameKey, string shaderPath, string sourceJson)> DetectGameAndShaderAutoWithSourceMany(UnityEngine.Object assetOrNull = null, string pathOrJson = null)
+        {
+            var results = new List<(string gameKey, string shaderPath, string sourceJson)>();
+
+            // Prefer explicit string input
+            if (!string.IsNullOrWhiteSpace(pathOrJson))
+            {
+                if (LooksLikeJson(pathOrJson))
+                {
+                    if (TryDetectFromJson(pathOrJson, out var g, out var s, out _, out _))
+                        results.Add((g, s, "<raw-json>"));
+                    return results;
+                }
+
+                var p = pathOrJson;
+                if (p.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    var abs = ToAbsolutePath(p);
+                    if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _))
+                        results.Add((g, s, abs));
+                    return results;
+                }
+
+                // Context scan for many
+                return DetectManyFromContextPath(p);
+            }
+
+            if (assetOrNull != null)
+            {
+                var assetPath = AssetDatabase.GetAssetPath(assetOrNull);
+                return DetectManyFromContextPath(assetPath);
+            }
+
+            return results;
+        }
+
+        private static IReadOnlyList<(string gameKey, string shaderPath, string sourceJson)> DetectManyFromContextPath(string assetPath)
+        {
+            var list = new List<(string gameKey, string shaderPath, string sourceJson)>();
+            if (string.IsNullOrWhiteSpace(assetPath)) return list;
+
+            // Direct JSON file path
+            if (assetPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                var abs = ToAbsolutePath(assetPath);
+                if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _)) list.Add((g, s, abs));
+                return list;
+            }
+
+            if (!TryFindWorkspaceRootAndMaterials(assetPath, out var rootDir, out var materialsDir))
+                return list;
+
+            try
+            {
+                var startDir = Directory.Exists(assetPath) ? assetPath : Path.GetDirectoryName(ToAbsolutePath(assetPath));
+                var jsons = Directory.EnumerateFiles(materialsDir, "*.json", SearchOption.AllDirectories)
+                    .Select(p => new { path = p, dist = DirDistance(startDir, Path.GetDirectoryName(ToAbsolutePath(p))) })
+                    .OrderBy(x => x.dist)
+                    .Select(x => x.path);
+
+                foreach (var jsonPath in jsons)
+                {
+                    var abs = ToAbsolutePath(jsonPath);
+                    if (TryDetectFromJsonFile(abs, out var game, out var shaderPath, out _, out _))
+                        list.Add((game, shaderPath, abs));
+                }
+            }
+            catch { }
+
+            return list;
+        }
         /// <summary>
         /// Detect Game/Shader (no provenance). Wrapper over DetectGameAndShaderAutoWithSource.
         /// </summary>
@@ -235,7 +329,7 @@ namespace HoyoToon.API
 
         private static HashSet<string> ExtractKeySet(MaterialJsonStructure data)
         {
-            var set = new HashSet<string>(StringComparer.Ordinal);
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
             if (data.IsUnityFormat && data.m_SavedProperties != null)
             {

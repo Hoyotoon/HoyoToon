@@ -1,8 +1,11 @@
-# HoyoToon 0.0.7
+# HoyoToon 0.0.8
 
 ## Scripts:
 
-- **MaterialDetection.cs**:
-  - Added high-level method `DetectGameAutoOnly` to detect only the game key and return the source JSON path, useful for context scans.
-  - Streamlined detection methods by introducing high-level auto methods while retaining low-level Try\* methods for explicit control.
-  - Added comments to clarify the purpose of context helpers and recommended usage of `DetectFromContextPathWithSource` to retain provenance.
+- System to Apply Texture Import Settings based on rules defined in `HoyoToonAPIConfig.json`.json:
+  - Exact name matches
+  - Substring matches
+  - Suffix matches
+- Removed mipmap settings from specific texture rules, relying on defaults or Unity's own import settings instead.
+- Added a "Defaults" section in texture import settings to apply common settings to all textures before specific rules.
+- Updated package metadata to version 0.0.8 with improved description and dependencies.
