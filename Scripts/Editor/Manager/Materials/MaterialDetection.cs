@@ -21,7 +21,7 @@ namespace HoyoToon.API
         /// Detect Game/Shader from a JSON string, a JSON path, or by scanning context; also returns the source JSON path.
         /// When both parameters are provided, 'pathOrJson' takes precedence.
         /// </summary>
-        public static (string gameKey, string shaderPath, string sourceJson) DetectGameAndShaderAutoWithSource(UnityEngine.Object assetOrNull = null, string pathOrJson = null)
+    public static (string gameKey, string shaderPath, string sourceJson) DetectGameAndShaderAutoWithSource(UnityEngine.Object assetOrNull = null, string pathOrJson = null)
         {
             // Prefer explicit string input
             if (!string.IsNullOrWhiteSpace(pathOrJson))
@@ -29,7 +29,10 @@ namespace HoyoToon.API
                 if (LooksLikeJson(pathOrJson))
                 {
                     if (TryDetectFromJson(pathOrJson, out var g, out var s, out _, out _))
+                    {
+                        HoyoToonLogger.APIInfo($"Detection (raw JSON): Game='{g}', Shader='{s}'");
                         return (g, s, "<raw-json>");
+                    }
                     return (null, null, null);
                 }
 
@@ -38,7 +41,10 @@ namespace HoyoToon.API
                 {
                     var abs = ToAbsolutePath(p);
                     if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _))
+                    {
+                        HoyoToonLogger.APIInfo($"Detection (file): Game='{g}', Shader='{s}', JSON='{abs}'");
                         return (g, s, abs);
+                    }
                     return (null, null, null);
                 }
                 return DetectFromContextPathWithSource(p);
@@ -47,26 +53,13 @@ namespace HoyoToon.API
             if (assetOrNull != null)
             {
                 var assetPath = AssetDatabase.GetAssetPath(assetOrNull);
-                return DetectFromContextPathWithSource(assetPath);
+                var result = DetectFromContextPathWithSource(assetPath);
+                if (!string.IsNullOrEmpty(result.gameKey))
+                    HoyoToonLogger.APIInfo($"Detection (context): Game='{result.gameKey}', Shader='{result.shaderPath}', JSON='{result.sourceJson}'");
+                return result;
             }
 
             return (null, null, null);
-        }
-
-        /// <summary>
-        /// Overload: optionally return all results discovered; when selectAll=true, the tuple return is the first (closest) result.
-        /// </summary>
-        public static (string gameKey, string shaderPath, string sourceJson) DetectGameAndShaderAutoWithSource(UnityEngine.Object assetOrNull, string pathOrJson, bool selectAll, out IReadOnlyList<(string gameKey, string shaderPath, string sourceJson)> all)
-        {
-            all = DetectGameAndShaderAutoWithSourceMany(assetOrNull, pathOrJson);
-            if (selectAll)
-            {
-                return all != null && all.Count > 0 ? all[0] : (null, null, null);
-            }
-            else
-            {
-                return DetectGameAndShaderAutoWithSource(assetOrNull, pathOrJson);
-            }
         }
 
         /// <summary>
@@ -85,7 +78,10 @@ namespace HoyoToon.API
                 if (LooksLikeJson(pathOrJson))
                 {
                     if (TryDetectFromJson(pathOrJson, out var g, out var s, out _, out _))
+                    {
                         results.Add((g, s, "<raw-json>"));
+                        HoyoToonLogger.APIInfo($"DetectionMany (raw JSON): Game='{g}', Shader='{s}'");
+                    }
                     return results;
                 }
 
@@ -94,7 +90,10 @@ namespace HoyoToon.API
                 {
                     var abs = ToAbsolutePath(p);
                     if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _))
+                    {
                         results.Add((g, s, abs));
+                        HoyoToonLogger.APIInfo($"DetectionMany (file): Game='{g}', Shader='{s}', JSON='{abs}'");
+                    }
                     return results;
                 }
 
@@ -105,7 +104,13 @@ namespace HoyoToon.API
             if (assetOrNull != null)
             {
                 var assetPath = AssetDatabase.GetAssetPath(assetOrNull);
-                return DetectManyFromContextPath(assetPath);
+                var list = DetectManyFromContextPath(assetPath) ?? new List<(string, string, string)>();
+                foreach (var (g, s, src) in list)
+                {
+                    if (!string.IsNullOrEmpty(g))
+                        HoyoToonLogger.APIInfo($"DetectionMany (context): Game='{g}', Shader='{s}', JSON='{src}'");
+                }
+                return list;
             }
 
             return results;
@@ -329,7 +334,7 @@ namespace HoyoToon.API
 
         private static HashSet<string> ExtractKeySet(MaterialJsonStructure data)
         {
-            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var set = new HashSet<string>(StringComparer.Ordinal);
 
             if (data.IsUnityFormat && data.m_SavedProperties != null)
             {
@@ -384,7 +389,7 @@ namespace HoyoToon.API
 
         
         // --- Context helpers ---
-        private static (string gameKey, string shaderPath, string sourceJson) DetectFromContextPathWithSource(string assetPath)
+    private static (string gameKey, string shaderPath, string sourceJson) DetectFromContextPathWithSource(string assetPath)
         {
             if (string.IsNullOrWhiteSpace(assetPath)) return (null, null, null);
 

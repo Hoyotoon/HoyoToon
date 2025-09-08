@@ -34,8 +34,11 @@ namespace HoyoToon.API
     // Import rules grouped by name matching strategies
     public TextureImportSettings TextureImportSettings { get; set; } = new TextureImportSettings();
 
-        // Categories like Face, Hair, Eye, etc. (optional)
-        public List<string> MaterialCategories { get; set; } = new List<string>();
+    // Model (FBX) importer defaults and rules
+    public ModelImportSettings ModelImportSettings { get; set; } = new ModelImportSettings();
+
+    // Categories like Face, Hair, Eye, etc. (optional)
+    public List<string> MaterialCategories { get; set; } = new List<string>();
     }
 
     [Serializable]
@@ -75,6 +78,54 @@ namespace HoyoToon.API
         public string WrapMode { get; set; } // TextureWrapMode enum name
         public int? MaxTextureSize { get; set; }
         public string FilterMode { get; set; } // FilterMode enum name
+    }
+
+    [Serializable]
+    public class ModelImportSettings
+    {
+        // For now we support only a Defaults block to keep things simple and predictable
+        public ModelImportRule Defaults { get; set; } = new ModelImportRule();
+    }
+
+    /// <summary>
+    /// JSON-driven FBX importer defaults; string enums map to Unity's ModelImporter enums.
+    /// Nullable fields mean "only apply when present".
+    /// </summary>
+    [Serializable]
+    public class ModelImportRule
+    {
+        // MODEL TAB
+        public float? ScaleFactor { get; set; }
+        public bool? UseFileScale { get; set; }
+        public bool? ImportBlendShapes { get; set; }
+        public bool? ImportVisibility { get; set; }
+        public bool? ImportCameras { get; set; }
+        public bool? ImportLights { get; set; }
+        public bool? IsReadable { get; set; }
+        public bool? OptimizeMeshPolygons { get; set; }
+        public bool? OptimizeMeshVertices { get; set; }
+        public string Normals { get; set; } // ModelImporterNormals
+        public string Tangents { get; set; } // ModelImporterTangents
+
+        // RIG TAB
+        public string AnimationType { get; set; } // ModelImporterAnimationType
+        public string AvatarSetup { get; set; }   // ModelImporterAvatarSetup
+        public bool? BakeAxisConversion { get; set; }
+        // Optional future: public string SourceAvatarGUID { get; set; }
+
+        // ANIMATION TAB
+        public bool? ImportAnimation { get; set; }
+        public string AnimationCompression { get; set; } // ModelImporterAnimationCompression
+        public bool? ResampleCurves { get; set; }
+
+        // MATERIALS TAB
+        public string MaterialImportMode { get; set; }   // ModelImporterMaterialImportMode
+        public string MaterialSearch { get; set; }       // ModelImporterMaterialSearch
+        public string MaterialName { get; set; }         // ModelImporterMaterialName
+        public string MaterialLocation { get; set; }     // ModelImporterMaterialLocation
+
+        // Extra (non-public) flag: legacy compute normals when mesh has blendshapes
+        public bool? LegacyBlendshapeNormals { get; set; }
     }
 }
 #endif

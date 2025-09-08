@@ -85,6 +85,12 @@
           "TangentIgnore"
         ]
       },
+      "ModelImportSettings": {
+        "Defaults": {
+          "ScaleFactor": 1.0,
+          "LegacyBlendshapeNormals": true
+        }
+      },
       "TextureMappings": {
         "_Lut2DTex": "LUT_HSR"
       },
