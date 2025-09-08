@@ -7,7 +7,6 @@ using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
-using Newtonsoft.Json.Linq;
 using UnityEngine;
 using HoyoToon.Utilities;
 
@@ -195,15 +194,9 @@ namespace HoyoToon
                     if (response.IsSuccessStatusCode)
                     {
                         var content = await response.Content.ReadAsStringAsync();
-                        
-                        // Try to parse as JSON
-                        if (content.StartsWith("{"))
-                        {
-                            var json = JObject.Parse(content);
-                            // Parse the JSON response to extract file information
-                            // This would need specific implementation based on the actual API response
-                            HoyoToonLogger.ResourcesInfo($"OCS API response from {apiUrl}: {content}");
-                        }
+                        // For now simply log the response; specific parsing can be implemented as needed
+                        if (!string.IsNullOrEmpty(content))
+                            HoyoToonLogger.ResourcesInfo($"OCS API response from {apiUrl}: {content.Substring(0, Math.Min(500, content.Length))}...");
                     }
                 }
                 catch (Exception ex)

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Newtonsoft.Json;
+using System.Runtime.Serialization;
 
 namespace HoyoToon
 {
@@ -8,18 +8,19 @@ namespace HoyoToon
     /// Data structure for tracking cached resources and their metadata
     /// </summary>
     [Serializable]
+    [DataContract]
     public class HoyoToonResourceCacheData
     {
-        [JsonProperty("version")]
+        [DataMember(Name = "version")]
         public string Version { get; set; } = "1.0.0";
 
-        [JsonProperty("lastUpdateCheck")]
+        [DataMember(Name = "lastUpdateCheck")]
         public DateTime LastUpdateCheck { get; set; } = DateTime.MinValue;
 
-        [JsonProperty("games")]
+        [DataMember(Name = "games")]
         public Dictionary<string, GameResourceData> Games { get; set; } = new Dictionary<string, GameResourceData>();
 
-        [JsonProperty("updateCheckInterval")]
+        [DataMember(Name = "updateCheckInterval")]
         public TimeSpan UpdateCheckInterval { get; set; } = TimeSpan.FromHours(6);
 
         /// <summary>
@@ -56,23 +57,24 @@ namespace HoyoToon
     /// Resource data for a specific game
     /// </summary>
     [Serializable]
+    [DataContract]
     public class GameResourceData
     {
-        [JsonProperty("gameKey")]
+        [DataMember(Name = "gameKey")]
         public string GameKey { get; set; }
 
-        [JsonProperty("webdavUrl")]
+        [DataMember(Name = "webdavUrl")]
         public string WebdavUrl { get; set; }
 
-        [JsonProperty("lastSync")]
+        [DataMember(Name = "lastSync")]
         public DateTime LastSync { get; set; } = DateTime.MinValue;
 
-        [JsonProperty("files")]
+        [DataMember(Name = "files")]
         public Dictionary<string, CachedFileInfo> Files { get; set; } = new Dictionary<string, CachedFileInfo>();
 
-        [JsonProperty("totalDownloaded")]
+        [DataMember(Name = "totalDownloaded")]
         public long TotalDownloaded { get; set; } = 0;
-        [JsonProperty("downloadErrors")]
+        [DataMember(Name = "downloadErrors")]
         public List<string> DownloadErrors { get; set; } = new List<string>();
 
         /// <summary>
@@ -141,30 +143,31 @@ namespace HoyoToon
     /// Information about a cached file
     /// </summary>
     [Serializable]
+    [DataContract]
     public class CachedFileInfo
     {
-        [JsonProperty("relativePath")]
+        [DataMember(Name = "relativePath")]
         public string RelativePath { get; set; }
 
-        [JsonProperty("localPath")]
+        [DataMember(Name = "localPath")]
         public string LocalPath { get; set; }
 
-        [JsonProperty("fileSize")]
+        [DataMember(Name = "fileSize")]
         public long FileSize { get; set; }
 
-        [JsonProperty("checksum")]
+        [DataMember(Name = "checksum")]
         public string Checksum { get; set; }
 
-        [JsonProperty("lastModified")]
+        [DataMember(Name = "lastModified")]
         public DateTime LastModified { get; set; }
 
-        [JsonProperty("downloadDate")]
+        [DataMember(Name = "downloadDate")]
         public DateTime DownloadDate { get; set; }
 
-        [JsonProperty("remoteEtag")]
+        [DataMember(Name = "remoteEtag")]
         public string RemoteEtag { get; set; }
 
-        [JsonProperty("isValid")]
+        [DataMember(Name = "isValid")]
         public bool CachedValid { get; set; } = true;
 
         /// <summary>

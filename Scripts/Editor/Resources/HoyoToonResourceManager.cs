@@ -8,7 +8,8 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
-using Newtonsoft.Json;
+using Utf8Json;
+using HoyoToon.API;
 using HoyoToon.Utilities;
 using System.Xml.Linq;
 using System.Text;
@@ -49,8 +50,12 @@ namespace HoyoToon
                 {
                     if (File.Exists(CacheDataPath))
                     {
-                        string json = File.ReadAllText(CacheDataPath);
-                        _cacheData = JsonConvert.DeserializeObject<HoyoToonResourceCacheData>(json);
+                        if (!HoyoToonApi.Parser.TryParseFile<HoyoToonResourceCacheData>(CacheDataPath, out var data, out var parseError) || data == null)
+                        {
+                            HoyoToonLogger.ResourcesWarning($"Failed to parse cache JSON with Utf8Json: {parseError}. Reinitializing cache.");
+                            data = new HoyoToonResourceCacheData();
+                        }
+                        _cacheData = data;
                         HoyoToonLogger.ResourcesInfo("Resource cache data loaded successfully.");
                     }
                     else
@@ -84,8 +89,8 @@ namespace HoyoToon
                         Directory.CreateDirectory(directoryPath);
                     }
 
-                    string json = JsonConvert.SerializeObject(_cacheData, Formatting.Indented);
-                    File.WriteAllText(CacheDataPath, json);
+                    var pretty = JsonSerializer.PrettyPrintByteArray(JsonSerializer.Serialize(_cacheData));
+                    File.WriteAllBytes(CacheDataPath, pretty);
                     HoyoToonLogger.ResourcesInfo("Resource cache data saved successfully.");
                 }
                 catch (Exception ex)

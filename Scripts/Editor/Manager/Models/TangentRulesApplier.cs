@@ -3,7 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Newtonsoft.Json;
+using Utf8Json;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon.API;
@@ -330,9 +330,9 @@ namespace HoyoToon.Manager.Models
             {
                 if (File.Exists(OriginalMeshPathsFile))
                 {
-                    var json = File.ReadAllText(OriginalMeshPathsFile);
-                    var dict = JsonConvert.DeserializeObject<Dictionary<string, Dictionary<string, string[]>>>(json);
-                    return dict ?? new Dictionary<string, Dictionary<string, string[]>>();
+                    var bytes = File.ReadAllBytes(OriginalMeshPathsFile);
+                    if (HoyoToonApi.Parser.TryParse<Dictionary<string, Dictionary<string, string[]>>>(bytes, out var dict, out var _))
+                        return dict ?? new Dictionary<string, Dictionary<string, string[]>>();
                 }
             }
             catch { }
@@ -344,8 +344,8 @@ namespace HoyoToon.Manager.Models
             try
             {
                 if (!Directory.Exists(HoyoToonFolder)) Directory.CreateDirectory(HoyoToonFolder);
-                var json = JsonConvert.SerializeObject(map, Formatting.Indented);
-                File.WriteAllText(OriginalMeshPathsFile, json);
+                var bytes = JsonSerializer.PrettyPrintByteArray(JsonSerializer.Serialize(map));
+                File.WriteAllBytes(OriginalMeshPathsFile, bytes);
             }
             catch (Exception ex)
             {

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
+using HoyoToon.API;
 
 namespace HoyoToon.Updater
 {
@@ -45,7 +46,10 @@ namespace HoyoToon.Updater
                 var path = Path.Combine(_toolRoot, _settings.packageJsonRelativePath);
                 if (File.Exists(path))
                 {
-                    return Newtonsoft.Json.JsonConvert.DeserializeObject<PackageInfo>(File.ReadAllText(path));
+                    if (HoyoToonApi.Parser.TryParseFile<PackageInfo>(path, out var pkg, out var _))
+                    {
+                        return pkg;
+                    }
                 }
             }
             catch { }

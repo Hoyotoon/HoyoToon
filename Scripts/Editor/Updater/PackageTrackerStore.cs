@@ -4,7 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Utf8Json;
+using HoyoToon.API;
 using UnityEngine;
 
 namespace HoyoToon.Updater
@@ -42,11 +43,12 @@ namespace HoyoToon.Updater
             try
             {
                 var path = CurrentTrackerPath();
-                if (File.Exists(path))
-                {
-                    return JsonConvert.DeserializeObject<LocalPackageTracker>(File.ReadAllText(path))
-                           ?? new LocalPackageTracker();
-                }
+                                if (File.Exists(path))
+                                {
+                                        var bytes = File.ReadAllBytes(path);
+                                        if (HoyoToonApi.Parser.TryParse<LocalPackageTracker>(bytes, out var tracker, out var _))
+                                                return tracker;
+                                }
             }
             catch { }
             return new LocalPackageTracker();
@@ -56,9 +58,9 @@ namespace HoyoToon.Updater
         {
             try
             {
-                var json = JsonConvert.SerializeObject(tracker, Formatting.Indented);
+                var bytes = JsonSerializer.PrettyPrintByteArray(JsonSerializer.Serialize(tracker));
                 var path = CurrentTrackerPath();
-                File.WriteAllText(path, json);
+                File.WriteAllBytes(path, bytes);
             }
             catch { }
         }

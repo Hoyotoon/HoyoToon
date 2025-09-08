@@ -5,7 +5,8 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
-using Newtonsoft.Json;
+using Utf8Json;
+using HoyoToon.API;
 
 namespace HoyoToon.Updater
 {
@@ -32,27 +33,35 @@ namespace HoyoToon.Updater
         {
             var url = $"https://api.github.com/repos/{_owner}/{_repo}/contents/{packageJsonPath}?ref={_branch}";
             var json = await _client.GetStringAsync(url);
-            var file = JsonConvert.DeserializeObject<GitFileInfo>(json);
+            GitFileInfo file = null;
+            if (!HoyoToonApi.Parser.TryParse<GitFileInfo>(Encoding.UTF8.GetBytes(json), out file, out var _))
+                return null;
             // API returns base64 with newlines, remove then decode
             var b64 = (file.content ?? string.Empty).Replace("\n", string.Empty).Replace("\r", string.Empty);
             var bytes = Convert.FromBase64String(b64);
             var text = Encoding.UTF8.GetString(bytes);
-            return JsonConvert.DeserializeObject<PackageInfo>(text);
+            if (!HoyoToonApi.Parser.TryParse<PackageInfo>(Encoding.UTF8.GetBytes(text), out var pkg, out var _))
+                return null;
+            return pkg;
         }
 
         public async Task<GitTreeResponse> GetRepoTreeAsync()
         {
             var url = $"https://api.github.com/repos/{_owner}/{_repo}/git/trees/{_branch}?recursive=1";
             var json = await _client.GetStringAsync(url);
-            return JsonConvert.DeserializeObject<GitTreeResponse>(json);
+            if (!HoyoToonApi.Parser.TryParse<GitTreeResponse>(Encoding.UTF8.GetBytes(json), out var tree, out var _))
+                return null;
+            return tree;
         }
 
         public async Task<string> GetBranchHeadShaAsync()
         {
             var url = $"https://api.github.com/repos/{_owner}/{_repo}/commits/{_branch}";
             var json = await _client.GetStringAsync(url);
-            dynamic obj = JsonConvert.DeserializeObject(json);
-            return (string)obj.sha;
+            // Minimal DTO for head commit response
+            if (!HoyoToonApi.Parser.TryParse<HeadCommit>(Encoding.UTF8.GetBytes(json), out var head, out var _))
+                return null;
+            return head.sha;
         }
 
         public async Task<byte[]> DownloadRawAsync(string relativePath)
@@ -94,7 +103,9 @@ namespace HoyoToon.Updater
                 if (resp.StatusCode == HttpStatusCode.NotFound) return null;
                 resp.EnsureSuccessStatusCode();
                 var json = await resp.Content.ReadAsStringAsync();
-                return JsonConvert.DeserializeObject<ReleaseInfo>(json);
+                if (!HoyoToonApi.Parser.TryParse<ReleaseInfo>(Encoding.UTF8.GetBytes(json), out var rel, out var _))
+                    return null;
+                return rel;
             }
         }
 
@@ -110,6 +121,11 @@ namespace HoyoToon.Updater
         }
 
         public void Dispose() => _client?.Dispose();
+
+        private class HeadCommit
+        {
+            public string sha;
+        }
     }
 }
 #endif
