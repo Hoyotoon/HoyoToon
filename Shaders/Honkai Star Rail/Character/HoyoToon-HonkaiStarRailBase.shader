@@ -139,13 +139,15 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Advanced][Sub(RimGroup)] _RimDark6 ("Rim Darken Value 0 (ID = 0)", Range(0, 1)) = 0.5
         [Advanced][Sub(RimGroup)] _RimDark7 ("Rim Darken Value 0 (ID = 0)", Range(0, 1)) = 0.5
         [Sub(RimGroup)] _Rimintensity ("Rim Intensity", Float) = 1
-        [Sub(RimGroup)] _RimFeatherWidth ("Rim Feather Width", Float) = 0.01
         [Sub(RimGroup)] _RimWidth ("RimWidth", Float) = 1
         [Sub(RimGroup)] _RimOffset ("Rim Offset", Vector) = (0,0,0,0)
         [Sub(RimGroup)] _RimEdge ("Rim Edge Base", Range(0.01, 0.02)) = 0.015
         [Sub(RimGroup)] [HDR] _FresnelColor ("FresnelColor", Color) = (0,0,0,0)
         [Sub(RimGroup)] _FresnelBSI ("Fresnel BSI", Vector) = (1,1,1,0)
         [Sub(RimGroup)] _FresnelColorStrength ("FresnelColorStrength", Float) = 1
+        [Advanced(Scripted Values)] [Sub(RimGroup)] _ES_RimLightWidth ("ES Rim Width", float) = 1.0
+        [Advanced][Sub(RimGroup)] _ES_RimLightOffset ("Rim Offset", vector) = (0,0,0,0)
+        [Advanced][Sub(RimGroup)] _ES_RimLightAddMode ("Rim Light Add Mode", Float) = 0
         // rim shadow
         [Main(RimShadowGroup, _, off, off)] _rimshadowgroup ("Rim Shadow", Float) = 0
         [Sub(RimShadowGroup)] _RimShadowCt ("Rim Shadow Ct", Float) = 1
@@ -427,6 +429,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
 
             ENDHLSL
         }
+        UsePass "VertexLit/SHADOWCASTER"
     }
     CustomEditor "LWGUI.LWGUI"
 }

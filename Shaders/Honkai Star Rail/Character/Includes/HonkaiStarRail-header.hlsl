@@ -21,6 +21,9 @@ float _HideCharaParts;
 int _ShowPartID;
 
 float _ES_CharacterToonRampMode;
+float _ES_RimLightWidth;
+float2 _ES_RimLightOffset;
+float _ES_RimLightAddMode;
 
 float _ES_LEVEL_ADJUST_ON;
 float4 _ES_LevelSkinLightColor;

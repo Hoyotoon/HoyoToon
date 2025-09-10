@@ -17,6 +17,7 @@ vertex_output base_vertex (vertex_input v)
     o.view = normalize(_WorldSpaceCameraPos.xyz - mul(unity_ObjectToWorld, v.vertex).xyz);
 
     o.ws_pos = mul(unity_ObjectToWorld, v.vertex);
+    o.opos = o.vertex;
 
     UNITY_TRANSFER_FOG(o,o.vertex);
     return o;
@@ -24,6 +25,7 @@ vertex_output base_vertex (vertex_input v)
 
 float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
 {
+    float4 fragCoord  = float4(i.opos.xyz, 1.0f / i.opos.w);
     // intialize inputs and output
     float4 color = vface ? _Color : _BackColor; 
     float4 vcol = i.color;
@@ -162,12 +164,11 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         }
         if(_ShadowBoost)
         {
-
             float boost_range = smoothstep(0.8, 0.81, shadow_area);
             float boost = lerp(_ShadowBoostVal, 1.0f, boost_range);
-            
             shadow_color.xyz = shadow_color * boost.xxx;
         }
+    output.xyz = output.xyz * shadow_color.xyz;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // moon halo
@@ -195,8 +196,7 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         float real_moon = smoothstep(_MoonDir.w, _MoonDir.z, moon_uv.x);
         float3 moon_color =  real_moon.xxx * output.xyz - output.xyz;
         moon_color = moon_area * moon_color + output.xyz;
-        output.xyz =  _UseMoonHalo ? moon_color : output.xyz;
-
+    output.xyz =  _UseMoonHalo ? moon_color : output.xyz;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // specular
@@ -227,14 +227,14 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         if(_UseMaterialValuesLUT)
         {
             specular_color[ID] = lut_speccol;
-            specular_values[ID] = lut_specval.xyz * float3(10.0f, 2.0f, 2.0f); // weird fix, not accurate to ingame code but whatever if it works it works
+            specular_values[ID] = lut_specval.xyz; // weird fix, not accurate to ingame code but whatever if it works it works
         }
 
         specular_values[ID].z = max(0.0f, specular_values[ID].z); // why would there ever be a reason for a negative specular intensity
 
 
         float3 specular = specular_base(shadow_area, ndoth, lightmap.z, specular_color[ID], specular_values[ID], _ES_SPColor, _ES_SPIntensity);
-
+    output.xyz = output.xyz + specular;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // matcap
@@ -259,7 +259,7 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         matcap_ceil = ceil(matcap_ceil);
 
         matcap.xyz = (matcap_color.xyz * matcap_ceil);
-        if(_UseMatcap)output.xyz = output * 1 /*this would be the rim shadow*/ + matcap;
+    if(_UseMatcap)output.xyz = output * 1 /*this would be the rim shadow*/ + matcap;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // emission
@@ -269,7 +269,7 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         emis_area = saturate(emis_area);
 
         float3 emission_color = _EmissionIntensity * (main_tex.xyz * _EmissionTintColor.xyz);
-        output.xyz = emis_area * (output.xyz * emission_color) + output.xyz;
+    output.xyz = emis_area * (output.xyz * emission_color) + output.xyz;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //  fresnel
@@ -279,6 +279,7 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         fresnel.x = saturate(fresnel.x);
         fresnel.xyz = (fresnel.xxx * _FresnelColor.xyz) * _FresnelColorStrength;
         fresnel = max(fresnel, 0.0f);
+    output.xyz = output.xyz + fresnel;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // bloom
@@ -318,19 +319,95 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
             bloom_intensity = bloom_array[ID];
         }  
 
-        increase_bloom(bloom_color, bloom_intensity, output.xyz);
+    increase_bloom(bloom_color, bloom_intensity, output.xyz);
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // rimlight 
-        float mode =  lerp(1.0f, lightmap.x, _RimLightMode );
-        float2 screen_pos = i.screenpos.xy / i.screenpos.w;
+
+        float4 rim_color[8] =
+        {
+            _RimColor0,
+            _RimColor1,
+            _RimColor2,
+            _RimColor3, 
+            _RimColor4,
+            _RimColor5,
+            _RimColor6,
+            _RimColor7,   
+        };
+
+        float3 rim_values[8] = // x = width, y = softness, z = type, w = dark
+        {
+            float3(_RimEdgeSoftness0, _RimType0, saturate(_RimDark0)),
+            float3(_RimEdgeSoftness1, _RimType0, saturate(_RimDark1)),
+            float3(_RimEdgeSoftness2, _RimType0, saturate(_RimDark2)),
+            float3(_RimEdgeSoftness3, _RimType0, saturate(_RimDark3)),
+            float3(_RimEdgeSoftness4, _RimType0, saturate(_RimDark4)),
+            float3(_RimEdgeSoftness5, _RimType0, saturate(_RimDark5)),
+            float3(_RimEdgeSoftness6, _RimType0, saturate(_RimDark6)),
+            float3(_RimEdgeSoftness7, _RimType0, saturate(_RimDark7)),
+        }; // they have unused id specific rim widths but just in case they do end up using them in the future ill leave them be here
+
+        if(_UseMaterialValuesLUT) 
+        {    
+            rim_values[ID].xyz = lut_rimval.yxz; 
+        }
+
+        float feather = rim_values[ID].x;
+        float type = rim_values[ID].y;
+        float dark = rim_values[ID].z;
+
+        float darkening = (shadow_area * dark + (-dark)) + 1.0f;
+
+        float mode =  lerp(1.0f, lightmap.x, _RimLightMode) * _RimWidth;
+        float normal_offset = view.z * normal.x - (view.x * normal.z);
+        normal_offset = 0.0f < normal_offset ? -1.0f : 1.0f;
+
+        float rim_width = mode * _ES_RimLightWidth;
+        rim_width = rim_width * normal_offset;
+        rim_width = rim_width * 0.0055f;
+
+        float2 screen_pos = i.screenpos.xy / i.screenpos.w;        
+
         float org_depth = GetLinearZFromZDepth_WorksWithMirrors(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screen_pos.xy), screen_pos);
+        rim_width = rim_width / org_depth;
+
+        float2 screen;
+        screen.x = (_ES_RimLightOffset.x * 0.01 + rim_width) + screen_pos.x;
+        screen.y = (_ES_RimLightOffset.y * 0.01 + screen_pos.y);
+
+        float norm_depth = LinearEyeDepth(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screen.xy)); 
+
+        float diff_depth = -org_depth + norm_depth; 
+        diff_depth = max(diff_depth, 0.01);
+        diff_depth = pow(diff_depth, _RimEdge * 10.f);
+
+        diff_depth = smoothstep(0.82, 0.9, diff_depth);
+        diff_depth = (feather < diff_depth) ? diff_depth : 0.0f;
+        float3 rColor = (rim_color[ID].xyz * diff_depth) * _Rimintensity;
+        rColor = (1.f - ndotv) * rColor;
+        float shadow_dark = dot(rColor.xyz, float3(0.212670997, 0.715160012, 0.0721689984));
+
+        shadow_dark =  saturate(darkening * shadow_dark);
+
+        float rim_ndotv = pow(max(1.f - ndotv, 0.001f), dark) + 1.0f;
+
+        float3 rim_add = (rim_color[ID].xyz * diff_depth) * _Rimintensity - output.xyz;
+        rim_add = shadow_dark * rim_add + output;
         
+        rColor = rColor * _ES_RimLightAddMode + rim_add;
+
+        float3 diff_intensity = max(output.xyz, 0.001f);
+        diff_intensity = pow(diff_intensity, rim_ndotv);
+
+        float3 rimSomething = (rim_color[ID].xyz * diff_depth) * _Rimintensity + -diff_intensity;
+        rimSomething = darkening * rimSomething + diff_intensity;
         
-        // output.xyz =  org_depth;
+        float3 rim_light = (lerp(rimSomething, diff_intensity, type)) * diff_depth;
+
+    output.xyz += rim_light;
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    output.xyz += fresnel;
-    output.xyz = output.xyz * shadow_color + specular;
+    
     if(_UseHeightLerp) heightlightlerp(i.ws_pos, output);
     return output;
 }

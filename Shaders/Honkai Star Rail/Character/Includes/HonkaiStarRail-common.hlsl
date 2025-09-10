@@ -88,9 +88,7 @@ float3 specular_base(float shadow_area, float ndoth, float lightmap_spec, float3
     float rough_thresh = specular_thresh - specular_values.y;
     specular_thresh = (specular_values.y + specular_thresh) - rough_thresh;
     specular = shadow_area * specular - rough_thresh; 
-    specular_thresh = saturate((1.0f / specular_thresh) * specular);
-    specular = (specular_thresh * - 2.0f + 3.0f) * pow(specular_thresh, 2.0f);
-    specular = (specular_color * specular_color_global) * specular * ((specular_values.z * specular_intensity_global) * 0.35f);
+    specular = smoothstep(specular_thresh, 1.f, specular) * (specular_color * specular_color_global) * (specular_values.z * specular_intensity_global);
     return specular;
 }
 
