@@ -1,0 +1,21 @@
+{
+    "name": "LWGUI",
+    "rootNamespace": "",
+    "references": [
+        "LWGUI.Runtime",
+        "LWGUI.Timeline",
+        "Unity.InternalAPIEditorBridge.020",
+        "LWGUI.Runtime.Timeline"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

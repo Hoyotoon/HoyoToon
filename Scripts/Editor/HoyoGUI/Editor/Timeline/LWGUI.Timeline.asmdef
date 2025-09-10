@@ -1,0 +1,28 @@
+{
+    "name": "LWGUI.Timeline",
+    "rootNamespace": "",
+    "references": [
+        "LWGUI.Runtime",
+        "LWGUI.Runtime.Timeline",
+        "Unity.InternalAPIEditorBridge.020",
+        "Unity.Timeline",
+        "Unity.Timeline.Editor"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [
+        {
+            "name": "com.unity.timeline",
+            "expression": "1.0.0",
+            "define": "MATERIAL_KEYWORDS_TRACK_REQUIRES_TIMELINE"
+        }
+    ],
+    "noEngineReferences": false
+}

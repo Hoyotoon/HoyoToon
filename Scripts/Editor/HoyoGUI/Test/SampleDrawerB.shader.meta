@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 7ee048c9536c0344bb8b4860595a4d9b
+ShaderImporter:
+  externalObjects: {}
+  defaultTextures:
+  - _Tex: {instanceID: 0}
+  - _AdvancedTex0: {instanceID: 0}
+  - _AdvancedTex1: {instanceID: 0}
+  - _AdvancedImage: {fileID: 2800000, guid: 63de4a0dcb29d454c89e31d4e6d0d8db, type: 3}
+  - _tex_single_line: {instanceID: 0}
+  - _tex_color: {instanceID: 0}
+  - _tex_channel: {instanceID: 0}
+  - _sRGBRamp: {instanceID: 0}
+  - _LinearRamp: {instanceID: 0}
+  nonModifiableTextures: []
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

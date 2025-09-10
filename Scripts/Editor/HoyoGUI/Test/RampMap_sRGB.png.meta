@@ -1,0 +1,127 @@
+fileFormatVersion: 2
+guid: fad186cbfd0faf2488e2edb774c6d08f
+TextureImporter:
+  internalIDToNameTable: []
+  externalObjects: {}
+  serializedVersion: 12
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 1
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 1
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 0
+  spriteExtrude: 1
+  spriteMeshType: 1
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 0
+  spriteTessellationDetail: -1
+  textureType: 0
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 3
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: 4
+    textureCompression: 0
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 3
+    buildTarget: Server
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites: []
+    outline: []
+    physicsShape: []
+    bones: []
+    spriteID: 
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    nameFileIdTable: {}
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: '{"_curves":[{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.2003910094499588,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3519061505794525,"value":0.9137465953826904,"inSlope":-1.1610162258148194,"outSlope":-1.1610162258148194,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.497556209564209,"value":0.4040227234363556,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":0.711692214012146,"inSlope":1.9705389738082886,"outSlope":1.9705389738082886,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.2003910094499588,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3519061505794525,"value":0.740675151348114,"inSlope":-0.3736116290092468,"outSlope":-0.3736116290092468,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.497556209564209,"value":0.7129190564155579,"inSlope":-0.38241732120513918,"outSlope":-0.38241732120513918,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":0.46618008613586428,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.2003910094499588,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3519061505794525,"value":0.24506132304668427,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.497556209564209,"value":0.7358490228652954,"inSlope":1.559748649597168,"outSlope":1.559748649597168,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":0.849056601524353,"inSlope":0.8733886480331421,"outSlope":0.8733886480331421,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.20000000298023225,"value":0.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3499511182308197,"value":0.13333334028720857,"inSlope":1.2060123682022095,"outSlope":1.2060123682022095,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4}]}#{"_curves":[{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.2003910094499588,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3519061505794525,"value":0.9137465953826904,"inSlope":-1.1610162258148194,"outSlope":-1.1610162258148194,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.497556209564209,"value":0.4040227234363556,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":0.711692214012146,"inSlope":1.9705389738082886,"outSlope":1.9705389738082886,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.2003910094499588,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3519061505794525,"value":0.740675151348114,"inSlope":-0.3736116290092468,"outSlope":-0.3736116290092468,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.497556209564209,"value":0.7129190564155579,"inSlope":-0.38241732120513918,"outSlope":-0.38241732120513918,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":0.46618008613586428,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.2003910094499588,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3519061505794525,"value":0.24506132304668427,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.497556209564209,"value":0.7358490228652954,"inSlope":1.559748649597168,"outSlope":1.559748649597168,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":0.849056601524353,"inSlope":0.8733886480331421,"outSlope":0.8733886480331421,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4},{"serializedVersion":"2","m_Curve":[{"serializedVersion":"3","time":0.20000000298023225,"value":0.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.3499511182308197,"value":0.13333334028720857,"inSlope":1.2060123682022095,"outSlope":1.2060123682022095,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.6422287225723267,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408},{"serializedVersion":"3","time":0.800000011920929,"value":1.0,"inSlope":0.0,"outSlope":0.0,"tangentMode":136,"weightedMode":0,"inWeight":0.3333333432674408,"outWeight":0.3333333432674408}],"m_PreInfinity":2,"m_PostInfinity":2,"m_RotationOrder":4}]}'
+  assetBundleName: 
+  assetBundleVariant: 
