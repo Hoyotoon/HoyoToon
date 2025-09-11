@@ -1,11 +1,16 @@
-# HoyoToon 0.1.0
+# HoyoToon 0.1.1
 
 ## Scripts:
 
-- Added Material Import Settings configuration to `HoyoToonAPIConfig.json` for setting default model import options.
-- Added Material Remap configuration to `HoyoToonAPIConfig.json` for remapping materials during model import.
-- Added Support for Tangent Generation Mode:
-  - `No Tangents`
-  - `Tangent Generation`
-  - `Vertex Colors`
-- Tangents has this new function where if ran on the FBX it'll modify the FBX itself to link to the tangent meshes. Meaning you can Generate Tangents once on the FBX and any future uses of the FBX in the scene will have the tangents already set up.
+- Added Material Generation (Only for HSR Base)
+  - Smart Detection so you can select any asset with the right context (JSON, folder with JSON, folder with textures, material, FBX) and it will try to generate the material(s) automatically.
+  - Added Shader GUI for easy tweaking of material properties.
+  - Added Texture Assigner to automatically assign textures to material properties based on naming conventions.
+  - Added Material Clearer to remove generated materials from selection/context.
+  - Added Texture Import Settings Applier to set texture import settings based on material property usage.
+  - Added Support for Converting properties when generating materials from JSON.
+  - Added Texture Mapping to assign a texture to a provided property name.
+
+## Honkai Star Rail
+
+- Added WIP Base Shader

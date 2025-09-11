@@ -100,7 +100,6 @@
       },
       "TextureImportSettings": {
         "Defaults": {
-          "SRGBTexture": true,
           "MipmapEnabled": false,
           "TextureCompression": "Uncompressed"
         },
