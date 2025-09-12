@@ -11,7 +11,7 @@ on:
       force_release:
         description: "Force release even if version unchanged"
         required: true
-        default: "false"
+        default: "true"
 
 permissions:
   contents: write
