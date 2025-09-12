@@ -21,6 +21,11 @@ concurrency:
   group: unity-package-build-${{ github.ref }}
   cancel-in-progress: false
 
+env:
+  # Set this to "true" to force a release even if version hasn't changed.
+  # Commit a change toggling this value (or edit via the GitHub UI) to trigger.
+  FORCE_RELEASE: "true"
+
 jobs:
   detect-version:
     name: Detect Version Change
@@ -44,12 +49,31 @@ jobs:
       - name: Determine change
         id: check
         run: |
-          FORCE='${{ github.event.inputs.force_release || '' }}'
+          INPUT_FORCE='${{ github.event.inputs.force_release || '' }}'
           CUR=${{ steps.current.outputs.version }}
 
-          # Manual force
-          if [ "$FORCE" = 'true' ]; then
-            echo "Forcing release for version $CUR"; echo 'changed=true' >> $GITHUB_OUTPUT; echo "version=$CUR" >> $GITHUB_OUTPUT; exit 0; fi
+          # Normalized boolean evaluation helper (returns 0 = true)
+          is_true() {
+            case "${1,,}" in
+              true|1|yes|on) return 0 ;;
+              *) return 1 ;;
+            esac
+          }
+
+          # Combine sources: explicit workflow_dispatch input OR global env flag
+          FORCE_SRC=""
+          if is_true "$INPUT_FORCE"; then
+            FORCE_SRC="workflow_dispatch input"
+          elif is_true "${FORCE_RELEASE}"; then
+            FORCE_SRC="FORCE_RELEASE env"
+          fi
+
+          if [ -n "$FORCE_SRC" ]; then
+            echo "Forcing release ($FORCE_SRC) for version $CUR"
+            echo 'changed=true' >> $GITHUB_OUTPUT
+            echo "version=$CUR" >> $GITHUB_OUTPUT
+            exit 0
+          fi
 
           if git rev-parse HEAD~1 >/dev/null 2>&1; then
             PREV=$(git show HEAD~1:package.json | jq -r '.version' 2>/dev/null || echo '')
@@ -91,14 +115,17 @@ jobs:
           FILE="${NAME} ${VERSION}.unitypackage"
           echo "filename=$FILE" >> $GITHUB_OUTPUT
           echo "Building $FILE"
-      
+
       - name: Create Unity package
         uses: pCYSl5EDgo/create-unitypackage@v1.2.3
         with:
           package-path: ${{ steps.meta.outputs.filename }}
+          # IMPORTANT: Each line must be an asset file path ending with its .meta counterpart implicitly; action requires .meta lines.
+          # For simplicity include the package.json and its meta (if any) plus the entire Scripts folder recursively.
+          # NOTE: You may need to expand this list to all assets you want shipped; wildcards are not supported by the action.
           include-files: |
-            ./**/*
-          # Optionally narrow include-files for a leaner package
+            package.json.meta
+          project-folder: .
 
       - name: Verify artifact
         run: |
