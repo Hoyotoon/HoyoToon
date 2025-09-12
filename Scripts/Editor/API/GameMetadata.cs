@@ -32,6 +32,10 @@ namespace HoyoToon.API
     // Texture property name -> default texture asset name mapping
     public Dictionary<string, string> TextureMappings { get; set; } = new Dictionary<string, string>();
 
+    // Per-shader property overrides: ShaderPath -> (PropertyName -> numeric value)
+    // These are applied after JSON mapping but before texture mappings/import rules.
+    public Dictionary<string, Dictionary<string, float>> PropertyOverrides { get; set; } = new Dictionary<string, Dictionary<string, float>>();
+
     // Import rules grouped by name matching strategies
     public TextureImportSettings TextureImportSettings { get; set; } = new TextureImportSettings();
 

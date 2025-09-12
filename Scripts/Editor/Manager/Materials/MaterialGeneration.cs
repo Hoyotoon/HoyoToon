@@ -53,9 +53,9 @@ namespace HoyoToon.API
 
             if (string.IsNullOrEmpty(gameKey))
             {
-                result.Error = "MaterialGeneration: Could not detect game.";
+                result.Error = "MaterialGeneration: Unsupported material JSON (no matching game metadata).";
                 HoyoToonLogger.MaterialError(result.Error);
-                return result;
+                return result; // collected by batch failure summary if enabled
             }
             if (string.IsNullOrEmpty(shaderPath))
             {
@@ -171,6 +171,9 @@ namespace HoyoToon.API
                     ApplyUnrealFormat(data, mat, meta);
                 else
                     HoyoToonLogger.MaterialWarning("MaterialGeneration: JSON did not match Unity or Unreal formats.");
+
+                // Apply explicit property overrides (after JSON assignment, before texture mappings)
+                MaterialOverrides.Apply(mat, meta);
 
                 // Final pass: configured texture mappings override assigned textures if specified
                 TextureMapping.ApplyMappings(mat, meta);

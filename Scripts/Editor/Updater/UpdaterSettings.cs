@@ -27,6 +27,13 @@ namespace HoyoToon.Updater
         // Optional: token for rate limit or private repos; leave empty by default in production
         public string githubToken => string.Empty;
 
+    // Feature flags / behavior toggles
+    // Respect entries in a local .gitignore file (located at the package root) when determining
+    // which files are eligible for deletion during update / branch clean operations.
+    // This allows developers to keep local-only development or debug folders (e.g. Dev/, Debug/)
+    // that are intentionally ignored by git without losing them on self-update.
+    public bool respectGitIgnoreForDeletions => true;
+
         // Backward-compatible helper for existing callers
         public static UpdaterSettings FindOrCreate() => Instance;
     }

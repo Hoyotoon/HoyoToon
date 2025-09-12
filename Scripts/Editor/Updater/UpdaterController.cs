@@ -65,6 +65,10 @@ namespace HoyoToon.Updater
                 batch = new UpdateBatch()
             };
 
+            // Prepare gitignore filter early for deletion-phase planning (optional; we only use it during apply, but
+            // if a file is ignored locally and missing remotely we will still list it for deletion so user sees difference.
+            // Actual protection against deletion happens in ApplyAsync.)
+
             var branch = BranchSelector.GetCurrentBranch();
             using (var api = new GitHubApiClient(_settings.repoOwner, _settings.repoName, branch, _settings.githubToken))
             {
@@ -173,6 +177,11 @@ namespace HoyoToon.Updater
             AssetDatabase.DisallowAutoRefresh();
             try
             {
+                GitIgnoreFilter gitIgnore = null;
+                if (_settings.respectGitIgnoreForDeletions)
+                {
+                    gitIgnore = GitIgnoreFilter.Load(_toolRoot);
+                }
                 var branch = BranchSelector.GetCurrentBranch();
                 using (var api = new GitHubApiClient(_settings.repoOwner, _settings.repoName, branch, _settings.githubToken))
                 {
@@ -191,6 +200,15 @@ namespace HoyoToon.Updater
                                 var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
                                 if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
                                 if (IsExcludedPath(rel)) continue; // don't touch excluded artifacts during clean
+                                if (gitIgnore != null && gitIgnore.IsIgnored(rel, false))
+                                {
+                                    Debug.Log($"[Updater] Preserving local gitignored file '{rel}' during clean.");
+                                    // Skip deletion of ignored file
+                                    removed++;
+                                    if (progress != null) progress.Report("Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
+                                    else EditorUtility.DisplayProgressBar("Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
+                                    continue;
+                                }
                                 var assetPathClean = ToAssetPath(fullPath);
                                 if (!string.IsNullOrEmpty(assetPathClean))
                                 {
@@ -242,6 +260,11 @@ namespace HoyoToon.Updater
                     foreach (var deletion in batch.filesToDelete)
                     {
                         if (IsExcludedPath(deletion)) { completed++; if (progress != null) progress.Report("Skipping Excluded", deletion, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping Excluded", deletion, (float)completed / total); continue; }
+                        if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false)) { completed++; if (progress != null) progress.Report("Skipping (gitignored)", deletion, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping (gitignored)", deletion, (float)completed / total); continue; }
+                        else if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false))
+                        {
+                            Debug.Log($"[Updater] Preserving local gitignored file '{deletion}' during apply.");
+                        }
                         var fullDel = Path.Combine(_toolRoot, deletion);
                         var assetPathDel = ToAssetPath(fullDel);
                         if (!string.IsNullOrEmpty(assetPathDel))

@@ -417,7 +417,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
             Name "Base Pass"
             Tags{ "LightMode" = "ForwardBase" }
             Cull [_CullMode]
-            Blend [_SrcBlend] [_DstBlend]
+            Blend [_SrcBlend] [_DstBlend] 
 
             HLSLPROGRAM
             #pragma vertex base_vertex

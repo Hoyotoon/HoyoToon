@@ -94,6 +94,11 @@ namespace HoyoToon.API
                         results.Add((g, s, abs));
                         HoyoToonLogger.APIInfo($"DetectionMany (file): Game='{g}', Shader='{s}', JSON='{abs}'");
                     }
+                    else
+                    {
+                        results.Add((null, null, abs));
+                        HoyoToonLogger.APIWarning($"DetectionMany (file): Unsupported JSON '{abs}'");
+                    }
                     return results;
                 }
 
@@ -126,6 +131,7 @@ namespace HoyoToon.API
             {
                 var abs = ToAbsolutePath(assetPath);
                 if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _)) list.Add((g, s, abs));
+                else list.Add((null, null, abs));
                 return list;
             }
 
@@ -145,6 +151,8 @@ namespace HoyoToon.API
                     var abs = ToAbsolutePath(jsonPath);
                     if (TryDetectFromJsonFile(abs, out var game, out var shaderPath, out _, out _))
                         list.Add((game, shaderPath, abs));
+                    else
+                        list.Add((null, null, abs));
                 }
             }
             catch { }
@@ -280,15 +288,10 @@ namespace HoyoToon.API
                 }
             }
 
-            // Fallback: if only one game configured, pick it
-            if (string.IsNullOrEmpty(bestGame) && metaMap.Count == 1)
+            // Reject if no positive evidence (score <= 0 means zero property + keyword hits)
+            if (string.IsNullOrEmpty(bestGame) || bestScore <= 0)
             {
-                bestGame = metaMap.First().Key;
-            }
-
-            if (string.IsNullOrEmpty(bestGame))
-            {
-                reason = "Could not determine game.";
+                reason = "No matching game metadata (no property / keyword hits).";
                 return false;
             }
 

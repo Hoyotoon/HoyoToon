@@ -70,8 +70,19 @@
           "_ParallaxScale"
         ]
       },
+      "ShaderBlacklist": [
+        "HoyoToon/Honkai Star Rail/Character/Weapon",
+        "HoyoToon/Honkai Star Rail/Character/Weapon_Standard"
+      ],
       "PropertyConversions": {
-        "_Test": "_Test2"
+        "_DstBlend": "_Test2"
+      },
+      "PropertyOverrides": {
+        "HoyoToon/Honkai Star Rail/Character/Base": {},
+        "HoyoToon/Honkai Star Rail/Character/Face": {},
+        "HoyoToon/Honkai Star Rail/Character/Hair": {},
+        "HoyoToon/Honkai Star Rail/Character/Transparent": {},
+        "HoyoToon/Honkai Star Rail/Character/Crystal": {}
       },
       "Tangents": {
         "Options": ["No Tangents", "Tangent Generation", "Vertex Color"],
