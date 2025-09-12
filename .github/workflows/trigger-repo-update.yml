@@ -1,0 +1,34 @@
+name: Trigger Repo Update
+
+on:
+  release:
+    types: [published, unpublished, created, edited, deleted]
+  repository_dispatch:
+    types:
+      - trigger-repo-update
+  workflow_dispatch:
+
+env:
+  triggerUpdate: ${{ true }}
+  repoOwner: "Hoyotoon"
+  repoName: "vpm"
+  repoBranch: "main"
+  workflowName: "build-listing.yml"
+  accessToken: ${{ secrets.MELIOLI_VPM }}
+
+jobs:
+  dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Repo Update
+        if: ${{ env.triggerUpdate == 'true' }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ env.accessToken }}
+          script: |
+            await github.rest.actions.createWorkflowDispatch({
+              owner: '${{ env.repoOwner }}',
+              repo: '${{ env.repoName }}',
+              workflow_id: '${{ env.workflowName }}',
+              ref: '${{ env.repoBranch }}',
+            })

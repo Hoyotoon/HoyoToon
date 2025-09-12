@@ -1,0 +1,98 @@
+name: Build Release
+
+on:
+  workflow_dispatch:
+  push:
+    branches: main
+    paths: package.json
+
+env:
+  icon_path: .github/thumbnail.png
+  triggerRepoUpdate: ${{ false }}
+
+permissions:
+  contents: write
+  actions: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Get Package Info
+        id: package-info
+        run: |
+          echo "name=$(jq -r '.name' package.json)" >> $GITHUB_OUTPUT
+          echo "version=$(jq -r '.version' package.json)" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$([[ "$(jq -r '.version' package.json)" =~ ^[0-9]+\.[0-9]+\.[0-9]+-(.+)$ ]] && echo true || echo false)" >> $GITHUB_OUTPUT
+
+      - name: Cancel Workflow if Version is 0.0.0
+        if: steps.package-info.outputs.version == '0.0.0'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            core.notice('Version is 0.0.0, requesting workflow cancellation...');
+            await github.rest.actions.cancelWorkflowRun({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: context.runId
+            });
+            core.info('Waiting for cancellation to take effect...');
+            await new Promise(resolve => setTimeout(resolve, 5000));
+
+      - name: Set Environment Variables
+        run: |
+          echo "zipFile=${{ steps.package-info.outputs.name }}_v${{ steps.package-info.outputs.version }}".zip >> $GITHUB_ENV
+          echo "unityPackage=${{ steps.package-info.outputs.name }}_v${{ steps.package-info.outputs.version }}.unitypackage" >> $GITHUB_ENV
+
+      - name: Create Package Zip
+        run: zip -x '.git/*' '.github/*' -r "/tmp/${{ env.zipFile }}" .
+
+      - name: Create UnityPackage
+        uses: foxscore/make-unitypackage@cbd3def23d6c9910b56e726b193c2363e5ca6adc
+        with:
+          path: .
+          saveTo: /tmp/${{ env.unityPackage }}
+          prefix: Packages/${{ steps.package-info.outputs.name }}/
+          icon: ${{ env.icon_path }}
+
+      - name: Create Tag
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tagName = `${{ steps.package-info.outputs.version }}`;
+            try {
+              await github.rest.git.createRef({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: `refs/tags/${tagName}`,
+                sha: context.sha
+              });
+              core.info(`Successfully created tag: ${tagName}`);
+            } catch (error) {
+              if (error.status === 422 && error.message.includes('Reference already exists')) {
+                core.setFailed(`Tag ${tagName} already exists`);
+              } else {
+                core.setFailed(`Failed to create tag: ${error.message}`);
+                throw error;
+              }
+            }
+
+      - name: Make Release
+        uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
+        with:
+          name: "${{ steps.package-info.outputs.version }}"
+          tag_name: "v${{ steps.package-info.outputs.version }}"
+          files: |
+            /tmp/${{ env.zipFile }}
+            /tmp/${{ env.unityPackage }}
+            package.json
+          prerelease: ${{ steps.package-info.outputs.is_prerelease }}
+
+      - name: Trigger VPM Repo Listing Update
+        if: ${{ env.triggerRepoUpdate == 'true' }}
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          event-type: trigger-repo-update
