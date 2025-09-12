@@ -85,6 +85,7 @@ jobs:
         with:
           name: "${{ steps.package-info.outputs.version }}"
           tag_name: "${{ steps.package-info.outputs.version }}"
+          body: changelog.md
           files: |
             /tmp/${{ env.zipFile }}
             /tmp/${{ env.unityPackage }}
