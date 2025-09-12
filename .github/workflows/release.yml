@@ -8,7 +8,7 @@ on:
 
 env:
   icon_path: .github/thumbnail.png
-  triggerRepoUpdate: ${{ false }}
+  triggerRepoUpdate: ${{ true }}
 
 permissions:
   contents: write
@@ -84,7 +84,7 @@ jobs:
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
           name: "${{ steps.package-info.outputs.version }}"
-          tag_name: "v${{ steps.package-info.outputs.version }}"
+          tag_name: "${{ steps.package-info.outputs.version }}"
           files: |
             /tmp/${{ env.zipFile }}
             /tmp/${{ env.unityPackage }}
