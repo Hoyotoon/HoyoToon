@@ -1,4 +1,4 @@
-name: Build & Release Unity Package (Beta)
+name: Build & Release Unity Package
 
 on:
   push:
@@ -10,8 +10,8 @@ on:
     inputs:
       force_release:
         description: "Force release even if version unchanged"
-        required: true
-        default: "true"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -83,15 +83,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "18"
-          # No lockfile present; omitting cache to avoid warning
-
-      - name: Install create-unitypackage
-        run: npm install -g @pcysl5edgo/create-unitypackage
-
       - name: Derive metadata
         id: meta
         run: |
@@ -100,15 +91,14 @@ jobs:
           FILE="${NAME} ${VERSION}.unitypackage"
           echo "filename=$FILE" >> $GITHUB_OUTPUT
           echo "Building $FILE"
-
+      
       - name: Create Unity package
-        run: |
-          # If you only want to package a subset, modify --input path(s).
-          create-unitypackage \
-            --input . \
-            --output "${{ steps.meta.outputs.filename }}" \
-            --package-name "HoyoToon" \
-            --package-version "${{ needs.detect-version.outputs.version }}"
+        uses: pCYSl5EDgo/create-unitypackage@v1.2.3
+        with:
+          package-path: ${{ steps.meta.outputs.filename }}
+          include-files: |
+            ./**/*
+          # Optionally narrow include-files for a leaner package
 
       - name: Verify artifact
         run: |
