@@ -10,7 +10,7 @@ on:
     inputs:
       force_release:
         description: "Force release even if version unchanged"
-        required: false
+        required: true
         default: "false"
 
 permissions:
