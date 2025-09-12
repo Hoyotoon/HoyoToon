@@ -57,21 +57,6 @@ namespace HoyoToon.API
                 HoyoToonLogger.APIInfo("Parser service set via HoyoToonApi.");
             }
         }
-        // Menu: Config file actions (Editor only)
-        [MenuItem("HoyoToon/API/Open Config JSON")]
-        private static void Menu_OpenConfigJson()
-        {
-            var path = Config.ConfigPath;
-            if (File.Exists(path)) EditorUtility.RevealInFinder(path);
-            else HoyoToonLogger.APIWarning($"Resource config not found at: {path}");
-        }
-
-        [MenuItem("HoyoToon/API/Reload Config")]
-        private static void Menu_ReloadConfig()
-        {
-            Config.Reload();
-            HoyoToonLogger.APIInfo("Resource config reloaded from JSON.");
-        }
 
         // Optional thin wrappers for brevity at call sites
         public static IReadOnlyDictionary<string, GameConfig> GetGames() => Config.GetGames();
