@@ -116,16 +116,26 @@ jobs:
           echo "filename=$FILE" >> $GITHUB_OUTPUT
           echo "Building $FILE"
 
-      - name: Create Unity package
+      - name: Build meta list
+        run: |
+          # Collect .meta entries for desired directories; adjust as needed.
+          echo "Generating meta list for Scripts, Resources, Shaders"
+          : > metaList
+          for d in Scripts Resources Shaders; do
+            if [ -d "$d" ]; then
+              # Directory .meta
+              if [ -f "$d.meta" ]; then echo "$d.meta" >> metaList; fi
+              find "$d" -name '*.meta' >> metaList
+            fi
+          done
+          echo "metaList contents:"; cat metaList
+          test -s metaList || { echo 'metaList is empty; nothing to package'; exit 1; }
+
+      - name: Create Unity package (Action)
         uses: pCYSl5EDgo/create-unitypackage@v1.2.3
         with:
           package-path: ${{ steps.meta.outputs.filename }}
-          # IMPORTANT: Each line must be an asset file path ending with its .meta counterpart implicitly; action requires .meta lines.
-          # For simplicity include the package.json and its meta (if any) plus the entire Scripts folder recursively.
-          # NOTE: You may need to expand this list to all assets you want shipped; wildcards are not supported by the action.
-          include-files: |
-            package.json.meta
-          project-folder: .
+          include-files: metaList
 
       - name: Verify artifact
         run: |
