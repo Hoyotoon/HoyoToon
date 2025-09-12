@@ -3,7 +3,7 @@ name: Build Release
 on:
   workflow_dispatch:
   push:
-    branches: main
+    branches: Beta
     paths: package.json
 
 env:
@@ -44,8 +44,12 @@ jobs:
 
       - name: Set Environment Variables
         run: |
-          echo "zipFile=${{ steps.package-info.outputs.name }}_v${{ steps.package-info.outputs.version }}".zip >> $GITHUB_ENV
-          echo "unityPackage=${{ steps.package-info.outputs.name }}_v${{ steps.package-info.outputs.version }}.unitypackage" >> $GITHUB_ENV
+          DISPLAY_NAME="HoyoToon"
+          VERSION='${{ steps.package-info.outputs.version }}'
+          # Filenames: HoyoToon <version>.zip / .unitypackage (spaces allowed)
+          echo "displayName=${DISPLAY_NAME}" >> $GITHUB_ENV
+          echo "zipFile=${DISPLAY_NAME} ${VERSION}.zip" >> $GITHUB_ENV
+          echo "unityPackage=${DISPLAY_NAME} ${VERSION}.unitypackage" >> $GITHUB_ENV
 
       - name: Create Package Zip
         run: zip -x '.git/*' '.github/*' -r "/tmp/${{ env.zipFile }}" .
@@ -83,9 +87,9 @@ jobs:
       - name: Make Release
         uses: softprops/action-gh-release@de2c0eb89ae2a093876385947365aca7b0e5f844
         with:
-          name: "${{ steps.package-info.outputs.version }}"
+          name: "HoyoToon ${{ steps.package-info.outputs.version }}"
           tag_name: "${{ steps.package-info.outputs.version }}"
-          body: changelog.md
+          body_path: changelog.md
           files: |
             /tmp/${{ env.zipFile }}
             /tmp/${{ env.unityPackage }}
