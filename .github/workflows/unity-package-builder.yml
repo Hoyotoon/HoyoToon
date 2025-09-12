@@ -87,7 +87,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "18"
-          cache: "npm"
+          # No lockfile present; omitting cache to avoid warning
 
       - name: Install create-unitypackage
         run: npm install -g @pcysl5edgo/create-unitypackage
