@@ -1,5 +1,3 @@
-# HoyoToon 0.1.2
-
 ## Scripts:
 
 - Added Overrides support to GameMetadata and MaterialGeneration.

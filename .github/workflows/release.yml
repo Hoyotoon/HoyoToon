@@ -3,7 +3,7 @@ name: Build Release
 on:
   workflow_dispatch:
   push:
-    branches: Beta
+    branches: main
     paths: package.json
 
 env:
