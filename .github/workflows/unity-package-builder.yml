@@ -24,7 +24,7 @@ concurrency:
 env:
   # Set this to "true" to force a release even if version hasn't changed.
   # Commit a change toggling this value (or edit via the GitHub UI) to trigger.
-  FORCE_RELEASE: "true"
+  FORCE_RELEASE: "false"
 
 jobs:
   detect-version:
@@ -161,7 +161,7 @@ jobs:
         id: tag
         run: |
           VERSION='${{ needs.build-package.outputs.version }}'
-          TAG="v${VERSION}"
+          TAG="${VERSION}"
           if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
             echo "exists=true" >> $GITHUB_OUTPUT
             echo "Tag ${TAG} already exists; skipping release.";
@@ -180,23 +180,13 @@ jobs:
         if: steps.tag.outputs.exists == 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ needs.build-package.outputs.version }}
+          tag_name: ${{ needs.build-package.outputs.version }}
           name: HoyoToon ${{ needs.build-package.outputs.version }}
           draft: false
           prerelease: false
           files: |
             dist/*.unitypackage
-          body: |
-            ## HoyoToon ${{ needs.build-package.outputs.version }} (Beta)
-            Automated release.
-            Version: ${{ needs.build-package.outputs.version }}
-
-            ### Installation
-            1. Download the unitypackage file
-            2. Import via Assets → Import Package → Custom Package
-
-            ### Notes
-            Built from branch: ${GITHUB_REF_NAME}
+          body_path: changelog.md
 
       - name: Skip notice
         if: steps.tag.outputs.exists == 'true'
