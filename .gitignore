@@ -89,6 +89,7 @@ Scripts/Editor/ResourceCache.json.meta
 # Block syntax (uncomment START/END and desired lines to activate):
 # HOYOTOON-UPDATER-KEEP START
 Dev
+Dev.meta
 # HOYOTOON-UPDATER-KEEP END
 #
 # Inline syntax (each line defines a single pattern):

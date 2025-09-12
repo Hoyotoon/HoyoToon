@@ -1,0 +1,176 @@
+name: Build & Release Unity Package (Beta)
+
+on:
+  push:
+    branches: [Beta]
+    paths:
+      - "package.json"
+      - ".github/workflows/unity-package-builder.yml"
+  workflow_dispatch:
+    inputs:
+      force_release:
+        description: "Force release even if version unchanged"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  packages: read
+
+concurrency:
+  group: unity-package-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  detect-version:
+    name: Detect Version Change
+    runs-on: ubuntu-latest
+    outputs:
+      changed: ${{ steps.check.outputs.changed }}
+      version: ${{ steps.check.outputs.version }}
+    steps:
+      - name: Checkout (shallow + previous commit)
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Extract current version
+        id: current
+        run: |
+          VERSION=$(jq -r '.version' package.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Current version: $VERSION"
+
+      - name: Determine change
+        id: check
+        run: |
+          FORCE='${{ github.event.inputs.force_release || '' }}'
+          CUR=${{ steps.current.outputs.version }}
+
+          # Manual force
+          if [ "$FORCE" = 'true' ]; then
+            echo "Forcing release for version $CUR"; echo 'changed=true' >> $GITHUB_OUTPUT; echo "version=$CUR" >> $GITHUB_OUTPUT; exit 0; fi
+
+          if git rev-parse HEAD~1 >/dev/null 2>&1; then
+            PREV=$(git show HEAD~1:package.json | jq -r '.version' 2>/dev/null || echo '')
+            echo "Previous version: $PREV" || true
+            if [ "$CUR" != "$PREV" ]; then
+              echo 'changed=true' >> $GITHUB_OUTPUT
+              echo "version=$CUR" >> $GITHUB_OUTPUT
+              echo "Version changed: $PREV -> $CUR"
+            else
+              echo 'changed=false' >> $GITHUB_OUTPUT
+              echo "No version change detected"
+            fi
+          else
+            echo 'changed=true' >> $GITHUB_OUTPUT
+            echo "version=$CUR" >> $GITHUB_OUTPUT
+            echo "First commit or shallow history - treating as changed"
+          fi
+
+      - name: Abort early (no change)
+        if: steps.check.outputs.changed != 'true'
+        run: echo "No version change; subsequent jobs will be skipped."
+
+  build-package:
+    name: Build UnityPackage
+    needs: detect-version
+    if: needs.detect-version.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    outputs:
+      package_file: ${{ steps.meta.outputs.filename }}
+      version: ${{ needs.detect-version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "18"
+          cache: "npm"
+
+      - name: Install create-unitypackage
+        run: npm install -g @pcysl5edgo/create-unitypackage
+
+      - name: Derive metadata
+        id: meta
+        run: |
+          NAME='HoyoToon'
+          VERSION=$(jq -r '.version' package.json)
+          FILE="${NAME} ${VERSION}.unitypackage"
+          echo "filename=$FILE" >> $GITHUB_OUTPUT
+          echo "Building $FILE"
+
+      - name: Create Unity package
+        run: |
+          # If you only want to package a subset, modify --input path(s).
+          create-unitypackage \
+            --input . \
+            --output "${{ steps.meta.outputs.filename }}" \
+            --package-name "HoyoToon" \
+            --package-version "${{ needs.detect-version.outputs.version }}"
+
+      - name: Verify artifact
+        run: |
+          test -f "${{ steps.meta.outputs.filename }}" || { echo 'Package missing'; exit 1; }
+          ls -lh "${{ steps.meta.outputs.filename }}"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hoyotoon-package-${{ needs.detect-version.outputs.version }}
+          path: ${{ steps.meta.outputs.filename }}
+          retention-days: 30
+
+  create-release:
+    name: Create GitHub Release
+    needs: build-package
+    runs-on: ubuntu-latest
+    if: needs.build-package.result == 'success'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check for existing tag
+        id: tag
+        run: |
+          VERSION='${{ needs.build-package.outputs.version }}'
+          TAG="v${VERSION}"
+          if git ls-remote --tags origin | grep -q "refs/tags/${TAG}$"; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag ${TAG} already exists; skipping release.";
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download artifact
+        if: steps.tag.outputs.exists == 'false'
+        uses: actions/download-artifact@v4
+        with:
+          name: hoyotoon-package-${{ needs.build-package.outputs.version }}
+          path: ./dist
+
+      - name: Create release
+        if: steps.tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ needs.build-package.outputs.version }}
+          name: HoyoToon ${{ needs.build-package.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            dist/*.unitypackage
+          body: |
+            ## HoyoToon ${{ needs.build-package.outputs.version }} (Beta)
+            Automated release.
+            Version: ${{ needs.build-package.outputs.version }}
+
+            ### Installation
+            1. Download the unitypackage file
+            2. Import via Assets → Import Package → Custom Package
+
+            ### Notes
+            Built from branch: ${GITHUB_REF_NAME}
+
+      - name: Skip notice
+        if: steps.tag.outputs.exists == 'true'
+        run: echo "Release already exists for this version."
