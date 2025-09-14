@@ -6,7 +6,7 @@ using HoyoToon.Utilities;
 
 namespace HoyoToon.Prerequisites
 {
-    internal sealed class ShadowProjectionCloseFitCheck : IPrerequisiteCheck
+    public sealed class ShadowProjectionCloseFitCheck : IPrerequisiteCheck
     {
         public string Name => "Shadow Projection Close Fit (Windows Editor)";
 

@@ -5,7 +5,7 @@ using HoyoToon.Utilities;
 
 namespace HoyoToon.Prerequisites
 {
-    internal sealed class ColorSpaceLinearCheck : IPrerequisiteCheck
+    public sealed class ColorSpaceLinearCheck : IPrerequisiteCheck
     {
         public string Name => "Color Space must be Linear";
 
