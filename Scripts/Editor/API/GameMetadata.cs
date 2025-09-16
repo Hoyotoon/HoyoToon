@@ -42,8 +42,27 @@ namespace HoyoToon.API
     // Model (FBX) importer defaults and rules
     public ModelImportSettings ModelImportSettings { get; set; } = new ModelImportSettings();
 
-    // Categories like Face, Hair, Eye, etc. (optional)
-    public List<string> MaterialCategories { get; set; } = new List<string>();
+    // Unified problem configuration:
+    // - Texture: Texture to find by contains name (e.g., "Albedo" or "Diffuse")
+    // - Regex: a single global regex to extract character name from texture filenames (named group 'name' or first group)
+    // - Entries: list of problems with Name (character) and Message (warning)
+    public ProblemListConfig ProblemList { get; set; } = new ProblemListConfig();
+    }
+
+    [Serializable]
+    public class ProblemListConfig
+    {
+        public string Texture { get; set; }
+        public string Regex { get; set; }
+        public List<ProblemEntry> Entries { get; set; } = new List<ProblemEntry>();
+    }
+
+    [Serializable]
+    public class ProblemEntry
+    {
+        public string Name { get; set; }
+        public string Message { get; set; }
+        public string Type { get; set; }
     }
 
     [Serializable]

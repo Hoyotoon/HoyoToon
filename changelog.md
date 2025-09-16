@@ -1,5 +1,7 @@
 ## Scripts:
 
-- Added Overrides support to GameMetadata and MaterialGeneration.
-- Game won't default to first metadata if no match; instead, it'll notify unsupported material JSON.
-- Read gitignore for updater to avoid overwriting local changes.
+- Move API to our cloud backend
+- API will now update live
+- Support to receive Popups from the API
+- Support to receive notices from the API for characters that have problems unique per game when detected
+- Support to get the Character name from the API

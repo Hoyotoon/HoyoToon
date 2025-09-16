@@ -59,6 +59,48 @@ namespace HoyoToon.Utilities
             ShowCustomWithImage(title, message, type, new[] { "OK", "Cancel" }, defaultIndex: 0, cancelIndex: 1, onResultIndex: i => onResult?.Invoke(i == 0), topBar: topBar, contentImageResourcePath: contentImageResourcePath, contentImage: contentImage, contentImageMaxHeight: contentImageMaxHeight);
         }
 
+        // Modal (blocking) helpers so callers can gate batch operations without Unity's EditorUtility
+        public static bool ShowYesNoWithImageModal(string title, string message, MessageType type = MessageType.Info, TopBarConfig topBar = null, string contentImageResourcePath = null, Texture2D contentImage = null, float contentImageMaxHeight = 220f)
+        {
+            // Batch-mode/Headless fallback: log and auto-choose Yes
+            if (Application.isBatchMode)
+            {
+                HoyoToonLogCore.LogAlways($"{title}: {message}", type == MessageType.Error ? LogType.Error : type == MessageType.Warning ? LogType.Warning : LogType.Log);
+                return true;
+            }
+
+            bool result = true; // default to Yes
+            var window = CreateInstance<HoyoToonDialogWindow>();
+            window._title = title;
+            window._message = message;
+            window._type = type;
+            window._topBar = topBar ?? TopBarConfig.Default();
+            window._onResultIndex = i => { result = (i == 0); };
+            window.titleContent = new GUIContent("HoyoToon");
+            window.minSize = new Vector2(UiLayout.WINDOW_MIN_WIDTH, UiLayout.WINDOW_MIN_HEIGHT);
+            window.maxSize = new Vector2(UiLayout.WINDOW_DEFAULT_WIDTH, UiLayout.WINDOW_MAX_HEIGHT);
+
+            window._contentImageResourcePath = contentImageResourcePath;
+            window._contentImage = contentImage;
+            window._contentImageMaxHeight = Mathf.Max(80f, contentImageMaxHeight);
+
+            window._buttons = new List<ButtonDef>
+            {
+                new ButtonDef { Label = "Yes", Index = 0, IsDefault = true, IsCancel = false },
+                new ButtonDef { Label = "No", Index = 1, IsDefault = false, IsCancel = true }
+            };
+
+            // Auto-detect markdown per message content
+            window._useMarkdown = window.LooksLikeMarkdown(message);
+            window._renderedMessageCache = null;
+            window._pendingResize = true;
+
+            // Pre-size and show modally (blocks until closed)
+            window.PreSizeBeforeShow(UiLayout.WINDOW_DEFAULT_WIDTH);
+            window.ShowModalUtility();
+            return result;
+        }
+
         // Progress dialogs
         public static HoyoToonDialogWindow ShowProgress(string title, string message, MessageType type = MessageType.Info, TopBarConfig topBar = null, Action onCancel = null)
         {

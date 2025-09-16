@@ -284,7 +284,7 @@ namespace HoyoToon
         private static Dictionary<string, GameConfig> _games;
 
         /// <summary>
-        /// Returns the games dictionary, loaded from Editor/API/HoyoToonAPIConfig.json.
+        /// Returns the games dictionary.
         /// The JSON starts empty and can be edited during development.
         /// </summary>
         public static Dictionary<string, GameConfig> Games

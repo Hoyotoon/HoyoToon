@@ -34,10 +34,18 @@
   "Games": [
     {
       "Key": "Honkai Star Rail",
-      "GameProperties": ["_mBloomIntensity0"],
-      "DefaultShader": "HoyoToon/Honkai Star Rail/Character/Base",
+      "GameProperties": [
+        "_mBloomIntensity0"
+      ],
       "ShaderKeywords": {
-        "HoyoToon/Honkai Star Rail/Character/Base": ["_UseMoonHalo"],
+        "HoyoToon/Honkai Star Rail/Character/Base": [
+          "_UseMoonHalo"
+        ],
+        "HoyoToon/Honkai Star Rail/Character/Crystal": [
+          "_ParallaxTex",
+          "_ParallaxAlpha",
+          "_ParallaxScale"
+        ],
         "HoyoToon/Honkai Star Rail/Character/Face": [
           "_FaceMap",
           "_FaceExpression",
@@ -63,29 +71,18 @@
           "_Sunglasses",
           "_Android_Debug_ToonSpecular",
           "_BendValue"
-        ],
-        "HoyoToon/Honkai Star Rail/Character/Crystal": [
-          "_ParallaxTex",
-          "_ParallaxAlpha",
-          "_ParallaxScale"
         ]
       },
-      "ShaderBlacklist": [
-        "HoyoToon/Honkai Star Rail/Character/Weapon",
-        "HoyoToon/Honkai Star Rail/Character/Weapon_Standard"
-      ],
+      "DefaultShader": "HoyoToon/Honkai Star Rail/Character/Base",
       "PropertyConversions": {
         "_DstBlend": "_Test2"
       },
-      "PropertyOverrides": {
-        "HoyoToon/Honkai Star Rail/Character/Base": {},
-        "HoyoToon/Honkai Star Rail/Character/Face": {},
-        "HoyoToon/Honkai Star Rail/Character/Hair": {},
-        "HoyoToon/Honkai Star Rail/Character/Transparent": {},
-        "HoyoToon/Honkai Star Rail/Character/Crystal": {}
-      },
       "Tangents": {
-        "Options": ["No Tangents", "Tangent Generation", "Vertex Color"],
+        "Options": [
+          "No Tangents",
+          "Tangent Generation",
+          "Vertex Color"
+        ],
         "Status": "Tangent Generation",
         "SkipMeshesContaining": [
           "Test",
@@ -96,94 +93,288 @@
           "TangentIgnore"
         ]
       },
-      "ModelImportSettings": {
-        "Defaults": {
-          "ScaleFactor": 1.0,
-          "IsReadable": true,
-          "LegacyBlendshapeNormals": true,
-          "MaterialName": "BasedOnMaterialName",
-          "MaterialSearch": "Everywhere",
-          "MaterialSearchAndRemap": true
-        }
-      },
       "TextureMappings": {
         "_Lut2DTex": "LUT_HSR"
       },
+      "PropertyOverrides": {
+        "HoyoToon/Honkai Star Rail/Character/Base": {
+
+        },
+        "HoyoToon/Honkai Star Rail/Character/Crystal": {
+
+        },
+        "HoyoToon/Honkai Star Rail/Character/Face": {
+
+        },
+        "HoyoToon/Honkai Star Rail/Character/Hair": {
+
+        },
+        "HoyoToon/Honkai Star Rail/Character/Transparent": {
+
+        }
+      },
       "TextureImportSettings": {
         "Defaults": {
+          "SRGBTexture": null,
           "MipmapEnabled": false,
-          "TextureCompression": "Uncompressed"
+          "TextureCompression": "Uncompressed",
+          "NPOTScale": null,
+          "TextureType": null,
+          "Compression": null,
+          "StreamingMipmaps": null,
+          "WrapMode": null,
+          "MaxTextureSize": null,
+          "FilterMode": null
         },
         "NameEquals": {
           "LUT_HSR": {
             "SRGBTexture": false,
-            "TextureCompression": "Uncompressed"
+            "MipmapEnabled": null,
+            "TextureCompression": "Uncompressed",
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           }
         },
         "NameContains": {
+          "Cool_Ramp": {
+            "SRGBTexture": true,
+            "MipmapEnabled": null,
+            "TextureCompression": "Uncompressed",
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "Dissolve": {
+            "SRGBTexture": true,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
           "ExpressionMap": {
-            "SRGBTexture": false
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           },
           "FaceMap": {
             "SRGBTexture": false,
-            "MipmapEnabled": false
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           },
           "LUT": {
             "SRGBTexture": false,
-            "MipmapEnabled": false
-          },
-          "materialidvalueslut": {
-            "SRGBTexture": false,
-            "NPOTScale": "None",
-            "MipmapEnabled": false
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           },
           "Stockings": {
-            "SRGBTexture": false
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           },
           "Warm_Ramp": {
             "SRGBTexture": true,
-            "TextureCompression": "Uncompressed"
-          },
-          "Cool_Ramp": {
-            "SRGBTexture": true,
-            "TextureCompression": "Uncompressed"
-          },
-          "Dissolve": {
-            "SRGBTexture": true
-          },
-          "lightmap": {
-            "SRGBTexture": false,
-            "MipmapEnabled": false
-          },
-          "diffuse": {
-            "SRGBTexture": true,
-            "MipmapEnabled": false
-          },
-          "_Color": {
-            "SRGBTexture": true,
-            "MipmapEnabled": false
-          },
-          "normalmap": {
-            "SRGBTexture": false,
-            "MipmapEnabled": false
-          },
-          "_Mask": {
-            "SRGBTexture": false,
-            "MipmapEnabled": false
+            "MipmapEnabled": null,
+            "TextureCompression": "Uncompressed",
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           },
           "Weapon_Ramp": {
             "SRGBTexture": true,
-            "TextureCompression": "Uncompressed"
+            "MipmapEnabled": null,
+            "TextureCompression": "Uncompressed",
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Color": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Mask": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "diffuse": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "lightmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "materialidvalueslut": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": "None",
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "normalmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           }
         },
         "NameEndsWith": {
-          "T_Caustic": {
-            "SRGBTexture": false
-          },
           "Stockings": {
-            "SRGBTexture": false
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "T_Caustic": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
           }
         }
+      },
+      "ModelImportSettings": {
+        "Defaults": {
+          "ScaleFactor": 1,
+          "UseFileScale": null,
+          "ImportBlendShapes": null,
+          "ImportVisibility": null,
+          "ImportCameras": null,
+          "ImportLights": null,
+          "IsReadable": true,
+          "OptimizeMeshPolygons": null,
+          "OptimizeMeshVertices": null,
+          "Normals": null,
+          "Tangents": null,
+          "AnimationType": null,
+          "AvatarSetup": null,
+          "BakeAxisConversion": null,
+          "ImportAnimation": null,
+          "AnimationCompression": null,
+          "ResampleCurves": null,
+          "MaterialImportMode": null,
+          "MaterialSearch": "Everywhere",
+          "MaterialName": "BasedOnMaterialName",
+          "MaterialLocation": null,
+          "MaterialSearchAndRemap": true,
+          "MaterialSearch&Remap": true,
+          "LegacyBlendshapeNormals": true
+        }
+      },
+      "ProblemList": {
+        "Texture": "_Color",
+        "Regex": "(?<=Avatar_)[^_]+",
+        "Entries": [
+          {
+            "Name": "Cerydra",
+            "Message": "There's a problem with Cerydra. Mihoyo made her too unique to 2 units so just like them we're limiting you to simply generating only 2 materials. **Cope**",
+            "Type": "Info"
+          }
+        ]
       }
     }
   ]
