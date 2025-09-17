@@ -33,6 +33,8 @@ namespace HoyoToon.Materials
             public string Error { get; set; }
         }
 
+        
+
         /// <summary>
         /// Generate a Material using either:
         /// - raw JSON (pathOrJson contains '{')
@@ -199,6 +201,7 @@ namespace HoyoToon.Materials
             HoyoToonLogger.MaterialInfo($"Generated material '{matName}' at '{assetPath}' using shader '{shaderPath}' for game '{gameKey}'.");
             return result;
         }
+
 
         /// <summary>
         /// Centralized entry point: generate materials from raw JSON, a JSON file, a single context asset/folder,
