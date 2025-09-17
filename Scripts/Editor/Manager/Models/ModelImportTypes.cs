@@ -4,7 +4,7 @@ using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace HoyoToon.Manager.Models
+namespace HoyoToon.Models
 {
     /// <summary>
     /// Strongly-typed, modular FBX importer settings. All fields are optional; only non-null values are applied.

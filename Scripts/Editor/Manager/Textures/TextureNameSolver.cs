@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using HoyoToon.API;
 
-namespace HoyoToon
+namespace HoyoToon.Textures
 {
     /// <summary>
     /// Helpers to extract a character name from a texture filename using the per-game
@@ -46,7 +46,10 @@ namespace HoyoToon
                     if (!string.IsNullOrWhiteSpace(name)) return TitleCase(name.Trim());
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // Ignore regex errors; fall back to heuristic or return null.
+            }
             return null;
         }
 

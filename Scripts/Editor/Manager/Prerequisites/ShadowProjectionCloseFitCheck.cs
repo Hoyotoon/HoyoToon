@@ -75,10 +75,16 @@ namespace HoyoToon.Prerequisites
                         if (asm.GetType("VRC.Editor.EnvConfig", throwOnError: false) != null)
                             return true;
                     }
-                    catch { }
+                    catch (Exception)
+                    {
+                        // Ignore reflection/type-load errors while scanning assemblies.
+                    }
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // Ignore top-level assembly enumeration errors; treat as not present.
+            }
             return false;
         }
     }

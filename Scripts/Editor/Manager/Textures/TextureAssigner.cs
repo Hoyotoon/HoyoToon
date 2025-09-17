@@ -5,8 +5,9 @@ using UnityEditor;
 using UnityEngine;
 using HoyoToon;
 using HoyoToon.API;
+using HoyoToon.Materials;
 
-namespace HoyoToon.API
+namespace HoyoToon.Textures
 {
     /// <summary>
     /// Assigns textures to a material by globally searching AssetDatabase by texture name.
@@ -24,7 +25,7 @@ namespace HoyoToon.API
             {
                 foreach (var kv in props.m_TexEnvs)
                 {
-                    var propName = ConvertName(kv.Key, meta);
+                    var propName = MaterialGeneration.ConvertName(kv.Key, meta);
                     if (!mat.HasProperty(propName)) continue;
 
                     var texName = kv.Value?.m_Texture?.Name;
@@ -43,7 +44,7 @@ namespace HoyoToon.API
             {
                 foreach (var kv in data.Textures)
                 {
-                    var propName = ConvertName(kv.Key, meta);
+                    var propName = MaterialGeneration.ConvertName(kv.Key, meta);
                     if (!mat.HasProperty(propName)) continue;
                     var tex = FindTextureGlobalOrMapped(kv.Value, propName, meta);
                     if (tex != null) mat.SetTexture(propName, tex);
@@ -104,13 +105,6 @@ namespace HoyoToon.API
                 if (tex != null) return tex;
             }
             return null;
-        }
-
-        private static string ConvertName(string key, GameMetadata meta)
-        {
-            if (meta?.PropertyConversions != null && !string.IsNullOrEmpty(key) && meta.PropertyConversions.TryGetValue(key, out var mapped))
-                return mapped;
-            return key;
         }
     }
 }

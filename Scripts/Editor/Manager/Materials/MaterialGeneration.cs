@@ -7,10 +7,11 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon;
-using HoyoToon.API;
 using HoyoToon.Utilities;
+using HoyoToon.API;
+using HoyoToon.Textures;
 
-namespace HoyoToon.API
+namespace HoyoToon.Materials
 {
     /// <summary>
     /// Global, editor-only material generation utilities.
@@ -75,7 +76,7 @@ namespace HoyoToon.API
 
             // 2) Resolve JSON payload
             string jsonPayload = null;
-            if (!string.IsNullOrWhiteSpace(pathOrJson) && LooksLikeJson(pathOrJson))
+            if (!string.IsNullOrWhiteSpace(pathOrJson) && HoyoToonEditorUtil.LooksLikeJson(pathOrJson))
             {
                 jsonPayload = pathOrJson;
             }
@@ -130,13 +131,13 @@ namespace HoyoToon.API
 
             // 5) Create/locate material asset path
             string outDir = ComputeOutputDirectory(outputDir, sourceJson);
-            EnsureDirectory(outDir);
+            HoyoToonEditorUtil.EnsureDirectory(outDir);
 
             string matName = !string.IsNullOrWhiteSpace(materialName)
-                ? SanitizeFileName(materialName)
+                ? HoyoToonEditorUtil.SanitizeFileName(materialName)
                 : DeriveMaterialName(sourceJson, shaderPath);
 
-            string assetPath = ToProjectRelative(Path.Combine(outDir, matName + ".mat"));
+            string assetPath = HoyoToonEditorUtil.ToProjectRelative(Path.Combine(outDir, matName + ".mat"));
             Material mat = AssetDatabase.LoadAssetAtPath<Material>(assetPath);
             if (mat == null)
             {
@@ -150,8 +151,8 @@ namespace HoyoToon.API
                     // Fallback to Assets if Packages is read-only or path invalid
                     HoyoToonLogger.MaterialWarning($"CreateAsset at '{assetPath}' failed: {ex.Message}. Falling back to 'Assets/HoyoToon/GeneratedMaterials'.");
                     var assetsFallbackDir = Path.Combine(Application.dataPath, "HoyoToon", "GeneratedMaterials");
-                    EnsureDirectory(assetsFallbackDir);
-                    var fbAssetPath = ToProjectRelative(Path.Combine(assetsFallbackDir, matName + ".mat"));
+                    HoyoToonEditorUtil.EnsureDirectory(assetsFallbackDir);
+                    var fbAssetPath = HoyoToonEditorUtil.ToProjectRelative(Path.Combine(assetsFallbackDir, matName + ".mat"));
                     AssetDatabase.CreateAsset(mat, fbAssetPath);
                     assetPath = fbAssetPath; // update to new path
                 }
@@ -337,7 +338,7 @@ namespace HoyoToon.API
                 if (string.IsNullOrEmpty(src) || !File.Exists(src)) continue;
                 var outDir = ComputeOutputDirectory(null, src);
                 var matName = DeriveMaterialName(src, shaderPath);
-                var candidate = ToProjectRelative(Path.Combine(outDir, matName + ".mat"));
+                var candidate = HoyoToonEditorUtil.ToProjectRelative(Path.Combine(outDir, matName + ".mat"));
                 if (AssetDatabase.LoadAssetAtPath<Material>(candidate) != null)
                 {
                     if (AssetDatabase.DeleteAsset(candidate)) deleted++;
@@ -346,7 +347,7 @@ namespace HoyoToon.API
                 {
                     // Also attempt fallback folder deletion if original generation fell back
                     var fbDir = Path.Combine(Application.dataPath, "HoyoToon", "GeneratedMaterials");
-                    var fbPath = ToProjectRelative(Path.Combine(fbDir, matName + ".mat"));
+                    var fbPath = HoyoToonEditorUtil.ToProjectRelative(Path.Combine(fbDir, matName + ".mat"));
                     if (AssetDatabase.LoadAssetAtPath<Material>(fbPath) != null)
                     {
                         if (AssetDatabase.DeleteAsset(fbPath)) deleted++;
@@ -525,7 +526,7 @@ namespace HoyoToon.API
             TextureAssigner.AssignTextures(data, mat, meta);
         }
 
-        private static string ConvertName(string key, GameMetadata meta)
+        public static string ConvertName(string key, GameMetadata meta)
         {
             if (meta?.PropertyConversions != null && !string.IsNullOrEmpty(key) && meta.PropertyConversions.TryGetValue(key, out var mapped))
                 return mapped;
@@ -537,7 +538,7 @@ namespace HoyoToon.API
             // Priority: explicit > beside JSON > Assets/HoyoToon/GeneratedMaterials
             if (!string.IsNullOrWhiteSpace(desiredOutDir))
             {
-                return ToAbsolute(desiredOutDir);
+                return HoyoToonEditorUtil.ToAbsolutePath(desiredOutDir);
             }
             if (!string.IsNullOrWhiteSpace(sourceJson) && File.Exists(sourceJson))
             {
@@ -559,49 +560,6 @@ namespace HoyoToon.API
             // Use shader tail as a hint
             var tail = shaderPath?.Split('/')?.LastOrDefault();
             return string.IsNullOrWhiteSpace(tail) ? "GeneratedMaterial" : ($"{tail}_Material");
-        }
-
-        private static string SanitizeFileName(string name)
-        {
-            foreach (var c in Path.GetInvalidFileNameChars())
-                name = name.Replace(c, '_');
-            return name;
-        }
-
-        private static void EnsureDirectory(string dir)
-        {
-            var abs = ToAbsolute(dir);
-            if (!Directory.Exists(abs)) Directory.CreateDirectory(abs);
-        }
-
-        private static bool LooksLikeJson(string s)
-        {
-            if (string.IsNullOrWhiteSpace(s)) return false;
-            for (int i = 0; i < s.Length; i++)
-            {
-                char c = s[i];
-                if (char.IsWhiteSpace(c)) continue;
-                return c == '{' || c == '[';
-            }
-            return false;
-        }
-
-        private static string ToAbsolute(string assetOrFsPath)
-        {
-            if (string.IsNullOrEmpty(assetOrFsPath)) return assetOrFsPath;
-            return Path.GetFullPath(assetOrFsPath);
-        }
-
-        private static string ToProjectRelative(string absolutePath)
-        {
-            // Normalize to forward slashes for AssetDatabase
-            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..")).Replace("\\", "/");
-            var abs = Path.GetFullPath(absolutePath).Replace("\\", "/");
-            if (abs.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase))
-            {
-                return abs.Substring(projectRoot.Length + 1); // skip trailing '/'
-            }
-            return absolutePath.Replace("\\", "/");
         }
 
         /// <summary>

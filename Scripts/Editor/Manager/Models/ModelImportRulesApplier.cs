@@ -6,8 +6,9 @@ using UnityEngine;
 using HoyoToon.Utilities;
 using HoyoToon.API;
 using System.Reflection;
+using HoyoToon.Materials;
 
-namespace HoyoToon.Manager.Models
+namespace HoyoToon.Models
 {
     /// <summary>
     /// Utilities to read/modify ModelImporter settings for FBX assets with consistent logging.
@@ -62,7 +63,7 @@ namespace HoyoToon.Manager.Models
             return true;
         }
 
-    public static bool TryApplyModelImportSettings(string assetPath, HoyoToonModelImportSettings settings, bool reimport = true)
+        public static bool TryApplyModelImportSettings(string assetPath, HoyoToonModelImportSettings settings, bool reimport = true)
         {
             if (settings == null)
             {
@@ -317,9 +318,7 @@ namespace HoyoToon.Manager.Models
         }
 
         private static bool EnumTryParseIgnoreCase<TEnum>(string value, out TEnum result) where TEnum : struct
-        {
-            return System.Enum.TryParse(value, true, out result);
-        }
+            => HoyoToonEditorUtil.EnumTryParseIgnoreCase(value, out result);
 
         /// <summary>
         /// If config requests a search & remap pass, attempt to relink materials after import according to importer settings.

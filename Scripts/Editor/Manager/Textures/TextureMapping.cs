@@ -5,7 +5,8 @@ using UnityEditor;
 using UnityEngine;
 using HoyoToon.API;
 
-namespace HoyoToon.API
+
+namespace HoyoToon.Textures
 {
     /// <summary>
     /// Final pass texture mapping: if metadata TextureMappings define a texture for a property,

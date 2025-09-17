@@ -2,7 +2,8 @@
 using UnityEngine;
 using System.Collections.Generic;
 
-namespace HoyoToon
+
+namespace HoyoToon.Materials
 {
     /// <summary>
     /// Lightweight DTO for parsing material JSONs (Unity and Unreal variants).

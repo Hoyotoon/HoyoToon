@@ -3,8 +3,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 using HoyoToon.Utilities;
+using HoyoToon.API;
 
-namespace HoyoToon.API
+namespace HoyoToon.Materials
 {
     /// <summary>
     /// Applies per-shader property override values defined in GameMetadata.PropertyOverrides.

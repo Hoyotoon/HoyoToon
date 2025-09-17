@@ -3,8 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using HoyoToon;
 using HoyoToon.API;
-
-namespace HoyoToon.API
+namespace HoyoToon.Materials
 {
     /// <summary>
     /// Applies metadata-based property name conversions to a parsed material JSON structure,

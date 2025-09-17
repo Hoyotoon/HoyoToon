@@ -8,8 +8,9 @@ using UnityEditor;
 using UnityEngine;
 using HoyoToon.API;
 using HoyoToon.Utilities;
+using HoyoToon.Materials;
 
-namespace HoyoToon.Manager.Models
+namespace HoyoToon.Models
 {
     /// <summary>
     /// Applies tangent reset/regeneration rules for a Model (FBX) based on per-game metadata config.
@@ -335,7 +336,10 @@ namespace HoyoToon.Manager.Models
                         return dict ?? new Dictionary<string, Dictionary<string, string[]>>();
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // Ignore JSON parse/IO errors; return empty map for robustness.
+            }
             return new Dictionary<string, Dictionary<string, string[]>>();
         }
 
@@ -471,28 +475,10 @@ namespace HoyoToon.Manager.Models
         }
 
         private static string UnityPathToAbsolute(string unityPath)
-        {
-            if (string.IsNullOrEmpty(unityPath)) return unityPath;
-            if (unityPath.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) || unityPath.Equals("Assets", StringComparison.OrdinalIgnoreCase))
-            {
-                var projectRoot = Directory.GetParent(Application.dataPath).FullName;
-                var combined = Path.Combine(projectRoot, unityPath.Replace('/', Path.DirectorySeparatorChar));
-                return Path.GetFullPath(combined);
-            }
-            return unityPath;
-        }
+            => HoyoToonEditorUtil.UnityPathToAbsolute(unityPath);
 
         private static string AbsoluteToUnityPath(string absPath)
-        {
-            if (string.IsNullOrEmpty(absPath)) return absPath;
-            var norm = Path.GetFullPath(absPath).Replace('\\', '/');
-            var data = Application.dataPath.Replace('\\', '/');
-            if (norm.StartsWith(data, StringComparison.OrdinalIgnoreCase))
-            {
-                return "Assets" + norm.Substring(data.Length);
-            }
-            return null;
-        }
+            => HoyoToonEditorUtil.AbsoluteToUnityPath(absPath);
 
         // --- Tangent processors (modular, self-contained copies of HoyoToonMeshManager algorithms) ---
         private static Mesh ProcessTangents_ModifyMeshTangents(Mesh mesh)

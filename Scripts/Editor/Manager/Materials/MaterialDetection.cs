@@ -6,58 +6,19 @@ using System.Linq;
 using System.Text;
 using UnityEditor;
 using UnityEngine;
-using HoyoToon; // For MaterialJsonStructure
+using HoyoToon;
 using HoyoToon.Utilities;
 using HoyoToon.API;
+using HoyoToon.Textures;
 
-namespace HoyoToon.API
+namespace HoyoToon.Materials
 {
         /// <summary>
         /// Utilities for detecting Game and Shader from material JSON (direct or via context).
         /// </summary>
         public static class MaterialDetection
         {
-            // Session-level de-duplication for ProblemList popups and batch decisions
-            private static readonly HashSet<string> s_ShownProblemKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            private static readonly Dictionary<string, bool> s_BatchDecisionCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
 
-            private static string BuildProblemKey(string gameKey, string characterName)
-                => string.IsNullOrEmpty(gameKey) || string.IsNullOrEmpty(characterName) ? null : (gameKey + "|" + characterName);
-
-            // Helper: Find ProblemList entry by character name (case-insensitive)
-            private static ProblemEntry FindProblemEntry(string gameKey, string characterName)
-            {
-                try
-                {
-                    var metaMap = HoyoToonApi.GetGameMetadata();
-                    if (metaMap == null) return null;
-                    if (!metaMap.TryGetValue(gameKey, out var meta) || meta?.ProblemList?.Entries == null) return null;
-                    return meta.ProblemList.Entries.FirstOrDefault(e => !string.IsNullOrEmpty(e?.Name) && string.Equals(e.Name, characterName, StringComparison.OrdinalIgnoreCase));
-                }
-                catch { return null; }
-            }
-
-            // Helper: Blocking prompt for batch flows using HoyoToon dialog; returns true to continue, false to stop
-            private static bool PromptBatchProceed(string gameKey, string characterName, ProblemEntry entry)
-            {
-                if (entry == null || string.IsNullOrEmpty(entry.Message)) return true; // nothing to warn about
-                var key = BuildProblemKey(gameKey, characterName);
-                if (!string.IsNullOrEmpty(key))
-                {
-                    if (s_BatchDecisionCache.TryGetValue(key, out var cached)) return cached;
-                    // If a single popup for this problem was already shown earlier, default to continue without re-prompting
-                    if (s_ShownProblemKeys.Contains(key)) return true;
-                }
-                string title = $"{gameKey}: {characterName}";
-                string body = entry.Message + "\n\nProceed with processing?";
-                bool proceed = HoyoToon.Utilities.HoyoToonDialogWindow.ShowYesNoWithImageModal(title, body, UnityEditor.MessageType.Warning);
-                if (!string.IsNullOrEmpty(key))
-                {
-                    s_BatchDecisionCache[key] = proceed;
-                    s_ShownProblemKeys.Add(key);
-                }
-                return proceed;
-            }
         /// <summary>
         /// Detect Game/Shader from a JSON string, a JSON path, or by scanning context; also returns the source JSON path.
         /// When both parameters are provided, 'pathOrJson' takes precedence.
@@ -67,7 +28,7 @@ namespace HoyoToon.API
             // Prefer explicit string input
             if (!string.IsNullOrWhiteSpace(pathOrJson))
             {
-                if (LooksLikeJson(pathOrJson))
+                if (HoyoToonEditorUtil.LooksLikeJson(pathOrJson))
                 {
                     if (TryDetectFromJson(pathOrJson, out var g, out var s, out _, out _))
                     {
@@ -80,7 +41,7 @@ namespace HoyoToon.API
                 var p = pathOrJson;
                 if (p.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                 {
-                    var abs = ToAbsolutePath(p);
+                    var abs = HoyoToonEditorUtil.ToAbsolutePath(p);
                     if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _))
                     {
                         var charName = TryExtractCharacterName(g, abs);
@@ -90,10 +51,10 @@ namespace HoyoToon.API
                             var entry = FindProblemEntry(g, charName);
                             if (entry != null && !string.IsNullOrEmpty(entry.Message))
                             {
-                                var msgType = UnityEditor.MessageType.Info;
+                                var msgType = MessageType.Info;
                                 var t = entry.Type ?? "Info";
-                                if (t.Equals("Warning", StringComparison.OrdinalIgnoreCase)) msgType = UnityEditor.MessageType.Warning;
-                                else if (t.Equals("Error", StringComparison.OrdinalIgnoreCase)) msgType = UnityEditor.MessageType.Error;
+                                if (t.Equals("Warning", StringComparison.OrdinalIgnoreCase)) msgType = MessageType.Warning;
+                                else if (t.Equals("Error", StringComparison.OrdinalIgnoreCase)) msgType = MessageType.Error;
                                 // De-duplicate: show once per (game|character) per session
                                 var key = BuildProblemKey(g, charName);
                                 if (!string.IsNullOrEmpty(key) && s_ShownProblemKeys.Contains(key))
@@ -102,7 +63,7 @@ namespace HoyoToon.API
                                 }
                                 else
                                 {
-                                    try { HoyoToon.Utilities.HoyoToonDialogWindow.ShowYesNoWithImageModal($"{g}: {charName}", entry.Message, msgType); } catch { }
+                                    try { HoyoToonDialogWindow.ShowYesNoWithImageModal($"{g}: {charName}", entry.Message, msgType); } catch { }
                                     if (!string.IsNullOrEmpty(key)) s_ShownProblemKeys.Add(key);
                                 }
                             }
@@ -133,10 +94,10 @@ namespace HoyoToon.API
                         var entry = FindProblemEntry(result.gameKey, charName);
                         if (entry != null && !string.IsNullOrEmpty(entry.Message))
                         {
-                            var msgType = UnityEditor.MessageType.Info;
+                            var msgType = MessageType.Info;
                             var t = entry.Type ?? "Info";
-                            if (t.Equals("Warning", StringComparison.OrdinalIgnoreCase)) msgType = UnityEditor.MessageType.Warning;
-                            else if (t.Equals("Error", StringComparison.OrdinalIgnoreCase)) msgType = UnityEditor.MessageType.Error;
+                            if (t.Equals("Warning", StringComparison.OrdinalIgnoreCase)) msgType = MessageType.Warning;
+                            else if (t.Equals("Error", StringComparison.OrdinalIgnoreCase)) msgType = MessageType.Error;
                             // De-duplicate: show once per (game|character) per session
                             var key = BuildProblemKey(result.gameKey, charName);
                             if (!string.IsNullOrEmpty(key) && s_ShownProblemKeys.Contains(key))
@@ -145,7 +106,7 @@ namespace HoyoToon.API
                             }
                             else
                             {
-                                try { HoyoToon.Utilities.HoyoToonDialogWindow.ShowYesNoWithImageModal($"{result.gameKey}: {charName}", entry.Message, msgType); } catch { }
+                                try { HoyoToonDialogWindow.ShowYesNoWithImageModal($"{result.gameKey}: {charName}", entry.Message, msgType); } catch { }
                                 if (!string.IsNullOrEmpty(key)) s_ShownProblemKeys.Add(key);
                             }
                         }
@@ -174,7 +135,7 @@ namespace HoyoToon.API
             // Prefer explicit string input
             if (!string.IsNullOrWhiteSpace(pathOrJson))
             {
-                if (LooksLikeJson(pathOrJson))
+                if (HoyoToonEditorUtil.LooksLikeJson(pathOrJson))
                 {
                     if (TryDetectFromJson(pathOrJson, out var g, out var s, out _, out _))
                     {
@@ -187,7 +148,7 @@ namespace HoyoToon.API
                 var p = pathOrJson;
                 if (p.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
                 {
-                    var abs = ToAbsolutePath(p);
+                    var abs = HoyoToonEditorUtil.ToAbsolutePath(p);
                     if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _))
                     {
                         results.Add((g, s, abs));
@@ -252,7 +213,7 @@ namespace HoyoToon.API
             // Direct JSON file path
             if (assetPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
-                var abs = ToAbsolutePath(assetPath);
+                var abs = HoyoToonEditorUtil.ToAbsolutePath(assetPath);
                 if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _)) list.Add((g, s, abs));
                 else list.Add((null, null, abs));
                 return list;
@@ -263,22 +224,25 @@ namespace HoyoToon.API
 
             try
             {
-                var startDir = Directory.Exists(assetPath) ? assetPath : Path.GetDirectoryName(ToAbsolutePath(assetPath));
+                var startDir = Directory.Exists(assetPath) ? assetPath : Path.GetDirectoryName(HoyoToonEditorUtil.ToAbsolutePath(assetPath));
                 var jsons = Directory.EnumerateFiles(materialsDir, "*.json", SearchOption.AllDirectories)
-                    .Select(p => new { path = p, dist = DirDistance(startDir, Path.GetDirectoryName(ToAbsolutePath(p))) })
+                    .Select(p => new { path = p, dist = HoyoToonEditorUtil.DirDistance(startDir, Path.GetDirectoryName(HoyoToonEditorUtil.ToAbsolutePath(p))) })
                     .OrderBy(x => x.dist)
                     .Select(x => x.path);
 
                 foreach (var jsonPath in jsons)
                 {
-                    var abs = ToAbsolutePath(jsonPath);
+                    var abs = HoyoToonEditorUtil.ToAbsolutePath(jsonPath);
                     if (TryDetectFromJsonFile(abs, out var game, out var shaderPath, out _, out _))
                         list.Add((game, shaderPath, abs));
                     else
                         list.Add((null, null, abs));
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // Intentionally ignore UI exceptions to avoid breaking detection flows.
+            }
 
             return list;
         }
@@ -317,14 +281,14 @@ namespace HoyoToon.API
                 if (!TryFindWorkspaceRootAndMaterials(contextAssetPath, out var rootDir, out var materialsDir)) return null;
                 var root = rootDir;
                 if (string.IsNullOrEmpty(root)) root = System.IO.Path.GetDirectoryName(System.IO.Path.GetFullPath(contextAssetPath));
-                var texturesDir = FindChildDirectoryIgnoreCase(root, "Textures");
+                var texturesDir = HoyoToonEditorUtil.FindChildDirectoryIgnoreCase(root, "Textures");
                 if (string.IsNullOrEmpty(texturesDir))
                 {
                     // Probe upwards for any Textures
                     var di = new DirectoryInfo(root);
                     while (di != null && string.IsNullOrEmpty(texturesDir))
                     {
-                        texturesDir = FindChildDirectoryIgnoreCase(di.FullName, "Textures");
+                        texturesDir = HoyoToonEditorUtil.FindChildDirectoryIgnoreCase(di.FullName, "Textures");
                         di = di.Parent;
                     }
                 }
@@ -339,14 +303,14 @@ namespace HoyoToon.API
                 }
 
                 // Order by proximity to the context directory
-                var startDir = Directory.Exists(contextAssetPath) ? contextAssetPath : Path.GetDirectoryName(ToAbsolutePath(contextAssetPath));
-                var ranked = files.Select(p => new { path = p, dist = DirDistance(startDir, Path.GetDirectoryName(ToAbsolutePath(p))) })
+                var startDir = Directory.Exists(contextAssetPath) ? contextAssetPath : Path.GetDirectoryName(HoyoToonEditorUtil.ToAbsolutePath(contextAssetPath));
+                var ranked = files.Select(p => new { path = p, dist = HoyoToonEditorUtil.DirDistance(startDir, Path.GetDirectoryName(HoyoToonEditorUtil.ToAbsolutePath(p))) })
                                   .OrderBy(x => x.dist)
                                   .Select(x => x.path);
 
                 foreach (var file in ranked)
                 {
-                    var name = HoyoToon.TextureNameSolver.ExtractCharacterNameUsingMeta(meta, file);
+                    var name = TextureNameSolver.ExtractCharacterNameUsingMeta(meta, file);
                     if (!string.IsNullOrEmpty(name)) return name;
                 }
                 return null;
@@ -567,16 +531,15 @@ namespace HoyoToon.API
             return null;
         }
 
-        
         // --- Context helpers ---
-    private static (string gameKey, string shaderPath, string sourceJson) DetectFromContextPathWithSource(string assetPath)
+        private static (string gameKey, string shaderPath, string sourceJson) DetectFromContextPathWithSource(string assetPath)
         {
             if (string.IsNullOrWhiteSpace(assetPath)) return (null, null, null);
 
             // Direct JSON file path
             if (assetPath.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             {
-                var abs = ToAbsolutePath(assetPath);
+                var abs = HoyoToonEditorUtil.ToAbsolutePath(assetPath);
                 if (TryDetectFromJsonFile(abs, out var g, out var s, out _, out _)) return (g, s, abs);
                 return (null, null, null);
             }
@@ -586,20 +549,23 @@ namespace HoyoToon.API
 
             try
             {
-                var startDir = Directory.Exists(assetPath) ? assetPath : Path.GetDirectoryName(ToAbsolutePath(assetPath));
+                var startDir = Directory.Exists(assetPath) ? assetPath : Path.GetDirectoryName(HoyoToonEditorUtil.ToAbsolutePath(assetPath));
                 var jsons = Directory.EnumerateFiles(materialsDir, "*.json", SearchOption.AllDirectories)
-                    .Select(p => new { path = p, dist = DirDistance(startDir, Path.GetDirectoryName(ToAbsolutePath(p))) })
+                    .Select(p => new { path = p, dist = HoyoToonEditorUtil.DirDistance(startDir, Path.GetDirectoryName(HoyoToonEditorUtil.ToAbsolutePath(p))) })
                     .OrderBy(x => x.dist)
                     .Select(x => x.path);
 
                 foreach (var jsonPath in jsons)
                 {
-                    var abs = ToAbsolutePath(jsonPath);
+                    var abs = HoyoToonEditorUtil.ToAbsolutePath(jsonPath);
                     if (TryDetectFromJsonFile(abs, out var game, out var shaderPath, out _, out _))
                         return (game, shaderPath, abs);
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // Resilience: ignore filesystem/probing errors during context scan.
+            }
 
             return (null, null, null);
         }
@@ -610,7 +576,7 @@ namespace HoyoToon.API
 
             try
             {
-                string fullStart = ToAbsolutePath(startAssetPathOrFsPath);
+                string fullStart = HoyoToonEditorUtil.ToAbsolutePath(startAssetPathOrFsPath);
                 string startPath = fullStart;
                 if (File.Exists(fullStart)) startPath = Path.GetDirectoryName(fullStart);
 
@@ -624,8 +590,8 @@ namespace HoyoToon.API
                     if (string.Equals(di.Name, "Assets", StringComparison.OrdinalIgnoreCase))
                     {
                         // Check if Assets itself has a workspace (rare)
-                        var matAtAssets = FindChildDirectoryIgnoreCase(di.FullName, "Materials");
-                        var texAtAssets = FindChildDirectoryIgnoreCase(di.FullName, "Textures");
+                        var matAtAssets = HoyoToonEditorUtil.FindChildDirectoryIgnoreCase(di.FullName, "Materials");
+                        var texAtAssets = HoyoToonEditorUtil.FindChildDirectoryIgnoreCase(di.FullName, "Textures");
                         if (matAtAssets != null)
                         {
                             rootDir = di.FullName;
@@ -636,8 +602,8 @@ namespace HoyoToon.API
                     }
 
                     // Check for Materials and Textures in current directory
-                    var mat = FindChildDirectoryIgnoreCase(di.FullName, "Materials");
-                    var tex = FindChildDirectoryIgnoreCase(di.FullName, "Textures");
+                    var mat = HoyoToonEditorUtil.FindChildDirectoryIgnoreCase(di.FullName, "Materials");
+                    var tex = HoyoToonEditorUtil.FindChildDirectoryIgnoreCase(di.FullName, "Textures");
                     if (!string.IsNullOrEmpty(mat))
                     {
                         if (string.IsNullOrEmpty(fallbackMaterials)) fallbackMaterials = mat;
@@ -659,62 +625,55 @@ namespace HoyoToon.API
                     return true;
                 }
             }
-            catch { }
+            catch (Exception)
+            {
+                // Resilience: ignore path probing failures; no detection result will be returned.
+            }
 
             return false;
         }
 
-        private static string FindChildDirectoryIgnoreCase(string parentDir, string childName)
+        // Session-level de-duplication for ProblemList popups and batch decisions
+        private static readonly HashSet<string> s_ShownProblemKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static readonly Dictionary<string, bool> s_BatchDecisionCache = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+        private static string BuildProblemKey(string gameKey, string characterName)
+            => string.IsNullOrEmpty(gameKey) || string.IsNullOrEmpty(characterName) ? null : (gameKey + "|" + characterName);
+
+        // Helper: Find ProblemList entry by character name (case-insensitive)
+        private static ProblemEntry FindProblemEntry(string gameKey, string characterName)
         {
             try
             {
-                foreach (var d in Directory.EnumerateDirectories(parentDir))
-                {
-                    if (string.Equals(Path.GetFileName(d), childName, StringComparison.OrdinalIgnoreCase))
-                        return d;
-                }
+                var metaMap = HoyoToonApi.GetGameMetadata();
+                if (metaMap == null) return null;
+                if (!metaMap.TryGetValue(gameKey, out var meta) || meta?.ProblemList?.Entries == null) return null;
+                return meta.ProblemList.Entries.FirstOrDefault(e => !string.IsNullOrEmpty(e?.Name) && string.Equals(e.Name, characterName, StringComparison.OrdinalIgnoreCase));
             }
-            catch { }
-            return null;
+            catch { return null; }
         }
 
-        private static bool LooksLikeJson(string s)
+        // Helper: Blocking prompt for batch flows using HoyoToon dialog; returns true to continue, false to stop
+        private static bool PromptBatchProceed(string gameKey, string characterName, ProblemEntry entry)
         {
-            if (string.IsNullOrWhiteSpace(s)) return false;
-            // Heuristic: starts with '{' or '[' after any whitespace
-            for (int i = 0; i < s.Length; i++)
+            if (entry == null || string.IsNullOrEmpty(entry.Message)) return true; // nothing to warn about
+            var key = BuildProblemKey(gameKey, characterName);
+            if (!string.IsNullOrEmpty(key))
             {
-                char c = s[i];
-                if (char.IsWhiteSpace(c)) continue;
-                return c == '{' || c == '[';
+                if (s_BatchDecisionCache.TryGetValue(key, out var cached)) return cached;
+                // If a single popup for this problem was already shown earlier, default to continue without re-prompting
+                if (s_ShownProblemKeys.Contains(key)) return true;
             }
-            return false;
-        }
-
-        private static string ToAbsolutePath(string assetOrFsPath)
-        {
-            if (string.IsNullOrEmpty(assetOrFsPath)) return assetOrFsPath;
-            // Path.GetFullPath resolves Unity relative paths (e.g., "Assets/...") against project root
-            return Path.GetFullPath(assetOrFsPath);
-        }
-
-        private static int DirDistance(string startDir, string targetDir)
-        {
-            try
+            string title = $"{gameKey}: {characterName}";
+            string body = entry.Message + "\n\nProceed with processing?";
+            bool proceed = HoyoToonDialogWindow.ShowYesNoWithImageModal(title, body, MessageType.Warning);
+            if (!string.IsNullOrEmpty(key))
             {
-                string a = Path.GetFullPath(startDir ?? string.Empty).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                string b = Path.GetFullPath(targetDir ?? string.Empty).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-                if (string.Equals(a, b, StringComparison.OrdinalIgnoreCase)) return 0;
-                // Simple heuristic: count separators in the relative path
-                var rel = Uri.TryCreate(a + Path.DirectorySeparatorChar, UriKind.Absolute, out var ua)
-                          && Uri.TryCreate(b + Path.DirectorySeparatorChar, UriKind.Absolute, out var ub)
-                          ? ua.MakeRelativeUri(ub).ToString()
-                          : b;
-                return rel.Count(ch => ch == '/' || ch == '\\');
+                s_BatchDecisionCache[key] = proceed;
+                s_ShownProblemKeys.Add(key);
             }
-            catch { return int.MaxValue; }
+            return proceed;
         }
-
     }
 }
 #endif

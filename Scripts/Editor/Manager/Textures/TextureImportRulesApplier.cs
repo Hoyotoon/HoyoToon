@@ -5,10 +5,11 @@ using System.IO;
 using System.Linq;
 using UnityEditor;
 using UnityEngine;
-using HoyoToon.API;
 using HoyoToon.Utilities;
+using HoyoToon.API;
+using HoyoToon.Materials;
 
-namespace HoyoToon.API
+namespace HoyoToon.Textures
 {
     /// <summary>
     /// Applies per-game TextureImporter settings based on API-configured rules.
@@ -145,7 +146,7 @@ namespace HoyoToon.API
         }
 
         /// <summary>
-    /// Batch-apply texture import settings: modifies all eligible importers first, then commits once per changed asset.
+        /// Batch-apply texture import settings: modifies all eligible importers first, then commits once per changed asset.
         /// Returns number of assets changed.
         /// </summary>
         public static int TryApplyForAssetsBatch(IEnumerable<string> assetPaths, UnityEngine.Object contextAsset = null)
@@ -546,9 +547,7 @@ namespace HoyoToon.API
         }
 
         private static bool EnumTryParseIgnoreCase<TEnum>(string value, out TEnum result) where TEnum : struct
-        {
-            return Enum.TryParse(value, true, out result);
-        }
+            => HoyoToonEditorUtil.EnumTryParseIgnoreCase(value, out result);
 
         private static bool IsAssetSelected(string assetPath)
         {
