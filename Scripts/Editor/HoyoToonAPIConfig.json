@@ -3,31 +3,31 @@
     {
       "Key": "Genshin Impact",
       "DisplayName": "Genshin Impact",
-      "WebdavUrl": "https://assets.hoyotoon.com/s/TQgY4mkTyZEat2b",
+      "WebdavUrl": "https://cdn.hoyotoon.com/s/3ysO",
       "LocalPath": "Resources/Genshin Impact"
     },
     {
       "Key": "Honkai Impact 3rd",
       "DisplayName": "Honkai Impact 3rd",
-      "WebdavUrl": "https://assets.hoyotoon.com/s/Q7KkrB69ny5kTBL",
+      "WebdavUrl": "https://cdn.hoyotoon.com/s/jxCE",
       "LocalPath": "Resources/Honkai Impact 3rd"
     },
     {
       "Key": "Honkai Star Rail",
       "DisplayName": "Honkai Star Rail",
-      "WebdavUrl": "https://assets.hoyotoon.com/s/8RaZzPQyLLEFb7o",
+      "WebdavUrl": "https://cdn.hoyotoon.com/s/GwfR",
       "LocalPath": "Resources/Honkai Star Rail"
     },
     {
       "Key": "Wuthering Waves",
       "DisplayName": "Wuthering Waves",
-      "WebdavUrl": "https://assets.hoyotoon.com/s/Y6o9agnZ7xP84sS",
+      "WebdavUrl": "https://cdn.hoyotoon.com/s/dju1",
       "LocalPath": "Resources/Wuthering Waves"
     },
     {
       "Key": "Zenless Zone Zero",
       "DisplayName": "Zenless Zone Zero",
-      "WebdavUrl": "https://assets.hoyotoon.com/s/BWBcHTK7qmwTnfd",
+      "WebdavUrl": "https://cdn.hoyotoon.com/s/4BUv",
       "LocalPath": "Resources/Zenless Zone Zero"
     }
   ],
@@ -372,6 +372,885 @@
           {
             "Name": "Cerydra",
             "Message": "There's a problem with Cerydra. Mihoyo made her too unique to 2 units so just like them we're limiting you to simply generating only 2 materials. **Cope**",
+            "Type": "Info"
+          }
+        ]
+      }
+    },
+    {
+      "Key": "Genshin Impact",
+      "GameProperties": [
+        "_UseFaceMapNew"
+      ],
+      "ShaderKeywords": {
+        "HoyoToon/Genshin Impact/Character/Base": [
+
+        ],
+        "HoyoToon/Genshin Impact/Character/FaceDecal": [
+          "_EnableCharacterFaceDecal"
+        ],
+        "HoyoToon/Genshin Impact/Character/FacialUVExpression": [
+          "_FacialUVExpressionEnable"
+        ],
+        "HoyoToon/Genshin Impact/Character/Leather": [
+          "_UseCharacterLeather"
+        ],
+        "HoyoToon/Genshin Impact/Character/NbrBase": [
+          "_UseCharacterNbrBase"
+        ],
+        "HoyoToon/Genshin Impact/Character/NbrSpecular": [
+          "_UseCharacterNbrSpecular"
+        ],
+        "HoyoToon/Genshin Impact/Character/SkirkStar": [
+          "_EnableCharacterSkirtStar"
+        ],
+        "HoyoToon/Genshin Impact/Character/StockingsNew": [
+          "_UseCharacterStockings"
+        ],
+        "HoyoToon/Genshin Impact/Character/TransparentVeil": [
+          "_EyeTransAlpha"
+        ]
+      },
+      "DefaultShader": "HoyoToon/Genshin Impact/Character/Base",
+      "PropertyConversions": {
+        "_DstBlend": "_Test2"
+      },
+      "Tangents": {
+        "Options": [
+          "No Tangents",
+          "Tangent Generation",
+          "Vertex Color"
+        ],
+        "Status": "Tangent Generation",
+        "SkipMeshesContaining": [
+          "Test",
+          "test",
+          "TEST",
+          "Test",
+          "Testing",
+          "TangentIgnore"
+        ]
+      },
+      "TextureMappings": {
+        "_MTMap": "Avatar_Tex_MetalMap",
+        "_MTSpecularRamp": "Avatar_Tex_Specular_Ramp",
+        "_NyxStateOutlineNoise": "Eff_Avatar_NyxState",
+        "_ScanPatternTex": "Eff_Gradient_Repeat_01",
+        "_WeaponDissolveTex": "Eff_WeaponsTotem_Dissolve_00",
+        "_WeaponPatternTex": "Eff_WeaponsTotem_Grain_00"
+      },
+      "PropertyOverrides": {
+        "HoyoToon/Genshin Impact/Character/Base": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/FaceDecal": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/FacialUVExpression": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/Leather": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/NbrBase": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/NbrSpecular": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/SkirkStar": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/StockingsNew": {
+
+        },
+        "HoyoToon/Genshin Impact/Character/TransparentVeil": {
+
+        }
+      },
+      "TextureImportSettings": {
+        "Defaults": {
+          "SRGBTexture": null,
+          "MipmapEnabled": false,
+          "TextureCompression": "Uncompressed",
+          "NPOTScale": null,
+          "TextureType": null,
+          "Compression": null,
+          "StreamingMipmaps": null,
+          "WrapMode": null,
+          "MaxTextureSize": null,
+          "FilterMode": null
+        },
+        "NameEquals": {
+
+        },
+        "NameContains": {
+          "ExpressionMap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Diffuse": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Face01_Shadow": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_FaceLightmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Face_Shadow": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Lightmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Normalmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Shadow_Ramp": {
+            "SRGBTexture": true,
+            "MipmapEnabled": null,
+            "TextureCompression": "Uncompressed",
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Stockings_Detailmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          }
+        },
+        "NameEndsWith": {
+          "_Ramp_NoStream": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          }
+        }
+      },
+      "ModelImportSettings": {
+        "Defaults": {
+          "ScaleFactor": 1,
+          "UseFileScale": null,
+          "ImportBlendShapes": null,
+          "ImportVisibility": null,
+          "ImportCameras": null,
+          "ImportLights": null,
+          "IsReadable": true,
+          "OptimizeMeshPolygons": null,
+          "OptimizeMeshVertices": null,
+          "Normals": null,
+          "Tangents": null,
+          "AnimationType": null,
+          "AvatarSetup": null,
+          "BakeAxisConversion": null,
+          "ImportAnimation": null,
+          "AnimationCompression": null,
+          "ResampleCurves": null,
+          "MaterialImportMode": null,
+          "MaterialSearch": "Everywhere",
+          "MaterialName": "BasedOnMaterialName",
+          "MaterialLocation": null,
+          "MaterialSearchAndRemap": true,
+          "MaterialSearch&Remap": true,
+          "LegacyBlendshapeNormals": true
+        }
+      },
+      "ProblemList": {
+        "Texture": "_Diffuse",
+        "Regex": "(?<=_)[^_]+(?=_Tex_)",
+        "Entries": [
+          {
+            "Name": "Aino",
+            "Message": "Testing Genshin Detection",
+            "Type": "Info"
+          }
+        ]
+      }
+    },
+    {
+      "Key": "Honkai Impact 3rd",
+      "GameProperties": [
+        "_BloomFactor",
+        "_RampTexV"
+      ],
+      "ShaderKeywords": {
+        "HoyoToon/Honkai Impact 3rd/Avatar/Base": [
+
+        ],
+        "HoyoToon/Honkai Impact 3rd/Avatar/Face": [
+          "_EyeEffectTex",
+          "_EyeEffectPupil"
+        ],
+        "HoyoToon/Honkai Impact 3rd/SRP/CharacterTone": [
+          "_RampTexV",
+          "_GIForwardCol"
+        ],
+        "HoyoToon/Honkai Impact 3rd/SRP/CharacterTone Hair": [
+          "_SpecularLowJitterRangeMin",
+          "_SpecularLowJitterRangeMax",
+          "_SpecularLowShininessRangeMax"
+        ]
+      },
+      "DefaultShader": "HoyoToon/Honkai Impact 3rd/Avatar/Base",
+      "PropertyConversions": {
+        "_DstBlend": "_Test2"
+      },
+      "Tangents": {
+        "Options": [
+          "No Tangents",
+          "Tangent Generation",
+          "Vertex Color"
+        ],
+        "Status": "Tangent Generation",
+        "SkipMeshesContaining": [
+          "Test",
+          "test",
+          "TEST",
+          "Test",
+          "Testing",
+          "TangentIgnore"
+        ]
+      },
+      "TextureMappings": {
+
+      },
+      "PropertyOverrides": {
+        "HoyoToon/Honkai Impact 3rd/Avatar/Base": {
+
+        },
+        "HoyoToon/Honkai Impact 3rd/Avatar/Face": {
+
+        },
+        "HoyoToon/Honkai Impact 3rd/SRP/CharacterTone": {
+
+        },
+        "HoyoToon/Honkai Impact 3rd/SRP/CharacterTone Hair": {
+
+        }
+      },
+      "TextureImportSettings": {
+        "Defaults": {
+          "SRGBTexture": null,
+          "MipmapEnabled": false,
+          "TextureCompression": "Uncompressed",
+          "NPOTScale": null,
+          "TextureType": null,
+          "Compression": null,
+          "StreamingMipmaps": null,
+          "WrapMode": null,
+          "MaxTextureSize": null,
+          "FilterMode": null
+        },
+        "NameEquals": {
+
+        },
+        "NameContains": {
+          "ExpressionMap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "Ramp": {
+            "SRGBTexture": true,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Color": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Colormask": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Facemap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Lightmap": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Mask": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Ramp": {
+            "SRGBTexture": true,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_Smooth_Noise": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          }
+        },
+        "NameEndsWith": {
+          "_Normal": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          }
+        }
+      },
+      "ModelImportSettings": {
+        "Defaults": {
+          "ScaleFactor": 1,
+          "UseFileScale": null,
+          "ImportBlendShapes": null,
+          "ImportVisibility": null,
+          "ImportCameras": null,
+          "ImportLights": null,
+          "IsReadable": true,
+          "OptimizeMeshPolygons": null,
+          "OptimizeMeshVertices": null,
+          "Normals": null,
+          "Tangents": null,
+          "AnimationType": null,
+          "AvatarSetup": null,
+          "BakeAxisConversion": null,
+          "ImportAnimation": null,
+          "AnimationCompression": null,
+          "ResampleCurves": null,
+          "MaterialImportMode": null,
+          "MaterialSearch": "Everywhere",
+          "MaterialName": "BasedOnMaterialName",
+          "MaterialLocation": null,
+          "MaterialSearchAndRemap": true,
+          "MaterialSearch&Remap": true,
+          "LegacyBlendshapeNormals": true
+        }
+      },
+      "ProblemList": {
+        "Texture": "_Color",
+        "Regex": "(?<=_)[^_]+",
+        "Entries": [
+          {
+            "Name": "Coralie",
+            "Message": "yues",
+            "Type": "Info"
+          }
+        ]
+      }
+    },
+    {
+      "Key": "Zenless Zone Zero",
+      "GameProperties": [
+        "_OverlayTexScale",
+        "_ShallowColor"
+      ],
+      "ShaderKeywords": {
+        "HoyoToon/Zenless Zone Zero/Character/Base": [
+
+        ],
+        "HoyoToon/Zenless Zone Zero/Character/Eye": [
+          "_EyeColorMap"
+        ],
+        "HoyoToon/Zenless Zone Zero/Character/Face": [
+          "_NoseLineHoriDisp",
+          "_NoseLineLkDnDisp"
+        ],
+        "HoyoToon/Zenless Zone Zero/Character/Transparent": [
+          "_UseAlpha"
+        ]
+      },
+      "DefaultShader": "HoyoToon/Zenless Zone Zero/Character/Base",
+      "PropertyConversions": {
+        "_DstBlend": "_Test2"
+      },
+      "Tangents": {
+        "Options": [
+          "No Tangents",
+          "Tangent Generation",
+          "Vertex Color"
+        ],
+        "Status": "No Tangents",
+        "SkipMeshesContaining": [
+          "Test",
+          "test",
+          "TEST",
+          "Test",
+          "Testing",
+          "TangentIgnore"
+        ]
+      },
+      "TextureMappings": {
+        "_Lut2DTex": "LUT_ZZZ"
+      },
+      "PropertyOverrides": {
+        "HoyoToon/Zenless Zone Zero/Character/Base": {
+
+        },
+        "HoyoToon/Zenless Zone Zero/Character/Eye": {
+
+        },
+        "HoyoToon/Zenless Zone Zero/Character/Face": {
+
+        },
+        "HoyoToon/Zenless Zone Zero/Character/Transparent": {
+
+        }
+      },
+      "TextureImportSettings": {
+        "Defaults": {
+          "SRGBTexture": null,
+          "MipmapEnabled": false,
+          "TextureCompression": "Uncompressed",
+          "NPOTScale": null,
+          "TextureType": null,
+          "Compression": null,
+          "StreamingMipmaps": null,
+          "WrapMode": null,
+          "MaxTextureSize": null,
+          "FilterMode": null
+        },
+        "NameEquals": {
+
+        },
+        "NameContains": {
+          "LUT": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_A": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_D": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_M": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_N": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          }
+        },
+        "NameEndsWith": {
+
+        }
+      },
+      "ModelImportSettings": {
+        "Defaults": {
+          "ScaleFactor": 1,
+          "UseFileScale": null,
+          "ImportBlendShapes": null,
+          "ImportVisibility": null,
+          "ImportCameras": null,
+          "ImportLights": null,
+          "IsReadable": true,
+          "OptimizeMeshPolygons": null,
+          "OptimizeMeshVertices": null,
+          "Normals": null,
+          "Tangents": null,
+          "AnimationType": null,
+          "AvatarSetup": null,
+          "BakeAxisConversion": null,
+          "ImportAnimation": null,
+          "AnimationCompression": null,
+          "ResampleCurves": null,
+          "MaterialImportMode": null,
+          "MaterialSearch": "Everywhere",
+          "MaterialName": "BasedOnMaterialName",
+          "MaterialLocation": null,
+          "MaterialSearchAndRemap": true,
+          "MaterialSearch&Remap": true,
+          "LegacyBlendshapeNormals": true
+        }
+      },
+      "ProblemList": {
+        "Texture": "_D",
+        "Regex": "^[^_]+",
+        "Entries": [
+          {
+            "Name": "Unagi",
+            "Message": "Miyabi detected",
+            "Type": "Info"
+          }
+        ]
+      }
+    },
+    {
+      "Key": "Wuthering Waves",
+      "GameProperties": [
+        "ShadowProcess",
+        "EyeScale"
+      ],
+      "ShaderKeywords": {
+        "HoyoToon/Wuthering Waves/Character": [
+
+        ]
+      },
+      "DefaultShader": "HoyoToon/Wuthering Waves/Character",
+      "PropertyConversions": {
+        "RotationAngle": "Rotation Angle (0-1) (S)"
+      },
+      "Tangents": {
+        "Options": [
+          "No Tangents",
+          "Tangent Generation",
+          "Vertex Color"
+        ],
+        "Status": "Tangent Generation",
+        "SkipMeshesContaining": [
+          "Eye",
+          "eye",
+          "Eyes",
+          "eyes",
+          "EYE",
+          "EYES"
+        ]
+      },
+      "TextureMappings": {
+        "_Lut2DTex": "LUT_WUWA"
+      },
+      "PropertyOverrides": {
+        "HoyoToon/Wuthering Waves/Character": {
+
+        }
+      },
+      "TextureImportSettings": {
+        "Defaults": {
+          "SRGBTexture": null,
+          "MipmapEnabled": false,
+          "TextureCompression": "Uncompressed",
+          "NPOTScale": null,
+          "TextureType": null,
+          "Compression": null,
+          "StreamingMipmaps": null,
+          "WrapMode": null,
+          "MaxTextureSize": null,
+          "FilterMode": null
+        },
+        "NameEquals": {
+
+        },
+        "NameContains": {
+          "LUT": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_D": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_HET": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_HM": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_ID": {
+            "SRGBTexture": false,
+            "MipmapEnabled": null,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_LD": {
+            "SRGBTexture": true,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          },
+          "_N": {
+            "SRGBTexture": false,
+            "MipmapEnabled": false,
+            "TextureCompression": null,
+            "NPOTScale": null,
+            "TextureType": null,
+            "Compression": null,
+            "StreamingMipmaps": null,
+            "WrapMode": null,
+            "MaxTextureSize": null,
+            "FilterMode": null
+          }
+        },
+        "NameEndsWith": {
+
+        }
+      },
+      "ModelImportSettings": {
+        "Defaults": {
+          "ScaleFactor": 1,
+          "UseFileScale": null,
+          "ImportBlendShapes": null,
+          "ImportVisibility": null,
+          "ImportCameras": null,
+          "ImportLights": null,
+          "IsReadable": true,
+          "OptimizeMeshPolygons": null,
+          "OptimizeMeshVertices": null,
+          "Normals": null,
+          "Tangents": null,
+          "AnimationType": null,
+          "AvatarSetup": null,
+          "BakeAxisConversion": null,
+          "ImportAnimation": null,
+          "AnimationCompression": null,
+          "ResampleCurves": null,
+          "MaterialImportMode": null,
+          "MaterialSearch": "Everywhere",
+          "MaterialName": "BasedOnMaterialName",
+          "MaterialLocation": null,
+          "MaterialSearchAndRemap": true,
+          "MaterialSearch&Remap": true,
+          "LegacyBlendshapeNormals": true
+        }
+      },
+      "ProblemList": {
+        "Texture": "_D",
+        "Regex": "(?i)(?<=r2t1).*?(?=md)",
+        "Entries": [
+          {
+            "Name": "buling",
+            "Message": "buling test",
             "Type": "Info"
           }
         ]

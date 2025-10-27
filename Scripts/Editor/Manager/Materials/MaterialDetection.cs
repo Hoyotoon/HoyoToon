@@ -98,17 +98,11 @@ namespace HoyoToon.Materials
                             var t = entry.Type ?? "Info";
                             if (t.Equals("Warning", StringComparison.OrdinalIgnoreCase)) msgType = MessageType.Warning;
                             else if (t.Equals("Error", StringComparison.OrdinalIgnoreCase)) msgType = MessageType.Error;
-                            // De-duplicate: show once per (game|character) per session
-                            var key = BuildProblemKey(result.gameKey, charName);
-                            if (!string.IsNullOrEmpty(key) && s_ShownProblemKeys.Contains(key))
+                            try
                             {
-                                // already shown this session; skip
+                                HoyoToonDialogWindow.ShowYesNoWithImageModal($"{result.gameKey}: {charName}", entry.Message, msgType);
                             }
-                            else
-                            {
-                                try { HoyoToonDialogWindow.ShowYesNoWithImageModal($"{result.gameKey}: {charName}", entry.Message, msgType); } catch { }
-                                if (!string.IsNullOrEmpty(key)) s_ShownProblemKeys.Add(key);
-                            }
+                            catch { }
                         }
                     }
                     else
