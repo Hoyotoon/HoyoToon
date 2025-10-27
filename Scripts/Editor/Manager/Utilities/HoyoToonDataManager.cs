@@ -15,7 +15,7 @@ namespace HoyoToon
         static string packageName = "com.meliverse.hoyotoon";
         static string packagePath = Path.Combine(HoyoToonParseManager.GetPackagePath(packageName), "Scripts/Editor/Manager");
         private static readonly string cacheFilePath = Path.Combine(packagePath, "HoyoToonManager.json");
-        private static readonly string url = "https://api.hoyotoon.com/HoyoToonManager.json";
+        private static readonly string url = "https://api.hoyotoon.com/api/storage/8da534b6-e9e0-4013-a8e6-79b80396b67c";
         private static HoyoToonData hoyoToonData;
         public static string HSRShader => GetShaderPath("HSRShader");
         public static string GIShader => GetShaderPath("GIShader");
