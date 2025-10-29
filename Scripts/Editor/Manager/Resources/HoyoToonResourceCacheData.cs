@@ -285,7 +285,7 @@ namespace HoyoToon
                 {
                     Key = "Genshin",
                     DisplayName = "Genshin Impact",
-                    WebdavUrl = "https://assets.hoyotoon.com/s/TQgY4mkTyZEat2b",
+                    WebdavUrl = "https://cdn.hoyotoon.com/s/3ysO",
                     LocalPath = "Resources/GI"
                 }
             },
@@ -295,7 +295,7 @@ namespace HoyoToon
                 {
                     Key = "Hi3",
                     DisplayName = "Honkai Impact 3rd",
-                    WebdavUrl = "https://assets.hoyotoon.com/s/Q7KkrB69ny5kTBL",
+                    WebdavUrl = "https://cdn.hoyotoon.com/s/jxCE",
                     LocalPath = "Resources/Hi3"
                 }
             },
@@ -305,7 +305,7 @@ namespace HoyoToon
                 {
                     Key = "StarRail",
                     DisplayName = "Honkai: Star Rail",
-                    WebdavUrl = "https://assets.hoyotoon.com/s/8RaZzPQyLLEFb7o",
+                    WebdavUrl = "https://cdn.hoyotoon.com/s/GwfR",
                     LocalPath = "Resources/HSR"
                 }
             },
@@ -315,7 +315,7 @@ namespace HoyoToon
                 {
                     Key = "Wuwa",
                     DisplayName = "Wuthering Waves",
-                    WebdavUrl = "https://assets.hoyotoon.com/s/Y6o9agnZ7xP84sS",
+                    WebdavUrl = "https://cdn.hoyotoon.com/s/dju1",
                     LocalPath = "Resources/Wuwa"
                 }
             },
@@ -325,7 +325,7 @@ namespace HoyoToon
                 {
                     Key = "ZZZ",
                     DisplayName = "Zenless Zone Zero",
-                    WebdavUrl = "https://assets.hoyotoon.com/s/BWBcHTK7qmwTnfd",
+                    WebdavUrl = "https://cdn.hoyotoon.com/s/4BUv",
                     LocalPath = "Resources/ZZZ"
                 }
             }
