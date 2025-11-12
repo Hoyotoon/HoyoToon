@@ -36,7 +36,7 @@ float _ES_LevelHighLight;
 float4 _ES_SPColor;
 float _ES_SPIntensity;
 float _UseHeightLerp;
-float _CharaWorldSpaceOffset;
+float4 _CharaWorldSpaceOffset;
 float _ES_HeightLerpBottom;
 float _ES_HeightLerpTop;
 float4 _ES_HeightLerpBottomColor;

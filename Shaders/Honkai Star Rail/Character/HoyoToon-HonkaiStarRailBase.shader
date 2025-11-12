@@ -15,6 +15,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(MainGroup)] _BackColor ("BackColor", Color) = (1,1,1,1)
         [Sub(MainGroup)] _EnvColor ("Env Color", Color) = (1,1,1,1)
         [Sub(MainGroup)] _AddColor ("Add Color", Color) = (0,0,0,0)
+        [Sub(MainGroup)] _CharaWorldSpaceOffset ("World Space Offset", Vector) = (0,0,0,0)
+
         // material lut
         [Advanced(Material LUT)][SubToggle(MainGroup)] _UseMaterialValuesLUT ("Use Mat Lut", Float) = 0
         [Advanced][SubToggle(MainGroup)]_MaterialValuesPackLUT ("Mat Pack LUT", 2D) = "white" { }        
@@ -23,8 +25,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Advanced][Sub(MainGroup)]_AlphaCutoff ("Alpha Cutoff", Range(0, 1)) = 0.5
         [Advanced][Sub(MainGroup)]_AlphaTestThreshold ("AlphaTest Threshold", Range(0, 1)) = 0.5
         // hide character parts
-        [Advanced(Hide Chara Parts)][Sub(MainGroup)]  _HideCharaPartdfsds ("Hide Chara Parts", Float) = 0
-        [Advanced][SubToggle(MainGroup)] _HideCharaParts ("Hide Chara Parts", Float) = 0
+        [Advanced(Hide Chara Parts)][SubToggle(MainGroup)] _HideCharaParts ("Toggle Hide Chara Parts", Float) = 0
         [Advanced][Sub(MainGroup)][IntRange] _ShowPartID ("Show Part ID", Range(0, 256)) = 0
         // emission group
         [Main(EmissionGroup, _, off, off)] _EmissionGroup ("Emission Settings", Float) = 0
@@ -94,13 +95,16 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Advanced][Sub(OutlineGroup)] _OutlineColor5 ("Outline Color 5 (ID = 159)", Color) = (0,0,0,1)
         [Advanced][Sub(OutlineGroup)] _OutlineColor6 ("Outline Color 6 (ID = 192)", Color) = (0,0,0,1)
         [Advanced][Sub(OutlineGroup)] _OutlineColor7 ("Outline Color 7 (ID = 223)", Color) = (0,0,0,1)
-        [Sub(OutlineGroup)]_OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
+        [Sub(OutlineGroup)] _OutlineColorIntensity ("Outline Color Intensity", Float) = 0
+        [Sub(OutlineGroup)] _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
+        [Sub(OutlineGroup)] _OutlineScale ("Outline Scale", Range(0, 1)) = 0.1
         [SubEnum(OutlineGroup, Normal, 0, Tangent, 1, UV2, 2)] _OutlineNormalFrom ("Outline Normal From", Float) = 0
-        [Sub(OutlineGroup)]_OutlineColorIntensity ("Outline Color Intensity", Float) = 0
-        [Sub(OutlineGroup)]_OutlineExtdStart ("Outline Extend Start Distance", Range(0, 128)) = 6.5
-        [Sub(OutlineGroup)]_OutlineExtdMax ("Outline Extend Max Distance", Range(0, 128)) = 18
-        [Sub(OutlineGroup)]_OutlineExtdMode ("Outline Extend Max Distance", Float) = 0
-        [Sub(OutlineGroup)]_OutlineOffset ("Outline Offset", Range(-1, 1)) = 0
+        [Sub(OutlineGroup)] _OutlineExtdStart ("Outline Extend Start Distance", Range(0, 128)) = 6.5
+        [Sub(OutlineGroup)] _OutlineExtdMax ("Outline Extend Max Distance", Range(0, 128)) = 18
+        [Sub(OutlineGroup)] _OutlineExtdMode ("Outline Extend Max Distance", Float) = 0
+        [Sub(OutlineGroup)] _OutlineOffset ("Outline Offset", Range(-1, 1)) = 0
+        [Advanced(Scripted Values)][Sub(OutlineGroup)] _ES_OutLineDarkenVal ("ES Outline Darkened", float) = 0.0
+        [Advanced][Sub(OutlineGroup)] _ES_OutLineLightedVal ("ES Outline Lightened", float) = 0.0
         // rim group
         [Main(RimGroup, _, off, off)] _rimlightgroup("Rim Light", Float) = 0
         [Sub(RimGroup)] _RimLightMode ("0:don't use lightmap.r, 1:use", Range(0, 1)) = 1
@@ -147,7 +151,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(RimGroup)] _FresnelColorStrength ("FresnelColorStrength", Float) = 1
         [Advanced(Scripted Values)] [Sub(RimGroup)] _ES_RimLightWidth ("ES Rim Width", float) = 1.0
         [Advanced][Sub(RimGroup)] _ES_RimLightOffset ("Rim Offset", vector) = (0,0,0,0)
-        [Advanced][Sub(RimGroup)] _ES_RimLightAddMode ("Rim Light Add Mode", Float) = 0
+        [Advanced][Sub(RimGroup)] _ES_RimLightAddMode ("Rim Light Add Mode", Float) = 0.07
         // rim shadow
         [Main(RimShadowGroup, _, off, off)] _rimshadowgroup ("Rim Shadow", Float) = 0
         [Sub(RimShadowGroup)] _RimShadowCt ("Rim Shadow Ct", Float) = 1
@@ -178,6 +182,9 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Advanced][Sub(RimShadowGroup)] _RimShadowWidth6 ("Rim Shadow Width 6 (ID = 6)", Float) = 1
         [Advanced][Sub(RimShadowGroup)] _RimShadowWidth7 ("Rim Shadow Width 7 (ID = 7)", Float) = 1
         [Sub(RimShadowGroup)] _RimShadowOffset ("Rim Shadow Offset", Vector) = (0,0,0,0)
+        [Advanced(Scripted Values)] [Sub(RimShadowGroup)] _ES_RimShadowIntensity ("ES Rim Shadow Width", float) = 1.0
+        [Advanced][Sub(RimShadowGroup)] _ES_RimShadowColor ("Rim Shadow Offset", vector) = (0,0,0,0)
+        // eye highlight group
         // stocking group
         [Main(StockingGroup, _, off, off)] _stockinggroup ("Stockings", Float) = 0
         [Sub(StockingGroup)] _EnableStocking ("With Stockings", Float) = 0
@@ -217,7 +224,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(FlameCrystalGroup)] _TangentDirTex ("Tangent Direction Texture", 2D) = "bump" { }
         [Sub(FlameCrystalGroup)] _FlameTex ("Fmale Texture", 2D) = "black" { }
         [Sub(FlameCrystalGroup)] _CrystalTex ("Crystal Texture", 2D) = "black" { }
-        [Sub(FlameCrystalGroup)] _FlameID ("Material ID for Flame", Float) = 1
+        [SubIntRange(FlameCrystalGroup)] _FlameID ("Material ID for Flame", Range(0,7)) = 1
         [Sub(FlameCrystalGroup)] _FlameColorOut ("OutSide Flame Color", Color) = (1,1,1,1)
         [Sub(FlameCrystalGroup)] _FlameColorIn ("Inside Flame Color", Color) = (1,1,1,1)
         [Sub(FlameCrystalGroup)] _FlameHeight ("Flame Height", Range(0, 1)) = 1
@@ -289,17 +296,33 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(GlintGroup)] _GlintSparkle ("Glint Sparkle", Range(0, 10)) = 2
         [Sub(GlintGroup)] _GlintSparkFreq ("Glint Sparkle Frequence", Range(0, 10)) = 2
         [Sub(GlintGroup)] _GlintViewFreq ("Glint View Frequence", Range(0, 10)) = 5
+        [Advanced(Custom Paramater A)][Sub(GlintGroup)] _CustomParamA0 ("CustomParamA 0 (ID = 0)", Float) = 1
+        [Advanced][Sub(BloomGroup)] _CustomParamA1 ("CustomParamA 1 (ID = 31)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamA2 ("CustomParamA 2 (ID = 63)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamA3 ("CustomParamA 3 (ID = 95)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamA4 ("CustomParamA 4 (ID = 127)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamA5 ("CustomParamA 5 (ID = 159)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamA6 ("CustomParamA 6 (ID = 192)", Float) = 1
+        [Advanced][Sub(BloomGroup)] _CustomParamA7 ("CustomParamA 7 (ID = 223)", Float) = 1
+        [Advanced(Custom Paramater B)][Sub(GlintGroup)] _CustomParamB0 ("CustomParamB 0 (ID = 0)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB1 ("CustomParamB 1 (ID = 31)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB2 ("CustomParamB 2 (ID = 63)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB3 ("CustomParamB 3 (ID = 95)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB4 ("CustomParamB 4 (ID = 127)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB5 ("CustomParamB 5 (ID = 159)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB6 ("CustomParamB 6 (ID = 192)", Float) = 1
+        [Advanced][Sub(GlintGroup)] _CustomParamB7 ("CustomParamB 7 (ID = 223)", Float) = 1
         // reflection 
         [Main(ReflectionGroup, _, off, off)] _reflectiongroup ("Reflection Group", float) = 0
-        [Sub(ReflectionGroup)] _ReflectionRoughness ("Fake Reflection Roughness", Range(0.01, 16)) = 1
-        [Sub(ReflectionGroup)] _ReflectionThreshold ("Fake Reflection Threshold", Range(0, 1)) = 0.5
-        [Sub(ReflectionGroup)] _ReflectionSoftness ("Fake Reflection Softness", Range(0, 1)) = 0.05
-        [Sub(ReflectionGroup)] _ReflectionBlendThreshold ("Fake Reflection Threshold", Range(0, 1)) = 0.1
-        [Sub(ReflectionGroup)] _ReflectionReversedThreshold ("Fake Reflection Threshold", Range(0, 1)) = 0.1
-        [Sub(ReflectionGroup)] _FakeRefBlendIntensity ("Fake Reflection Threshold", Range(0, 1)) = 0.1
-        [Sub(ReflectionGroup)] _FakeRefAddIntensity ("Fake Reflection Threshold", Range(0, 1)) = 0.25
-        [Sub(ReflectionGroup)] _ReflectionColor ("", Color) = (1,1,1,1)
-        [Sub(ReflectionGroup)] _ReflectionBlendColor ("", Color) = (1,1,1,1)
+        [Sub(ReflectionGroup)] _ReflectionRoughness ("Reflection Roughness", Range(0.01, 16)) = 1
+        [Sub(ReflectionGroup)] _ReflectionThreshold ("Reflection Threshold", Range(0, 1)) = 0.5
+        [Sub(ReflectionGroup)] _ReflectionSoftness ("Reflection Softness", Range(0, 1)) = 0.05
+        [Sub(ReflectionGroup)] _ReflectionBlendThreshold ("Reflection Blend Threshold", Range(0, 1)) = 0.1
+        [Sub(ReflectionGroup)] _ReflectionReversedThreshold ("Reflection Reversed Threshold", Range(0, 1)) = 0.1
+        [Sub(ReflectionGroup)] _FakeRefBlendIntensity ("Reflection Blend Intensity", Range(0, 1)) = 0.1
+        [Sub(ReflectionGroup)] _FakeRefAddIntensity ("Reflection Add Intensity", Range(0, 1)) = 0.25
+        [Sub(ReflectionGroup)] _ReflectionColor ("Reflection Color", Color) = (0,0,0,1)
+        [Sub(ReflectionGroup)] _ReflectionBlendColor ("Reflection Blend Color", Color) = (0,0,0,1)
         //  dissolve k y s
         [Main(DissolveGroup, _, off, off)] _dissolvegroup ("Dissolve", Float) = 0
         [SubToggle(DissolveGroup)] _DissoveON ("Enable Dissolve", Float) = 0
@@ -308,34 +331,29 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(DissolveGroup)] _DissolveMap ("Dissolve Map", 2D) = "white" { }
         [Sub(DissolveGroup)] _DissolveST ("Dissolve ST", Vector) = (1,1,0,0)
         [Sub(DissolveGroup)] _DistortionST ("Distortion ST", Vector) = (1,1,0,0)
-        [Sub(DissolveGroup)] _DissolveDistortionIntensity ("", Float) = 0.01
-        [Sub(DissolveGroup)] _DissolveOutlineSize1 ("", Float) = 0.05
-        [Sub(DissolveGroup)] _DissolveOutlineSize2 ("", Float) = 0
-        [Sub(DissolveGroup)] _DissolveOutlineOffset ("", Float) = 0
-        [Sub(DissolveGroup)] _DissolveOutlineColor1 ("", Color) = (1,1,1,1)
-        [Sub(DissolveGroup)] _DissolveOutlineColor2 ("", Color) = (0,0,0,0)
-        [Sub(DissolveGroup)] _DissoveDirecMask ("", Float) = 2
-        [Sub(DissolveGroup)] _DissolveMapAdd ("", Float) = 0
-        [Sub(DissolveGroup)] _DissolveOutlineSmoothStep ("", Vector) = (0,0,0,0)
-        [Sub(DissolveGroup)] _DissolveUV ("", Range(0, 1)) = 0
-        [Sub(DissolveGroup)] _DissolveUVSpeed ("", Vector) = (0,0,0,0)
+        [Sub(DissolveGroup)] _DissolveDistortionIntensity ("Distortion Intensity", Float) = 0.01
+        [Sub(DissolveGroup)] _DissolveOutlineSize1 ("Outline Size 1", Float) = 0.05
+        [Sub(DissolveGroup)] _DissolveOutlineSize2 ("Outline Size 2", Float) = 0
+        [Sub(DissolveGroup)] _DissolveOutlineOffset ("Outline Offset", Float) = 0
+        [Sub(DissolveGroup)][HDR] _DissolveOutlineColor1 ("Outline Color 1", Color) = (1,1,1,1)
+        [Sub(DissolveGroup)][HDR] _DissolveOutlineColor2 ("Outline Color 2", Color) = (0,0,0,0)
+        [Sub(DissolveGroup)] _DissoveDirecMask ("Direction Mask", Float) = 2
+        [Sub(DissolveGroup)] _DissolveMapAdd ("Map Add", Float) = 0
+        [Sub(DissolveGroup)] _DissolveOutlineSmoothStep ("Outline SmoothStep", Vector) = (0,0,0,0)
+        [Sub(DissolveGroup)] _DissolveUV ("UV0 -> UV1", Range(0, 1)) = 0
+        [Sub(DissolveGroup)] _DissolveUVSpeed ("UV Speed", Vector) = (0,0,0,0)
         [Sub(DissolveGroup)] _DissolveMask ("Dissolve Mask", 2D) = "white" { }
         [Sub(DissolveGroup)] _DissolveComponent ("MaskChannel RGBA=0/1", Vector) = (1,0,0,0)
-        [Sub(DissolveGroup)] _DissolvePosMaskPos ("", Vector) = (1,0,0,1)
-        [Sub(DissolveGroup)] _DissolvePosMaskWorldON ("", Float) = 0
-        [Sub(DissolveGroup)] _DissolvePosMaskRootOffset ("", Vector) = (0,0,0,0)
-        [Sub(DissolveGroup)] _DissolvePosMaskFilpOn ("", Float) = 0
-        [Sub(DissolveGroup)] _DissolvePosMaskOn ("", Float) = 0
-        [Sub(DissolveGroup)] _DissolveMaskUVSet ("", Range(0, 1)) = 0
-        [Sub(DissolveGroup)] _DissolveUseDirection ("_DissolveUseDirection", Float) = 0
-        [Sub(DissolveGroup)] _DissolveCenter ("_DissolveCenter", Vector) = (0,0,0,0)
-        [Sub(DissolveGroup)] _DissolveDiretcionXYZ ("_DissolveDiretcionXYZ", Vector) = (0,0,0,0)
-        [Sub(DissolveGroup)] _DissolvePosMaskGlobalOn ("_DissolvePosMaskGlobalOn", Float) = 0
-        // add light
-        [Main(AddLightGroup, _, off, off)] _addlightgroup ("Add Light Group", Float) = 0
-        [Sub(AddLightGroup)] _AddLightOffset ("Add Light Offset", Range(0, 1)) = 0.5
-        [Sub(AddLightGroup)] _AddLightStrengthen ("Add Light Strengthen", Range(0, 3)) = 0.3
-        [Sub(AddLightGroup)] _AddLightFeather ("Add Light Feather", Range(0, 0.1)) = 0.03
+        [Sub(DissolveGroup)] _DissolvePosMaskPos ("Mask Position", Vector) = (1,0,0,1)
+        [SubToggle(DissolveGroup)] _DissolvePosMaskWorldON ("World Mask On/Off", Float) = 0
+        [Sub(DissolveGroup)] _DissolvePosMaskRootOffset ("World Offset", Vector) = (0,0,0,0)
+        [SubToggle(DissolveGroup)] _DissolvePosMaskFilpOn ("Mask Flip On/Off", Float) = 0
+        [SubToggle(DissolveGroup)] _DissolvePosMaskOn ("Mask On/Off", Float) = 0
+        [Sub(DissolveGroup)] _DissolveMaskUVSet ("UV Set", Range(0, 1)) = 0
+        [SubToggle(DissolveGroup)] _DissolveUseDirection ("Use Direction", Float) = 0
+        [Sub(DissolveGroup)] _DissolveCenter ("Center", Vector) = (0,0,0,0)
+        [Sub(DissolveGroup)] _DissolveDiretcionXYZ ("XYZ Direction", Vector) = (0,0,0,0)
+        [SubToggle(DissolveGroup)] _DissolvePosMaskGlobalOn ("Global Mask On/Off", Float) = 0 
         // bloom group
         [Main(BloomGroup, _, off, off)] _bloomgroup ("Extra Bloom", float) = 0
         [Advanced(Bloom Intensity)] [Sub(BloomGroup)] _mBloomIntensity0 ("Bloom Intensity 0 (ID = 0)", Float) = 0
@@ -354,32 +372,14 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Advanced][Sub(BloomGroup)] _mBloomColor5 ("Bloom Color 5 (ID = 159)", Color) = (1,1,1,1)
         [Advanced][Sub(BloomGroup)] _mBloomColor6 ("Bloom Color 6 (ID = 192)", Color) = (1,1,1,1)
         [Advanced][Sub(BloomGroup)] _mBloomColor7 ("Bloom Color 7 (ID = 223)", Color) = (1,1,1,1)
-        [Advanced(Bloom Color)][Sub(BloomGroup)] _CustomParamA0 ("CustomParamA 0 (ID = 0)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA1 ("CustomParamA 1 (ID = 31)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA2 ("CustomParamA 2 (ID = 63)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA3 ("CustomParamA 3 (ID = 95)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA4 ("CustomParamA 4 (ID = 127)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA5 ("CustomParamA 5 (ID = 159)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA6 ("CustomParamA 6 (ID = 192)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamA7 ("CustomParamA 7 (ID = 223)", Float) = 1
-        [Advanced(Bloom Color)][Sub(BloomGroup)] _CustomParamB0 ("CustomParamB 0 (ID = 0)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB1 ("CustomParamB 1 (ID = 31)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB2 ("CustomParamB 2 (ID = 63)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB3 ("CustomParamB 3 (ID = 95)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB4 ("CustomParamB 4 (ID = 127)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB5 ("CustomParamB 5 (ID = 159)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB6 ("CustomParamB 6 (ID = 192)", Float) = 1
-        [Advanced][Sub(BloomGroup)] _CustomParamB7 ("CustomParamB 7 (ID = 223)", Float) = 1
         
         [Main(HeightGroup, _, off, off)] _heightgroup ("Height Light Group", Float) = 0
         [SubToggle(HeightGroup)] _UseHeightLerp ("Enable Height Light", Float) = 0
-        [Sub(HeightGroup)] _CharaWorldSpaceOffset ("World Space Offset", Float) = 0
         [Sub(HeightGroup)]_ES_HeightLerpBottom ("Height Bottom", Float) = 0
         [Sub(HeightGroup)]_ES_HeightLerpTop ("Height Top", Float) = 1
         [Advanced(Colors)][Sub(HeightGroup)] _ES_HeightLerpBottomColor ("Light Bottom Color", Color) = (0.5,0.5,0.5,1)
         [Advanced][Sub(HeightGroup)] _ES_HeightLerpMiddleColor ("Light Middle Color", Color) = (1,1,1,1)
         [Advanced][Sub(HeightGroup)] _ES_HeightLerpTopColor ("Light Top Color", Color) = (1,1,1,1)
-
 
         [Main(RenderinGroup, _, off, off)] _renderinggroup("Rendering Settings", float) = 0
         [Sub(RenderinGroup)] _StencilRef ("Stencil Ref", Float) = 16
@@ -400,6 +400,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
     SubShader
     {
         HLSLINCLUDE 
+        #define is_baseshader
         #include "UnityCG.cginc"
         #include "UnityLightingCommon.cginc"
         #include "UnityShaderVariables.cginc"
@@ -407,9 +408,9 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         #include "AutoLight.cginc"
         #include "UnityInstancing.cginc"
         #include "includes/HonkaiStarRail-header.hlsl"
-        #include "includes/HonkaiStarRail-common.hlsl"
         #include "includes/HonkaiStarRail-base_input.hlsl"
         #include "includes/HonkaiStarRail-base_declaration.hlsl"
+        #include "includes/HonkaiStarRail-common.hlsl"
         ENDHLSL
 
         Pass
@@ -429,7 +430,26 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
 
             ENDHLSL
         }
-        UsePass "VertexLit/SHADOWCASTER"
+
+        Pass
+        {
+            Name "Outline Pass"
+            Tags{ "LightMode" = "ForwardBase" }
+            Cull Front
+            
+            Blend [_SrcBlend] [_DstBlend] 
+
+            HLSLPROGRAM
+            #pragma vertex outline_vertex
+            #pragma fragment outline_pixel
+            // make fog work
+            #pragma multi_compile_fog
+
+            #include "includes/HonkaiStarRail-base_program.hlsl"
+
+            ENDHLSL
+        }
+        UsePass "HoyoToon/Honkai Star Rail/Character/Depth Caster/Shadow Pass"
     }
     CustomEditor "LWGUI.LWGUI"
 }

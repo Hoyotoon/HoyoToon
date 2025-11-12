@@ -19,6 +19,8 @@ struct vertex_output
     float4 ws_pos    : TEXCOORD6;
     float4 screenpos : TEXCOORD7;
     float4 opos      : TEXCOORD8;
+    float4 diss_uv   : TEXCOORD9;
+    float4 diss_pos  : TEXCOORD10;
     UNITY_FOG_COORDS(10)
     float4 vertex  : SV_POSITION;
 };

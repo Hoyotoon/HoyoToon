@@ -15,6 +15,12 @@ Texture2D _MatCapMaskTex;
 Texture2D _GlintMask;
 Texture2D _DissolveMap;
 Texture2D _DissolveMask;
+Texture2D _OutlineColorTex;
+
+float4 _SkyTex_ST;
+float4 _SkyMask_ST;
+float4 _SkyStarTex_ST;
+float4 _SkyStarMaskTex_ST;
 
 int _UVChannelFront;
 int _UVChannelBack;
@@ -80,6 +86,7 @@ float _SpecularIntensity6;
 float _SpecularIntensity7;
 
 // outline
+float _Outline;
 float4 _OutlineColor0;
 float4 _OutlineColor1;
 float4 _OutlineColor2;
@@ -89,12 +96,15 @@ float4 _OutlineColor5;
 float4 _OutlineColor6;
 float4 _OutlineColor7;
 float _OutlineWidth;
+float _OutlineScale;
 float _OutlineNormalFrom;
 float _OutlineColorIntensity;
 float _OutlineExtdStart;
 float _OutlineExtdMax;
 float _OutlineExtdMode;
 float _OutlineOffset;
+float _ES_OutLineDarkenVal;
+float _ES_OutLineLightedVal;
 
 // rim
 float _RimLightMode;
@@ -153,6 +163,7 @@ float4 _RimShadowColor4;
 float4 _RimShadowColor5;
 float4 _RimShadowColor6;
 float4 _RimShadowColor7;
+float _RimShadowFeather0;
 float _RimShadowFeather1;
 float _RimShadowFeather2;
 float _RimShadowFeather3;
@@ -169,6 +180,8 @@ float _RimShadowWidth5;
 float _RimShadowWidth6;
 float _RimShadowWidth7;
 float4 _RimShadowOffset;
+float4 _ES_RimShadowColor;
+float _ES_RimShadowIntensity;
 
 // stocking
 float _EnableStocking;
@@ -211,6 +224,7 @@ float _MatCapStrength;
 float _MatCapStrengthInShadow;
 
 //  glint
+float _UseGlint;
 float _GlintWorldPosUV;
 float _GlintScaleBackface;
 float _GlintUVTillingY;
@@ -218,11 +232,11 @@ float _GlobalGlintScale;
 float _GlobalGlintPointScale;
 float _GlobalGlintIntensity;
 float _GlobalGlintShadow;
-float _GlobalGlintColor;
+float4 _GlobalGlintColor;
 float _GlobalGlintDensity;
 float _GlobalGlintSparkle;
 float _GlobalGlintSparkFreq;
-float _GlobalGlintViewFreq;
+float _GlobalGlintViewFreq; 
 float _GlintScale;
 float _GlintPointScale;
 float _GlintDensity;
@@ -245,7 +259,7 @@ float _FakeRefAddIntensity;
 float4 _ReflectionColor;
 float4 _ReflectionBlendColor;
 
-//  dissolve
+// dissolve
 float _DissoveON;
 float _DissolveShadowOff;
 float _DissolveRate;
@@ -273,6 +287,7 @@ float _DissolveUseDirection;
 float4 _DissolveCenter;
 float4 _DissolveDiretcionXYZ;
 float _DissolvePosMaskGlobalOn;
+float3 _ES_EffCustomLightPosition;
 
 // addlight
 float _AddLightOffset;
@@ -312,3 +327,37 @@ float _CustomParamB4;
 float _CustomParamB5;
 float _CustomParamB6;
 float _CustomParamB7;
+
+float _UseOverHeated;
+float _HeatInst;
+float4 _HeatDir;
+float _HeatedHeight;
+float _HeatedThreshould;
+float4 _HeatColor0;
+float4 _HeatColor1;
+float4 _HeatColor2;
+
+// flame crystal
+float _flamecrystalgroup;
+float _FlameCrystal;
+float _FlameID;
+float4 _FlameColorOut;
+float4 _FlameColorIn;
+float _FlameHeight;
+float _FlameWidth;
+float _FlameSpeed;
+float _FlameSwirilTexScale;
+float _FlameSwirilSpeed;
+float _FlameSwirilScale;
+float _CrystalTransparency;
+float _CrystalRange1;
+float _CrystalRange2;
+float _ColorIntensity;
+float4 _EffectColor0;
+float4 _EffectColor1;
+float4 _EffectColor2;
+float4 _EffectColor3;
+float4 _EffectColor4;
+float4 _EffectColor5;
+float4 _EffectColor6;
+float4 _EffectColor7;
