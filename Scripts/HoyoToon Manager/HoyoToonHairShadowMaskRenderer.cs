@@ -666,8 +666,12 @@ namespace HoyoToon.EditorTools.ManagerScene
 
             if (!HasHairTag())
             {
-                WarnMissingHairTag();
-                return false;
+                TryCreateHairTag();
+                if (!HasHairTag())
+                {
+                    WarnMissingHairTag();
+                    return false;
+                }
             }
 
             try
@@ -676,8 +680,13 @@ namespace HoyoToon.EditorTools.ManagerScene
             }
             catch (UnityException)
             {
-                WarnMissingHairTag();
-                return false;
+                TryCreateHairTag();
+                if (!HasHairTag())
+                {
+                    WarnMissingHairTag();
+                    return false;
+                }
+                return renderer.CompareTag(HairTagName);
             }
         }
 
@@ -705,33 +714,6 @@ namespace HoyoToon.EditorTools.ManagerScene
 #endif
 
             return s_hasHairTag;
-        }
-
-        private void WarnMissingHairTag()
-            if (!HasHairTag())
-#if UNITY_EDITOR
-                TryCreateHairTag();
-                if (!HasHairTag())
-                {
-                    WarnMissingHairTag();
-                    return false;
-                }
-            }
-
-            try
-            {
-                return renderer.CompareTag(HairTagName);
-            }
-            catch (UnityException)
-            {
-                TryCreateHairTag();
-                if (!HasHairTag())
-                {
-                    WarnMissingHairTag();
-                    return false;
-                }
-                return renderer.CompareTag(HairTagName);
-            }
         }
 
         private void TryCreateHairTag()
@@ -774,6 +756,20 @@ namespace HoyoToon.EditorTools.ManagerScene
             }
 #endif
         }
+
+        private void WarnMissingHairTag()
+        {
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                var now = EditorApplication.timeSinceStartup;
+                if (now - _lastHairWarningTime < HairWarningCooldownSeconds)
+                {
+                    return;
+                }
+                _lastHairWarningTime = now;
+            }
+#endif
             Debug.LogWarning("[HoyoToon] Tag 'Hair' not found. Hair shadow mask will be disabled until the tag is created.");
         }
     }

@@ -246,6 +246,7 @@ namespace HoyoToon.Updater
                         win.SetMessage("Downloading files, verifying integrity, and writing to disk. Please wait...");
                         win.SetShowProgressBar(true);
                         win.UpdateProgress(0.01f, "Preparing...");
+                        win.SetButtons(Array.Empty<string>(), defaultIndex: 0, cancelIndex: -1, onResultIndex: null, keepOpenOnClick: true);
 
                         var sink = new DialogProgressSink(win);
                         try
@@ -259,17 +260,25 @@ namespace HoyoToon.Updater
                             doneMsg.AppendLine("package.json refreshed.");
                             doneMsg.AppendLine();
                             doneMsg.AppendLine("You can now close this window.");
-                            win.SetTitle("Update Complete");
-                            win.SetMessage(doneMsg.ToString());
-                            win.SetButtons(new[] { "Close" }, 0, 0, _ => { }, keepOpenOnClick: false);
+                            EditorApplication.delayCall += () =>
+                            {
+                                if (win == null) return;
+                                win.SetTitle("Update Complete");
+                                win.SetMessage(doneMsg.ToString());
+                                win.SetButtons(new[] { "Close" }, 0, 0, _ => { }, keepOpenOnClick: false);
+                            };
                         }
                         catch (Exception ex)
                         {
                             var err = $"Update failed: {ex.Message}";
                             HoyoToonDialogWindow.ShowError("Update Failed", err);
-                            win.SetTitle("Update Failed");
-                            win.SetMessage(err + "\n\nSome files may have been partially updated.");
-                            win.SetButtons(new[] { "Close" }, 0, 0, _ => { }, keepOpenOnClick: false);
+                            EditorApplication.delayCall += () =>
+                            {
+                                if (win == null) return;
+                                win.SetTitle("Update Failed");
+                                win.SetMessage(err + "\n\nSome files may have been partially updated.");
+                                win.SetButtons(new[] { "Close" }, 0, 0, _ => { }, keepOpenOnClick: false);
+                            };
                         }
                     }
                     else

@@ -3,7 +3,6 @@ using System;
 using System.IO;
 using System.Text.RegularExpressions;
 using UnityEditor;
-using UnityEditor.PackageManager;
 using UnityEngine;
 using HoyoToon.Prerequisites;
 using HoyoToon.Utilities;
@@ -99,7 +98,7 @@ namespace HoyoToon.Shaders
         {
             try
             {
-                var packageInfo = PackageInfo.FindForAssembly(typeof(HoyoToonShaderPreprocessor).Assembly);
+                var packageInfo = UnityEditor.PackageManager.PackageInfo.FindForAssembly(typeof(HoyoToonShaderPreprocessor).Assembly);
                 if (packageInfo != null && !string.IsNullOrEmpty(packageInfo.resolvedPath))
                 {
                     return Path.Combine(packageInfo.resolvedPath, ShadersFolderName);
