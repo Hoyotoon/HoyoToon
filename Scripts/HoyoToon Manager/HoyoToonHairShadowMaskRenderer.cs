@@ -5,6 +5,7 @@ using UnityEngine;
 
 #if UNITY_EDITOR
 using UnityEditor;
+using UnityEditorInternal;
 #endif
 
 namespace HoyoToon.EditorTools.ManagerScene
@@ -94,6 +95,9 @@ namespace HoyoToon.EditorTools.ManagerScene
         private bool isInitialized = false;
         private double _lastHairWarningTime;
         private const double HairWarningCooldownSeconds = 5.0;
+        private const string HairTagName = "Hair";
+        private static bool s_tagChecked;
+        private static bool s_hasHairTag;
 
         public static HoyoToonHairShadowMaskRenderer EnsureForManager(HoyoToonManager manager, Transform parent)
         {
@@ -387,7 +391,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                     continue;
                 }
 
-                bool isHair = renderer.CompareTag("Hair");
+                bool isHair = IsHairRenderer(renderer);
                 if (isHair) hairFound = true;
 
                 Material sharedMaskMat;
@@ -644,13 +648,133 @@ namespace HoyoToon.EditorTools.ManagerScene
                     continue;
                 }
 
-                if (renderer.CompareTag("Hair"))
+                if (IsHairRenderer(renderer))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private bool IsHairRenderer(Renderer renderer)
+        {
+            if (renderer == null || renderer.gameObject == null)
+            {
+                return false;
+            }
+
+            if (!HasHairTag())
+            {
+                WarnMissingHairTag();
+                return false;
+            }
+
+            try
+            {
+                return renderer.CompareTag(HairTagName);
+            }
+            catch (UnityException)
+            {
+                WarnMissingHairTag();
+                return false;
+            }
+        }
+
+        private bool HasHairTag()
+        {
+            if (s_tagChecked)
+            {
+                return s_hasHairTag;
+            }
+
+            s_tagChecked = true;
+
+#if UNITY_EDITOR
+            try
+            {
+                var tags = InternalEditorUtility.tags;
+                s_hasHairTag = tags != null && tags.Contains(HairTagName);
+            }
+            catch
+            {
+                s_hasHairTag = false;
+            }
+#else
+            s_hasHairTag = true;
+#endif
+
+            return s_hasHairTag;
+        }
+
+        private void WarnMissingHairTag()
+            if (!HasHairTag())
+#if UNITY_EDITOR
+                TryCreateHairTag();
+                if (!HasHairTag())
+                {
+                    WarnMissingHairTag();
+                    return false;
+                }
+            }
+
+            try
+            {
+                return renderer.CompareTag(HairTagName);
+            }
+            catch (UnityException)
+            {
+                TryCreateHairTag();
+                if (!HasHairTag())
+                {
+                    WarnMissingHairTag();
+                    return false;
+                }
+                return renderer.CompareTag(HairTagName);
+            }
+        }
+
+        private void TryCreateHairTag()
+        {
+#if UNITY_EDITOR
+            if (HasHairTag())
+            {
+                return;
+            }
+
+            try
+            {
+                var tagManager = new SerializedObject(AssetDatabase.LoadAllAssetsAtPath("ProjectSettings/TagManager.asset")[0]);
+                var tagsProp = tagManager.FindProperty("tags");
+                bool exists = false;
+                for (int i = 0; i < tagsProp.arraySize; i++)
+                {
+                    var tagProp = tagsProp.GetArrayElementAtIndex(i);
+                    if (tagProp != null && tagProp.stringValue == HairTagName)
+                    {
+                        exists = true;
+                        break;
+                    }
+                }
+
+                if (!exists)
+                {
+                    tagsProp.InsertArrayElementAtIndex(tagsProp.arraySize);
+                    var newTagProp = tagsProp.GetArrayElementAtIndex(tagsProp.arraySize - 1);
+                    newTagProp.stringValue = HairTagName;
+                    tagManager.ApplyModifiedProperties();
+                }
+
+                s_tagChecked = false;
+                _lastHairWarningTime = 0;
+            }
+            catch
+            {
+                s_tagChecked = false;
+            }
+#endif
+        }
+            Debug.LogWarning("[HoyoToon] Tag 'Hair' not found. Hair shadow mask will be disabled until the tag is created.");
         }
     }
 }
