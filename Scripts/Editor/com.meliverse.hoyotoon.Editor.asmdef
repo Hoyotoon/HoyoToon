@@ -2,7 +2,9 @@
   "name": "com.meliverse.hoyotoon.Editor",
   "rootNamespace": "",
   "references": [
-    "com.vrchat.core.vpm-resolver.Editor"
+    "com.vrchat.core.vpm-resolver.Editor",
+    "com.meliverse.hoyotoon.Scripts",
+    "Unity.Postprocessing.Runtime"
   ],
   "includePlatforms": [
     "Editor"

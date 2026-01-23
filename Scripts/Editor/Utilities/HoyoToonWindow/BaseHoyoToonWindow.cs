@@ -438,7 +438,10 @@ namespace HoyoToon.Utilities
                 minSize = new Vector2(Mathf.Max(UiLayout.WINDOW_MIN_WIDTH, minSize.x, width), Mathf.Max(dynamicMin, newH));
                 maxSize = new Vector2(Mathf.Max(UiLayout.WINDOW_DEFAULT_WIDTH, maxSize.x, width), UiLayout.WINDOW_MAX_HEIGHT);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("BaseWindow.PreSize", $"Base window pre-size failed: {ex.Message}");
+            }
             finally
             {
                 _pendingResize = true;

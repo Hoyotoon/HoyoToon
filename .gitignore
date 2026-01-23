@@ -50,19 +50,15 @@ Resources/ZZZ/
 Resources/Genshin/
 Resources/Hi3/
 Resources/StarRail/
-Resources/Wuwa/
 Shaders/WIP/
 Shaders/WIP.meta
 Resources/Hi3.meta
 Resources/ZZZ.meta
-Resources/Wuwa.meta
 Resources/Genshin.meta
 Resources/StarRail.meta
 Resources/Hi3.meta
-Resources/Wuwa.meta
 Resources/Genshin.meta
 Resources/StarRail.meta
-Resources/Wuwa
 Resources/GI
 Resources/HSR
 Resources.meta
@@ -75,8 +71,6 @@ Resources/Honkai Star Rail
 Resources/Honkai Star Rail.meta
 Resources/Zenless Zone Zero
 Resources/Zenless Zone Zero.meta
-Resources/Wuthering Waves
-Resources/Wuthering Waves.meta
 /.github/instructions
 Scripts/Editor/ResourceCache.json
 Scripts/Editor/ResourceCache.json.meta

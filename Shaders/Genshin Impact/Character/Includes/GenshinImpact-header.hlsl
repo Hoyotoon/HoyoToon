@@ -1,0 +1,536 @@
+#ifndef GI_HEADER
+#define GI_HEADER
+// this is where we'll be putting the 100% common and shared things between all the hsr shaders
+// starting with the generic samplers
+SamplerState sampler_linear_repeat;
+SamplerState sampler_linear_clamp;
+SamplerState sampler_point_repeat;
+SamplerState sampler_point_clamp;
+
+// common textures now
+Texture2D _MainTex;
+float4 _MainTex_ST;
+
+float _TessMask;
+float _TessValue;
+float _PhongWeight;
+
+UNITY_DECLARE_DEPTH_TEXTURE(_CameraDepthTexture);
+
+float _ES_CharacterColorTone;
+float _CurTimeOfDay24; // this is actually the same as the above but 0 = 0 and 1 = 24
+
+#if defined(is_weapon_or_glass)
+    Texture2D _WeaponPatternTex;
+    Texture2D _WeaponDissolveTex;
+    Texture2D _ScanPatternTex;
+    float4 _WeaponDissolveTex_ST;
+    float4 _WeaponPatternTex_ST;
+    float _MainColorScaler;
+    float4 _WeaponPatternColor;
+    float _Pattern_Speed;
+    float _WeaponDissolveValue;
+    float _DissolveDirection_Toggle;
+    float _SkillEmisssionPower;
+    float4 _SkillEmisssionColor;
+    float _SkillEmissionScaler;
+    float4 _ScanPatternTex_ST;
+    float _ScanDirection_Switch;
+    float _ScanSpeed;
+    float _ScanColorScaler;
+    float4 _ScanColor;
+#endif
+
+float4 _Test;
+
+float _IsYup;
+
+float _UseNPCMultiEye;
+float _NPCMultiEyeSize;
+Texture2D _EyeMask;
+
+Texture2D _LightMapBlueNoise;
+Texture2D _TextureLinePackageMap;
+#if defined(ENABLE_PACK_NORMAL_ON)
+Texture2D _NormalPackageMap;
+#endif
+Texture2D _PackageLightMap;
+
+Texture2D _FakePointNoiseTex;
+#if defined(FACE_MAP_NEW_ON)
+Texture2D _FaceMapTex;
+#endif
+#if defined(METAL_MAT)
+    Texture2D _MTSpecularRamp;
+    Texture2D _MTMap;
+#endif
+#if defined(SHADOW_RAMP_ON)
+    Texture2D _PackedShadowRampTex;
+#endif 
+#if defined(BUMP_TEXTURELINE_MAP)
+    Texture2D _BumpMap; 
+#endif
+Texture2D _LightMapTex;
+#if defined(MATERIAL_MASK)
+    Texture2D _MaterialMasksTex;
+    float4 _MaterialMasksTex_ST;
+#endif
+
+float _MainTexAlphaUse;
+float _MainTexAlphaCutoff;
+float _FaceBlushStrength;
+float4 _FaceBlushColor;
+float4 _Color;
+float _UseEyeMask;
+float _EnableEyeMaskDraw;
+float _DrawAlphaClipEye;
+
+float _ES_AvatarRimWidthScale;
+float _ES_AvatarRimWidth;
+float4 _ES_AvatarFrontRimColor;
+float _ES_AvatarFrontRimIntensity;
+float4 _ES_AvatarBackRimColor;
+float _ES_AvatarBackRimIntensity;
+
+float _DesaturateScale;
+float _UseMaterialMasksTex;
+float _UseToonLightMap;
+float _UseLightMapColorAO;
+#if defined(BUMP_TEXTURELINE_MAP)
+    float _UseBumpMap;
+    float _BumpScale;
+#endif
+float _UseMobileBumpCompressSmooth;
+float4 _FirstShadowMultColor;
+float4 _CoolShadowMultColor;
+float _UseVertexColorAO;
+float _UseCoolShadowColorOrTex;
+float _LightArea;
+float _UseShadowTransition;
+float _ShadowTransitionRange;
+float _ShadowTransitionSoftness;
+#if defined(SHADOW_RAMP_ON)
+    float _UseShadowRamp;
+    float _ShadowRampWidth;
+    float _UseVertexRampWidth;
+#endif
+float _useShadowSoft;
+float _shadowSoftRange;
+float _UseSpecular;
+float _Shininess;
+float _SpecMulti;
+float _SpecualrInShaow;
+float4 _SpecularColor;
+float _SpecOpacity;
+float _UseCharacterPlaneClips;
+#if defined(METAL_MAT)
+    float _MetalMaterial;
+    float _MTMapBrightness;
+    float _MTMapTileScale;
+    float4 _MTMapLightColor;
+    float4 _MTMapDarkColor;
+    float4 _MTShadowMultiColor;
+    float _MTShininess;
+    float _MTSpecularScale;
+    float _MTSpecularAttenInShadow;
+    float4 _MTSpecularColor;
+    float _MTUseSpecularRamp;
+    float _MTSharpLayerOffset;
+    float4 _MTSharpLayerColor;
+    float _MTSpecularOffset;
+    float _MTSpecularShadowScale;
+    float _MTSpecularAO;
+#endif
+float _CharacterEmission;
+float _EmissionScaler;
+float4 _EmissionScaler_State;
+float4 _EmissionScaler_Value1;
+float4 _EmissionScaler_Value2;
+float4 _EmissionScaler_LerpParam;
+float4 _EmissionColor_MHY;
+float4 _EmissionColor_MHY1;
+float _EmissionScaler1;
+float _EnableEmissionBloom;
+float4 _EmissionBloomColor;
+float _EmissionBloomScale;
+#if defined(BUMP_TEXTURELINE_MAP)
+    float _TextureLineThickness;
+    float _TextureLineSmoothness;
+    float4 _TextureLineDistanceControl;
+#endif
+float4 _TextureLineMultiplier;
+float _OutlineWidth;
+float _Scale;
+float _OutlineCorrectionWidth;
+float4 _OutlineColor;
+float _OutLineZOffset;
+float _OutLineIntensity;
+float _MaxOutlineZOffset;
+float _OutlineOffsetBlockBChannel;
+float4 _OutlineWidthAdjustZs;
+float4 _OutlineWidthAdjustScales;
+float _UseMaterial2;
+float4 _Color2;
+float _EmissionScaler2;
+float4 _EmissionColor_MHY2;
+float4 _FirstShadowMultColor2;
+float4 _CoolShadowMultColor2;
+float _Shininess2;
+float _SpecMulti2;
+float _SpecOpacity2;
+float4 _SpecularColor2;
+float4 _CharacterCubeColor2;
+float _OutLineIntensity2;
+float4 _OutlineColor2;
+float _ShadowTransitionRange2;
+float _ShadowTransitionSoftness2;
+float _useShadowSoft2;
+float _shadowSoftRange2;
+float _UseMaterial3;
+float4 _Color3;
+float _EmissionScaler3;
+float4 _EmissionColor_MHY3;
+float4 _FirstShadowMultColor3;
+float4 _CoolShadowMultColor3;
+float _Shininess3;
+float _SpecMulti3;
+float _SpecOpacity3;
+float4 _SpecularColor3;
+float4 _CharacterCubeColor3;
+float _OutLineIntensity3;
+float4 _OutlineColor3;
+float _ShadowTransitionRange3;
+float _ShadowTransitionSoftness3;
+float _useShadowSoft3;
+float _shadowSoftRange3;
+float _UseMaterial4;
+float4 _Color4;
+float _EmissionScaler4;
+float4 _EmissionColor_MHY4;
+float4 _FirstShadowMultColor4;
+float4 _CoolShadowMultColor4;
+float _Shininess4;
+float _SpecMulti4;
+float _SpecOpacity4;
+float4 _SpecularColor4;
+float4 _CharacterCubeColor4;
+float _OutLineIntensity4;
+float4 _OutlineColor4;
+float _ShadowTransitionRange4;
+float _ShadowTransitionSoftness4;
+float _useShadowSoft4;
+float _shadowSoftRange4;
+float _UseMaterial5;
+float4 _Color5;
+float _EmissionScaler5;
+float4 _EmissionColor_MHY5;
+float4 _FirstShadowMultColor5;
+float4 _CoolShadowMultColor5;
+float _Shininess5;
+float _SpecMulti5;
+float _SpecOpacity5;
+float4 _SpecularColor5;
+float4 _CharacterCubeColor5;
+float _OutLineIntensity5;
+float4 _OutlineColor5;
+float _ShadowTransitionRange5;
+float _ShadowTransitionSoftness5;
+float _useShadowSoft5;
+float _shadowSoftRange5;
+#if defined(FACE_MAP_NEW_ON)
+float _UseFaceMapNew;
+float _FaceMapRotateOffset;
+float _FaceMapSoftness;
+#endif
+#if defined(HAIR_MAP_ON)
+float _UseHairMap;
+float _UseBumpAsAOMask;
+float _AOShadowWarpScale;
+float _SelectMatID;
+#endif
+#if defined(BACK_FACE_ON)
+    float _DrawBackFace;
+    float _UseBackFaceUV2;
+    float _BackFaceAlphaClipWithUV1;
+    float _BackFaceLighting;
+#endif
+#if defined(MAIN_TEX_COLORING_ON)
+    float _MainTexColoring;
+    float4 _MainTexTintColor;
+#endif
+float4 _HitColor;
+float4 _ElementRimColor;
+float _HitColorScaler;
+float _HitColorFresnelPower;
+float _EmissionStrengthLerp;
+float _UsingDitherAlpha;
+float _DitherAlpha;
+float _UseFakePoint;
+float _EnableFakePoint;
+float4 _FakePointColor;
+float _FakePointRange;
+float _FakePointIntensity;
+float4 _FakePointPosition;
+float _FakePointReflection;
+float _FakePointFrequency;
+float _FakePointFrequencyMin;
+float _FakePointSkinIntensity;
+float _FakePointSkinSaturate;
+#if defined(ENABLE_PACK_NORMAL_ON)
+    float _EnablePerformance;
+    float _PackageLightMapToggle;
+    float _LightMapLayerEnum;
+    float _LightMapBlurSize;
+    float _PackageNormalMapToggle;
+    float _NormalMapLayerEnum;
+#endif
+float _NormalMapOffset; 
+float _NormalMapScale;
+float _isNativeMainNormal;
+float _DummyFixedForNormal;
+
+#if defined(is_facialuv)
+    float _FacialUVExpressionEnable;
+    Texture2D _FacialExpAtlasTex;
+    float _FacialExpEnable;
+    float _FacialExpAtlasRows;
+    float _FacialExpIndex;
+    float _FacialExpSplitIndex;
+    float _FacialExpLeftIndex;
+    float _FacialExpRightHoriFlip;
+    float _FacialExpRightScale;
+    float _FacialExpRightOffsetX;
+    float _FacialExpRightOffsetY;
+    float _FacialExpRightRotateAngle;
+    float _FacialExpRightRotateSpeed;
+    float _FacialExpMirror;
+    float _FacialExpLeftHoriFlip;
+    float _FacialExpLeftScale;
+    float _FacialExpLeftOffsetX;
+    float _FacialExpLeftOffsetY;
+    float _FacialExpLeftRotateAngle;
+    float _FacialExpLeftRotateSpeed;
+    float _FacialExpShadowThreshold;
+    float _FacialExpShadowSoftness;
+    float _FacialExpShadowStrength;
+#endif
+#if defined(ENABLE_CHARACTER_STOCKINGS_ON)
+    float _UseCharacterStockings;
+    float4 _StockingsSpecularColor; 
+    float _StockingsSpecularShift; 
+    float _StockingsSpecularRange; 
+    float _StockingsSpecularScale; 
+    float _StockingsSpecularSharpe;
+    float4 _StockingsSpecularDetailColor; 
+    float _StockingsSpecularDetailRange; 
+    float _StockingsSpecularDetailScale; 
+    float _StockingsSpecularDetailSharpe;
+    Texture2D _StockingsDetailTex; 
+    float _StockingsDetailTilingNear;
+    float _StockingsDetailScale;
+    float4 _StockingsLightColor;
+    float _StockingsLightDarkColor;
+    float _StockingsLightRange;
+    float _StockingsLightScale;
+    float _StockingsLightScaleInShadow;
+    float _UseStockingAmbientColor;
+    float _StockingAmbientColorStrength;
+    float _UseGradientStocking;
+    float _StockingsGradientTypeChoose;
+    float _StockingsGradientLength;
+    float _StockingsGradientStrength;
+    float4 _StockingsGradientLightColor;
+    float4 _StockingsGradientDarkColor;
+    float _UseGradientStockingRampColor;
+    Texture2D _StockingsShadowRamp;
+    float4 _StockingsShadowColor; 
+    float _StockingsShadowRange; 
+    float _UseSecondFresnel;
+    float4 _StockingsSecondShadowColor;
+    float _StockingsSecondShadowRange;
+    float _StockingsSecondShadowSoft; 
+    float _StockingsSpecularDistance; 
+    float _StockingsSpecularFade; 
+    float4 _StockingsDetailPattenColor;
+    float _StockingsDetailPattenScale;
+    float _StockingsDetailPattenTiling;
+#endif 
+#if defined(ENABLE_CHARACTER_SHINING_ON)
+    float _ShiningNotUseMask;
+    float _ShiningSizeNear;
+    float _ShiningSizeFar;
+    float _ShiningMaxDistance;
+    float _ShiningFarNearBlend;
+    float4 _ShiningColor;
+    float _ShiningTiling;
+    float _ShiningSize;
+    float _ShiningFrequencncy;
+    float _ShiningDensity;
+    float _ShiningIntensity;
+    float _ShiningColorBlend;
+#endif
+#if defined(is_transparent)
+    float _TransparentAlpha;
+    float _FresnelPower;
+    float _FresnelScale;
+    float _FresnelInvert;
+    float _FresnelColorAdditive;
+    float4 _FresnelColor;
+    float _FresnelAlpha;
+    float _EnableTransAlphaDistFade;
+    float _TransparentAlphaDistanceMin;
+    float _TransparentAlphaDistanceMax;
+    float _TransparentAlphaDistanceAlphaMin;
+    float _TransparentAlphaDistanceAlphaMax;
+    float _EyeTransAlpha;
+    float _EnableEyeTransDistFade;
+    float _EyeTransDistanceMin;
+    float _EyeTransDistanceMax;
+    float _EyeTransDistanceAlphaMin;
+    float _EyeTransDistanceAlphaMax;
+    float _EnableCameraDirFade;
+    float _CameraDirFadeHorizontalMin;
+    float _CameraDirFadeHorizontalMax;
+    float _CameraDirFadeAlphaMin;
+    float _CameraDirFadeAlphaMax;
+#endif
+#if defined(is_facedecal)
+    float _EnableCharacterFaceDecal;
+    float _CharacterFaceDecalBlendMode;
+    float4 _CharacterFaceDecalColor;
+    float _CharacterFaceDecalOpacity;
+    Texture2D _CharacterFaceDecalMask;
+    float _CharacterFaceDecalMaskUVSwitch;
+    float4 _CharacterFaceDecalMaskST;
+    float _CharacterFaceDecalMask_MirrorU;
+    float _CharacterFaceDecalMask_MirrorV;
+    float _CharacterFaceDecalMaskChannelSwitch;
+    float _CharacterFaceDecalMaskGradientOffset;
+    float _CharacterFaceDecalMaskGradientSoftness;
+    float _CharacterFaceDecalSkipByLightmapG;
+    float _CharacterFaceDecalSkipByLightmapA;
+#endif
+#if defined(ENABLE_CHARACTER_LEATHER_ON)
+float4 _LeatherSpecularColor;
+float _LeatherSpecularShift;
+float _LeatherSpecularRange;
+float _LeatherSpecularScale;
+float _LeatherSpecularSharpe;
+float4 _LeatherSpecularDetailColor;
+float _LeatherSpecularDetailRange;
+float _LeatherSpecularDetailScale;
+float _LeatherSpecularDetailSharpe;
+Texture2D _LeatherLaserRamp;
+float _LeatherLaserTiling;
+float _LeatherLaserOffset;
+float _LeatherLaserScale;
+Texture2D _LeatherReflect;
+float _LeatherReflectScale;
+float _LeatherReflectOffset;
+#endif
+
+#if defined(ENABLE_CHARACTER_NBRBASE_ON)
+float4 _NbrBaseColor;
+Texture2D _NbrRefTex;
+float _NbrRoughness;
+float _NbrScale;
+float _NbrRefScale;
+float _NbrRefTiling;
+float _NbrRefBlur;
+float _NbrBaseAOByLightmapG;
+#endif
+
+#if defined( ENABLE_CHARACTER_NBRSPECULAR_ON)
+TextureCube _NbrSpecularIbl;
+Texture2D _NbrParallaxTex;
+float _NbrlightScale;
+float _NbrSpecularMetal;
+float _NbrSpecularRoughness;
+float _NbrSpecularScale;
+float _NbrSpecularRefScale;
+float _NbrSpecularParallaxScale;
+float _NbrSpecularDirScale;
+float _NbrSpecularIblScale;
+float _NbrSpecularIblBlur;
+float _NbrSpecularRange;
+float _NbrSpecularIntensity;
+float _UseMatCapReflection;
+float _MatCapSpecularRefScale;
+float _MatCapSpecularRefTiling;
+float _NbrParallaxDepth;
+float _NbrParallaxScale;
+float _NbrNoiseScale;
+float _NbrCurvatureScale;
+float _NbrReflectionPlaneRange;
+float _NbrReflectionPlaneScale;
+float4 _NbrMainSpecularColor;
+float4 _NbrSpecularIblColor;
+float4 _NbrSpecularColor;
+float4 _MatCapSpecularRefColor;
+float4 _NbrParallaxColor;
+float4 _NbrParallaxTilingOffset;
+float4 _NbrNoiseColor;
+float4 _NbrNoiseTilingOffset;
+float4 _NbrReflectionPlaneColor;
+#endif
+float _HairTransparentValue;
+float4 _CharacterFaceWorldDirection;
+float4 _CharacterHeadCenterWorldPosition;
+float4 _CharacterHeadCenterXDirWS;
+float4 _HairTransRemapHori;
+float4 _HairTransRemapVert;
+float _UseHairAlphaLimitation;
+float _UseHairAlphaMask;
+float _TestHairShadowPos;
+float _HairShadowExtrusion;
+float _HairShadowLightShift;
+float4 _HairShadowVerticalRemap;
+float4 _HairShadowStencilShift;
+#if defined(is_nyx)
+Texture2D _NyxStateOutlineNoise;
+Texture2D _NyxStateOutlineColorRamp;
+Texture2D _TempNyxStatePaintMaskTex;
+float _NyxStateOutlineColorScale;
+float2 _NyxStateOutlineColorNoiseScale;
+float4 _NyxStateOutlineColorNoiseAnim;
+float _NyxStateOutlineColorNoiseTurbulence;
+float3 _NyxStateOutlineColorOnBodyMultiplier;
+float _NyxStateOutlineColorOnBodyOpacity;
+uint _TempNyxStatePaintMaskChannel;
+float _NyxStateOutlineWidthScale;
+float3 _NyxStateOutlineWidthVarietyWithResolution;
+uint _NyxStateEnableOutlineWidthScaleHeightLerp;
+float2 _NyxStateOutlineWidthScaleRange;
+float4 _NyxStateOutlineWidthScaleLerpHeightRange;
+float2 _NyxStateOutlineVertAnimNoiseScale;
+float2 _NyxStateOutlineVertAnimNoiseAnim;
+float _NyxStateOutlineVertAnimScale;
+uint _NyxStateEnableOutlineVertAnimScaleHeightLerp;
+float2 _NyxStateOutlineVertAnimScaleRange;
+float4 _NyxStateOutlineVertAnimScaleLerpHeightRange;
+#endif
+#if defined(ENABLE_CHARACTER_SKIRK_STAR_ON)
+    Texture2D _StarTex;
+    Texture2D _StarMask;
+    Texture2D _BlockHighlightMask;
+    Texture2D _BrightLineTex;
+    Texture2D _BrightLineMask;
+    float _StarEmissionStrength;
+    float4 _StarTexST;
+    float _StarTexChannelSwitch;
+    float4 _StarTexSpeed;
+    float4 _StarColor;
+    float _StarFlickToggle;
+    float4 _StarFlickColor;
+    float _StarFlickRange;
+    float _BlockHighlightViewWeight;
+    float _BlockHighlightRange;
+    float _BlockHighlightSoftness;
+    float4 _BlockHighlightColor;
+    float _BrightLineTexChannelSwitch;
+    float _BrightLineMaskChannelSwitch;
+    float4 _BrightLineMaskSpeed;
+    float4 _BrightLineColor;
+    float _BrightLineMaskContrast;
+#endif
+#endif

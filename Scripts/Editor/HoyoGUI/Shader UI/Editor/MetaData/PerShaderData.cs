@@ -40,12 +40,14 @@ namespace LWGUI
 		public string displayName = string.Empty; // Decoded displayName (Helpbox and Tooltip are encoded in displayName)
 
 		// Structure
-		public string                   groupName                = string.Empty; // [Group(groupName)] / [Sub(groupName)] / [Advanced(groupName)]
+		public string                   groupName                = string.Empty; // [Group(groupName)] / [Sub(groupName)] / [Advanced(groupName)] / [SubGroup(mainGroupName, subGroupName)]
 		public bool                     isMain                   = false;        // [Group]
+		public bool                     isSubGroup               = false;        // [SubGroup]
+		public string                   subGroupName             = string.Empty; // Name of the SubGroup used for foldout display
 		public bool                     isAdvanced               = false;        // [Advanced]
 		public bool                     isAdvancedHeader         = false;        // the first [Advanced] in the same group
 		public bool                     isAdvancedHeaderProperty = false;
-		public string                   advancedHeaderString     = string.Empty;
+		public string                   advancedHeaderString     = string.Empty; 
 		public PropertyStaticData       parent                   = null;
 		public List<PropertyStaticData> children                 = new List<PropertyStaticData>();
 
@@ -150,28 +152,87 @@ namespace LWGUI
 															string.IsNullOrEmpty(extraPropName) || !propStaticDatas.ContainsKey(extraPropName)));
 			}
 
-			// Build Property Structure
-			{
-				var groupToMainPropertyDic = new Dictionary<string, MaterialProperty>();
+		// Build Property Structure
+		{
+			var groupToMainPropertyDic = new Dictionary<string, MaterialProperty>();
+			var pathToPropertyDic = new Dictionary<string, MaterialProperty>(); // Maps any path (Main, SubGroup, or nested) to its property
+			var subGroupNameToPathDic = new Dictionary<string, string>(); // Maps simple SubGroup names to their full paths
 
-				// Collection Groups
-				foreach (var prop in props)
+			// Collection Main Groups and any groups/subgroups
+			foreach (var prop in props)
+			{
+				var propData = propStaticDatas[prop.name];
+				if (propData.isMain 
+				 && !string.IsNullOrEmpty(propData.groupName)
+				 && !groupToMainPropertyDic.ContainsKey(propData.groupName))
 				{
-					var propData = propStaticDatas[prop.name];
-					if (propData.isMain
-					 && !string.IsNullOrEmpty(propData.groupName)
-					 && !groupToMainPropertyDic.ContainsKey(propData.groupName))
-						groupToMainPropertyDic.Add(propData.groupName, prop);
+					groupToMainPropertyDic.Add(propData.groupName, prop);
 				}
 
-				// Register SubProps
-				foreach (var prop in props)
+				// Register any SubGroup with its full path (parentPath_subGroupName)
+				if (propData.isSubGroup
+				 && !string.IsNullOrEmpty(propData.groupName)
+				 && !string.IsNullOrEmpty(propData.subGroupName))
 				{
-					var propData = propStaticDatas[prop.name];
-					if (!propData.isMain
-					 && !string.IsNullOrEmpty(propData.groupName))
+					var fullPath = propData.groupName + "_" + propData.subGroupName;
+					if (!pathToPropertyDic.ContainsKey(fullPath))
 					{
-						foreach (var groupName in groupToMainPropertyDic.Keys)
+						pathToPropertyDic.Add(fullPath, prop);
+					}
+					// Also map just the SubGroup name to its full path for easy lookup
+					if (!subGroupNameToPathDic.ContainsKey(propData.subGroupName))
+					{
+						subGroupNameToPathDic.Add(propData.subGroupName, fullPath);
+					}
+				}
+			}
+
+			// Register SubProps to their parents (non-SubGroup properties)
+			foreach (var prop in props)
+			{
+				var propData = propStaticDatas[prop.name];
+				if (!propData.isMain && !propData.isSubGroup
+				 && !string.IsNullOrEmpty(propData.groupName))
+				{
+					// Try to find the longest matching parent path
+					bool foundParent = false;
+					
+					// First check if it's a simple SubGroup name and resolve it
+					if (!propData.groupName.Contains("_") && subGroupNameToPathDic.ContainsKey(propData.groupName))
+					{
+						propData.groupName = subGroupNameToPathDic[propData.groupName];
+					}
+					
+					// First check all registered subgroups/nested paths
+					var sortedPaths = pathToPropertyDic.Keys.OrderByDescending(k => k.Length).ToList();
+					foreach (var pathKey in sortedPaths)
+					{
+						if (propData.groupName.StartsWith(pathKey))
+						{
+							var parentProp = pathToPropertyDic[pathKey];
+							propData.parent = propStaticDatas[parentProp.name];
+							propStaticDatas[parentProp.name].children.Add(propData);
+							foundParent = true;
+
+							// Extract conditional display keyword if present
+							if (propData.groupName.Length > pathKey.Length)
+							{
+								var keywordPart = propData.groupName.Substring(pathKey.Length, propData.groupName.Length - pathKey.Length);
+								// Remove leading underscore if present
+								if (keywordPart.StartsWith("_"))
+									keywordPart = keywordPart.Substring(1);
+								propData.conditionalDisplayKeyword = keywordPart.ToUpper();
+								propData.groupName = pathKey;
+							}
+							break;
+						}
+					}
+
+					// If not found in subgroups, try to match with MainProps
+					if (!foundParent)
+					{
+						var sortedMainGroups = groupToMainPropertyDic.Keys.OrderByDescending(k => k.Length).ToList();
+						foreach (var groupName in sortedMainGroups)
 						{
 							if (propData.groupName.StartsWith(groupName))
 							{
@@ -183,14 +244,124 @@ namespace LWGUI
 								// Split groupName and conditional display keyword
 								if (propData.groupName.Length > groupName.Length)
 								{
-									propData.conditionalDisplayKeyword =
-										propData.groupName.Substring(groupName.Length, propData.groupName.Length - groupName.Length).ToUpper();
+									var keywordPart = propData.groupName.Substring(groupName.Length, propData.groupName.Length - groupName.Length);
+									// Remove leading underscore if present
+									if (keywordPart.StartsWith("_"))
+										keywordPart = keywordPart.Substring(1);
+									propData.conditionalDisplayKeyword = keywordPart.ToUpper();
 									propData.groupName = groupName;
 								}
 								break;
 							}
 						}
 					}
+				}
+			}
+
+			// Register SubGroups to their parents (can be Main or another SubGroup)
+			// Use multiple passes to handle deeply nested hierarchies
+			// Also resolve simple SubGroup names to full paths
+			bool madeProgress = true;
+			int maxIterations = 10; // Prevent infinite loops
+			int iterations = 0;
+			
+			while (madeProgress && iterations < maxIterations)
+			{
+				madeProgress = false;
+				iterations++;
+				
+				foreach (var prop in props)
+				{
+					var propData = propStaticDatas[prop.name];
+					
+					// Only process SubGroups that don't have a parent yet
+					if (propData.isSubGroup && !string.IsNullOrEmpty(propData.groupName) && propData.parent == null)
+					{
+						// First, check if groupName is a simple SubGroup name (no underscores) and resolve it
+						if (!propData.groupName.Contains("_") && subGroupNameToPathDic.ContainsKey(propData.groupName))
+						{
+							// Resolve simple SubGroup name to full path
+							propData.groupName = subGroupNameToPathDic[propData.groupName];
+						}
+
+						// Try to find parent in existing subgroups first (for nested subgroups)
+						bool foundSubGroupParent = false;
+						var sortedPaths = pathToPropertyDic.Keys.OrderByDescending(k => k.Length).ToList();
+						foreach (var pathKey in sortedPaths)
+						{
+							if (propData.groupName == pathKey)
+							{
+								var parentProp = pathToPropertyDic[pathKey];
+								propData.parent = propStaticDatas[parentProp.name];
+								propStaticDatas[parentProp.name].children.Add(propData);
+								foundSubGroupParent = true;
+								madeProgress = true;
+								break;
+							}
+						}
+
+						// If not found in subgroups, try main groups
+						if (!foundSubGroupParent)
+						{
+							var sortedMainGroups = groupToMainPropertyDic.Keys.OrderByDescending(k => k.Length).ToList();
+							foreach (var groupName in sortedMainGroups)
+							{
+								if (propData.groupName == groupName)
+								{
+									var mainProp = groupToMainPropertyDic[groupName];
+									propData.parent = propStaticDatas[mainProp.name];
+									propStaticDatas[mainProp.name].children.Add(propData);
+									foundSubGroupParent = true;
+									madeProgress = true;
+									break;
+								}
+							}
+						}
+					}
+				}
+			}
+		}			// Build Advanced Structure
+			{
+				PropertyStaticData lastPropData = null;
+				PropertyStaticData lastHeaderPropData = null;
+				PropertyStaticData lastAdvancedParent = null; // Track the parent context for Advanced headers
+				
+				for (int i = 0; i < props.Length; i++)
+				{
+					var prop = props[i];
+					var propStaticData = propStaticDatas[prop.name];
+
+					// Build Advanced Structure
+					if (propStaticData.isAdvanced)
+					{
+						// If it is the first prop in a Advanced Block, set to Header
+						if (lastPropData == null
+						 || !lastPropData.isAdvanced
+						 || propStaticData.isAdvancedHeaderProperty
+						 || (!string.IsNullOrEmpty(propStaticData.advancedHeaderString)
+						  && propStaticData.advancedHeaderString != lastPropData.advancedHeaderString))
+						{
+							propStaticData.isAdvancedHeader = true;
+							lastHeaderPropData = propStaticData;
+							lastAdvancedParent = propStaticData.parent; // Remember parent context
+							
+							// Advanced Header should be a child of its actual parent (SubGroup or MainGroup)
+							// Parent is already set from earlier processing, no need to change it
+						}
+						// Else set to child of Advanced Header
+						else
+						{
+							propStaticData.parent = lastHeaderPropData;
+							lastHeaderPropData.children.Add(propStaticData);
+						}
+					}
+					else if (lastAdvancedParent != null)
+					{
+						// Exit Advanced context
+						lastAdvancedParent = null;
+					}
+
+					lastPropData = propStaticData;
 				}
 			}
 
@@ -214,27 +385,6 @@ namespace LWGUI
 					  && (propStaticData.parent.isAdvanced
 					   || (propStaticData.parent.parent != null && propStaticData.parent.parent.isAdvanced))))
 						displayModeData.advancedCount++;
-
-					// Build Advanced Structure
-					if (propStaticData.isAdvanced)
-					{
-						// If it is the first prop in a Advanced Block, set to Header
-						if (lastPropData == null
-						 || !lastPropData.isAdvanced
-						 || propStaticData.isAdvancedHeaderProperty
-						 || (!string.IsNullOrEmpty(propStaticData.advancedHeaderString)
-						  && propStaticData.advancedHeaderString != lastPropData.advancedHeaderString))
-						{
-							propStaticData.isAdvancedHeader = true;
-							lastHeaderPropData = propStaticData;
-						}
-						// Else set to child
-						else
-						{
-							propStaticData.parent = lastHeaderPropData;
-							lastHeaderPropData.children.Add(propStaticData);
-						}
-					}
 
 					lastPropData = propStaticData;
 				}

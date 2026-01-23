@@ -37,6 +37,16 @@ namespace HoyoToon.API
         /// Save the entire Games metadata section.
         /// </summary>
         void SaveGameMetadata(IEnumerable<GameMetadata> games);
+
+        /// <summary>
+        /// Get converter profiles (e.g., Hoyo2Unity, Hoyo2VRC).
+        /// </summary>
+        IReadOnlyDictionary<string, ConverterProfile> GetConverterProfiles();
+
+        /// <summary>
+        /// Save the entire converter profiles section.
+        /// </summary>
+        void SaveConverterProfiles(IEnumerable<ConverterProfile> profiles);
     }
 }
 #endif

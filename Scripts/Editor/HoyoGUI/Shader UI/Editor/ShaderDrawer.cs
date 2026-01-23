@@ -1,4 +1,4 @@
-﻿// Copyright (c) Jason Ma
+// Copyright (c) Jason Ma
 
 using System;
 using System.Collections.Generic;
@@ -155,9 +155,9 @@ namespace LWGUI
 	}
 
 	/// <summary>
-	/// Draw a property with default style in the folding group
+	/// Draw a property with default style in the folding group or SubGroup
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name (Main or SubGroup). Can use simple names like 'GroupA' or full paths like 'MainGroup_GroupA' (Default: none)
 	/// Target Property Type: Any
 	/// </summary>
 	public class SubDrawer : MaterialPropertyDrawer, IBaseDrawer
@@ -217,6 +217,106 @@ namespace LWGUI
 			editor.DefaultShaderPropertyInternal(position, prop, label);
 		}
 	}
+
+	/// <summary>
+	/// Create a nested Folding Group within a Main Group or another SubGroup
+	/// 
+	/// parentPath: parent group path. Can be:
+	///   - Main group name: "MainGroup"
+	///   - SubGroup name (will auto-resolve): "GroupA" 
+	///   - Full path (legacy): "MainGroup_SubGroup"
+	/// subGroupName: name of this SubGroup (displayed as foldout header)
+	/// keyword: keyword used for toggle, "_" = ignore, none or "__" = Property Name +  "_ON", always Upper (Default: none)
+	/// default Folding State: "on" or "off" (Default: off)
+	/// default Toggle Displayed: "on" or "off" (Default: on)
+	/// Target Property Type: Float, express Toggle value
+	/// </summary>
+	public class SubGroupDrawer : MaterialPropertyDrawer, IBaseDrawer
+	{
+		protected LWGUIMetaDatas metaDatas;
+
+		private static readonly float _height = 28f;
+
+		private string _parentPath;        // Can be "MainGroup", "GroupA" (simple name), or "MainGroup_SubGroup" (full path)
+		private string _subGroupName;
+		private string _keyword;
+		private bool _defaultFoldingState;
+		private bool _defaultToggleDisplayed;
+
+		public SubGroupDrawer(string parentPath, string subGroupName) : this(parentPath, subGroupName, String.Empty) { }
+
+		public SubGroupDrawer(string parentPath, string subGroupName, string keyword) : this(parentPath, subGroupName, keyword, "off") { }
+
+		public SubGroupDrawer(string parentPath, string subGroupName, string keyword, string defaultFoldingState) : this(parentPath, subGroupName, keyword, defaultFoldingState, "off") { }
+
+		public SubGroupDrawer(string parentPath, string subGroupName, string keyword, string defaultFoldingState, string defaultToggleDisplayed)
+		{
+			this._parentPath = parentPath;
+			this._subGroupName = subGroupName;
+			this._keyword = keyword;
+			this._defaultFoldingState = Helper.StringToBool(defaultFoldingState);
+			this._defaultToggleDisplayed = Helper.StringToBool(defaultToggleDisplayed);
+		}
+
+		public void BuildStaticMetaData(Shader inShader, MaterialProperty inProp, MaterialProperty[] inProps, PropertyStaticData inoutPropertyStaticData)
+		{
+			// Store the full parent path and subgroup name separately
+			// This allows proper nesting at any depth
+			// _parentPath can be either:
+			// - A simple SubGroup name like "GroupA" (will be resolved to full path later in PerShaderData)
+			// - A full path like "MainGroup_GroupA" (legacy, used directly)
+			// - A Main group name like "MainGroup" (used directly)
+			inoutPropertyStaticData.groupName = _parentPath;
+			inoutPropertyStaticData.isSubGroup = true;
+			inoutPropertyStaticData.subGroupName = _subGroupName;
+			inoutPropertyStaticData.isExpanding = _defaultFoldingState;
+			PerShaderData.DecodeMetaDataFromDisplayName(inProp, inoutPropertyStaticData);
+		}
+
+		public void GetDefaultValueDescription(Shader inShader, MaterialProperty inProp, MaterialProperty inDefaultProp, PerShaderData inPerShaderData, PerMaterialData inoutPerMaterialData)
+		{
+			inoutPerMaterialData.propDynamicDatas[inProp.name].defaultValueDescription = inDefaultProp.floatValue > 0 ? "On" : "Off";
+		}
+
+		public void GetCustomContextMenus(GenericMenu menu, Rect rect, MaterialProperty prop, LWGUIMetaDatas metaDatas) { }
+
+		public override void OnGUI(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			metaDatas = Helper.GetLWGUIMetadatas(editor);
+
+			var showMixedValue = EditorGUI.showMixedValue;
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+			EditorGUI.BeginChangeCheck();
+
+			// Indent SubGroup to show it's nested under Main group
+			position = EditorGUI.IndentedRect(position);
+
+			bool toggleResult = Helper.DrawFoldout(position, ref metaDatas.GetPropStaticData(prop).isExpanding, !Helper.Approximately(prop.floatValue, 0), _defaultToggleDisplayed, label);
+
+			if (Helper.EndChangeCheck(metaDatas, prop))
+			{
+				prop.floatValue = toggleResult ? 1.0f : 0.0f;
+				var keyword = Helper.GetKeywordName(_keyword, prop.name);
+				Helper.SetShaderKeywordEnabled(editor.targets, keyword, toggleResult);
+				TimelineHelper.SetKeywordToggleToTimeline(prop, editor, keyword);
+			}
+			EditorGUI.showMixedValue = showMixedValue;
+		}
+
+		public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
+		{
+			return _height;
+		}
+
+		public override void Apply(MaterialProperty prop)
+		{
+			base.Apply(prop);
+			if (!prop.hasMixedValue && VersionControlHelper.IsWriteable(prop.targets))
+			{
+				Helper.SetShaderKeywordEnabled(prop.targets, Helper.GetKeywordName(_keyword, prop.name), prop.floatValue > 0f);
+			}
+		}
+	}
 	#endregion
 
 	#region Extra Drawers
@@ -225,7 +325,7 @@ namespace LWGUI
 	/// <summary>
 	/// Similar to builtin Toggle()
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name (Main or SubGroup). Can use simple names like 'GroupA' or full paths like 'MainGroup_GroupA' (Default: none)
 	/// keyword: keyword used for toggle, "_" = ignore, none or "__" = Property Name +  "_ON", always Upper (Default: none)
 	/// preset File Name: "Shader Property Preset" asset name, see Preset() for detail (Default: none)
 	/// Target Property Type: Float
@@ -299,7 +399,7 @@ namespace LWGUI
 	/// <summary>
 	/// Similar to builtin PowerSlider()
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// power: power of slider (Default: 1)
 	/// Target Property Type: Range
 	/// </summary>
@@ -330,7 +430,7 @@ namespace LWGUI
 	/// <summary>
 	/// Similar to builtin IntRange()
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// Target Property Type: Range
 	/// </summary>
 	public class SubIntRangeDrawer : SubDrawer
@@ -370,7 +470,7 @@ namespace LWGUI
 	/// <summary>
 	/// Draw a min max slider
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// minPropName: Output Min Property Name
 	/// maxPropName: Output Max Property Name
 	/// Target Property Type: Range, range limits express the MinMaxSlider value range
@@ -483,7 +583,7 @@ namespace LWGUI
 	/// <summary>
 	/// Similar to builtin Enum() / KeywordEnum()
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// n(s): display name
 	/// k(s): keyword
 	/// v(s): value
@@ -694,7 +794,7 @@ namespace LWGUI
 	/// <summary>
 	/// Popping a menu, you can select the Shader Property Preset, the Preset values will replaces the default values
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	///	presetFileName: "Shader Property Preset" asset name, you can create new Preset by
 	///		"Right Click > Create > LWGUI > Shader Property Preset" in Project window,
 	///		*any Preset in the entire project cannot have the same name*
@@ -946,7 +1046,7 @@ namespace LWGUI
 	/// Visually similar to Ramp(), but RampAtlasIndexer() must be used together with RampAtlas().
 	/// The actual stored value is the index of the current Ramp in the Ramp Atlas SO, used for sampling the Ramp Atlas Texture in the Shader.
 	///
-	/// group: parent group name.
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties.
 	/// rampAtlasPropName: RampAtlas() property name.
 	/// defaultRampName: default ramp name. (Default: Ramp)
 	/// colorSpace: default ramp color space. (sRGB/Linear) (Default: sRGB)
@@ -1177,7 +1277,7 @@ namespace LWGUI
 	/// <summary>
 	/// Draw a Texture property in single line with a extra property
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// extraPropName: extra property name (Default: none)
 	/// Target Property Type: Texture
 	/// Extra Property Type: Color, Vector
@@ -1261,7 +1361,7 @@ namespace LWGUI
 	/// Draw an unreal style Ramp Map Editor (Default Ramp Map Resolution: 256 * 2)
 	/// NEW: The new LwguiGradient type has both the Gradient and Curve editors, and can be used in C# scripts and runtime, and is intended to replace UnityEngine.Gradient
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// defaultFileName: default Ramp Map file name when create a new one (Default: RampMap)
 	/// rootPath: the path where ramp is stored, replace '/' with '.' (for example: Assets.Art.Ramps). when selecting ramp, it will also be filtered according to the path (Default: Assets)
 	/// colorSpace: switch sRGB / Linear in ramp texture import setting (Default: sRGB)
@@ -1554,7 +1654,7 @@ namespace LWGUI
 	/// Note: Currently, the material only saves Texture reference and Int value,
 	///		  if you manually modify the Ramp Atlas, the references will not update automatically!
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// defaultFileName: the default file name when creating a Ramp Atlas SO (Default: RampAtlas)
 	/// rootPath: the default directory when creating a Ramp Atlas SO, replace '/' with '.' (for example: Assets.Art.RampAtlas). (Default: Assets)
 	/// colorSpace: the Color Space of Ramp Atlas Texture. (sRGB/Linear) (Default: sRGB)
@@ -1686,7 +1786,7 @@ namespace LWGUI
 	/// Draw an image preview.
 	/// display name: The path of the image file relative to the Unity project, such as: "Assets/test.png", "Doc/test.png", "../test.png"
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// Target Property Type: Any
 	/// </summary>
 	public class ImageDrawer : SubDrawer
@@ -1791,32 +1891,62 @@ namespace LWGUI
 	/// <summary>
 	/// Display up to 4 colors in a single line
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// color2-4: extra color property name
 	/// Target Property Type: Color
 	/// </summary>
 	public class ColorDrawer : SubDrawer
 	{
-		private string[] _colorStrings = new string[3];
+		// Array size changed from 3 to 7 to hold names for up to 7 additional colors
+		private string[] _colorStrings = new string[8]; 
 
-		public ColorDrawer(string group, string color2) : this(group, color2, String.Empty, String.Empty) { }
+		// Constructor for 2 colors (main + 1 extra)
+		public ColorDrawer(string group, string color2) 
+			: this(group, new[] { color2 }) { }
 
-		public ColorDrawer(string group, string color2, string color3) : this(group, color2, color3, String.Empty) { }
-
+		// Constructor for 3 colors (main + 2 extra)
+		public ColorDrawer(string group, string color2, string color3) 
+			: this(group, new[] { color2, color3 }) { }
+			
+		// Constructor for 4 colors (main + 3 extra)
 		public ColorDrawer(string group, string color2, string color3, string color4)
+			: this(group, new[] { color2, color3, color4 }) { }
+		public ColorDrawer(string group, string color2, string color3, string color4, string color5)
+					: this(group, new[] { color2, color3, color4, color5}) { }
+		public ColorDrawer(string group, string color2, string color3, string color4, string color5, string color6, string color7, string color8)
+					: this(group, new[] { color2, color3, color4, color5, color6, color7, color8}) { }
+					
+
+		// Main constructor using params array for maximum flexibility (up to 7 extra colors)
+		public ColorDrawer(string group, params string[] colorProps)
 		{
 			this.group = group;
-			this._colorStrings[0] = color2;
-			this._colorStrings[1] = color3;
-			this._colorStrings[2] = color4;
+
+			// Ensure we don't try to copy more than the array can hold (now 8)
+			int copyCount = Math.Min(colorProps.Length, _colorStrings.Length);
+			
+			// Copy the property names (now up to 8)
+			Array.Copy(colorProps, _colorStrings, copyCount);
+
+			// Fill the rest with String.Empty
+			for (int i = copyCount; i < _colorStrings.Length; i++)
+			{
+				_colorStrings[i] = String.Empty;
+			}
 		}
 
-		protected override bool IsMatchPropType(MaterialProperty property) { return property.GetPropertyType() == ShaderPropertyType.Color; }
+		// --- Core Methods ---
+		
+		protected override bool IsMatchPropType(MaterialProperty property) 
+		{ 
+			return property.GetPropertyType() == ShaderPropertyType.Color; 
+		}
 
 		public override void BuildStaticMetaData(Shader inShader, MaterialProperty inProp, MaterialProperty[] inProps, PropertyStaticData inoutPropertyStaticData)
 		{
 			base.BuildStaticMetaData(inShader, inProp, inProps, inoutPropertyStaticData);
-			foreach (var colorPropName in _colorStrings)
+			// Only add properties that have a non-empty name
+			foreach (var colorPropName in _colorStrings.Where(s => !String.IsNullOrEmpty(s)))
 			{
 				inoutPropertyStaticData.AddExtraProperty(colorPropName);
 			}
@@ -1824,39 +1954,56 @@ namespace LWGUI
 
 		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
 		{
-			var cProps = new Stack<MaterialProperty>();
-			for (int i = 0; i < 4; i++)
-			{
-				if (i == 0)
-				{
-					cProps.Push(prop);
-					continue;
-				}
+			// Use a List instead of a fixed-size array/Stack for easier dynamic population
+			var cProps = new List<MaterialProperty>();
 
-				var p = metaDatas.GetProperty(_colorStrings[i - 1]);
+			// 1. Add the main property
+			cProps.Add(prop);
+
+			// 2. Add up to 7 extra properties if they exist and match the type
+			foreach (var propName in _colorStrings)
+			{
+				if (String.IsNullOrEmpty(propName)) continue;
+
+				var p = metaDatas.GetProperty(propName);
+				// Check if the property exists AND its type is Color
 				if (p != null && IsMatchPropType(p))
-					cProps.Push(p);
+				{
+					cProps.Add(p);
+				}
 			}
 
 			var count = cProps.Count;
 			var colorArray = cProps.ToArray();
 
+			// Draw the label for the whole group
 			EditorGUI.PrefixLabel(position, label);
 
+			// Draw the color fields from right to left (as in original logic)
 			for (int i = 0; i < count; i++)
 			{
 				EditorGUI.BeginChangeCheck();
 				var cProp = colorArray[i];
 				EditorGUI.showMixedValue = cProp.hasMixedValue;
+				
 				var r = new Rect(position);
+				
+				// i is the index (0 to count-1)
+				// interval and w calculations maintain the original staggered drawing style
 				var interval = 13 * i * (-0.25f + EditorGUI.indentLevel * 1.25f);
 				var w = EditorGUIUtility.fieldWidth * (0.8f + EditorGUI.indentLevel * 0.2f);
+				
+				// Adjust the rect for the current color field
 				r.xMin += r.width - w * (i + 1) + interval;
 				r.xMax -= w * i - interval;
 
 				var src = cProp.colorValue;
-				var isHdr = (colorArray[i].GetPropertyFlags() & ShaderPropertyFlags.HDR) != ShaderPropertyFlags.None;
+				var isHdr = (cProp.GetPropertyFlags() & ShaderPropertyFlags.HDR) != ShaderPropertyFlags.None;
+				
+				// The actual color field drawing
 				var dst = EditorGUI.ColorField(r, GUIContent.none, src, true, true, isHdr);
+				
+				// Check for change and apply new value
 				if (Helper.EndChangeCheck(metaDatas, cProp))
 				{
 					cProp.colorValue = dst;
@@ -1877,7 +2024,7 @@ namespace LWGUI
 	/// 	RGB Luminance = (0.2126f, 0.7152f, 0.0722f, 0)
 	///		None = (0, 0, 0, 0)
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// Target Property Type: Vector, used to dot() with Texture Sample Value
 	/// </summary>
 	public class ChannelDrawer : SubDrawer
@@ -1974,7 +2121,7 @@ namespace LWGUI
 	/// The full example:
 	/// [Button(_)] _button0 ("URL Button@URL:https://github.com/JasonMa0012/LWGUI@C#:LWGUI.ButtonDrawer.TestMethod(1234, abcd)", Float) = 0
 	/// 
-	/// group: parent group name (Default: none)
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// Target Property Type: Any
 	/// </summary>
 	public class ButtonDrawer : SubDrawer
@@ -2163,7 +2310,8 @@ namespace LWGUI
 			position = EditorGUI.IndentedRect(position);
 			GUIStyle style = new GUIStyle(EditorStyles.boldLabel);
 			style.alignment = TextAnchor.LowerLeft;
-			style.border.bottom = 2;
+			style.fontSize = 15;
+			style.border.bottom = 10;
 			GUI.Label(position, _header, style);
 		}
 	}

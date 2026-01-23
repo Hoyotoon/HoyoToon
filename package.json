@@ -1,13 +1,14 @@
 {
   "name": "com.meliverse.hoyotoon",
   "displayName": "HoyoToon",
-  "version": "0.1.4",
+  "version": "0.2.5",
   "description": "Shader for Unity (Built-in Rendering Pipeline) attempting to replicate the shading of miHoYo developed games.\nThis is for datamined assets, not custom-made ones nor the MMD variants.",
-  "dependencies": {},
+  "dependencies": {
+    "com.unity.postprocessing": "3.4.0"
+  },
   "gitDependencies": {},
   "vpmDependencies": {},
   "keywords": [
-    "Meliverse",
     "HoyoToon",
     "HoyoVerse",
     "miHoYo",
@@ -17,9 +18,7 @@
     "Genshin Impact",
     "Honkai Impact 3rd",
     "Honkai Star Rail",
-    "Wuthering Waves",
     "Zenless Zone Zero",
-    "Umamusume Pretty Derby",
     "VRChat",
     "VRC"
   ],
@@ -37,6 +36,6 @@
     "url": "https://github.com/HoyoToon/HoyoToon/issues"
   },
   "hideInEditor": false,
-  "unity": "2019.4",
+  "unity": "2022.3",
   "localPath": ".\\Packages\\com.meliverse.hoyotoon"
 }

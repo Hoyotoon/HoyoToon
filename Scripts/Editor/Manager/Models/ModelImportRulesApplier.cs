@@ -148,9 +148,17 @@ namespace HoyoToon.Models
                     {
                         var oldObj = prop.GetValue(importer);
                         bool oldVal = oldObj is bool b && b;
-                        if (oldVal != settings.legacyBlendshapeNormals.Value)
+                        bool requested = settings.legacyBlendshapeNormals.Value;
+
+                        if (requested && importer.importBlendShapes && importer.importNormals == ModelImporterNormals.Calculate)
                         {
-                            prop.SetValue(importer, settings.legacyBlendshapeNormals.Value);
+                            requested = false;
+                            HoyoToonLogger.ModelInfo($"Disabled legacy blendshape normals for '{assetPath}' to avoid smoothing-group warnings.");
+                        }
+
+                        if (oldVal != requested)
+                        {
+                            prop.SetValue(importer, requested);
                             changed = true;
                         }
                     }
@@ -191,6 +199,63 @@ namespace HoyoToon.Models
             }
 
             return changed;
+        }
+
+        /// <summary>
+        /// Evaluate whether config defaults would change the importer for the given asset.
+        /// Returns true when differences are found or a remap is explicitly requested.
+        /// </summary>
+        public static bool TryEvaluateFromConfigForAsset(string assetPath, UnityEngine.Object contextAsset, out string gameKey, out System.Collections.Generic.List<string> differences)
+        {
+            gameKey = null;
+            differences = null;
+
+            if (string.IsNullOrWhiteSpace(assetPath) || !assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            string contextPath = !string.IsNullOrEmpty(assetPath) ? assetPath : (contextAsset != null ? AssetDatabase.GetAssetPath(contextAsset) : null);
+            var (detectedGameKey, _, _) = MaterialDetection.DetectGameAndShaderAutoWithSource(contextAsset, contextPath);
+            if (string.IsNullOrEmpty(detectedGameKey))
+            {
+                return false;
+            }
+
+            var metaMap = HoyoToonApi.GetGameMetadata();
+            if (metaMap == null || !metaMap.TryGetValue(detectedGameKey, out var gameMeta) || gameMeta == null)
+            {
+                return false;
+            }
+
+            var defaults = gameMeta.ModelImportSettings != null ? gameMeta.ModelImportSettings.Defaults : null;
+            if (defaults == null)
+            {
+                return false;
+            }
+
+            var importer = AssetImporter.GetAtPath(assetPath) as ModelImporter;
+            if (importer == null)
+            {
+                return false;
+            }
+
+            var dto = MapRuleToDto(defaults);
+            var hasChanges = HasDifferences(importer, dto, out differences);
+            var remapRequested = defaults.MaterialSearchAndRemap.HasValue && defaults.MaterialSearchAndRemap.Value;
+            if (remapRequested && !hasChanges)
+            {
+                differences = differences ?? new System.Collections.Generic.List<string>();
+                differences.Add("MaterialSearchAndRemap requested");
+                hasChanges = true;
+            }
+
+            if (hasChanges)
+            {
+                gameKey = detectedGameKey;
+            }
+
+            return hasChanges;
         }
 
         /// <summary>
@@ -319,6 +384,111 @@ namespace HoyoToon.Models
 
         private static bool EnumTryParseIgnoreCase<TEnum>(string value, out TEnum result) where TEnum : struct
             => HoyoToonEditorUtil.EnumTryParseIgnoreCase(value, out result);
+
+        private static bool HasDifferences(ModelImporter importer, HoyoToonModelImportSettings settings, out System.Collections.Generic.List<string> differences)
+        {
+            var diffs = new System.Collections.Generic.List<string>();
+            if (importer == null || settings == null)
+            {
+                differences = diffs;
+                return false;
+            }
+
+            void AddDiff(string label, object current, object desired)
+            {
+                diffs.Add($"{label}: {current} -> {desired}");
+            }
+
+            if (settings.globalScale.HasValue && !Mathf.Approximately(importer.globalScale, settings.globalScale.Value))
+                AddDiff("Global Scale", importer.globalScale, settings.globalScale.Value);
+            if (settings.useFileScale.HasValue && importer.useFileScale != settings.useFileScale.Value)
+                AddDiff("Use File Scale", importer.useFileScale, settings.useFileScale.Value);
+            if (settings.importBlendShapes.HasValue && importer.importBlendShapes != settings.importBlendShapes.Value)
+                AddDiff("Import BlendShapes", importer.importBlendShapes, settings.importBlendShapes.Value);
+            if (settings.importVisibility.HasValue && importer.importVisibility != settings.importVisibility.Value)
+                AddDiff("Import Visibility", importer.importVisibility, settings.importVisibility.Value);
+            if (settings.importCameras.HasValue && importer.importCameras != settings.importCameras.Value)
+                AddDiff("Import Cameras", importer.importCameras, settings.importCameras.Value);
+            if (settings.importLights.HasValue && importer.importLights != settings.importLights.Value)
+                AddDiff("Import Lights", importer.importLights, settings.importLights.Value);
+            if (settings.isReadable.HasValue && importer.isReadable != settings.isReadable.Value)
+                AddDiff("Read/Write Enabled", importer.isReadable, settings.isReadable.Value);
+            if (settings.optimizeMeshPolygons.HasValue && importer.optimizeMeshPolygons != settings.optimizeMeshPolygons.Value)
+                AddDiff("Optimize Mesh Polygons", importer.optimizeMeshPolygons, settings.optimizeMeshPolygons.Value);
+            if (settings.optimizeMeshVertices.HasValue && importer.optimizeMeshVertices != settings.optimizeMeshVertices.Value)
+                AddDiff("Optimize Mesh Vertices", importer.optimizeMeshVertices, settings.optimizeMeshVertices.Value);
+            if (settings.normals.HasValue && importer.importNormals != settings.normals.Value)
+                AddDiff("Normals", importer.importNormals, settings.normals.Value);
+            if (settings.tangents.HasValue && importer.importTangents != settings.tangents.Value)
+                AddDiff("Tangents", importer.importTangents, settings.tangents.Value);
+
+            if (settings.animationType.HasValue && importer.animationType != settings.animationType.Value)
+                AddDiff("Rig Animation Type", importer.animationType, settings.animationType.Value);
+            if (settings.avatarSetup.HasValue && importer.avatarSetup != settings.avatarSetup.Value)
+                AddDiff("Avatar Setup", importer.avatarSetup, settings.avatarSetup.Value);
+            if (settings.sourceAvatar != null && importer.sourceAvatar != settings.sourceAvatar)
+                AddDiff("Source Avatar", importer.sourceAvatar ? importer.sourceAvatar.name : "<none>", settings.sourceAvatar.name);
+            if (settings.bakeAxisConversion.HasValue && importer.bakeAxisConversion != settings.bakeAxisConversion.Value)
+                AddDiff("Bake Axis Conversion", importer.bakeAxisConversion, settings.bakeAxisConversion.Value);
+
+            if (settings.importAnimation.HasValue && importer.importAnimation != settings.importAnimation.Value)
+                AddDiff("Import Animation", importer.importAnimation, settings.importAnimation.Value);
+            if (settings.animationCompression.HasValue && importer.animationCompression != settings.animationCompression.Value)
+                AddDiff("Animation Compression", importer.animationCompression, settings.animationCompression.Value);
+            if (settings.resampleCurves.HasValue && importer.resampleCurves != settings.resampleCurves.Value)
+                AddDiff("Resample Curves", importer.resampleCurves, settings.resampleCurves.Value);
+
+            if (settings.materialImportMode.HasValue && importer.materialImportMode != settings.materialImportMode.Value)
+                AddDiff("Material Import Mode", importer.materialImportMode, settings.materialImportMode.Value);
+            if (settings.materialSearch.HasValue && importer.materialSearch != settings.materialSearch.Value)
+                AddDiff("Material Search", importer.materialSearch, settings.materialSearch.Value);
+            if (settings.materialName.HasValue && importer.materialName != settings.materialName.Value)
+                AddDiff("Material Name", importer.materialName, settings.materialName.Value);
+            if (settings.materialLocation.HasValue && importer.materialLocation != settings.materialLocation.Value)
+                AddDiff("Material Location", importer.materialLocation, settings.materialLocation.Value);
+
+            if (settings.legacyBlendshapeNormals.HasValue)
+            {
+                var legacyValue = TryGetLegacyBlendshapeNormals(importer, out var current) ? (bool?)current : null;
+                if (legacyValue.HasValue && legacyValue.Value != settings.legacyBlendshapeNormals.Value)
+                {
+                    AddDiff("Legacy Blendshape Normals", legacyValue.Value, settings.legacyBlendshapeNormals.Value);
+                }
+            }
+
+            differences = diffs;
+            return diffs.Count > 0;
+        }
+
+        private static bool TryGetLegacyBlendshapeNormals(ModelImporter importer, out bool value)
+        {
+            value = false;
+            if (importer == null)
+            {
+                return false;
+            }
+
+            try
+            {
+                string pName = "legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes";
+                var prop = importer.GetType().GetProperty(pName, BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public);
+                if (prop != null)
+                {
+                    var oldObj = prop.GetValue(importer);
+                    if (oldObj is bool b)
+                    {
+                        value = b;
+                        return true;
+                    }
+                }
+            }
+            catch
+            {
+                // ignore reflection failures
+            }
+
+            return false;
+        }
 
         /// <summary>
         /// If config requests a search & remap pass, attempt to relink materials after import according to importer settings.

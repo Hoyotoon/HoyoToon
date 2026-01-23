@@ -13,8 +13,11 @@ Texture2D _CrystalTex;
 Texture2D _MatCapTex;
 Texture2D _MatCapMaskTex;
 Texture2D _GlintMask;
-Texture2D _DissolveMap;
-Texture2D _DissolveMask;
+
+float4 _SkyTex_ST;
+float4 _SkyMask_ST;
+float4 _SkyStarTex_ST;
+float4 _SkyStarMaskTex_ST;
 
 int _UVChannelFront;
 int _UVChannelBack;
@@ -25,10 +28,6 @@ float4 _BackColor;
 float4 _EnvColor;
 float4 _AddColor;
 float _UseMaterialValuesLUT;
-// alpha
-float _EnableAlphaCutoff;
-float _AlphaCutoff;
-float _AlphaTestThreshold;
 
 // emission
 float _EmissionThreshold;
@@ -38,48 +37,9 @@ float4 _EmissionTintColor;
 // shadow 
 float _ShadowRamp;
 
-float _ShadowBoost;
-float _ShadowBoostVal;
-
-// speculalr
-// specular color
-float4 _SpecularColor0;
-float4 _SpecularColor1;
-float4 _SpecularColor2;
-float4 _SpecularColor3;
-float4 _SpecularColor4;
-float4 _SpecularColor5;
-float4 _SpecularColor6;
-float4 _SpecularColor7;
-// specular shininess
-float _SpecularShininess0;
-float _SpecularShininess1;
-float _SpecularShininess2;
-float _SpecularShininess3;
-float _SpecularShininess4;
-float _SpecularShininess5;
-float _SpecularShininess6;
-float _SpecularShininess7;
-// specular roughness
-float _SpecularRoughness0;
-float _SpecularRoughness1;
-float _SpecularRoughness2;
-float _SpecularRoughness3;
-float _SpecularRoughness4;
-float _SpecularRoughness5;
-float _SpecularRoughness6;
-float _SpecularRoughness7;
-//  specular intensity
-float _SpecularIntensity0;
-float _SpecularIntensity1;
-float _SpecularIntensity2;
-float _SpecularIntensity3;
-float _SpecularIntensity4;
-float _SpecularIntensity5;
-float _SpecularIntensity6;
-float _SpecularIntensity7;
 
 // outline
+float _Outline;
 float4 _OutlineColor0;
 float4 _OutlineColor1;
 float4 _OutlineColor2;
@@ -89,58 +49,17 @@ float4 _OutlineColor5;
 float4 _OutlineColor6;
 float4 _OutlineColor7;
 float _OutlineWidth;
+float _OutlineScale;
 float _OutlineNormalFrom;
 float _OutlineColorIntensity;
 float _OutlineExtdStart;
 float _OutlineExtdMax;
 float _OutlineExtdMode;
 float _OutlineOffset;
+float _ES_OutLineDarkenVal;
+float _ES_OutLineLightedVal;
 
-// rim
-float _RimLightMode;
-float _RimLight;
-float _RimWidth0;
-// rim colors
-float4 _RimColor0;
-float4 _RimColor1;
-float4 _RimColor2;
-float4 _RimColor3;
-float4 _RimColor4;
-float4 _RimColor5;
-float4 _RimColor6;
-float4 _RimColor7;
-float _RimEdgeSoftness0;
-float _RimEdgeSoftness1;
-float _RimEdgeSoftness2;
-float _RimEdgeSoftness3;
-float _RimEdgeSoftness4;
-float _RimEdgeSoftness5;
-float _RimEdgeSoftness6;
-float _RimEdgeSoftness7;
-float _RimType0;
-float _RimType1;
-float _RimType2;
-float _RimType3;
-float _RimType4;
-float _RimType5;
-float _RimType6;
-float _RimType7;
-float _RimDark0;
-float _RimDark1;
-float _RimDark2;
-float _RimDark3;
-float _RimDark4;
-float _RimDark5;
-float _RimDark6;
-float _RimDark7;
-float _Rimintensity;
-float _RimFeatherWidth;
-float _RimWidth;
-float _RimEdge;
-float2 _RimOffset;
-float4 _FresnelColor;
-float4 _FresnelBSI;
-float _FresnelColorStrength;
+
 
 float _RimShadowCt;
 float _RimShadowIntensity;
@@ -153,6 +72,7 @@ float4 _RimShadowColor4;
 float4 _RimShadowColor5;
 float4 _RimShadowColor6;
 float4 _RimShadowColor7;
+float _RimShadowFeather0;
 float _RimShadowFeather1;
 float _RimShadowFeather2;
 float _RimShadowFeather3;
@@ -211,6 +131,7 @@ float _MatCapStrength;
 float _MatCapStrengthInShadow;
 
 //  glint
+float _UseGlint;
 float _GlintWorldPosUV;
 float _GlintScaleBackface;
 float _GlintUVTillingY;
@@ -218,11 +139,11 @@ float _GlobalGlintScale;
 float _GlobalGlintPointScale;
 float _GlobalGlintIntensity;
 float _GlobalGlintShadow;
-float _GlobalGlintColor;
+float4 _GlobalGlintColor;
 float _GlobalGlintDensity;
 float _GlobalGlintSparkle;
 float _GlobalGlintSparkFreq;
-float _GlobalGlintViewFreq;
+float _GlobalGlintViewFreq; 
 float _GlintScale;
 float _GlintPointScale;
 float _GlintDensity;
@@ -245,34 +166,22 @@ float _FakeRefAddIntensity;
 float4 _ReflectionColor;
 float4 _ReflectionBlendColor;
 
-//  dissolve
-float _DissoveON;
-float _DissolveShadowOff;
-float _DissolveRate;
-float4 _DissolveST;
-float4 _DistortionST;
-float _DissolveDistortionIntensity;
-float _DissolveOutlineSize1;
-float _DissolveOutlineSize2;
-float _DissolveOutlineOffset;
-float4 _DissolveOutlineColor1;
-float4 _DissolveOutlineColor2;
-float _DissoveDirecMask;
-float _DissolveMapAdd;
-float4 _DissolveOutlineSmoothStep;
-float _DissolveUV;
-float4 _DissolveUVSpeed;
-float4 _DissolveComponent;
-float4 _DissolvePosMaskPos;
-float _DissolvePosMaskWorldON;
-float4 _DissolvePosMaskRootOffset;
-float _DissolvePosMaskFilpOn;
-float _DissolvePosMaskOn;
-float _DissolveMaskUVSet;
-float _DissolveUseDirection;
-float4 _DissolveCenter;
-float4 _DissolveDiretcionXYZ;
-float _DissolvePosMaskGlobalOn;
+float _Sunglasses;
+float4 _SunGlassesTilingOffset;
+float4 _SunglassesSpecluarColor;
+float _HighlightWidthL;
+float _HighlightWidthR;
+float _TotalSizeL;
+float _TotalSizeR;
+float _BlendRadiusL;
+float _BlendRadiusR;
+float _HighlightAngleL;
+float _HighlightAngleR;
+float _HighlightOffsetL;
+float _HighlightOffsetR;
+float _BendValue;
+float _GlobalOneMinusAvatarIntensityEnable;
+float _OneMinusGlobalMainIntensityEnable;
 
 // addlight
 float _AddLightOffset;
@@ -312,3 +221,37 @@ float _CustomParamB4;
 float _CustomParamB5;
 float _CustomParamB6;
 float _CustomParamB7;
+
+float _UseOverHeated;
+float _HeatInst;
+float4 _HeatDir;
+float _HeatedHeight;
+float _HeatedThreshould;
+float4 _HeatColor0;
+float4 _HeatColor1;
+float4 _HeatColor2;
+
+// flame crystal
+float _flamecrystalgroup;
+float _FlameCrystal;
+float _FlameID;
+float4 _FlameColorOut;
+float4 _FlameColorIn;
+float _FlameHeight;
+float _FlameWidth;
+float _FlameSpeed;
+float _FlameSwirilTexScale;
+float _FlameSwirilSpeed;
+float _FlameSwirilScale;
+float _CrystalTransparency;
+float _CrystalRange1;
+float _CrystalRange2;
+float _ColorIntensity;
+float4 _EffectColor0;
+float4 _EffectColor1;
+float4 _EffectColor2;
+float4 _EffectColor3;
+float4 _EffectColor4;
+float4 _EffectColor5;
+float4 _EffectColor6;
+float4 _EffectColor7;

@@ -13,6 +13,9 @@ namespace HoyoToon.Utilities
     {
         private const string Prefix = "<color=purple>[HoyoToon]</color>";
         private const string DefaultCategoryColor = "#C0C0C0"; // light gray
+        private static readonly Dictionary<string, DateTime> s_LastLogUtc = new Dictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
+        private static readonly object s_ThrottleGate = new object();
+        private static readonly TimeSpan DefaultThrottle = TimeSpan.FromMinutes(2);
 
         // Category -> Color hex (e.g., "#FF80FF" or named color)
         private static readonly Dictionary<string, string> s_CategoryColors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -26,6 +29,7 @@ namespace HoyoToon.Utilities
             { "Manager",  "#FFD480" }, // peach
             { "Resources", "#FF8080" }, // red
             { "Updater",  "#40FF40" }, // bright green
+            { "FBX Converter", "#FFA040" }, // orange
         };
 
         public static event Action<string, LogType> OnLog;
@@ -57,6 +61,18 @@ namespace HoyoToon.Utilities
         /// </summary>
         public static void LogAlways(string message, LogType type = LogType.Log) => InternalLog(message, type, null, true);
         public static void LogAlwaysCategory(string category, string message, LogType type = LogType.Log) => InternalLog(message, type, null, true, category);
+
+        /// <summary>
+        /// Throttled logging to prevent spam from repeated exceptions in hot paths.
+        /// </summary>
+        public static void ThrottleLog(string key, string message, TimeSpan? throttle = null, string category = "System")
+            => ThrottleInternal(key, message, LogType.Log, throttle ?? DefaultThrottle, category);
+
+        public static void ThrottleWarn(string key, string message, TimeSpan? throttle = null, string category = "System")
+            => ThrottleInternal(key, message, LogType.Warning, throttle ?? DefaultThrottle, category);
+
+        public static void ThrottleError(string key, string message, TimeSpan? throttle = null, string category = "System")
+            => ThrottleInternal(key, message, LogType.Error, throttle ?? DefaultThrottle, category);
 
         /// <summary>
         /// Configure a category color at runtime.
@@ -100,6 +116,20 @@ namespace HoyoToon.Utilities
 
             try { OnLog?.Invoke(message, type); }
             catch (Exception ex) { Debug.LogException(ex); }
+        }
+
+        private static void ThrottleInternal(string key, string message, LogType type, TimeSpan throttle, string category)
+        {
+            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(message)) return;
+            var now = DateTime.UtcNow;
+            lock (s_ThrottleGate)
+            {
+                if (s_LastLogUtc.TryGetValue(key, out var last) && now - last < throttle)
+                    return;
+                s_LastLogUtc[key] = now;
+            }
+
+            InternalLog(message, type, null, true, category);
         }
     }
 }

@@ -5,7 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using HoyoToon.Utilities;
-
+using System.Threading.Tasks;
 namespace HoyoToon
 {
     /// <summary>
@@ -17,7 +17,6 @@ namespace HoyoToon
         #region Constants
 
         private static readonly string FirstTimeSetupKey = "HoyoToon_FirstTimeSetup_Completed";
-        private static readonly string LastUpdateCheckKey = "HoyoToon_LastUpdateCheck";
         private static readonly string SuppressNotificationsKey = "HoyoToon_SuppressResourceNotifications";
 
         #endregion
@@ -113,7 +112,7 @@ namespace HoyoToon
                     switch (result)
                     {
                         case 0: // Download Now
-                            DownloadAllAssetsAndCompleteSetup(missingResources);
+                            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadAllAssetsAndCompleteSetup(missingResources), "First-time setup download");
                             break;
                         case 1: // Skip for Now
                             HoyoToonLogger.ResourcesInfo("User chose to skip asset download for now.");
@@ -130,7 +129,7 @@ namespace HoyoToon
         /// <summary>
         /// Download all assets and complete first-time setup
         /// </summary>
-        private static async void DownloadAllAssetsAndCompleteSetup(string[] missingResources)
+        private static async Task DownloadAllAssetsAndCompleteSetup(string[] missingResources)
         {
             try
             {
@@ -165,7 +164,6 @@ namespace HoyoToon
         private static void CompleteFirstTimeSetup()
         {
             EditorPrefs.SetBool(FirstTimeSetupKey, true);
-            EditorPrefs.SetString(LastUpdateCheckKey, DateTime.UtcNow.ToBinary().ToString());
             
             // Ensure notifications are enabled by default after first-time setup
             // Only set if the user hasn't already made a choice about notifications
@@ -198,13 +196,13 @@ namespace HoyoToon
                 return;
 
             // Perform background update check
-            PerformBackgroundUpdateCheck();
+            HoyoToonAsyncUtil.RunFireAndForget(PerformBackgroundUpdateCheck, "Background resource update check");
         }
 
         /// <summary>
         /// Perform background update check
         /// </summary>
-        private static async void PerformBackgroundUpdateCheck()
+        private static async Task PerformBackgroundUpdateCheck()
         {
             try
             {
@@ -327,7 +325,7 @@ namespace HoyoToon
                     switch (result)
                     {
                         case 0: // Update Now
-                            UpdateAssetsNow(updateInfoMap, missingGames);
+                            HoyoToonAsyncUtil.RunFireAndForget(() => UpdateAssetsNow(updateInfoMap, missingGames), "Update assets now");
                             break;
                         case 1: // Later
                             HoyoToonLogger.ResourcesInfo("User chose to update assets later.");
@@ -343,7 +341,7 @@ namespace HoyoToon
         /// <summary>
         /// Update assets immediately
         /// </summary>
-        private static async void UpdateAssetsNow(
+        private static async Task UpdateAssetsNow(
             Dictionary<string, FileUpdateInfo> updateInfoMap,
             List<string> missingGames)
         {
@@ -390,7 +388,6 @@ namespace HoyoToon
         /// <summary>
         /// Reset first-time setup (for debugging)
         /// </summary>
-        //[MenuItem("HoyoToon/Resources/Reset First-Time Setup", priority = 30)]
         public static void ResetFirstTimeSetup()
         {
             HoyoToonDialogWindow.ShowOkCancel("Reset First-Time Setup",
@@ -401,7 +398,6 @@ namespace HoyoToon
                 if (!ok) return;
 
                 EditorPrefs.DeleteKey(FirstTimeSetupKey);
-                EditorPrefs.DeleteKey(LastUpdateCheckKey);
                 EditorPrefs.DeleteKey(SuppressNotificationsKey);
 
                 HoyoToonDialogWindow.ShowInfo("Reset Complete", "First-time setup has been reset. The welcome dialog will appear next time Unity starts.");
@@ -413,7 +409,6 @@ namespace HoyoToon
         /// <summary>
         /// Enable resource notifications
         /// </summary>
-        //[MenuItem("HoyoToon/Resources/Enable Notifications", priority = 25)]
         public static void EnableResourceNotifications()
         {
             EditorPrefs.SetBool(SuppressNotificationsKey, false);
@@ -424,7 +419,6 @@ namespace HoyoToon
         /// <summary>
         /// Validate enable notifications menu item
         /// </summary>
-        //[MenuItem("HoyoToon/Resources/Enable Notifications", true, priority = 25)]
         public static bool ValidateEnableResourceNotifications()
         {
             // Only show if notifications are currently disabled
@@ -434,7 +428,6 @@ namespace HoyoToon
         /// <summary>
         /// Disable resource notifications
         /// </summary>
-        //[MenuItem("HoyoToon/Resources/Disable Notifications", priority = 26)]
         public static void DisableResourceNotifications()
         {
             EditorPrefs.SetBool(SuppressNotificationsKey, true);
@@ -445,7 +438,6 @@ namespace HoyoToon
         /// <summary>
         /// Validate disable notifications menu item
         /// </summary>
-        //[MenuItem("HoyoToon/Resources/Disable Notifications", true, priority = 26)]
         public static bool ValidateDisableResourceNotifications()
         {
             // Only show if notifications are currently enabled

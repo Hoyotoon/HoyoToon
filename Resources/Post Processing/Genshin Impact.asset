@@ -1,0 +1,112 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &-3485118384736980092
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 41b643eaf9bbe7c43a26afd0db35e6cc, type: 3}
+  m_Name: StarRailToneMap
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  red:
+    overrideState: 1
+    value: 0
+  green:
+    overrideState: 1
+    value: 0
+  blue:
+    overrideState: 1
+    value: 0
+  threshold:
+    overrideState: 1
+    value: 0.7
+  intensity:
+    overrideState: 1
+    value: 0.6
+  Lut2D:
+    overrideState: 1
+    value: {fileID: 2800000, guid: f6a5b92887ae5f14f95aabc07c898a85, type: 3}
+    defaultState: 1
+  LutSlicesNumber:
+    overrideState: 1
+    value: 31
+  LutScaleXYFactor:
+    overrideState: 1
+    value: {x: 0.00098, y: 0.03125}
+  EnableVignette:
+    overrideState: 0
+    value: 1
+  VignetteCenter:
+    overrideState: 0
+    value: {x: 0.5, y: 0.5}
+  VignetteIntensity:
+    overrideState: 0
+    value: 1
+  VignetteSmoothness:
+    overrideState: 0
+    value: 2.87
+  VignetteRounded:
+    overrideState: 0
+    value: 1.16
+  VignetteColor:
+    overrideState: 0
+    value: {r: 0, g: 0, b: 0, a: 1}
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e6292b2c06870d4495f009f912b9600, type: 3}
+  m_Name: Genshin Impact
+  m_EditorClassIdentifier: 
+  settings:
+  - {fileID: 5411035098727924066}
+--- !u!114 &5411035098727924066
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 162d892c5d6e8504a86f095904eff49d, type: 3}
+  m_Name: GenshinBloom
+  m_EditorClassIdentifier: 
+  active: 1
+  enabled:
+    overrideState: 1
+    value: 1
+  prefilterBloom:
+    overrideState: 1
+    value:
+      BloomThreshold: 0.72
+      BloomCharaThreshold: 0.72
+      BloomScalar: 2.5
+  blurStageSettings:
+    overrideState: 1
+    value:
+      GaussianScalar: 1
+      BloomWeight1: 0.3
+      BloomWeight2: 0.3
+      BloomWeight3: 0.26
+      BloomWeight4: 0.15
+  bloomToneSettings:
+    overrideState: 1
+    value:
+      EnableTonemap: 1
+      BloomIntensity: 0.7
+      BloomExposure: 1
+      BloomGamma: 1

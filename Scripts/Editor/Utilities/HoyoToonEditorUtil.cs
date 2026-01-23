@@ -55,14 +55,7 @@ namespace HoyoToon.Utilities
         /// </summary>
         public static string UnityPathToAbsolute(string unityPath)
         {
-            if (string.IsNullOrEmpty(unityPath)) return unityPath;
-            var p = unityPath.Replace('\\', '/');
-            if (p.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase) || p.Equals("Assets", StringComparison.OrdinalIgnoreCase)
-                || p.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
-            {
-                return Path.GetFullPath(Path.Combine(GetProjectRoot(), p.Replace('/', Path.DirectorySeparatorChar)));
-            }
-            return Path.GetFullPath(unityPath);
+            return ToAbsolutePath(unityPath);
         }
 
         /// <summary>
@@ -86,6 +79,18 @@ namespace HoyoToon.Utilities
                 return norm.Substring(idx + 1); // strip leading '/'
             }
             return norm;
+        }
+
+        /// <summary>
+        /// Convert absolute path to Unity project-relative asset path (Assets/... or Packages/...), or null if outside project.
+        /// </summary>
+        public static string ToUnityAssetPath(string fullPath)
+        {
+            if (string.IsNullOrWhiteSpace(fullPath)) return null;
+            var projectRoot = GetProjectRoot().Replace('\\', '/');
+            var normalized = Path.GetFullPath(fullPath).Replace('\\', '/');
+            if (!normalized.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase)) return null;
+            return normalized.Substring(projectRoot.Length + 1).Replace('\\', '/');
         }
 
         /// <summary>
@@ -116,7 +121,10 @@ namespace HoyoToon.Utilities
                         return d;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("EditorUtil.FindChildDirectoryIgnoreCase", $"Failed to enumerate directories under '{parentDir}': {ex.Message}");
+            }
             return null;
         }
 
@@ -133,7 +141,11 @@ namespace HoyoToon.Utilities
                 var rel = new Uri(a + Path.DirectorySeparatorChar).MakeRelativeUri(new Uri(b + Path.DirectorySeparatorChar)).ToString();
                 return rel.Count(ch => ch == '/' || ch == '\\');
             }
-            catch { return int.MaxValue; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("EditorUtil.DirDistance", $"Failed to compute directory distance from '{startDir}' to '{targetDir}': {ex.Message}");
+                return int.MaxValue;
+            }
         }
 
         // --- Parsing helpers ---

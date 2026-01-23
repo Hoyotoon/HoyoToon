@@ -18,10 +18,10 @@ namespace HoyoToon.Prerequisites
                 return PrerequisiteResult.Ok("Skipped for non-Windows editor platform.");
             }
 
-            if (IsVrcEnvConfigPresent())
+            if (VRCSDKInstalledCheck.HasEnvConfig)
             {
-                HoyoToonLogger.ManagerInfo("VRChat EnvConfig detected; leaving Shadow Projection to SDK-managed settings.");
-                return PrerequisiteResult.Ok("Managed by VRChat SDK (EnvConfig). Skipping enforcement.");
+                HoyoToonLogger.ManagerInfo($"{VRCSDKInstalledCheck.FriendlySdkName} EnvConfig detected; leaving Shadow Projection to SDK-managed settings.");
+                return PrerequisiteResult.Ok($"Managed by {VRCSDKInstalledCheck.FriendlySdkName} (EnvConfig). Skipping enforcement.");
             }
 
             if (QualitySettings.shadowProjection == ShadowProjection.CloseFit)
@@ -39,7 +39,7 @@ namespace HoyoToon.Prerequisites
             if (Application.platform != RuntimePlatform.WindowsEditor)
                 return true; // nothing to do when not on Windows Editor
 
-            if (IsVrcEnvConfigPresent())
+            if (VRCSDKInstalledCheck.HasEnvConfig)
             {
                 HoyoToonLogger.ManagerInfo("Skipping Shadow Projection auto-fix because VRChat EnvConfig manages quality settings.");
                 return false; // cannot fix because external manager will override
@@ -57,36 +57,7 @@ namespace HoyoToon.Prerequisites
             }
         }
 
-        private static bool IsVrcEnvConfigPresent()
-        {
-            // Try fast type lookup first
-            var t = Type.GetType("VRC.Editor.EnvConfig, Assembly-CSharp-Editor");
-            if (t != null) return true;
-            t = Type.GetType("VRC.Editor.EnvConfig");
-            if (t != null) return true;
-
-            // Fallback: scan loaded assemblies for the type to avoid hardcoding assembly names
-            try
-            {
-                foreach (var asm in AppDomain.CurrentDomain.GetAssemblies())
-                {
-                    try
-                    {
-                        if (asm.GetType("VRC.Editor.EnvConfig", throwOnError: false) != null)
-                            return true;
-                    }
-                    catch (Exception)
-                    {
-                        // Ignore reflection/type-load errors while scanning assemblies.
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Ignore top-level assembly enumeration errors; treat as not present.
-            }
-            return false;
-        }
+        // EnvConfig detection is centralized in VRCSDKInstalledCheck.
     }
 }
 #endif

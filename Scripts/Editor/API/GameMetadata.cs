@@ -47,6 +47,10 @@ namespace HoyoToon.API
     // - Regex: a single global regex to extract character name from texture filenames (named group 'name' or first group)
     // - Entries: list of problems with Name (character) and Message (warning)
     public ProblemListConfig ProblemList { get; set; } = new ProblemListConfig();
+
+    // Converter profiles scoped per game
+    public ConverterProfile Hoyo2Unity { get; set; }
+    public ConverterProfile Hoyo2VRC { get; set; }
     }
 
     [Serializable]
@@ -157,6 +161,41 @@ namespace HoyoToon.API
 
         // Extra (non-public) flag: legacy compute normals when mesh has blendshapes
         public bool? LegacyBlendshapeNormals { get; set; }
+    }
+
+    // Converter profiles (used by FBX converter selection)
+    [Serializable]
+    public class ConverterProfile
+    {
+        public string Key { get; set; }
+        public ConverterFeatureConfig Features { get; set; } = new ConverterFeatureConfig();
+        public ConverterFeatureConfig Disable { get; set; } = new ConverterFeatureConfig();
+        public ConverterListConfig RemoveMeshes { get; set; } = new ConverterListConfig();
+        public ConverterListConfig RemoveBones { get; set; } = new ConverterListConfig();
+        public ConverterRenameConfig RenameBones { get; set; } = new ConverterRenameConfig();
+    }
+
+    [Serializable]
+    public class ConverterFeatureConfig
+    {
+        public string Default { get; set; } = string.Empty;
+        [DataMember(Name = "DefaultList")]
+        public List<string> DefaultList { get; set; } = new List<string>();
+        [DataMember(Name = "Defaults")]
+        public List<string> DefaultListAlt { get => DefaultList; set => DefaultList = value; }
+        public List<string> Options { get; set; } = new List<string>();
+    }
+
+    [Serializable]
+    public class ConverterListConfig
+    {
+        public string List { get; set; } = string.Empty;
+    }
+
+    [Serializable]
+    public class ConverterRenameConfig
+    {
+        public string Mapping { get; set; } = string.Empty;
     }
 }
 #endif

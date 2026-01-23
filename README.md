@@ -7,13 +7,12 @@
 
 ## Features
 
-- A shader designed for the Built-in Pipeline, aiming to accurately reproduce the shading style of Hoyoverse games and now Wuthering Waves too.
+- A shader designed for the Built-in Pipeline, aiming to accurately reproduce the shading style of Hoyoverse games.
 - The shader is based on the latest version of each game.
-- Supports Genshin Impact (Weapons too)
-- Supports Honkai Impact (Part 1 and 2)
+- Supports Genshin Impact
+- Supports Honkai Impact 3rd
 - Supports Honkai Star Rail
 - Supports Zenless Zone Zero
-- Supports Wuthering Waves
 - Supports both Real-time and Baked Lighting
 - Provides support for stencils and self casted shadows.
 - Includes Visual Effects (VFX) Shaders like those used for Paimon, Dainlief, Asmoday, and Skirk.

@@ -35,6 +35,7 @@ namespace HoyoToon.API.Services
         {
             public List<GameConfig> Resources { get; set; } = new List<GameConfig>();
             public List<GameMetadata> Games { get; set; } = new List<GameMetadata>();
+            public List<ConverterProfile> Converters { get; set; } = new List<ConverterProfile>();
         }
 
         private string _configPath;
@@ -43,12 +44,23 @@ namespace HoyoToon.API.Services
         private DateTime _lastRemoteUpdateUtc;
         private bool _hasRemoteData;
         private DateTime _lastDiskWriteUtc;
-        private static readonly TimeSpan RemoteWriteThrottle = TimeSpan.FromSeconds(10); // avoid hammering disk if server pushes frequently
+        private static readonly TimeSpan RemoteWriteThrottle = TimeSpan.FromSeconds(60);
 
         // WebSocket state
         private ClientWebSocket _ws;
         private CancellationTokenSource _wsCts;
-        private bool _wsConnecting;
+        private bool _wsLoopRunning;
+
+        // Pending remote updates (receive thread -> main thread apply)
+        private readonly object _pendingRemoteLock = new object();
+        private ConvexMessage _pendingRemoteUpdate;
+        private int _pendingRemoteUpdateCount;
+        private string _pendingRemoteUpdateLastType;
+        private readonly ConcurrentQueue<HoyoToonPopupSystem.PopupDocument> _pendingPopups = new ConcurrentQueue<HoyoToonPopupSystem.PopupDocument>();
+
+        // Throttled diagnostics (avoid console spam on unknown message types)
+        private DateTime _lastIgnoredTypeLogUtc;
+        private static readonly TimeSpan IgnoredTypeLogThrottle = TimeSpan.FromMinutes(5);
 
         // Static instance for bootstrap flush
         private static JsonConfigService _instance;
@@ -75,7 +87,11 @@ namespace HoyoToon.API.Services
         public JsonConfigService()
         {
             // Preload so calls before first WS message have data
-            try { LoadModel(); } catch { }
+            try { LoadModel(); }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("JsonConfigService.LoadModel", $"Initial config load failed: {ex.Message}");
+            }
             InitializeWebSocket();
             _instance = this;
         }
@@ -114,6 +130,23 @@ namespace HoyoToon.API.Services
             return map;
         }
 
+        public IReadOnlyDictionary<string, ConverterProfile> GetConverterProfiles()
+        {
+            EnsureLoaded();
+            var map = new Dictionary<string, ConverterProfile>(StringComparer.OrdinalIgnoreCase);
+            List<ConverterProfile> list;
+            lock (_modelLock)
+            {
+                list = _modelCache?.Converters ?? new List<ConverterProfile>();
+            }
+            foreach (var p in list)
+            {
+                if (string.IsNullOrWhiteSpace(p?.Key)) continue;
+                map[p.Key] = p;
+            }
+            return map;
+        }
+
         public void SaveGames(IEnumerable<GameConfig> games)
         {
             EnsureLoaded();
@@ -130,6 +163,16 @@ namespace HoyoToon.API.Services
             lock (_modelLock)
             {
                 _modelCache.Games = new List<GameMetadata>(games ?? Array.Empty<GameMetadata>());
+                WriteModel();
+            }
+        }
+
+        public void SaveConverterProfiles(IEnumerable<ConverterProfile> profiles)
+        {
+            EnsureLoaded();
+            lock (_modelLock)
+            {
+                _modelCache.Converters = new List<ConverterProfile>(profiles ?? Array.Empty<ConverterProfile>());
                 WriteModel();
             }
         }
@@ -251,19 +294,22 @@ namespace HoyoToon.API.Services
             public string Type { get; set; }
             public List<GameMetadata> Games { get; set; } = new List<GameMetadata>();
             public List<GameConfig> Resources { get; set; } = new List<GameConfig>();
+            public List<ConverterProfile> Converters { get; set; } = new List<ConverterProfile>();
             public List<HoyoToonPopupSystem.PopupDocument> Popups { get; set; } = new List<HoyoToonPopupSystem.PopupDocument>();
 
             // Lowercase variants mapped via DataMember so Utf8Json can bind when server sends camel/lower
             [DataMember(Name = "type")] public string Type_Lower { get => Type; set => Type = value; }
             [DataMember(Name = "games")] public List<GameMetadata> Games_Lower { get => Games; set => Games = value; }
             [DataMember(Name = "resources")] public List<GameConfig> Resources_Lower { get => Resources; set => Resources = value; }
+            [DataMember(Name = "converters")] public List<ConverterProfile> Converters_Lower { get => Converters; set => Converters = value; }
             [DataMember(Name = "popups")] public List<HoyoToonPopupSystem.PopupDocument> Popups_Lower { get => Popups; set => Popups = value; }
         }
 
         private void InitializeWebSocket()
         {
-            if (_ws != null || _wsConnecting) return;
-            _wsConnecting = true;
+            // Only start one connect loop at a time.
+            if (_wsLoopRunning) return;
+            _wsLoopRunning = true;
             _wsCts = new CancellationTokenSource();
             Task.Run(async () => await ConnectLoop(_wsCts.Token));
         }
@@ -271,29 +317,44 @@ namespace HoyoToon.API.Services
         private async Task ConnectLoop(CancellationToken token)
         {
             const int ReconnectDelayMs = 5000;
-            while (!token.IsCancellationRequested)
+            try
             {
-                _ws = new ClientWebSocket();
-                try
+                while (!token.IsCancellationRequested)
                 {
-                    LogInfo($"Connecting to WS: {WebSocketEndpoint}");
-                    await _ws.ConnectAsync(new Uri(WebSocketEndpoint), token);
-                    LogInfo("HoyoToon WebSocket connected.");
-                    _wsConnecting = false;
-                    await ReceiveLoop(token);
+                    _ws = new ClientWebSocket();
+                    try
+                    {
+                        LogInfo($"Connecting to WS: {WebSocketEndpoint}");
+                        await _ws.ConnectAsync(new Uri(WebSocketEndpoint), token);
+                        LogInfo("HoyoToon WebSocket connected.");
+                        await ReceiveLoop(token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (Exception ex)
+                    {
+                        LogError($"WebSocket connection error: {ex.Message}");
+                    }
+                    finally
+                    {
+                        try { _ws?.Dispose(); }
+                        catch (Exception ex)
+                        {
+                            HoyoToonLogger.ThrottleWarning("JsonConfigService.WSDispose", $"WebSocket dispose failed: {ex.Message}");
+                        }
+                        _ws = null;
+                    }
+
+                    if (token.IsCancellationRequested) break;
+                    LogInfo("Reconnecting WebSocket in 5s...");
+                    try { await Task.Delay(ReconnectDelayMs, token); } catch { break; }
                 }
-                catch (Exception ex)
-                {
-                    LogError($"WebSocket connection error: {ex.Message}");
-                }
-                finally
-                {
-                    try { _ws?.Dispose(); } catch { }
-                    _ws = null;
-                }
-                if (token.IsCancellationRequested) break;
-                LogInfo("Reconnecting WebSocket in 5s...");
-                try { await Task.Delay(ReconnectDelayMs, token); } catch { break; }
+            }
+            finally
+            {
+                _wsLoopRunning = false;
             }
         }
 
@@ -327,61 +388,40 @@ namespace HoyoToon.API.Services
                         }
                         else if (string.IsNullOrEmpty(msg.Type))
                         {
-                            var raw = System.Text.Encoding.UTF8.GetString(payload);
-                            LogInfo($"WS message received with empty Type. Raw (truncated 200): {raw.Substring(0, Math.Min(200, raw.Length))}");
+                            // Avoid spamming raw payload; just note occasionally.
+                            if (DateTime.UtcNow - _lastIgnoredTypeLogUtc >= IgnoredTypeLogThrottle)
+                            {
+                                _lastIgnoredTypeLogUtc = DateTime.UtcNow;
+                                LogWarn("WS message received with empty Type (throttled)." );
+                            }
                         }
+
+                        // Queue popups from any message type; apply on main thread during flush.
+                        if (msg?.Popups != null && msg.Popups.Count > 0)
+                        {
+                            foreach (var popup in msg.Popups)
+                            {
+                                _pendingPopups.Enqueue(popup);
+                            }
+                        }
+
+                        // Batch init/update messages; apply only on periodic main-thread tick to avoid console spam.
                         if (msg != null && (string.Equals(msg.Type, "init", StringComparison.OrdinalIgnoreCase) || string.Equals(msg.Type, "update", StringComparison.OrdinalIgnoreCase)))
                         {
-                            int gamesCount, resourcesCount;
-                            lock (_modelLock)
+                            lock (_pendingRemoteLock)
                             {
-                                if (_modelCache == null) _modelCache = new APIModel();
-                                _modelCache.Games = msg.Games ?? new List<GameMetadata>();
-                                _modelCache.Resources = msg.Resources ?? new List<GameConfig>();
-                                gamesCount = _modelCache.Games.Count;
-                                resourcesCount = _modelCache.Resources.Count;
-                                _hasRemoteData = true;
-                                _lastRemoteUpdateUtc = DateTime.UtcNow;
-                            }
-                            LogInfo($"WS applied '{msg.Type}' update (Games={gamesCount}, Resources={resourcesCount}). Considering cache write.");
-                            var now = DateTime.UtcNow;
-                            var forceFirst = !_hasRemoteData; // after lock above _hasRemoteData true, so compute before? treat first always writes
-                            var shouldWrite = forceFirst || (now - _lastDiskWriteUtc) >= RemoteWriteThrottle;
-                            if (shouldWrite)
-                            {
-                                _pendingWrite = true; // main thread will flush
-                            }
-                            else
-                            {
-                                LogInfo("Skipping disk write (throttled) — in-memory model updated.");
-                            }
-                            // Forward any popups bundled with init/update
-                            if (msg.Popups != null && msg.Popups.Count > 0)
-                            {
-                                foreach (var popup in msg.Popups)
-                                {
-                                    try { HoyoToon.Utilities.HoyoToonPopupSystem.EnqueuePopup(popup); } catch (Exception ex) { LogError($"Popup enqueue failed: {ex.Message}"); }
-                                }
+                                _pendingRemoteUpdate = msg;
+                                _pendingRemoteUpdateCount++;
+                                _pendingRemoteUpdateLastType = msg.Type;
                             }
                         }
-                        else if (msg != null && string.Equals(msg.Type, "popup", StringComparison.OrdinalIgnoreCase))
+                        else if (msg != null && !string.IsNullOrEmpty(msg.Type) && !string.Equals(msg.Type, "popup", StringComparison.OrdinalIgnoreCase))
                         {
-                            // Dedicated popup push message with popups array
-                            if (msg.Popups != null && msg.Popups.Count > 0)
+                            // Unknown/ignored message types: log very occasionally.
+                            if (DateTime.UtcNow - _lastIgnoredTypeLogUtc >= IgnoredTypeLogThrottle)
                             {
-                                foreach (var popup in msg.Popups)
-                                {
-                                    try { HoyoToon.Utilities.HoyoToonPopupSystem.EnqueuePopup(popup); } catch (Exception ex) { LogError($"Popup enqueue failed: {ex.Message}"); }
-                                }
-                                LogInfo($"WS applied popup batch count={msg.Popups.Count}");
-                            }
-                        }
-                        else if (msg != null)
-                        {
-                            if (!string.IsNullOrEmpty(msg.Type))
-                            {
-                                var raw = System.Text.Encoding.UTF8.GetString(payload);
-                                LogInfo($"WS ignored message Type='{msg.Type}'. Raw (truncated 150): {raw.Substring(0, Math.Min(150, raw.Length))}");
+                                _lastIgnoredTypeLogUtc = DateTime.UtcNow;
+                                LogInfo($"WS ignored message Type='{msg.Type}' (throttled)." );
                             }
                         }
                     }
@@ -393,9 +433,91 @@ namespace HoyoToon.API.Services
             }
         }
 
+        private void ApplyPendingRemote()
+        {
+            ConvexMessage msg;
+            int pendingCount;
+            string lastType;
+            lock (_pendingRemoteLock)
+            {
+                msg = _pendingRemoteUpdate;
+                pendingCount = _pendingRemoteUpdateCount;
+                lastType = _pendingRemoteUpdateLastType;
+                _pendingRemoteUpdate = null;
+                _pendingRemoteUpdateCount = 0;
+                _pendingRemoteUpdateLastType = null;
+            }
+
+            if (msg != null && (string.Equals(msg.Type, "init", StringComparison.OrdinalIgnoreCase) || string.Equals(msg.Type, "update", StringComparison.OrdinalIgnoreCase)))
+            {
+                bool changed = false;
+                int gamesCount;
+                int resourcesCount;
+                int convertersCount;
+                lock (_modelLock)
+                {
+                    if (_modelCache == null) _modelCache = new APIModel();
+
+                    var newGames = msg.Games ?? new List<GameMetadata>();
+                    var newResources = msg.Resources ?? new List<GameConfig>();
+                    var newConverters = msg.Converters ?? new List<ConverterProfile>();
+                    bool hasConverters = newConverters.Count > 0;
+                    var effectiveConverters = hasConverters ? newConverters : (_modelCache.Converters ?? new List<ConverterProfile>());
+
+                    var currentGamesJson = JsonSerializer.ToJsonString(_modelCache.Games);
+                    var newGamesJson = JsonSerializer.ToJsonString(newGames);
+                    var currentResourcesJson = JsonSerializer.ToJsonString(_modelCache.Resources);
+                    var newResourcesJson = JsonSerializer.ToJsonString(newResources);
+                    var currentConvertersJson = JsonSerializer.ToJsonString(_modelCache.Converters);
+                    var newConvertersJson = JsonSerializer.ToJsonString(effectiveConverters);
+
+                    if (currentGamesJson != newGamesJson || currentResourcesJson != newResourcesJson || currentConvertersJson != newConvertersJson)
+                    {
+                        _modelCache.Games = newGames;
+                        _modelCache.Resources = newResources;
+                        if (hasConverters)
+                            _modelCache.Converters = newConverters;
+                        changed = true;
+                    }
+
+                    gamesCount = _modelCache.Games.Count;
+                    resourcesCount = _modelCache.Resources.Count;
+                    convertersCount = hasConverters ? newConverters.Count : CountGameConverters(_modelCache.Games);
+                    _hasRemoteData = true;
+                    _lastRemoteUpdateUtc = DateTime.UtcNow;
+                }
+
+                if (changed)
+                {
+                    _pendingWrite = true;
+                    LogInfo($"WS applied batched update (lastType='{lastType}', queued={pendingCount}) Games={gamesCount}, Resources={resourcesCount}, Converters={convertersCount}. Scheduling write.");
+                }
+            }
+
+            // Apply queued popups on main thread.
+            int queuedPopups = 0;
+            while (_pendingPopups.TryDequeue(out var popup))
+            {
+                try
+                {
+                    if (HoyoToonPopupSystem.EnqueuePopup(popup))
+                        queuedPopups++;
+                }
+                catch (Exception ex) { LogError($"Popup enqueue failed: {ex.Message}"); }
+            }
+            if (queuedPopups > 0)
+            {
+                LogInfo($"WS queued {queuedPopups} new popup(s).");
+            }
+        }
+
         ~JsonConfigService()
         {
-            try { _wsCts?.Cancel(); } catch { }
+            try { _wsCts?.Cancel(); }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("JsonConfigService.Finalizer", $"WebSocket cancellation failed: {ex.Message}");
+            }
         }
         #endregion
 
@@ -411,7 +533,14 @@ namespace HoyoToon.API.Services
 
         internal static void FlushLogsAndWrites()
         {
-            // Flush logs first
+            var inst = _instance;
+            // Apply any pending remote updates/popups first so their logs are included this tick.
+            if (inst != null)
+            {
+                inst.ApplyPendingRemote();
+            }
+
+            // Flush logs
             while (_logQueue.TryDequeue(out var entry))
             {
                 switch (entry.Level)
@@ -423,7 +552,6 @@ namespace HoyoToon.API.Services
             }
 
             // Pending write
-            var inst = _instance;
             if (inst != null && inst._pendingWrite)
             {
                 // Double check throttle
@@ -437,8 +565,32 @@ namespace HoyoToon.API.Services
                     }
                 }
             }
+
+            // Flush logs again in case the write step queued any messages.
+            while (_logQueue.TryDequeue(out var entry2))
+            {
+                switch (entry2.Level)
+                {
+                    case "INFO": HoyoToonLogger.APIInfo(entry2.Message); break;
+                    case "WARN": HoyoToonLogger.APIWarning(entry2.Message); break;
+                    case "ERROR": HoyoToonLogger.APIError(entry2.Message); break;
+                }
+            }
         }
         #endregion
+
+        private static int CountGameConverters(List<GameMetadata> games)
+        {
+            if (games == null || games.Count == 0) return 0;
+            int count = 0;
+            foreach (var game in games)
+            {
+                if (game == null) continue;
+                if (game.Hoyo2Unity != null) count++;
+                if (game.Hoyo2VRC != null) count++;
+            }
+            return count;
+        }
     }
 
     /// <summary>
@@ -449,7 +601,7 @@ namespace HoyoToon.API.Services
     internal static class JsonConfigServiceBootstrap
     {
         private static double _lastHealthCheck;
-        private const double HealthIntervalSeconds = 10.0; // periodic check
+        private const double HealthIntervalSeconds = 60.0; // periodic check
 
         static JsonConfigServiceBootstrap()
         {
@@ -513,7 +665,11 @@ namespace HoyoToon.API.Services
             var ctsField = typeof(JsonConfigService).GetField("_wsCts", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
             if (ctsField?.GetValue(svc) is CancellationTokenSource cts)
             {
-                try { cts.Cancel(); } catch { }
+                try { cts.Cancel(); }
+                catch (Exception ex)
+                {
+                    HoyoToonLogger.ThrottleWarning("JsonConfigService.Shutdown", $"WebSocket cancellation failed: {ex.Message}");
+                }
             }
         }
     }

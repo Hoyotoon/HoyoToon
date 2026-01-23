@@ -367,6 +367,8 @@ namespace LWGUI
 
 		public static void DrawLogo()
 		{
+			if (_logo == null) return;
+
 			var logoRect = EditorGUILayout.GetControlRect(false, _logo.height);
 			var w = logoRect.width;
 			logoRect.xMin += w * 0.5f - _logo.width * 0.5f;

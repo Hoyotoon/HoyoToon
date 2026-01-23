@@ -1,0 +1,822 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!29 &1
+OcclusionCullingSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_OcclusionBakeSettings:
+    smallestOccluder: 5
+    smallestHole: 0.25
+    backfaceThreshold: 100
+  m_SceneGUID: 00000000000000000000000000000000
+  m_OcclusionCullingData: {fileID: 0}
+--- !u!104 &2
+RenderSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 9
+  m_Fog: 0
+  m_FogColor: {r: 0.5, g: 0.5, b: 0.5, a: 1}
+  m_FogMode: 3
+  m_FogDensity: 0.01
+  m_LinearFogStart: 0
+  m_LinearFogEnd: 300
+  m_AmbientSkyColor: {r: 0.11033732, g: 0.24622074, b: 0.26886794, a: 1.5}
+  m_AmbientEquatorColor: {r: 0.19058824, g: 0.29117647, b: 0.26653686, a: 1.3499999}
+  m_AmbientGroundColor: {r: 0.09529412, g: 0.14558823, b: 0.13326843, a: 1.3499999}
+  m_AmbientIntensity: 1
+  m_AmbientMode: 1
+  m_SubtractiveShadowColor: {r: 0.42, g: 0.478, b: 0.627, a: 1}
+  m_SkyboxMaterial: {fileID: 0}
+  m_HaloStrength: 0.5
+  m_FlareStrength: 1
+  m_FlareFadeSpeed: 3
+  m_HaloTexture: {fileID: 0}
+  m_SpotCookie: {fileID: 10001, guid: 0000000000000000e000000000000000, type: 0}
+  m_DefaultReflectionMode: 1
+  m_DefaultReflectionResolution: 128
+  m_ReflectionBounces: 1
+  m_ReflectionIntensity: 1
+  m_CustomReflection: {fileID: 0}
+  m_Sun: {fileID: 0}
+  m_IndirectSpecularColor: {r: 0, g: 0, b: 0, a: 1}
+  m_UseRadianceAmbientProbe: 0
+--- !u!157 &3
+LightmapSettings:
+  m_ObjectHideFlags: 0
+  serializedVersion: 12
+  m_GIWorkflowMode: 1
+  m_GISettings:
+    serializedVersion: 2
+    m_BounceScale: 1
+    m_IndirectOutputScale: 1
+    m_AlbedoBoost: 1
+    m_EnvironmentLightingMode: 0
+    m_EnableBakedLightmaps: 1
+    m_EnableRealtimeLightmaps: 0
+  m_LightmapEditorSettings:
+    serializedVersion: 12
+    m_Resolution: 2
+    m_BakeResolution: 40
+    m_AtlasSize: 1024
+    m_AO: 0
+    m_AOMaxDistance: 1
+    m_CompAOExponent: 1
+    m_CompAOExponentDirect: 0
+    m_ExtractAmbientOcclusion: 0
+    m_Padding: 2
+    m_LightmapParameters: {fileID: 0}
+    m_LightmapsBakeMode: 1
+    m_TextureCompression: 1
+    m_FinalGather: 0
+    m_FinalGatherFiltering: 1
+    m_FinalGatherRayCount: 256
+    m_ReflectionCompression: 2
+    m_MixedBakeMode: 2
+    m_BakeBackend: 1
+    m_PVRSampling: 1
+    m_PVRDirectSampleCount: 32
+    m_PVRSampleCount: 512
+    m_PVRBounces: 2
+    m_PVREnvironmentSampleCount: 256
+    m_PVREnvironmentReferencePointCount: 2048
+    m_PVRFilteringMode: 1
+    m_PVRDenoiserTypeDirect: 1
+    m_PVRDenoiserTypeIndirect: 1
+    m_PVRDenoiserTypeAO: 1
+    m_PVRFilterTypeDirect: 0
+    m_PVRFilterTypeIndirect: 0
+    m_PVRFilterTypeAO: 0
+    m_PVREnvironmentMIS: 1
+    m_PVRCulling: 1
+    m_PVRFilteringGaussRadiusDirect: 1
+    m_PVRFilteringGaussRadiusIndirect: 5
+    m_PVRFilteringGaussRadiusAO: 2
+    m_PVRFilteringAtrousPositionSigmaDirect: 0.5
+    m_PVRFilteringAtrousPositionSigmaIndirect: 2
+    m_PVRFilteringAtrousPositionSigmaAO: 1
+    m_ExportTrainingData: 0
+    m_TrainingDataDestination: TrainingData
+    m_LightProbeSampleCountMultiplier: 4
+  m_LightingDataAsset: {fileID: 0}
+  m_LightingSettings: {fileID: 0}
+--- !u!196 &4
+NavMeshSettings:
+  serializedVersion: 2
+  m_ObjectHideFlags: 0
+  m_BuildSettings:
+    serializedVersion: 3
+    agentTypeID: 0
+    agentRadius: 0.5
+    agentHeight: 2
+    agentSlope: 45
+    agentClimb: 0.4
+    ledgeDropHeight: 0
+    maxJumpAcrossDistance: 0
+    minRegionArea: 2
+    manualCellSize: 0
+    cellSize: 0.16666667
+    manualTileSize: 0
+    tileSize: 256
+    buildHeightMesh: 0
+    maxJobWorkers: 0
+    preserveTilesOutsideBounds: 0
+    debug:
+      m_Flags: 0
+  m_NavMeshData: {fileID: 0}
+--- !u!1 &34262514
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 34262515}
+  m_Layer: 0
+  m_Name: Scripts
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &34262515
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 34262514}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 339679431}
+  - {fileID: 315303647}
+  m_Father: {fileID: 1082679862}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &315303646
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 315303647}
+  - component: {fileID: 315303648}
+  m_Layer: 0
+  m_Name: HoyoToon Hair Shadow Mask
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &315303647
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 315303646}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 34262515}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &315303648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 315303646}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 16f48e252ceedad41897b61a7861944f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!1 &339679430
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 339679431}
+  - component: {fileID: 339679432}
+  m_Layer: 0
+  m_Name: HoyoToon Scene Light Controller
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &339679431
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339679430}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 34262515}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &339679432
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 339679430}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6615854dc62ed2549927d6da25c0b782, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  AutoFindManager: 1
+  Manager: {fileID: 1082679863}
+  AutoDetectGame: 1
+  GameKey: Honkai Star Rail
+  AutoDetectDirectionalLight: 1
+  DirectionalLight: {fileID: 822455649}
+  AutoDetectPointLights: 1
+  MaxPointLights: 3
+  PointLights: []
+  AutoCollectRenderers: 1
+  UseManagerModels: 1
+  UseActiveModelOnly: 1
+  IncludeInactive: 1
+  LayerMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  IncludeSkinnedRenderers: 1
+  IncludeMeshRenderers: 1
+  IncludeNameContains: []
+  ExcludeNameContains: []
+  ShaderNameContains: []
+  RendererGroups:
+  - Root: {fileID: 0}
+    GameKey: Genshin Impact
+    Renderers:
+    - {fileID: 0}
+    - {fileID: 0}
+  Renderers:
+  - {fileID: 0}
+  - {fileID: 0}
+  GameSettings:
+  - GameKey: Honkai Star Rail
+    HonkaiStarRail:
+      Enabled: 1
+      UseColdRamp: 0
+      SPColorEnable: 0
+      SPColor: {r: 1, g: 1, b: 1, a: 1}
+      SPIntensityEnable: 0
+      SPIntensity: 0.1
+      EnableShadowBoost: 0
+      ShadowBoost: 0.5
+      HeightLerpEnable: 0
+      HeightLerpTop: 1
+      HeightLerpBottom: 0
+      HeightLerpTopColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpMiddleColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpBottomColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+      RimLightEnable: 1
+      RimLightWidth: 1
+      RimLightIntensity: 0.5
+      RimLightOffset: {x: 0, y: 0, z: 0, w: 0}
+      RimShadowEnable: 1
+      RimShadowIntensity: 1
+      RimShadowColor: {r: 1, g: 1, b: 1, a: 0.5}
+      LevelAdjustEnable: 0
+      LevelSkinLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelSkinShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelHighLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadow: 0
+      LevelMid: 0.55
+      LevelHighLight: 1
+      UseFakeDirectionalLight: 0
+      UseFakeFog: 0
+      FakeFogColor: {r: 0, g: 0, b: 0, a: 1}
+      FakeFogDensity: 0
+      FakeFogHeightFalloff: 0
+      FakeFogStartHeight: 0
+    GenshinImpact:
+      Enabled: 0
+    HonkaiImpact3rd:
+      Enabled: 0
+    ZenlessZoneZero:
+      Enabled: 0
+  - GameKey: Genshin Impact
+    HonkaiStarRail:
+      Enabled: 1
+      UseColdRamp: 0
+      SPColorEnable: 0
+      SPColor: {r: 1, g: 1, b: 1, a: 1}
+      SPIntensityEnable: 0
+      SPIntensity: 0.1
+      EnableShadowBoost: 0
+      ShadowBoost: 0.5
+      HeightLerpEnable: 0
+      HeightLerpTop: 1
+      HeightLerpBottom: 0
+      HeightLerpTopColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpMiddleColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpBottomColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+      RimLightEnable: 0
+      RimLightWidth: 1
+      RimLightIntensity: 1
+      RimLightOffset: {x: 0, y: 0, z: 0, w: 0}
+      RimShadowEnable: 0
+      RimShadowIntensity: 1
+      RimShadowColor: {r: 1, g: 1, b: 1, a: 0.5}
+      LevelAdjustEnable: 0
+      LevelSkinLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelSkinShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelHighLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadow: 0
+      LevelMid: 0.55
+      LevelHighLight: 1
+      UseFakeDirectionalLight: 0
+      UseFakeFog: 0
+      FakeFogColor: {r: 0, g: 0, b: 0, a: 1}
+      FakeFogDensity: 0
+      FakeFogHeightFalloff: 0
+      FakeFogStartHeight: 0
+    GenshinImpact:
+      Enabled: 1
+    HonkaiImpact3rd:
+      Enabled: 0
+    ZenlessZoneZero:
+      Enabled: 0
+  - GameKey: Honkai Impact 3rd
+    HonkaiStarRail:
+      Enabled: 1
+      UseColdRamp: 0
+      SPColorEnable: 0
+      SPColor: {r: 1, g: 1, b: 1, a: 1}
+      SPIntensityEnable: 0
+      SPIntensity: 0.1
+      EnableShadowBoost: 0
+      ShadowBoost: 0.5
+      HeightLerpEnable: 0
+      HeightLerpTop: 1
+      HeightLerpBottom: 0
+      HeightLerpTopColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpMiddleColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpBottomColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+      RimLightEnable: 0
+      RimLightWidth: 1
+      RimLightIntensity: 1
+      RimLightOffset: {x: 0, y: 0, z: 0, w: 0}
+      RimShadowEnable: 0
+      RimShadowIntensity: 1
+      RimShadowColor: {r: 1, g: 1, b: 1, a: 0.5}
+      LevelAdjustEnable: 0
+      LevelSkinLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelSkinShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelHighLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadow: 0
+      LevelMid: 0.55
+      LevelHighLight: 1
+      UseFakeDirectionalLight: 0
+      UseFakeFog: 0
+      FakeFogColor: {r: 0, g: 0, b: 0, a: 1}
+      FakeFogDensity: 0
+      FakeFogHeightFalloff: 0
+      FakeFogStartHeight: 0
+    GenshinImpact:
+      Enabled: 0
+    HonkaiImpact3rd:
+      Enabled: 0
+    ZenlessZoneZero:
+      Enabled: 0
+  - GameKey: Zenless Zone Zero
+    HonkaiStarRail:
+      Enabled: 1
+      UseColdRamp: 0
+      SPColorEnable: 0
+      SPColor: {r: 1, g: 1, b: 1, a: 1}
+      SPIntensityEnable: 0
+      SPIntensity: 0.1
+      EnableShadowBoost: 0
+      ShadowBoost: 0.5
+      HeightLerpEnable: 0
+      HeightLerpTop: 1
+      HeightLerpBottom: 0
+      HeightLerpTopColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpMiddleColor: {r: 1, g: 1, b: 1, a: 0.5}
+      HeightLerpBottomColor: {r: 0.5, g: 0.5, b: 0.5, a: 0.5}
+      RimLightEnable: 0
+      RimLightWidth: 1
+      RimLightIntensity: 1
+      RimLightOffset: {x: 0, y: 0, z: 0, w: 0}
+      RimShadowEnable: 0
+      RimShadowIntensity: 1
+      RimShadowColor: {r: 1, g: 1, b: 1, a: 0.5}
+      LevelAdjustEnable: 0
+      LevelSkinLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelSkinShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelHighLightColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadowColor: {r: 1, g: 1, b: 1, a: 0.55}
+      LevelShadow: 0
+      LevelMid: 0.55
+      LevelHighLight: 1
+      UseFakeDirectionalLight: 0
+      UseFakeFog: 0
+      FakeFogColor: {r: 0, g: 0, b: 0, a: 1}
+      FakeFogDensity: 0
+      FakeFogHeightFalloff: 0
+      FakeFogStartHeight: 0
+    GenshinImpact:
+      Enabled: 0
+    HonkaiImpact3rd:
+      Enabled: 0
+    ZenlessZoneZero:
+      Enabled: 0
+  ApplyInEditMode: 1
+  ApplyInPlayMode: 1
+  EnableLogs: 0
+--- !u!1 &489643315
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 489643318}
+  - component: {fileID: 489643317}
+  - component: {fileID: 489643316}
+  - component: {fileID: 489643320}
+  - component: {fileID: 489643319}
+  - component: {fileID: 489643321}
+  m_Layer: 0
+  m_Name: Main Camera
+  m_TagString: MainCamera
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!81 &489643316
+AudioListener:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489643315}
+  m_Enabled: 1
+--- !u!20 &489643317
+Camera:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489643315}
+  m_Enabled: 1
+  serializedVersion: 2
+  m_ClearFlags: 2
+  m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
+  m_projectionMatrixMode: 1
+  m_GateFitMode: 2
+  m_FOVAxisMode: 0
+  m_Iso: 200
+  m_ShutterSpeed: 0.005
+  m_Aperture: 16
+  m_FocusDistance: 10
+  m_FocalLength: 50
+  m_BladeCount: 5
+  m_Curvature: {x: 2, y: 11}
+  m_BarrelClipping: 0.25
+  m_Anamorphism: 0
+  m_SensorSize: {x: 36, y: 24}
+  m_LensShift: {x: 0, y: 0}
+  m_NormalizedViewPortRect:
+    serializedVersion: 2
+    x: 0
+    y: 0
+    width: 1
+    height: 1
+  near clip plane: 0.3
+  far clip plane: 1000
+  field of view: 24
+  orthographic: 0
+  orthographic size: 1
+  m_Depth: -100
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingPath: 1
+  m_TargetTexture: {fileID: 0}
+  m_TargetDisplay: 0
+  m_TargetEye: 3
+  m_HDR: 0
+  m_AllowMSAA: 1
+  m_AllowDynamicResolution: 0
+  m_ForceIntoRT: 0
+  m_OcclusionCulling: 1
+  m_StereoConvergence: 10
+  m_StereoSeparation: 0.022
+--- !u!4 &489643318
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489643315}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: 1, z: -0, w: 0}
+  m_LocalPosition: {x: 0, y: 1, z: 3.5}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1082679862}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!114 &489643319
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489643315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b9a305e18de0c04dbd257a21cd47087, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  sharedProfile: {fileID: 11400000, guid: 0d0f6d87cdde1474fa7a787ca66b46ba, type: 2}
+  isGlobal: 1
+  blendDistance: 0
+  weight: 1
+  priority: 0
+--- !u!114 &489643320
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489643315}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 948f4100a11a5c24981795d21301da5c, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  volumeTrigger: {fileID: 489643318}
+  volumeLayer:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  stopNaNPropagation: 1
+  finalBlitToCameraTarget: 0
+  antialiasingMode: 2
+  temporalAntialiasing:
+    jitterSpread: 0.75
+    sharpness: 0.25
+    stationaryBlending: 0.95
+    motionBlending: 0.85
+  subpixelMorphologicalAntialiasing:
+    quality: 2
+  fastApproximateAntialiasing:
+    fastMode: 0
+    keepAlpha: 0
+  fog:
+    enabled: 1
+    excludeSkybox: 1
+  debugLayer:
+    lightMeter:
+      width: 512
+      height: 256
+      showCurves: 1
+    histogram:
+      width: 512
+      height: 256
+      channel: 3
+    waveform:
+      exposure: 0.12
+      height: 256
+    vectorscope:
+      size: 256
+      exposure: 0.12
+    overlaySettings:
+      linearDepth: 0
+      motionColorIntensity: 4
+      motionGridSize: 64
+      colorBlindnessType: 0
+      colorBlindnessStrength: 1
+  m_Resources: {fileID: 11400000, guid: d82512f9c8e5d4a4d938b575d47f88d4, type: 2}
+  m_ShowToolkit: 0
+  m_ShowCustomSorter: 0
+  breakBeforeColorGrading: 0
+  m_BeforeTransparentBundles: []
+  m_BeforeStackBundles:
+  - assemblyQualifiedName: HoyoToon.PostProcessing.ZenlessBloom, com.meliverse.hoyotoon.Editor,
+      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - assemblyQualifiedName: HoyoToon.PostProcessing.GenshinBloom, com.meliverse.hoyotoon.Editor,
+      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  - assemblyQualifiedName: HoyoToon.PostProcessing.StarRailBloom, com.meliverse.hoyotoon.Editor,
+      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+  m_AfterStackBundles:
+  - assemblyQualifiedName: HoyoToon.PostProcessing.HonkaiImpactBloom, com.meliverse.hoyotoon.Editor,
+      Version=0.0.0.0, Culture=neutral, PublicKeyToken=null
+--- !u!124 &489643321
+Behaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 489643315}
+  m_Enabled: 1
+--- !u!1 &822455648
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 822455650}
+  - component: {fileID: 822455649}
+  m_Layer: 0
+  m_Name: Directional Light
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!108 &822455649
+Light:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 822455648}
+  m_Enabled: 1
+  serializedVersion: 10
+  m_Type: 1
+  m_Shape: 0
+  m_Color: {r: 0.91, g: 0.91, b: 0.91, a: 1}
+  m_Intensity: 1.2
+  m_Range: 10
+  m_SpotAngle: 30
+  m_InnerSpotAngle: 21.80208
+  m_CookieSize: 10
+  m_Shadows:
+    m_Type: 2
+    m_Resolution: 3
+    m_CustomResolution: -1
+    m_Strength: 1
+    m_Bias: 0.01
+    m_NormalBias: 0.4
+    m_NearPlane: 0.2
+    m_CullingMatrixOverride:
+      e00: 1
+      e01: 0
+      e02: 0
+      e03: 0
+      e10: 0
+      e11: 1
+      e12: 0
+      e13: 0
+      e20: 0
+      e21: 0
+      e22: 1
+      e23: 0
+      e30: 0
+      e31: 0
+      e32: 0
+      e33: 1
+    m_UseCullingMatrixOverride: 0
+  m_Cookie: {fileID: 0}
+  m_DrawHalo: 0
+  m_Flare: {fileID: 0}
+  m_RenderMode: 0
+  m_CullingMask:
+    serializedVersion: 2
+    m_Bits: 4294967295
+  m_RenderingLayerMask: 1
+  m_Lightmapping: 4
+  m_LightShadowCasterMode: 0
+  m_AreaSize: {x: 1, y: 1}
+  m_BounceIntensity: 1
+  m_ColorTemperature: 6000
+  m_UseColorTemperature: 0
+  m_BoundingSphereOverride: {x: 0, y: 0, z: 0, w: 0}
+  m_UseBoundingSphereOverride: 0
+  m_UseViewFrustumForShadowCasterCull: 1
+  m_ShadowRadius: 0
+  m_ShadowAngle: 0
+--- !u!4 &822455650
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 822455648}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 1, z: 0, w: 0}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1946400641}
+  m_LocalEulerAnglesHint: {x: 0, y: 180, z: 0}
+--- !u!1 &1082679860
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1082679862}
+  - component: {fileID: 1082679863}
+  m_Layer: 0
+  m_Name: HoyoToon Manager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1082679862
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1082679860}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 34262515}
+  - {fileID: 1946400641}
+  - {fileID: 489643318}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1082679863
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1082679860}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3ffd5dfe1ceb3854aa7854cc7987f485, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  autoInitialize: 1
+  managedModels:
+  - {fileID: 0}
+  activeModelIndex: 0
+--- !u!1 &1946400640
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1946400641}
+  m_Layer: 0
+  m_Name: Lights
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1946400641
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1946400640}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 822455650}
+  m_Father: {fileID: 1082679862}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1660057539 &9223372036854775807
+SceneRoots:
+  m_ObjectHideFlags: 0
+  m_Roots:
+  - {fileID: 1082679862}

@@ -163,10 +163,15 @@ namespace LWGUI
 		}
 
 		private static Texture _iconCache;
+		private static GUIContent _iconGuiContentCache;
 		private static Texture _icon => _iconCache = _iconCache ?? AssetDatabase.LoadAssetAtPath<Texture>(AssetDatabase.GUIDToAssetPath("e7bc1130858d984488bca32b8512ca96"));
+				// Create a GUIContent for the Icon
+		private static GUIContent _iconGuiContent => _iconGuiContentCache = _iconGuiContentCache ?? 
+					new GUIContent(string.Empty, _icon, "Revert property to default value");
 
 		public static bool DrawRevertButton(Rect rect)
 		{
+			if (_iconGuiContent == null || _iconGuiContent.image == null) return false;
 			GUI.DrawTexture(rect, _icon);
 			var e = Event.current;
 			if (e.type == UnityEngine.EventType.MouseDown && rect.Contains(e.mousePosition))

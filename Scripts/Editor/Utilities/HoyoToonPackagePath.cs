@@ -2,6 +2,7 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using System;
 
 namespace HoyoToon.Utilities
 {
@@ -21,7 +22,10 @@ namespace HoyoToon.Utilities
                         return Normalize(info.resolvedPath);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("PackagePath.ResolveByScript", $"Failed to resolve package path from script asset: {ex.Message}");
+            }
 
             // 2) Try direct Packages/<name>
             try
@@ -29,7 +33,10 @@ namespace HoyoToon.Utilities
                 var guess = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Packages", packageName));
                 if (Directory.Exists(guess)) return Normalize(guess);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("PackagePath.ResolveByGuess", $"Failed to resolve package path by direct guess: {ex.Message}");
+            }
 
             // 3) Fallback: parent of this script file up to package folder
             try
@@ -48,7 +55,10 @@ namespace HoyoToon.Utilities
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("PackagePath.ResolveByAncestor", $"Failed to resolve package path by ancestor scan: {ex.Message}");
+            }
 
             // 4) Last resort: return Packages/<name> even if not present
             var fallback = Path.GetFullPath(Path.Combine(Application.dataPath, "..", "Packages", packageName));

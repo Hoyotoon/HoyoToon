@@ -18,7 +18,10 @@ struct vertex_output
     float3 view      : TEXCOORD5;
     float4 ws_pos    : TEXCOORD6;
     float4 screenpos : TEXCOORD7;
-    float4 opos      : TEXCOORD8;
-    UNITY_FOG_COORDS(10)
+    float4 pos      : TEXCOORD8;
+    float4 diss_uv   : TEXCOORD9;
+    float4 diss_pos  : TEXCOORD10; // z is the dither rate
+    float4 hairpos   : TEXCOORD11;
     float4 vertex  : SV_POSITION;
+    SHADOW_COORDS(12)   
 };

@@ -198,11 +198,17 @@ namespace LWGUI
 
 		public static bool GetParentPropertyVisibility(PropertyStaticData parentPropStaticData, Material material, LWGUIMetaDatas metaDatas)
 		{
-			if (parentPropStaticData != null
-			 && (!metaDatas.GetPropStaticData(parentPropStaticData.name).isExpanding
-			  || !GetPropertyVisibility(metaDatas.GetProperty(parentPropStaticData.name), material, metaDatas)))
+			if (parentPropStaticData != null)
 			{
-				return false;
+				var parentStaticData = metaDatas.GetPropStaticData(parentPropStaticData.name);
+				var parentProp = metaDatas.GetProperty(parentPropStaticData.name);
+				
+				// Check if parent is expanding and visible
+				if (!parentStaticData.isExpanding
+				 || !GetPropertyVisibility(parentProp, material, metaDatas))
+				{
+					return false;
+				}
 			}
 
 			return true;

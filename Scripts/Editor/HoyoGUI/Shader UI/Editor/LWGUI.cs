@@ -75,24 +75,35 @@ namespace LWGUI
 						if (!MetaDataHelper.GetPropertyVisibility(prop, material, metaDatas))
 							continue;
 
-						if (propStaticData.parent != null
-							&& (!MetaDataHelper.GetParentPropertyVisibility(propStaticData.parent, material, metaDatas)
-								|| !MetaDataHelper.GetParentPropertyVisibility(propStaticData.parent.parent, material, metaDatas)))
-							continue;
-					}
+						// Check entire parent chain for visibility
+						bool allParentsVisible = true;
+						var currentParent = propStaticData.parent;
+						while (currentParent != null)
+						{
+							if (!MetaDataHelper.GetParentPropertyVisibility(currentParent, material, metaDatas))
+							{
+								allParentsVisible = false;
+								break;
+							}
+							currentParent = currentParent.parent;
+						}
 
-					// Indent
+						if (!allParentsVisible)
+							continue;
+					}               // Indent - count depth in hierarchy
 					var indentLevel = EditorGUI.indentLevel;
 					if (propStaticData.isAdvancedHeader)
 						EditorGUI.indentLevel++;
-					if (propStaticData.parent != null)
-					{
-						EditorGUI.indentLevel++;
-						if (propStaticData.parent.parent != null)
-							EditorGUI.indentLevel++;
-					}
 
-					// Advanced Header
+					// Count parent depth for incremental indentation
+					var parentDepth = 0;
+					var tempParent = propStaticData.parent;
+					while (tempParent != null)
+					{
+						parentDepth++;
+						tempParent = tempParent.parent;
+					}
+					EditorGUI.indentLevel += parentDepth;                   // Advanced Header
 					if (propStaticData.isAdvancedHeader && !propStaticData.isAdvancedHeaderProperty)
 					{
 						DrawAdvancedHeader(propStaticData, prop);
@@ -154,7 +165,7 @@ namespace LWGUI
 		{
 			var (propStaticData, propDynamicData) = metaDatas.GetPropDatas(prop);
 			var materialEditor = metaDatas.GetMaterialEditor();
-			
+
 			if (propStaticData.isAdvancedHeaderProperty)
 				EditorGUILayout.Space(3);
 
@@ -170,14 +181,14 @@ namespace LWGUI
 			if (propStaticData.isReadOnly) GUI.enabled = false;
 			Helper.BeginProperty(rect, prop, metaDatas);
 			Helper.DoPropertyContextMenus(rect, prop, metaDatas);
-			
+
 			RevertableHelper.FixGUIWidthMismatch(prop.GetPropertyType(), materialEditor);
 			if (propStaticData.isAdvancedHeaderProperty)
 				propStaticData.isExpanding = EditorGUI.Foldout(rect, propStaticData.isExpanding, string.Empty);
-			
+
 			RevertableHelper.DrawRevertableProperty(revertButtonRect, prop, metaDatas, propStaticData.isMain || propStaticData.isAdvancedHeaderProperty);
 			materialEditor.ShaderProperty(rect, prop, label);
-			
+
 			Helper.EndProperty(metaDatas, prop);
 			GUI.enabled = enabled;
 		}
@@ -201,13 +212,13 @@ namespace LWGUI
 			UnityEditorExtension.ApplyMaterialPropertyAndDecoratorDrawers(materials);
 			MetaDataHelper.ForceUpdateMaterialsMetadataCache(materials);
 		}
-		
+
 		// Called after edit in code
 		public static void OnValidate(LWGUIMetaDatas metaDatas)
 		{
 			OnValidate(metaDatas?.GetMaterialEditor()?.targets);
 		}
-		
+
 		public override void ValidateMaterial(Material material)
 		{
 			// Debug.Log($"ValidateMaterial {material.name}, {metaDatas}, {Event.current?.type}");

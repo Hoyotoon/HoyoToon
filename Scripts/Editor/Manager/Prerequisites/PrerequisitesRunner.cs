@@ -16,6 +16,7 @@ namespace HoyoToon.Prerequisites
         {
             s_checks = new List<IPrerequisiteCheck>
             {
+                new VRCSDKInstalledCheck(),
                 new ColorSpaceLinearCheck(),
                 new ShadowProjectionCloseFitCheck(),
             };

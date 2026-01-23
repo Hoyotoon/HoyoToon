@@ -63,7 +63,11 @@ namespace HoyoToon.Materials
                                 }
                                 else
                                 {
-                                    try { HoyoToonDialogWindow.ShowYesNoWithImageModal($"{g}: {charName}", entry.Message, msgType); } catch { }
+                                    try { HoyoToonDialogWindow.ShowYesNoWithImageModal($"{g}: {charName}", entry.Message, msgType); }
+                                    catch (Exception ex)
+                                    {
+                                        HoyoToonLogger.ThrottleWarning("MaterialDetection.ProblemDialog", $"Failed to show problem dialog for {g}/{charName}: {ex.Message}");
+                                    }
                                     if (!string.IsNullOrEmpty(key)) s_ShownProblemKeys.Add(key);
                                 }
                             }
@@ -102,7 +106,10 @@ namespace HoyoToon.Materials
                             {
                                 HoyoToonDialogWindow.ShowYesNoWithImageModal($"{result.gameKey}: {charName}", entry.Message, msgType);
                             }
-                            catch { }
+                            catch (Exception ex)
+                            {
+                                HoyoToonLogger.ThrottleWarning("MaterialDetection.ProblemDialog", $"Failed to show problem dialog for {result.gameKey}/{charName}: {ex.Message}");
+                            }
                         }
                     }
                     else
@@ -233,9 +240,10 @@ namespace HoyoToon.Materials
                         list.Add((null, null, abs));
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                // Intentionally ignore UI exceptions to avoid breaking detection flows.
+                // Intentionally avoid breaking detection flows.
+                HoyoToonLogger.ThrottleWarning("MaterialDetection.ContextScan", $"Context scan failed: {ex.Message}");
             }
 
             return list;
@@ -309,7 +317,11 @@ namespace HoyoToon.Materials
                 }
                 return null;
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("MaterialDetection.TryExtractCharacter", $"Character extraction failed: {ex.Message}");
+                return null;
+            }
         }
 
         // Streamlined: High-level auto methods above; low-level Try* remain for explicit control.
@@ -556,9 +568,10 @@ namespace HoyoToon.Materials
                         return (game, shaderPath, abs);
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Resilience: ignore filesystem/probing errors during context scan.
+                HoyoToonLogger.ThrottleWarning("MaterialDetection.ContextScan", $"Context scan failed: {ex.Message}");
             }
 
             return (null, null, null);
@@ -619,9 +632,10 @@ namespace HoyoToon.Materials
                     return true;
                 }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 // Resilience: ignore path probing failures; no detection result will be returned.
+                HoyoToonLogger.ThrottleWarning("MaterialDetection.WorkspaceRoot", $"Workspace root probing failed: {ex.Message}");
             }
 
             return false;
@@ -644,7 +658,11 @@ namespace HoyoToon.Materials
                 if (!metaMap.TryGetValue(gameKey, out var meta) || meta?.ProblemList?.Entries == null) return null;
                 return meta.ProblemList.Entries.FirstOrDefault(e => !string.IsNullOrEmpty(e?.Name) && string.Equals(e.Name, characterName, StringComparison.OrdinalIgnoreCase));
             }
-            catch { return null; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("MaterialDetection.FindProblemEntry", $"Problem entry lookup failed: {ex.Message}");
+                return null;
+            }
         }
 
         // Helper: Blocking prompt for batch flows using HoyoToon dialog; returns true to continue, false to stop

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon.API;
+using HoyoToon.Utilities;
 
 namespace HoyoToon.Updater
 {
@@ -52,7 +53,10 @@ namespace HoyoToon.Updater
                     }
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.LoadLocalPackage", $"Failed to load local package.json: {ex.Message}");
+            }
             return null;
         }
 
@@ -169,9 +173,9 @@ namespace HoyoToon.Updater
             return result;
         }
 
-    public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg, IProgressSink progress = null)
+        public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg, IProgressSink progress = null)
         {
-                    if (batch == null) return;
+            if (batch == null) return;
 
             // Disable auto-refresh to avoid compile/import churn
             AssetDatabase.DisallowAutoRefresh();
@@ -202,14 +206,13 @@ namespace HoyoToon.Updater
                                 if (IsExcludedPath(rel)) continue; // don't touch excluded artifacts during clean
                                 if (gitIgnore != null && gitIgnore.IsIgnored(rel, false))
                                 {
-                                    Debug.Log($"[Updater] Preserving local gitignored file '{rel}' during clean.");
+                                    HoyoToonLogger.UpdaterInfo($"Preserving local gitignored file '{rel}' during clean.");
                                     // Skip deletion of ignored file
                                     removed++;
-                                    if (progress != null) progress.Report("Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
-                                    else EditorUtility.DisplayProgressBar("Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
+                                    ReportProgress(progress, "Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
                                     continue;
                                 }
-                                var assetPathClean = ToAssetPath(fullPath);
+                                var assetPathClean = HoyoToonEditorUtil.ToUnityAssetPath(fullPath);
                                 if (!string.IsNullOrEmpty(assetPathClean))
                                 {
                                     if (!AssetDatabase.DeleteAsset(assetPathClean))
@@ -224,8 +227,7 @@ namespace HoyoToon.Updater
                                     var meta = fullPath + ".meta"; if (File.Exists(meta)) File.Delete(meta);
                                 }
                                 removed++;
-                                if (progress != null) progress.Report("Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
-                                else EditorUtility.DisplayProgressBar("Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
+                                ReportProgress(progress, "Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
                             }
                         }
                         finally { if (progress == null) EditorUtility.ClearProgressBar(); }
@@ -240,7 +242,12 @@ namespace HoyoToon.Updater
                     {
                     foreach (var update in batch.fileUpdates)
                     {
-                        if (IsExcludedPath(update.path)) { completed++; if (progress != null) progress.Report("Skipping Excluded", update.path, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping Excluded", update.path, (float)completed / total); continue; }
+                        if (IsExcludedPath(update.path))
+                        {
+                            completed++;
+                            ReportProgress(progress, "Skipping Excluded", update.path, (float)completed / total);
+                            continue;
+                        }
                         var bytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
                             ? await api.DownloadRawAtCommitAsync(update.path, batch.sourceCommitSha)
                             : await api.DownloadRawAsync(update.path);
@@ -252,21 +259,26 @@ namespace HoyoToon.Updater
                         Directory.CreateDirectory(Path.GetDirectoryName(full));
                         await File.WriteAllBytesAsync(full, bytes);
                         completed++;
-                        if (progress != null) progress.Report("Applying Updates", update.path, (float)completed / total);
-                        else EditorUtility.DisplayProgressBar("Applying Updates", update.path, (float)completed / total);
+                        ReportProgress(progress, "Applying Updates", update.path, (float)completed / total);
                         await Task.Delay(10);
                     }
 
                     foreach (var deletion in batch.filesToDelete)
                     {
-                        if (IsExcludedPath(deletion)) { completed++; if (progress != null) progress.Report("Skipping Excluded", deletion, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping Excluded", deletion, (float)completed / total); continue; }
-                        if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false)) { completed++; if (progress != null) progress.Report("Skipping (gitignored)", deletion, (float)completed / total); else EditorUtility.DisplayProgressBar("Skipping (gitignored)", deletion, (float)completed / total); continue; }
-                        else if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false))
+                        if (IsExcludedPath(deletion))
                         {
-                            Debug.Log($"[Updater] Preserving local gitignored file '{deletion}' during apply.");
+                            completed++;
+                            ReportProgress(progress, "Skipping Excluded", deletion, (float)completed / total);
+                            continue;
+                        }
+                        if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false))
+                        {
+                            completed++;
+                            ReportProgress(progress, "Skipping (gitignored)", deletion, (float)completed / total);
+                            continue;
                         }
                         var fullDel = Path.Combine(_toolRoot, deletion);
-                        var assetPathDel = ToAssetPath(fullDel);
+                        var assetPathDel = HoyoToonEditorUtil.ToUnityAssetPath(fullDel);
                         if (!string.IsNullOrEmpty(assetPathDel))
                         {
                             if (!AssetDatabase.DeleteAsset(assetPathDel))
@@ -283,8 +295,7 @@ namespace HoyoToon.Updater
                             if (File.Exists(meta)) File.Delete(meta);
                         }
                         completed++;
-                        if (progress != null) progress.Report("Applying Updates", deletion, (float)completed / total);
-                        else EditorUtility.DisplayProgressBar("Applying Updates", deletion, (float)completed / total);
+                        ReportProgress(progress, "Applying Updates", deletion, (float)completed / total);
                         await Task.Delay(10);
                     }
                     }
@@ -301,15 +312,14 @@ namespace HoyoToon.Updater
                             var fullPkg = Path.Combine(_toolRoot, pkgPath);
                             Directory.CreateDirectory(Path.GetDirectoryName(fullPkg));
                             await File.WriteAllBytesAsync(fullPkg, pkgBytes);
-                            Debug.Log($"[Updater] Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
+                            HoyoToonLogger.UpdaterInfo($"Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
                             // Small progress nudge (doesn't count toward total as it's implicit)
-                            if (progress != null) progress.Report("Finalizing", "package.json", 1f);
-                            else EditorUtility.DisplayProgressBar("Finalizing", "package.json", 1f);
+                            ReportProgress(progress, "Finalizing", "package.json", 1f);
                         }
                     }
                     catch (Exception pkgEx)
                     {
-                        Debug.LogWarning($"[Updater] package.json update skipped: {pkgEx.Message}");
+                        HoyoToonLogger.UpdaterWarning($"package.json update skipped: {pkgEx.Message}");
                     }
                 }
 
@@ -327,16 +337,13 @@ namespace HoyoToon.Updater
             }
         }
 
-        private static string ToAssetPath(string fullPath)
-        {
-            var projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            var normalized = Path.GetFullPath(fullPath);
-            if (!normalized.StartsWith(projectRoot, StringComparison.OrdinalIgnoreCase)) return null;
-            var rel = normalized.Substring(projectRoot.Length + 1).Replace("\\", "/");
-            return rel;
-        }
-
         private static string Now() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
+
+        private static void ReportProgress(IProgressSink progress, string title, string info, float value)
+        {
+            if (progress != null) progress.Report(title, info, value);
+            else EditorUtility.DisplayProgressBar(title, info, value);
+        }
 
         private static bool IsNewerVersion(string newVersion, string currentVersion)
         {
@@ -347,7 +354,11 @@ namespace HoyoToon.Updater
                 var b = new Version(currentVersion);
                 return a > b;
             }
-            catch { return string.Compare(newVersion, currentVersion, StringComparison.OrdinalIgnoreCase) > 0; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.VersionCompare", $"Version compare failed ('{newVersion}' vs '{currentVersion}'): {ex.Message}");
+                return string.Compare(newVersion, currentVersion, StringComparison.OrdinalIgnoreCase) > 0;
+            }
         }
 
         private static bool IsExcludedPath(string rel)

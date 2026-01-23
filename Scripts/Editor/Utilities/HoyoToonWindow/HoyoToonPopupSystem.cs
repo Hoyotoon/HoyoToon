@@ -74,25 +74,31 @@ namespace HoyoToon.Utilities
             public string text;
         }
 
-        internal static void EnqueuePopup(PopupDocument doc)
+        /// <summary>
+        /// Enqueue a popup for potential display.
+        /// Returns true only if the popup was actually queued (i.e., not already shown/pending when showOnce is enabled).
+        /// Note: even when queued, it may still not be shown due to enabled/publishAt/expiresAt checks.
+        /// </summary>
+        internal static bool EnqueuePopup(PopupDocument doc)
         {
-            if (doc == null) return;
+            if (doc == null) return false;
             if (!_mainThreadCaptured || !IsMainThread())
             {
                 EditorApplication.delayCall += () => EnqueuePopup(doc);
-                return;
+                return false;
             }
             if (string.IsNullOrEmpty(doc.id) && !string.IsNullOrEmpty(doc._id)) doc.id = doc._id;
             if (_shownIds == null) LoadShown();
             if (string.IsNullOrEmpty(doc.id)) doc.id = Guid.NewGuid().ToString("N");
             bool showOnce = doc.showOnce ?? true;
-            if (showOnce && _shownIds != null && _shownIds.Contains(doc.id)) return;
-            if (showOnce && _pendingIds.Contains(doc.id)) return;
+            if (showOnce && _shownIds != null && _shownIds.Contains(doc.id)) return false;
+            if (showOnce && _pendingIds.Contains(doc.id)) return false;
             _pendingPopups.Enqueue(doc);
             if (showOnce) _pendingIds.Add(doc.id);
             PopupReceived?.Invoke(doc);
             EditorApplication.update -= Drain;
             EditorApplication.update += Drain;
+            return true;
         }
 
         private static bool IsMainThread() => _mainThreadCaptured && System.Threading.Thread.CurrentThread.ManagedThreadId == _mainThreadId;

@@ -30,6 +30,11 @@ namespace HoyoToon.Updater
         [MenuItem("HoyoToon/Debug/Updater: Large Changelog Test", priority = 501)]
         public static void RunDebugLargeChangelogTest()
         {
+            if (!HoyoToonDebug.Enabled)
+            {
+                HoyoToonDialogWindow.ShowWarning("Debug Disabled", "Enable Debug Mode to run updater debug tests.");
+                return;
+            }
             var win = HoyoToonDialogWindow.ShowProgressWithCustomButtons(
                 title: "HoyoToon Updater (Debug)",
                 message: "Preparing fake update summary...",
@@ -41,6 +46,12 @@ namespace HoyoToon.Updater
             );
 
             _ = RunDebugAsync(win);
+        }
+
+        [MenuItem("HoyoToon/Debug/Updater: Large Changelog Test", true)]
+        private static bool ValidateRunDebugLargeChangelogTest()
+        {
+            return HoyoToonDebug.Enabled;
         }
 
         private static Task RunDebugAsync(HoyoToonDialogWindow win)
@@ -290,7 +301,10 @@ namespace HoyoToon.Updater
                     if (rel != null && !string.IsNullOrEmpty(rel.body))
                         return $"Release Notes for {remote.version}\n\n" + rel.body;
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    HoyoToonLogger.ThrottleWarning("Updater.Changelog.Release", $"Failed to fetch release notes: {ex.Message}");
+                }
 
                 // Fallback: look for changelog.md
                 try
@@ -310,15 +324,12 @@ namespace HoyoToon.Updater
                         return text.Trim();
                     }
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    HoyoToonLogger.ThrottleWarning("Updater.Changelog.Fallback", $"Failed to fetch changelog.md: {ex.Message}");
+                }
             }
             return null;
-        }
-
-        private static string Truncate(string s, int max)
-        {
-            if (string.IsNullOrEmpty(s) || s.Length <= max) return s;
-            return s.Substring(0, max) + "\n...";
         }
     }
 }

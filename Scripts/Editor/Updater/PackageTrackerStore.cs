@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using Utf8Json;
 using HoyoToon.API;
 using UnityEngine;
+using HoyoToon.Utilities;
 
 namespace HoyoToon.Updater
 {
@@ -28,7 +29,10 @@ namespace HoyoToon.Updater
                     File.Copy(BaseTrackerPath, path, overwrite: true);
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.Tracker.Migrate", $"Failed to migrate tracker file: {ex.Message}");
+            }
             return path;
         }
 
@@ -43,14 +47,17 @@ namespace HoyoToon.Updater
             try
             {
                 var path = CurrentTrackerPath();
-                                if (File.Exists(path))
-                                {
-                                        var bytes = File.ReadAllBytes(path);
-                                        if (HoyoToonApi.Parser.TryParse<LocalPackageTracker>(bytes, out var tracker, out var _))
-                                                return tracker;
-                                }
+                if (File.Exists(path))
+                {
+                    var bytes = File.ReadAllBytes(path);
+                    if (HoyoToonApi.Parser.TryParse<LocalPackageTracker>(bytes, out var tracker, out var _))
+                        return tracker;
+                }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.Tracker.Load", $"Failed to load tracker: {ex.Message}");
+            }
             return new LocalPackageTracker();
         }
 
@@ -62,7 +69,10 @@ namespace HoyoToon.Updater
                 var path = CurrentTrackerPath();
                 File.WriteAllBytes(path, bytes);
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.Tracker.Save", $"Failed to save tracker: {ex.Message}");
+            }
         }
 
         public static async Task SnapshotAsync(LocalPackageTracker tracker, string toolRootFullPath)

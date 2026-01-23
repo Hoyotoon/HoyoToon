@@ -343,20 +343,32 @@ namespace HoyoToon
                         return val.ToString();
                 }
             }
-            catch { return "(unprintable)"; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Environment.SafeString", $"Failed to stringify value: {ex.Message}");
+                return "(unprintable)";
+            }
         }
 
         private static string Short(Exception ex)
         {
             try { return ex.GetType().Name + ": " + ex.Message; }
-            catch { return "Exception"; }
+            catch (Exception inner)
+            {
+                HoyoToonLogger.ThrottleWarning("Environment.Short", $"Failed to shorten exception: {inner.Message}");
+                return "Exception";
+            }
         }
 
         // --- Helpers -------------------------------------------------------
         private static T SafeGet<T>(Func<T> getter, T fallback)
         {
             try { return getter(); }
-            catch { return fallback; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Environment.SafeGet", $"SafeGet failed: {ex.Message}");
+                return fallback;
+            }
         }
 
         // Avoid direct use of obsolete Resolution.refreshRate by accessing refreshRateRatio via reflection.
@@ -400,14 +412,21 @@ namespace HoyoToon
                     if (v is int i) return i;
                 }
             }
-            catch { }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Environment.RefreshRate", $"Failed to read refresh rate: {ex.Message}");
+            }
             return 0;
         }
 
         private static bool SafeGetUseDefaultGraphicsAPIs(BuildTarget target)
         {
             try { return PlayerSettings.GetUseDefaultGraphicsAPIs(target); }
-            catch { return true; }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Environment.DefaultGraphicsAPIs", $"Failed to read default graphics APIs for {target}: {ex.Message}");
+                return true;
+            }
         }
 
         private static string[] SafeGetGraphicsAPIs(BuildTarget target)
@@ -419,7 +438,11 @@ namespace HoyoToon
                 var apis = PlayerSettings.GetGraphicsAPIs(target);
                 return apis?.Select(a => a.ToString()).ToArray() ?? Array.Empty<string>();
             }
-            catch { return Array.Empty<string>(); }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Environment.GraphicsAPIs", $"Failed to read graphics APIs for {target}: {ex.Message}");
+                return Array.Empty<string>();
+            }
         }
     }
 }

@@ -4,7 +4,6 @@ using UnityEngine;
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
@@ -27,7 +26,7 @@ namespace HoyoToon
         // Resolve absolute path to this embedded package under the project Packages folder
         private static readonly string PackagePath = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", "Packages", PackageName));
         private static readonly string CacheDataPath = Path.Combine(PackagePath, "Scripts/Editor", "ResourceCache.json");
-    private static readonly string ResourcesBasePath = Path.Combine(PackagePath, "Resources");
+        private static readonly string ResourcesBasePath = Path.Combine(PackagePath, "Resources");
 
         #endregion
 
@@ -35,6 +34,99 @@ namespace HoyoToon
 
         private static HoyoToonResourceCacheData _cacheData;
         private static readonly object _cacheLock = new object();
+
+        private static bool IsThumbMarkerFile(string relativePath)
+        {
+            return !string.IsNullOrEmpty(relativePath) && relativePath.EndsWith("._thumb", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Remove cache entries for games no longer present in the current API-backed config.
+        /// Also resets per-game cache if the WebDAV endpoint changed.
+        /// IMPORTANT: This only touches the JSON cache, never deletes files on disk.
+        /// </summary>
+        private static bool PruneCacheToCurrentConfig(HoyoToonResourceCacheData data, out int removedGames, out int resetGames, out int removedThumbEntries)
+        {
+            removedGames = 0;
+            resetGames = 0;
+            removedThumbEntries = 0;
+            if (data == null || data.Games == null) return false;
+
+            bool changed = false;
+
+            // Always purge thumb marker entries from cache (independent of config availability).
+            foreach (var gd in data.Games.Values)
+            {
+                if (gd?.Files == null || gd.Files.Count == 0) continue;
+                var fileKeys = gd.Files.Keys.Where(IsThumbMarkerFile).ToList();
+                if (fileKeys.Count == 0) continue;
+                foreach (var fk in fileKeys)
+                {
+                    gd.Files.Remove(fk);
+                    removedThumbEntries++;
+                }
+                changed = true;
+            }
+
+            // If there are no games, we're done.
+            if (data.Games.Count == 0) return changed;
+
+            Dictionary<string, GameConfig> configGames = null;
+            try
+            {
+                configGames = HoyoToonResourceConfig.Games;
+            }
+            catch
+            {
+                // If config isn't available (e.g., offline / not initialized), don't risk pruning.
+                return false;
+            }
+
+            if (configGames == null || configGames.Count == 0)
+            {
+                // Empty config could be a transient state; do not purge cache.
+                return false;
+            }
+
+            // Remove obsolete games.
+            var keys = data.Games.Keys.ToList();
+            foreach (var key in keys)
+            {
+                if (!configGames.ContainsKey(key))
+                {
+                    data.Games.Remove(key);
+                    removedGames++;
+                    changed = true;
+                }
+            }
+
+            // Sync/reset known games when the endpoint changed.
+            foreach (var kvp in configGames)
+            {
+                var key = kvp.Key;
+                var cfg = kvp.Value;
+                if (cfg == null) continue;
+
+                if (!data.Games.TryGetValue(key, out var gameData) || gameData == null)
+                    continue;
+
+                var cfgUrl = cfg.WebdavUrl ?? string.Empty;
+                var cachedUrl = gameData.WebdavUrl ?? string.Empty;
+                if (!string.Equals(cfgUrl, cachedUrl, StringComparison.Ordinal))
+                {
+                    // Endpoint changed: cached ETags/file listing may be invalid.
+                    gameData.WebdavUrl = cfg.WebdavUrl;
+                    gameData.LastSync = DateTime.MinValue;
+                    gameData.Files?.Clear();
+                    gameData.TotalDownloaded = 0;
+                    gameData.DownloadErrors?.Clear();
+                    resetGames++;
+                    changed = true;
+                }
+            }
+
+            return changed;
+        }
 
         /// <summary>
         /// Load cache data from disk or create new if doesn't exist
@@ -56,6 +148,17 @@ namespace HoyoToon
                             data = new HoyoToonResourceCacheData();
                         }
                         _cacheData = data;
+
+                        // Prune stale cache entries (e.g., games removed from the API config).
+                        if (PruneCacheToCurrentConfig(_cacheData, out var removed, out var reset, out var removedThumbs))
+                        {
+                            SaveCacheData();
+                            if (removed > 0 || reset > 0 || removedThumbs > 0)
+                            {
+                                HoyoToonLogger.ResourcesInfo($"Resource cache pruned: removed {removed} obsolete game(s), reset {reset} game(s) due to endpoint change, removed {removedThumbs} thumbnail marker entr(y/ies).");
+                            }
+                        }
+
                         HoyoToonLogger.ResourcesInfo("Resource cache data loaded successfully.");
                     }
                     else
@@ -113,51 +216,17 @@ namespace HoyoToon
         #region UI Helpers
 
         // Centralized progress dialog management to avoid direct EditorUtility calls
-        private static HoyoToonDialogWindow _progressWindow;
         private static void ProgressStart(string title, string message)
         {
-            try
-            {
-                if (_progressWindow == null)
-                {
-                    _progressWindow = HoyoToonDialogWindow.ShowProgress(title, message, MessageType.Info);
-                }
-                else
-                {
-                    // Reuse existing window and update text to avoid spawning multiple windows
-                    _progressWindow.SetTitle(title);
-                    _progressWindow.SetMessage(message);
-                }
-            }
-            catch { _progressWindow = null; }
+            HoyoToonProgressDialog.Start(title, message);
         }
         private static void ProgressUpdate(float progress, string message)
         {
-            try
-            {
-                if (_progressWindow != null)
-                {
-                    if (!string.IsNullOrEmpty(message))
-                    {
-                        _progressWindow.SetMessage(message);
-                    }
-                    _progressWindow.UpdateProgress(progress, message);
-                }
-            }
-            catch { }
+            HoyoToonProgressDialog.Update(progress, message);
         }
         private static void ProgressEnd(string completionMessage = null)
         {
-            try
-            {
-                if (_progressWindow != null)
-                {
-                    if (!string.IsNullOrEmpty(completionMessage)) _progressWindow.CompleteProgress(completionMessage);
-                    _progressWindow.Close();
-                    _progressWindow = null;
-                }
-            }
-            catch { _progressWindow = null; }
+            HoyoToonProgressDialog.End(completionMessage);
         }
 
         #endregion
@@ -165,9 +234,9 @@ namespace HoyoToon
         #region Menu Items
 
         [MenuItem("HoyoToon/Resources/Check Resource Status", priority = 5)]
-        public static async void CheckResourceStatus()
+        public static void CheckResourceStatus()
         {
-            await CheckResourceStatusWithActions();
+            HoyoToonAsyncUtil.RunFireAndForget(CheckResourceStatusWithActions, "Resource status check");
         }
 
         /// <summary>
@@ -353,7 +422,7 @@ namespace HoyoToon
                         if (missingGames.Any() && updateInfoMap.Any())
                         {
                             // Download everything and synchronize files
-                            DownloadMissingResourcesAndSynchronizeAsync(missingGames, updateInfoMap);
+                            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadMissingResourcesAndSynchronizeAsync(missingGames, updateInfoMap), "Resource sync (missing + changes)");
                         }
                         else if (missingGames.Any())
                         {
@@ -376,7 +445,7 @@ namespace HoyoToon
                         {
                             // Refresh entire games that need updates
                             var gamesToRefresh = updateInfoMap.Keys.Concat(missingGames).Distinct().ToArray();
-                            _ = DownloadResourcesAsync(gamesToRefresh);
+                            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(gamesToRefresh), "Refresh resources (games)");
                         }
                         break;
                     case 2: // Cancel
@@ -388,7 +457,7 @@ namespace HoyoToon
         /// <summary>
         /// Download missing games and synchronize specific files (downloads + deletions)
         /// </summary>
-                private static async void DownloadMissingResourcesAndSynchronizeAsync(List<string> missingGames, Dictionary<string, FileUpdateInfo> updateInfoMap)
+                private static async Task DownloadMissingResourcesAndSynchronizeAsync(List<string> missingGames, Dictionary<string, FileUpdateInfo> updateInfoMap)
         {
             try
             {
@@ -580,68 +649,43 @@ namespace HoyoToon
             }
         }
 
-        //[MenuItem("HoyoToon/Resources/Download All Resources", priority = 10)]
-        public static async void DownloadAllResources()
+        public static void DownloadAllResources()
         {
             // Download only games that have resource LocalPath defined
-            await DownloadResourcesAsync(HoyoToonResourceConfig.Games.Values.Where(g => !string.IsNullOrEmpty(g.LocalPath)).Select(g => g.Key).ToArray());
+            var keys = HoyoToonResourceConfig.Games.Values.Where(g => !string.IsNullOrEmpty(g.LocalPath)).Select(g => g.Key).ToArray();
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(keys), "Download all resources");
         }
 
-        //[MenuItem("HoyoToon/Resources/Download Genshin Resources", priority = 11)]
-        public static async void DownloadGenshinResources()
+        public static void DownloadGenshinResources()
         {
-            await DownloadResourcesAsync(new[] { "Genshin" });
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(new[] { "Genshin" }), "Download Genshin resources");
         }
 
-        //[MenuItem("HoyoToon/Resources/Download StarRail Resources", priority = 12)]
-        public static async void DownloadStarRailResources()
+        public static void DownloadStarRailResources()
         {
-            await DownloadResourcesAsync(new[] { "StarRail" });
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(new[] { "StarRail" }), "Download StarRail resources");
         }
 
-        //[MenuItem("HoyoToon/Resources/Download Hi3 Resources", priority = 13)]
-        public static async void DownloadHi3Resources()
+        public static void DownloadHi3Resources()
         {
-            await DownloadResourcesAsync(new[] { "Hi3" });
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(new[] { "Hi3" }), "Download Hi3 resources");
         }
 
-        //[MenuItem("HoyoToon/Resources/Download Wuwa Resources", priority = 14)]
-        public static async void DownloadWuwaResources()
-        {
-            await DownloadResourcesAsync(new[] { "Wuwa" });
-        }
-
-        //[MenuItem("HoyoToon/Resources/Download ZZZ Resources", priority = 15)]
-        public static async void DownloadZZZResources()
-        {
-            await DownloadResourcesAsync(new[] { "ZZZ" });
-        }
-
-        //[MenuItem("HoyoToon/Resources/Delete Genshin Resources", priority = 16)]
         public static void DeleteGenshinResources()
         {
             DeleteGameResources("Genshin");
         }
 
-        //[MenuItem("HoyoToon/Resources/Delete StarRail Resources", priority = 17)]
         public static void DeleteStarRailResources()
         {
             DeleteGameResources("StarRail");
         }
 
-        //[MenuItem("HoyoToon/Resources/Delete Hi3 Resources", priority = 18)]
         public static void DeleteHi3Resources()
         {
             DeleteGameResources("Hi3");
         }
 
-        //[MenuItem("HoyoToon/Resources/Delete Wuwa Resources", priority = 19)]
-        public static void DeleteWuwaResources()
-        {
-            DeleteGameResources("Wuwa");
-        }
-
-        //[MenuItem("HoyoToon/Resources/Delete ZZZ Resources", priority = 20)]
         public static void DeleteZZZResources()
         {
             DeleteGameResources("ZZZ");
@@ -718,7 +762,6 @@ namespace HoyoToon
             });
         }
 
-        //[MenuItem("HoyoToon/Resources/Clear Resource Cache", priority = 22)]
         public static void ClearResourceCache()
         {
             HoyoToonDialogWindow.ShowOkCancel("Clear Resource Cache", 
@@ -733,7 +776,6 @@ namespace HoyoToon
             });
         }
 
-        //[MenuItem("HoyoToon/Resources/Delete All Resources", priority = 21)]
         public static void DeleteAllResources()
         {
             HoyoToonDialogWindow.ShowOkCancel("Delete All Resources", 
@@ -910,12 +952,13 @@ namespace HoyoToon
                 HoyoToonLogger.ResourcesInfo($"Checking server for {gameConfig.DisplayName} updates...");
 
                 // Get current file list from server
-                var remoteFiles = await HoyoToonNextCloudClient.GetFileListAsync(gameConfig.WebdavUrl);
+                var remoteFiles = await HoyoToonCloudreveClient.GetFileListAsync(gameConfig.WebdavUrl);
                 
                 // Filter out directories only, keep all files
-                var serverFiles = remoteFiles.Where(f => !f.IsDirectory && 
-                                                   !f.RelativePath.EndsWith("/") && 
-                                                   !f.RelativePath.EndsWith("\\"))
+                    var serverFiles = remoteFiles.Where(f => !f.IsDirectory &&
+                                           !IsThumbMarkerFile(f.RelativePath) &&
+                                           !f.RelativePath.EndsWith("/") && 
+                                           !f.RelativePath.EndsWith("\\"))
                                              .ToDictionary(f => f.RelativePath, f => f);
 
                 // Check for new files on server
@@ -940,7 +983,7 @@ namespace HoyoToon
                 }
 
                 // Check for deleted files on server
-                var deletedFiles = gameData.Files.Keys.Where(path => !serverFiles.ContainsKey(path)).ToList();
+                var deletedFiles = gameData.Files.Keys.Where(path => !IsThumbMarkerFile(path) && !serverFiles.ContainsKey(path)).ToList();
                 if (deletedFiles.Any())
                 {
                     HoyoToonLogger.ResourcesInfo($"Found {deletedFiles.Count} deleted files for {gameConfig.DisplayName}, cleaning up...");
@@ -1191,15 +1234,18 @@ namespace HoyoToon
                 if (plannedFiles != null)
                 {
                     // Use precomputed plan (fixed totals set earlier)
-                    remoteFiles = plannedFiles.Where(f => !f.IsDirectory).ToList();
+                    remoteFiles = plannedFiles.Where(f => !f.IsDirectory && !IsThumbMarkerFile(f.RelativePath)).ToList();
                 }
                 else
                 {
                     progress.StatusMessage = $"Connecting to {gameConfig.DisplayName} server...";
-                    // Get file list from NextCloud public share
-                    var discovered = await HoyoToonNextCloudClient.GetFileListAsync(gameConfig.WebdavUrl);
+                    // Get file list from Cloudreve public share
+                    var discovered = await HoyoToonCloudreveClient.GetFileListAsync(gameConfig.WebdavUrl);
                     // Filter out any directories that might have slipped through
-                    remoteFiles = discovered.Where(f => !f.IsDirectory && !f.RelativePath.EndsWith("/") && !f.RelativePath.EndsWith("\\")).ToList();
+                    remoteFiles = discovered.Where(f => !f.IsDirectory &&
+                                                       !IsThumbMarkerFile(f.RelativePath) &&
+                                                       !f.RelativePath.EndsWith("/") &&
+                                                       !f.RelativePath.EndsWith("\\")).ToList();
                     HoyoToonLogger.ResourcesInfo($"Found {remoteFiles.Count} files for {gameConfig.DisplayName} (all file types)");
                     // Only set totals if not already precomputed
                     if (progress.TotalFiles == 0) progress.TotalFiles = remoteFiles.Count;
@@ -1226,12 +1272,16 @@ namespace HoyoToon
                 var localBasePath = Path.Combine(ResourcesBasePath, gameConfig.LocalPath.Replace("Resources/", ""));
                 Directory.CreateDirectory(localBasePath);
 
-                using (var httpClient = new HttpClient())
+                var httpClient = HoyoToonCloudreveClient.SharedClient;
+                foreach (var remoteFile in remoteFiles)
                 {
-                    httpClient.Timeout = TimeSpan.FromMinutes(10); // Long timeout for large files
+                        if (IsThumbMarkerFile(remoteFile.RelativePath))
+                        {
+                            // Defensive: should already be filtered out.
+                            progress.FilesCompleted++;
+                            continue;
+                        }
 
-                    foreach (var remoteFile in remoteFiles)
-                    {
                         progress.CurrentFile = remoteFile.RelativePath;
                         progress.StatusMessage = $"Downloading {gameConfig.DisplayName} files...";
 
@@ -1279,8 +1329,7 @@ namespace HoyoToon
                                 continue;
                             }
 
-                            var token = ExtractTokenFromShareUrl(gameConfig.WebdavUrl);
-                            await HoyoToonNextCloudClient.DownloadFileAsync(httpClient, remoteFile.DownloadUrl, localPath, token);
+                            await HoyoToonCloudreveClient.DownloadFileAsync(httpClient, remoteFile, gameConfig.WebdavUrl, localPath);
                             
                             var fileInfo = new FileInfo(localPath);
                             var cachedFileInfo = new CachedFileInfo
@@ -1300,7 +1349,6 @@ namespace HoyoToon
                         }
 
                         progress.FilesCompleted++;
-                    }
                 }
 
                 gameData.LastSync = DateTime.UtcNow;
@@ -1363,8 +1411,11 @@ namespace HoyoToon
                         }
 
                         // Discover remote files
-                        var remoteFiles = await HoyoToonNextCloudClient.GetFileListAsync(gameConfig.WebdavUrl);
-                        var files = remoteFiles.Where(f => !f.IsDirectory && !f.RelativePath.EndsWith("/") && !f.RelativePath.EndsWith("\\")).ToList();
+                        var remoteFiles = await HoyoToonCloudreveClient.GetFileListAsync(gameConfig.WebdavUrl);
+                        var files = remoteFiles.Where(f => !f.IsDirectory &&
+                                                           !IsThumbMarkerFile(f.RelativePath) &&
+                                                           !f.RelativePath.EndsWith("/") &&
+                                                           !f.RelativePath.EndsWith("\\")).ToList();
 
                         // Filter based on cache if not forcing full download
                         if (!forceDownload)
@@ -1707,7 +1758,7 @@ namespace HoyoToon
         /// </summary>
         private static void DownloadSpecificGameAsync(string gameKey)
         {
-            _ = DownloadResourcesAsync(new[] { gameKey });
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(new[] { gameKey }), "Download specific game resources");
         }
 
         /// <summary>
@@ -1715,7 +1766,7 @@ namespace HoyoToon
         /// </summary>
         private static void DownloadMissingGamesAsync(string[] gameKeys)
         {
-            _ = DownloadResourcesAsync(gameKeys);
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(gameKeys), "Download missing game resources");
         }
 
         /// <summary>
@@ -1723,7 +1774,7 @@ namespace HoyoToon
         /// </summary>
         private static void DownloadAllResourcesAsync()
         {
-            _ = DownloadResourcesAsync(HoyoToonResourceConfig.Games.Keys.ToArray());
+            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadResourcesAsync(HoyoToonResourceConfig.Games.Keys.ToArray()), "Download all game resources (wrapper)");
         }
 
         /// <summary>
@@ -1807,10 +1858,11 @@ namespace HoyoToon
                     return updateInfo;
                 }
                 // Get current file list from server
-                var remoteFiles = await HoyoToonNextCloudClient.GetFileListAsync(gameConfig.WebdavUrl);
-                var serverFiles = remoteFiles.Where(f => !f.IsDirectory && 
-                                                   !f.RelativePath.EndsWith("/") && 
-                                                   !f.RelativePath.EndsWith("\\"))
+                var remoteFiles = await HoyoToonCloudreveClient.GetFileListAsync(gameConfig.WebdavUrl);
+                    var serverFiles = remoteFiles.Where(f => !f.IsDirectory &&
+                                           !IsThumbMarkerFile(f.RelativePath) &&
+                                           !f.RelativePath.EndsWith("/") && 
+                                           !f.RelativePath.EndsWith("\\"))
                                              .ToDictionary(f => f.RelativePath, f => f);
 
                 // Check for missing files (on server but not in cache)
@@ -1826,11 +1878,11 @@ namespace HoyoToon
                 updateInfo.OutdatedFiles.AddRange(outdatedFiles);
                 
                 // Check for deleted files (in cache but no longer on server)
-                var deletedFiles = gameData.Files.Keys.Where(path => !serverFiles.ContainsKey(path)).ToList();
+                var deletedFiles = gameData.Files.Keys.Where(path => !IsThumbMarkerFile(path) && !serverFiles.ContainsKey(path)).ToList();
                 updateInfo.DeletedFiles.AddRange(deletedFiles);
                 
                 // Check for locally missing files (in cache but not on disk)
-                var locallyMissingFiles = gameData.Files.Where(kvp => !System.IO.File.Exists(kvp.Value.LocalPath))
+                var locallyMissingFiles = gameData.Files.Where(kvp => !IsThumbMarkerFile(kvp.Key) && !System.IO.File.Exists(kvp.Value.LocalPath))
                                                         .Select(kvp => kvp.Key).ToList();
                 updateInfo.MissingFiles.AddRange(locallyMissingFiles.Where(f => !updateInfo.MissingFiles.Contains(f)));
                 
@@ -1881,7 +1933,7 @@ namespace HoyoToon
                         switch (result)
                         {
                             case 0:
-                                SynchronizeFilesForSingleGameAsync(gameKey, updateInfo);
+                                HoyoToonAsyncUtil.RunFireAndForget(() => SynchronizeFilesForSingleGameAsync(gameKey, updateInfo), "Synchronize files (single game)");
                                 break;
                             case 1:
                                 DownloadSpecificGameAsync(gameKey);
@@ -1916,7 +1968,7 @@ namespace HoyoToon
                         switch (result)
                         {
                             case 0:
-                                DownloadSpecificFilesForMultipleGamesAsync(gamesNeedingUpdates);
+                                HoyoToonAsyncUtil.RunFireAndForget(() => DownloadSpecificFilesForMultipleGamesAsync(gamesNeedingUpdates), "Synchronize files (multiple games)");
                                 break;
                             case 1:
                                 DownloadMissingGamesAsync(gamesNeedingUpdates.Keys.ToArray());
@@ -1934,7 +1986,7 @@ namespace HoyoToon
         /// <summary>
         /// Synchronize files for a single game (downloads + deletions)
         /// </summary>
-        private static async void SynchronizeFilesForSingleGameAsync(string gameKey, FileUpdateInfo updateInfo)
+        private static async Task SynchronizeFilesForSingleGameAsync(string gameKey, FileUpdateInfo updateInfo)
         {
             try
             {
@@ -1964,7 +2016,7 @@ namespace HoyoToon
         /// <summary>
         /// Download specific files for a single game
         /// </summary>
-        private static async void DownloadSpecificFilesAsync(string gameKey, List<string> filePaths)
+        private static async Task DownloadSpecificFilesAsync(string gameKey, List<string> filePaths)
         {
             try
             {
@@ -1990,7 +2042,7 @@ namespace HoyoToon
         /// <summary>
         /// Download specific files for multiple games
         /// </summary>
-        private static async void DownloadSpecificFilesForMultipleGamesAsync(Dictionary<string, FileUpdateInfo> gamesNeedingUpdates)
+        private static async Task DownloadSpecificFilesForMultipleGamesAsync(Dictionary<string, FileUpdateInfo> gamesNeedingUpdates)
         {
             try
             {
@@ -2025,6 +2077,10 @@ namespace HoyoToon
             if (filePaths == null || !filePaths.Any())
                 return;
 
+            // Never include thumbnail marker files.
+            filePaths = filePaths.Where(p => !IsThumbMarkerFile(p)).ToList();
+            if (filePaths.Count == 0) return;
+
             var gameConfig = HoyoToonResourceConfig.Games[gameKey];
             var cacheData = LoadCacheData();
             var gameData = cacheData.GetOrCreateGameData(gameKey);
@@ -2032,20 +2088,17 @@ namespace HoyoToon
             HoyoToonLogger.ResourcesInfo($"Downloading {filePaths.Count} specific files for {gameConfig.DisplayName}");
             
             // Get full file list from server to find the files we need
-            var remoteFiles = await HoyoToonNextCloudClient.GetFileListAsync(gameConfig.WebdavUrl);
-            var remoteFilesDict = remoteFiles.Where(f => !f.IsDirectory)
+            var remoteFiles = await HoyoToonCloudreveClient.GetFileListAsync(gameConfig.WebdavUrl);
+            var remoteFilesDict = remoteFiles.Where(f => !f.IsDirectory && !IsThumbMarkerFile(f.RelativePath))
                                             .ToDictionary(f => f.RelativePath, f => f);
             
             var localBasePath = Path.Combine(ResourcesBasePath, gameConfig.LocalPath.Replace("Resources/", ""));
             Directory.CreateDirectory(localBasePath);
 
-            using (var httpClient = new HttpClient())
+            var httpClient = HoyoToonCloudreveClient.SharedClient;
+            int downloadedCount = 0;
+            foreach (var filePath in filePaths)
             {
-                httpClient.Timeout = TimeSpan.FromMinutes(10);
-                
-                int downloadedCount = 0;
-                foreach (var filePath in filePaths)
-                {
                     if (remoteFilesDict.TryGetValue(filePath, out var remoteFile))
                     {
                         var cleanRelativePath = remoteFile.RelativePath.Replace('/', Path.DirectorySeparatorChar);
@@ -2057,8 +2110,7 @@ namespace HoyoToon
                             Directory.CreateDirectory(localDir);
                         }
 
-                        var token = ExtractTokenFromShareUrl(gameConfig.WebdavUrl);
-                        await HoyoToonNextCloudClient.DownloadFileAsync(httpClient, remoteFile.DownloadUrl, localPath, token);
+                        await HoyoToonCloudreveClient.DownloadFileAsync(httpClient, remoteFile, gameConfig.WebdavUrl, localPath);
                         
                         var fileInfo = new FileInfo(localPath);
                         var cachedFileInfo = new CachedFileInfo
@@ -2090,7 +2142,6 @@ namespace HoyoToon
                     {
                         HoyoToonLogger.ResourcesWarning($"File not found on server: {filePath}");
                     }
-                }
             }
             
             gameData.LastSync = DateTime.UtcNow;
@@ -2116,7 +2167,7 @@ namespace HoyoToon
         private static void SynchronizeFilesForMultipleGamesAsyncWrapper(Dictionary<string, FileUpdateInfo> updateInfoMap)
         {
             // Fire-and-forget, intentionally discarding the returned Task
-            _ = SynchronizeFilesForMultipleGamesAsync(updateInfoMap);
+            HoyoToonAsyncUtil.RunFireAndForget(() => SynchronizeFilesForMultipleGamesAsync(updateInfoMap), "Synchronize files (wrapper)");
         }
 
         #endregion

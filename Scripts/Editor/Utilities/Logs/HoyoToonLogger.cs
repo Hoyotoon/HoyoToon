@@ -54,6 +54,20 @@ namespace HoyoToon.Utilities
         public static void UpdaterWarning(string message) => HoyoToonLogCore.WarnCategory("Updater", message);
         public static void UpdaterError(string message) => HoyoToonLogCore.ErrorCategory("Updater", message);
 
+        public static void FBXConverterInfo(string message) => HoyoToonLogCore.LogCategory("FBX Converter", message);
+        public static void FBXConverterWarning(string message) => HoyoToonLogCore.WarnCategory("FBX Converter", message);
+        public static void FBXConverterError(string message) => HoyoToonLogCore.ErrorCategory("FBX Converter", message);
+
+        // Throttled logging helpers for hot paths
+        public static void ThrottleInfo(string key, string message, TimeSpan? throttle = null, string category = "System")
+            => HoyoToonLogCore.ThrottleLog(key, message, throttle, category);
+
+        public static void ThrottleWarning(string key, string message, TimeSpan? throttle = null, string category = "System")
+            => HoyoToonLogCore.ThrottleWarn(key, message, throttle, category);
+
+        public static void ThrottleError(string key, string message, TimeSpan? throttle = null, string category = "System")
+            => HoyoToonLogCore.ThrottleError(key, message, throttle, category);
+
         // Unconditional pass-through if needed
         public static void Always(string message, LogType type = LogType.Log) => HoyoToonLogCore.LogAlways(message, type);
         public static void Always(string category, string message, LogType type) => HoyoToonLogCore.LogAlwaysCategory(category, message, type);

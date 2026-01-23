@@ -557,7 +557,10 @@ namespace HoyoToon.Utilities
                 minSize = new Vector2(Mathf.Max(UiLayout.WINDOW_MIN_WIDTH, minSize.x, width), Mathf.Max(UiLayout.WINDOW_MIN_HEIGHT, newH));
                 maxSize = new Vector2(Mathf.Max(UiLayout.WINDOW_DEFAULT_WIDTH, maxSize.x, width), UiLayout.WINDOW_MAX_HEIGHT);
             }
-            catch { /* non-fatal sizing best-effort */ }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("DialogWindow.PreSize", $"Dialog window pre-size failed: {ex.Message}");
+            }
             finally
             {
                 // Allow another resize pass after first repaint if measurements differ
@@ -660,44 +663,6 @@ namespace HoyoToon.Utilities
             else x = Mathf.Clamp(x, layout.logoRect.xMax + TopBarLayout.MIN_LOGO_DISTANCE, layout.bgRect.xMax - 1f);
 
             return new Rect(x, y, w, h);
-        }
-
-        protected override void DrawProgressBar()
-        {
-            using (new EditorGUILayout.VerticalScope())
-            {
-                // Progress text
-                if (!string.IsNullOrEmpty(_progressText))
-                {
-                    GUILayout.Label(_progressText, EditorStyles.centeredGreyMiniLabel);
-                }
-
-                // Progress bar
-                var progressRect = GUILayoutUtility.GetRect(0, 16, GUILayout.ExpandWidth(true));
-                progressRect.x += 6;
-                progressRect.width -= 12;
-                
-                // Background
-                EditorGUI.DrawRect(progressRect, EditorGUIUtility.isProSkin ? new Color(0.3f, 0.3f, 0.3f, 0.8f) : new Color(0.7f, 0.7f, 0.7f, 0.8f));
-                
-                // Progress fill
-                if (_progress > 0)
-                {
-                    var fillRect = new Rect(progressRect.x, progressRect.y, progressRect.width * _progress, progressRect.height);
-                    EditorGUI.DrawRect(fillRect, EditorGUIUtility.isProSkin ? new Color(0.3f, 0.6f, 1f, 0.8f) : new Color(0.2f, 0.5f, 0.9f, 0.8f));
-                }
-                
-                // Progress percentage text overlay
-                var progressPercent = Mathf.RoundToInt(_progress * 100);
-                var percentText = $"{progressPercent}%";
-                var textStyle = new GUIStyle(EditorStyles.miniLabel)
-                {
-                    alignment = TextAnchor.MiddleCenter,
-                    normal = { textColor = EditorGUIUtility.isProSkin ? Color.white : new Color(0.05f, 0.05f, 0.05f, 1f) }
-                };
-                
-                GUI.Label(progressRect, percentText, textStyle);
-            }
         }
 
         private void DrawButtons()

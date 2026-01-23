@@ -66,6 +66,16 @@ namespace HoyoToon.API
         // New metadata convenience accessors
         public static IReadOnlyDictionary<string, GameMetadata> GetGameMetadata() => Config.GetGameMetadata();
         public static void SaveGameMetadata(IEnumerable<GameMetadata> games) => Config.SaveGameMetadata(games);
+
+        // Converter profiles (Hoyo2Unity / Hoyo2VRC)
+        public static IReadOnlyDictionary<string, ConverterProfile> GetConverterProfiles() => Config.GetConverterProfiles();
+        public static void SaveConverterProfiles(IEnumerable<ConverterProfile> profiles) => Config.SaveConverterProfiles(profiles);
+        public static ConverterProfile GetConverterProfile(string key)
+        {
+            if (string.IsNullOrWhiteSpace(key)) return null;
+            var map = Config.GetConverterProfiles();
+            return map != null && map.TryGetValue(key, out var profile) ? profile : null;
+        }
     }
 }
 #endif
