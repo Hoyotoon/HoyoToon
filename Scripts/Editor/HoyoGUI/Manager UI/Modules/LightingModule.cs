@@ -39,6 +39,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private const float DefaultDirectionalYaw = 180f;
         private const float DefaultAutoRotateSpeed = 50f;
         private static Texture2D _colorTemperatureTexture;
+        private const float AutoRotateUpdateInterval = 1f / 30f;
+        private const float AutoRotateRepaintInterval = 1f / 10f;
 
         private enum AutoRotateDirection
         {
@@ -56,6 +58,9 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private float _autoRotateSpeed = DefaultAutoRotateSpeed;
         private AutoRotateDirection _autoRotateDirection = AutoRotateDirection.Clockwise;
         private double _lastAutoRotateTime;
+        private double _nextAutoRotateTime;
+        private double _nextAutoRotateRepaintTime;
+        private float _manualYawCache = DefaultDirectionalYaw;
 
         public LightingModule()
         {
@@ -376,11 +381,20 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUILayout.LabelField("Rotation", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            float currentYaw = reference.localEulerAngles.y;
-            float newYaw = EditorGUILayout.Slider(Styles.RotationLabel, currentYaw, 0f, 360f);
-            if (!Mathf.Approximately(newYaw, currentYaw))
+            using (new EditorGUI.DisabledScope(_autoRotate))
             {
-                ApplyToLightTransforms(targets, "Adjust Light Rotation", t => t.localEulerAngles = new Vector3(0f, newYaw, 0f));
+                float currentYaw = _autoRotate ? _manualYawCache : reference.localEulerAngles.y;
+                if (!_autoRotate)
+                {
+                    _manualYawCache = currentYaw;
+                }
+
+                float newYaw = EditorGUILayout.Slider(Styles.RotationLabel, currentYaw, 0f, 360f);
+                if (!Mathf.Approximately(newYaw, currentYaw))
+                {
+                    _manualYawCache = newYaw;
+                    ApplyToLightTransforms(targets, "Adjust Light Rotation", t => t.localEulerAngles = new Vector3(0f, newYaw, 0f));
+                }
             }
 
             bool newAutoRotate = EditorGUILayout.Toggle(Styles.AutoRotateLabel, _autoRotate);
@@ -647,6 +661,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
+            if (_autoRotateSpeed <= 0f)
+            {
+                _lastAutoRotateTime = EditorApplication.timeSinceStartup;
+                return;
+            }
+
             EnsureSceneLights();
             var targets = GetActiveTargets();
             if (targets.Count == 0)
@@ -656,6 +676,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
 
             double now = EditorApplication.timeSinceStartup;
+            if (now < _nextAutoRotateTime)
+            {
+                return;
+            }
+
+            _nextAutoRotateTime = now + AutoRotateUpdateInterval;
             float delta = (float)(now - _lastAutoRotateTime);
             if (delta <= 0f)
             {
@@ -676,7 +702,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 EditorUtility.SetDirty(t);
             }
 
-            InternalEditorUtility.RepaintAllViews();
+            if (!Application.isPlaying && now >= _nextAutoRotateRepaintTime)
+            {
+                _nextAutoRotateRepaintTime = now + AutoRotateRepaintInterval;
+                InternalEditorUtility.RepaintAllViews();
+            }
         }
     }
 }

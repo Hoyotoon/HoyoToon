@@ -172,7 +172,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
 			"Queue" = "Geometry+5" 
 			"PerformanceChecks" = "False" 
 		}
-        Blend SrcAlpha OneMinusSrcAlpha 
+         
         HLSLINCLUDE 
         #define is_hairshader
         #include "UnityCG.cginc"
