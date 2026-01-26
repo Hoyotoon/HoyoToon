@@ -270,6 +270,31 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             return list;
         }
 
+        private List<Light> GetAutoRotateTargets()
+        {
+            var list = new List<Light>();
+            foreach (var light in _selectedLights)
+            {
+                if (light)
+                {
+                    list.Add(light);
+                }
+            }
+
+            if (list.Count > 0)
+            {
+                return list;
+            }
+
+            var sun = RenderSettings.sun;
+            if (sun && sun.type == LightType.Directional)
+            {
+                list.Add(sun);
+            }
+
+            return list;
+        }
+
         private void DrawColorControls(List<Light> targets)
         {
             Light reference = targets[0];
@@ -402,6 +427,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 _autoRotate = newAutoRotate;
                 _lastAutoRotateTime = EditorApplication.timeSinceStartup;
+                _nextAutoRotateTime = _lastAutoRotateTime;
+                _nextAutoRotateRepaintTime = _lastAutoRotateTime;
             }
 
             EditorGUI.BeginDisabledGroup(!_autoRotate);
@@ -667,17 +694,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            EnsureSceneLights();
-            var targets = GetActiveTargets();
-            if (targets.Count == 0)
-            {
-                _lastAutoRotateTime = EditorApplication.timeSinceStartup;
-                return;
-            }
-
             double now = EditorApplication.timeSinceStartup;
             if (now < _nextAutoRotateTime)
             {
+                return;
+            }
+
+            var targets = GetAutoRotateTargets();
+            if (targets.Count == 0)
+            {
+                _lastAutoRotateTime = now;
                 return;
             }
 
@@ -699,13 +725,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 Vector3 euler = t.localEulerAngles;
                 float newYaw = Mathf.Repeat(euler.y + deltaYaw, 360f);
                 t.localEulerAngles = new Vector3(0f, newYaw, 0f);
-                EditorUtility.SetDirty(t);
             }
 
             if (!Application.isPlaying && now >= _nextAutoRotateRepaintTime)
             {
                 _nextAutoRotateRepaintTime = now + AutoRotateRepaintInterval;
-                InternalEditorUtility.RepaintAllViews();
+                SceneView.RepaintAll();
             }
         }
     }
