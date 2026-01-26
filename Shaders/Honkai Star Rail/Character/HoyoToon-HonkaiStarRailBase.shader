@@ -168,6 +168,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Advanced(Scripted Values)] [Sub(RimGroup)] _ES_RimLightWidth ("ES Rim Width", float) = 1.0
         [Advanced][Sub(RimGroup)] _ES_RimLightOffset ("Rim Offset", vector) = (0,0,0,0)
         [Advanced][Sub(RimGroup)] _ES_RimLightAddMode ("Rim Light Add Mode", Float) = 0.07
+        [Advanced][Sub(RimGroup)] _ES_RimLightIntensity ("Rim Light Intensity", Float) = 1.0
+        [Advanced][Sub(RimGroup)] _ES_RimLightColor ("Rim Light Color", Color) = (1,1,1,1)
         // rim shadow
         [SubGroup(LightingGroup, RimShadowGroup, _, off, off)] _rimshadowgroup ("Rim Shadow", Float) = 0
         [Sub(RimShadowGroup)] _RimShadowCt ("Rim Shadow Ct", Float) = 1
@@ -449,12 +451,12 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(RenderinGroup)] _StencilMask ("Stencil Read Mask", Float) = 255
         [Sub(RenderinGroup)] _RenderingMode ("Rendering Mode", Float) = 0
         [Sub(RenderinGroup)] _ZWrite ("ZWrite", Float) = 1
-        [SubEnum(RenderinGroup, UnityEngine.Rendering.BlendMode)] _SrcBlend ("Src Blend", Float) = 1
-        [SubEnum(RenderinGroup, UnityEngine.Rendering.BlendMode)] _DstBlend ("Dst Blend", Float) = 0
+        [SubEnum(RenderinGroup, UnityEngine.Rendering.BlendMode)] _SourceBlend ("Src Blend", Float) = 1
+        [SubEnum(RenderinGroup, UnityEngine.Rendering.BlendMode)] _DestBlend ("Dst Blend", Float) = 0
         [SubEnum(RenderinGroup,UnityEngine.Rendering.CullMode)] _CullMode ("CullMode", Float) = 2
         [Main(ADVANCED, _, off, off)] _AdvancedGroup("Advanced", Float) = 0
         [Sub(ADVANCED)] _IsVRC ("Vrchat toggle", Float) = 0
-[HiddenInInspector] _IsYup ("_IsYUp", Float) = 0
+        [HideInInspector] _IsYup ("_IsYUp", Float) = 0
     }
     SubShader
     {
@@ -480,7 +482,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         {
             Name "Base Pass"    
             Cull [_CullMode]
-            Blend [_SrcBlend] [_DstBlend] 
+            Blend [_SourceBlend] [_DestBlend] 
 
             Stencil
             {
@@ -533,8 +535,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
             ENDHLSL
         }
         
-        UsePass "Legacy Shaders/VertexLit/SHADOWCASTER"
-        // UsePass "HoyoToon/Honkai Star Rail/Character/Depth Caster/Shadow Pass"
+        // UsePass "Legacy Shaders/VertexLit/SHADOWCASTER"
+        UsePass "HoyoToon/Honkai Star Rail/Character/Depth Caster/Shadow Pass"
     }
     CustomEditor "LWGUI.LWGUI" 
 }

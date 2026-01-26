@@ -258,10 +258,10 @@ Shader "Hidden/HoyoToon/Utility/WhiteMask"
             {
                 v2f o = (v2f)0;
                 float4 ws_pos = mul(unity_ObjectToWorld, v.vertex);
-                float3 vl = mul(_WorldSpaceLightPos0.xyz, UNITY_MATRIX_V) * (1.f / ws_pos.w);
-                float3 offset_pos = ((vl * .0015f) * float3(0,0,-3)) + v.vertex.xyz;
+                float3 vl = mul(_WorldSpaceLightPos0.xyz, UNITY_MATRIX_MV) * (1.f / ws_pos.w);
+                float3 offset_pos = ((vl * .0015f) * float3(0,0,3)) + v.vertex.xyz;
                 o.uv = v.uv1;
-                v.vertex.xyz = offset_pos;
+                v.vertex.xyz = _MaskColorValue ? offset_pos : v.vertex.xyz;
                 o.vertex = UnityObjectToClipPos(v.vertex);
                 o.vertex = showpart(v.color.xy) ?  o.vertex : float4(-99.0, -99.0, -99.0, 1.0);
                 o.wspos = ws_pos;
@@ -305,8 +305,10 @@ Shader "Hidden/HoyoToon/Utility/WhiteMask"
                     dither(i.diss_pos.z, dis_out, dither_screen_pos);
                     // ordered_dither(i.ws_pos.z * _DitherAlpha, dis_out, dither_screen_pos, dither);
                 }
-                
-                return float4(_MaskColorValue, 0, 1, 1.f);
+
+                // Output normalized device depth (0..1) to the green channel.
+                float depth01 = saturate(i.screenpos.z / i.screenpos.w);
+                return float4(_MaskColorValue, depth01, 1, 1.f);
             }
             ENDCG
         }

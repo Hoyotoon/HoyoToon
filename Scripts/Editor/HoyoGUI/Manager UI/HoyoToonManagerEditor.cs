@@ -14,6 +14,8 @@ namespace HoyoToon.EditorTools.ManagerUI
     public class HoyoToonManagerEditor : Editor
     {
         private static readonly Dictionary<int, GameObject> s_PendingModelCache = new Dictionary<int, GameObject>();
+        private static readonly Dictionary<int, HoyoToonManagerModuleNavbar> s_ModuleNavbarCache = new Dictionary<int, HoyoToonManagerModuleNavbar>();
+        private static bool s_AssemblyReloadHooked;
 
         private static class Styles
         {
@@ -51,12 +53,9 @@ namespace HoyoToon.EditorTools.ManagerUI
 
         private void OnEnable()
         {
+            EnsureModuleCacheHooks();
             _bannerHeader = new HoyoToonBannerHeader();
-            _moduleNavbar = new HoyoToonManagerModuleNavbar();
-            _moduleNavbar.RegisterModule(new Modules.MainModule());
-            _moduleNavbar.RegisterModule(new Modules.LightingModule());
-            _moduleNavbar.RegisterModule(new Modules.MaterialsModule());
-            _moduleNavbar.RegisterModule(new Modules.PostProcessingModule());
+            _moduleNavbar = GetOrCreateNavbarForTarget(target as HoyoToonManager);
             _footer = new HoyoToonManagerFooter(
                 activeModelProvider: GetActiveManagedModel,
                 prefabFolderResolver: ResolveActiveModelFolder,
@@ -72,8 +71,7 @@ namespace HoyoToon.EditorTools.ManagerUI
         private void OnDisable()
         {
             CachePendingModel(target, _pendingModelAsset);
-            _moduleNavbar?.Dispose();
-            _moduleNavbar = null;
+            ReleaseNavbarForTarget(target);
             _bannerHeader = null;
             _footer = null;
             _managedModelsProperty = null;
@@ -698,6 +696,82 @@ namespace HoyoToon.EditorTools.ManagerUI
             }
 
             return current.gameObject;
+        }
+
+        private static void EnsureModuleCacheHooks()
+        {
+            if (s_AssemblyReloadHooked)
+            {
+                return;
+            }
+
+            s_AssemblyReloadHooked = true;
+            AssemblyReloadEvents.beforeAssemblyReload += ClearModuleNavbarCache;
+        }
+
+        private static void ClearModuleNavbarCache()
+        {
+            foreach (var navbar in s_ModuleNavbarCache.Values)
+            {
+                navbar?.Dispose();
+            }
+
+            s_ModuleNavbarCache.Clear();
+        }
+
+        private static HoyoToonManagerModuleNavbar GetOrCreateNavbarForTarget(HoyoToonManager manager)
+        {
+            if (manager == null)
+            {
+                var fallback = new HoyoToonManagerModuleNavbar();
+                RegisterDefaultModules(fallback);
+                return fallback;
+            }
+
+            int key = manager.GetInstanceID();
+            if (s_ModuleNavbarCache.TryGetValue(key, out var existing) && existing != null)
+            {
+                return existing;
+            }
+
+            var navbar = new HoyoToonManagerModuleNavbar();
+            RegisterDefaultModules(navbar);
+            s_ModuleNavbarCache[key] = navbar;
+            return navbar;
+        }
+
+        private static void RegisterDefaultModules(HoyoToonManagerModuleNavbar navbar)
+        {
+            if (navbar == null)
+            {
+                return;
+            }
+
+            navbar.RegisterModule(new Modules.MainModule());
+            navbar.RegisterModule(new Modules.LightingModule());
+            navbar.RegisterModule(new Modules.MaterialsModule());
+            navbar.RegisterModule(new Modules.PostProcessingModule());
+        }
+
+        private static void ReleaseNavbarForTarget(UnityEngine.Object targetObject)
+        {
+            if (targetObject == null)
+            {
+                return;
+            }
+
+            int key = targetObject.GetInstanceID();
+            if (targetObject is HoyoToonManager manager && manager)
+            {
+                // Keep cached to preserve module state across inspector focus changes.
+                return;
+            }
+
+            if (s_ModuleNavbarCache.TryGetValue(key, out var existing))
+            {
+                existing?.Dispose();
+                s_ModuleNavbarCache.Remove(key);
+            }
         }
     }
 }

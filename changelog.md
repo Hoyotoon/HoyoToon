@@ -1,4 +1,12 @@
 # Scripts
 
-- Fixed an issue where if the hair tag didn't exist it'll spam errors.
-- Fixed an issue where old Hoyo2VRC validations would prevent you from setting up models.
+- Fixed self casted shadows being wonky
+- Fixed Hoyo2VRC not fixing bindposes on models without animations
+- Fix HoyoToon Manager UI resetting when leaving focus
+- Changed Light Module transform settings to simply rotate slider
+- Auto Rotate and Rotate speed added to Light module
+
+# Honkai Star Rail
+
+- Fixed hair shadow rotating incorrectly and the weird blockyness near the edges of characters cheeks
+- Fixed the rimlight

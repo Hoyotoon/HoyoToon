@@ -54,6 +54,29 @@ float GetLinearZFromZDepth_WorksWithMirrors(float zDepthFromMap, float2 screenUV
 	return -camPos.z / camPos.w;
 }
 
+float GetLinear01ZFromZDepth_WorksWithMirrors(float zDepthFromMap, float2 screenUV)
+{
+	#if defined(UNITY_REVERSED_Z)
+	zDepthFromMap = 1 - zDepthFromMap;
+			
+    // When using a mirror, the far plane can be whack. This just checks for it and aborts.
+    // Linear01Depth equivalent should return 1.0 at the far plane.
+    if( zDepthFromMap >= 1.0 ) return 1.0;
+	#endif
+
+	float4 clipPos = float4(screenUV.xy, zDepthFromMap, 1.0);
+	clipPos.xyz = 2.0f * clipPos.xyz - 1.0f;
+	float4 camPos = mul(unity_CameraInvProjection, clipPos);
+    float eyeDepth = -camPos.z / camPos.w;
+
+    // Convert eye depth to linear 0..1 depth (near..far), as an alternative to Linear01Depth().
+    // _ProjectionParams.y = near, _ProjectionParams.z = far.
+    float nearPlane = _ProjectionParams.y;
+    float farPlane  = _ProjectionParams.z;
+    return saturate((eyeDepth - nearPlane) / max(farPlane - nearPlane, 1e-6));
+}
+
+
 // https://github.com/cnlohr/shadertrixx/blob/main/README.md#detecting-if-you-are-on-desktop-vr-camera-etc
 bool isVR(){
     // USING_STEREO_MATRICES
@@ -191,22 +214,36 @@ void cg_lighting(inout float3 shadow_color, float shadow_area, int material_id)
     float3 isSkinVector = (float3)isSkin;
     float3 tempAdjustment = (float3)0.0;
 
+    float4 skinLightColor = _ES_LevelSkinLightColor;
+    float4 skinShadowColor = _ES_LevelSkinShadowColor;
+    float4 highlightColor = _ES_LevelHighLightColor;
+    float4 shadowColor = _ES_LevelShadowColor;
+    #if defined(is_faceshader)
+    highlightColor = skinLightColor;
+    shadowColor = skinShadowColor;
+    #endif
+    #if defined(is_hairshader)
+    skinLightColor = highlightColor;
+    skinShadowColor = shadowColor;
+    #endif
+
+
     // Calculate skin light color adjustment
-    skinLightColorAdjustment = _ES_LevelSkinLightColor.www * _ES_LevelSkinLightColor.xyz;
+    skinLightColorAdjustment = skinLightColor.www * skinLightColor.xyz;
     skinLightColorAdjustment *= 2.0;
 
     // Calculate highlight color adjustment
-    highlightColorAdjustment = _ES_LevelHighLightColor.www * _ES_LevelHighLightColor.xyz;
+    highlightColorAdjustment = highlightColor.www * highlightColor.xyz;
     highlightColorAdjustment = (highlightColorAdjustment * 2.0) - skinLightColorAdjustment;
     skinLightColorAdjustment = (isSkinVector * highlightColorAdjustment) + skinLightColorAdjustment;
     skinLightColorAdjustment = max(skinLightColorAdjustment, 0.01f);
 
     // Calculate skin shadow color adjustment
-    skinShadowColorAdjustment = _ES_LevelSkinShadowColor.www * _ES_LevelSkinShadowColor.xyz;
+    skinShadowColorAdjustment = skinShadowColor.www * skinShadowColor.xyz;
     skinShadowColorAdjustment *= 2.0;
 
     // Calculate shadow color adjustment
-    shadowColorAdjustment = _ES_LevelShadowColor.www * _ES_LevelShadowColor.xyz;
+    shadowColorAdjustment = shadowColor.www * shadowColor.xyz;
     shadowColorAdjustment = (shadowColorAdjustment * 2.0) - skinShadowColorAdjustment;
     skinShadowColorAdjustment = (isSkinVector * shadowColorAdjustment) + skinShadowColorAdjustment;
     skinShadowColorAdjustment = max(skinShadowColorAdjustment, 0.01f);
@@ -235,10 +272,7 @@ float3 specular_base(float shadow_area, float ndoth, float lightmap_spec, float3
     float3 specular = ndoth;
     specular = pow(max(specular, 0.00f), specular_values.x);
     specular_values.y = max(specular_values.y, 0.001f);
-    #if defined(is_hairshader)
-        float int_shadow = _SpecularShadowOffset < shadow_area ? 1.0f : _SpecularShadowIntensity;
-        specular_values.z = int_shadow * lightmap_spec;
-    #endif
+    
 
     float specular_thresh = 1.0f - lightmap_spec;
     float rough_thresh = specular_thresh - specular_values.y;
@@ -445,6 +479,71 @@ float3 GetGlintVector(float rand1, float rand2)
     );
     
     return normalize(v);
+}
+
+void rim_lighting(in float2 lightmap, in float3 lightDir, in float casted, in float4 screenpos, in float4 pos, in float3 view, in float3 normal, in float3 color, in float3 values, inout float4 output)
+{
+    float2 screen = screenpos.xy / screenpos.ww;
+    float rim_mask = lerp(1.0f, lightmap, _RimLightMode.x) * _RimWidth;
+    float normal_offset = view.z * normal.x - (view.x * normal.z);    
+    normal_offset = 0.0f < normal_offset ? -1.0f : 1.0f;
+
+    float rim_width = rim_mask.x * _ES_RimLightWidth;
+    rim_width.x = normal_offset.x * rim_width.x;
+    rim_width.x = rim_width.x * 0.0055;
+    rim_width = UNITY_MATRIX_P[3][3] == 0 ? rim_width :  rim_width * 0.25; // if in ortho mode
+    // shadow area for rim: 
+    float ndotl = dot(normal, lightDir);
+    float shade = lightmap.y + lightmap.y;
+    ndotl = dot(saturate(ndotl * 0.5 + 0.5).xx, shade.xx);
+    ndotl = ndotl * casted;
+
+    float3 rim_color = (color * (_ES_RimLightColor.www * _ES_RimLightColor.xyz)) * _ES_RimLightIntensity * 0.5f; 
+
+    // if its _ZBufferParams.x * [something] + _ZBufferParams.y its Linear01Depth
+    // and if its _ZbufferParams.z * [something] + _ZBufferParams.w its LinearEyeDepth
+    // float org_depth = Linear01Depth(pos.z / pos.w);
+    float org_depth = GetLinear01ZFromZDepth_WorksWithMirrors(pos.z / pos.w, screen.xy);
+    rim_width = rim_width / (org_depth * _ProjectionParams.z + 3.0); 
+
+    float2 depth_uv;
+    depth_uv.x = ((_ES_RimLightOffset.x + _RimOffset.x) * 0.00999999978f + rim_width) + screen.x;
+    depth_uv.y = ((_ES_RimLightOffset.y + _RimOffset.y) * 0.00999999978f + screen.y);
+
+    float sampled_depth = (SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, depth_uv.xy));
+    // sampled_depth = 1.0f / (_ZBufferParams.x * sampled_depth + _ZBufferParams.y);
+    // sampled_depth = Linear01Depth(sampled_depth);
+    sampled_depth = GetLinear01ZFromZDepth_WorksWithMirrors(sampled_depth, depth_uv.xy);
+    sampled_depth = sampled_depth - org_depth;
+    sampled_depth = max(sampled_depth, 9.99999997e-07);
+    sampled_depth = pow(sampled_depth, _RimEdge);
+
+    sampled_depth = smoothstep(0.82f, 0.9f, sampled_depth);
+    sampled_depth = (values.x < sampled_depth) ? sampled_depth : 0.0f;
+    
+    float3 rim = sampled_depth * rim_color;
+
+    float rim_type = (ndotl * values.z - values.z) + 1.0f;
+   
+    float ndotv = 1.0f - dot(normal, view);
+
+    rim_color.xyz = rim.xyz * _Rimintensity;
+    float rim_tmp_1 = dot(rim.xyz, float3(0.212670997, 0.715160012, 0.0721689984));
+    rim_tmp_1 = ndotv * rim_tmp_1;
+    rim_type = saturate(rim_type * rim_tmp_1);
+    float3 rim_tmp_2 = rim.xyz * _Rimintensity + (-output.xyz);
+    rim_tmp_2.xyz = rim_type.xxx * rim_tmp_2.xyz + output.xyz;
+    rim_color.xyz = rim_color.xyz * _ES_RimLightAddMode + rim_tmp_2.xyz;
+    rim_tmp_1 = max(ndotv.x, 0.00100000005);
+    rim_tmp_1 = pow(rim_tmp_1, values.z);
+    rim_tmp_1 = rim_tmp_1 + 1.0;
+    float3 rim_tmp_3 = max(output.xyz, (float3)0.001);
+    rim_tmp_3 = pow(rim_tmp_3, rim_tmp_1.xxx);
+    float3 rim_tmp_4 = lerp(rim_tmp_3, rim, rim_type);
+    rim = lerp(rim_tmp_4, rim_color, values.y);
+    
+    output.xyz = rim;
+
 }
 #endif
 

@@ -209,9 +209,8 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         float3 shadow_color;
         float shadow_area;
         float selfshadow = SHADOW_ATTENUATION(i);
-        selfshadow = smoothstep(0.f, 1.f, selfshadow);
-        ndotl = ndotl * selfshadow;
-        shadow_area = shadow_rate(ndotl, lightmap.y, vcol.x, _ShadowRamp, 1);
+        selfshadow = smoothstep(0.f, 1.f, selfshadow);;
+        shadow_area = shadow_rate(ndotl, lightmap.y, vcol.x, _ShadowRamp, selfshadow);
 
         // RAMP UVS  
         float2 ramp_uv = {shadow_area, ramp_ID};
@@ -965,28 +964,6 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
     // rimlight 
     if(!_UsingDitherAlpha)
     {
-
-        float rim_width_mask = lerp(1.0f, lightmap.x, _RimLightMode) * _RimWidth;
-        float normal_offset = view.z * normal.x - (view.x * normal.z);
-        normal_offset = 0.0f < normal_offset ? -1.0f : 1.0f;
-        float rim_width = rim_width_mask.x * _ES_RimLightWidth;
-        rim_width.x = normal_offset.x * rim_width.x;
-        rim_width.x = rim_width.x * 0.0055;
-        rim_width = UNITY_MATRIX_P[3][3] == 0 ? rim_width :  rim_width * 0.25;
-
-
-        float2 screen_pos = (i.screenpos.xy / i.screenpos.w);
-
-        float org_depth = GetLinearZFromZDepth_WorksWithMirrors(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, screen_pos.xy), screen_pos);
-        
-        rim_width = rim_width / (org_depth );
-
-        float2 depth_uv;
-        depth_uv.x = ((_ES_RimLightOffset.x + _RimOffset.x) * 0.001 + rim_width) + screen_pos.x;
-        depth_uv.y = ((_ES_RimLightOffset.y + _RimOffset.y) * 0.001 + screen_pos.y);
-
-        float rim_depth = GetLinearZFromZDepth_WorksWithMirrors(SAMPLE_DEPTH_TEXTURE(_CameraDepthTexture, depth_uv.xy), depth_uv);
-        
         float4 rim_color[8] =
         {
             _RimColor0,
@@ -1001,13 +978,13 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         float3 rim_values[8] = // x = softness, y = type, z = dark
         {
             float3(_RimEdgeSoftness0, _RimType0, saturate(_RimDark0)),
-            float3(_RimEdgeSoftness1, _RimType0, saturate(_RimDark1)),
-            float3(_RimEdgeSoftness2, _RimType0, saturate(_RimDark2)),
-            float3(_RimEdgeSoftness3, _RimType0, saturate(_RimDark3)),
-            float3(_RimEdgeSoftness4, _RimType0, saturate(_RimDark4)),
-            float3(_RimEdgeSoftness5, _RimType0, saturate(_RimDark5)),
-            float3(_RimEdgeSoftness6, _RimType0, saturate(_RimDark6)),
-            float3(_RimEdgeSoftness7, _RimType0, saturate(_RimDark7)),
+            float3(_RimEdgeSoftness1, _RimType1, saturate(_RimDark1)),
+            float3(_RimEdgeSoftness2, _RimType2, saturate(_RimDark2)),
+            float3(_RimEdgeSoftness3, _RimType3, saturate(_RimDark3)),
+            float3(_RimEdgeSoftness4, _RimType4, saturate(_RimDark4)),
+            float3(_RimEdgeSoftness5, _RimType5, saturate(_RimDark5)),
+            float3(_RimEdgeSoftness6, _RimType6, saturate(_RimDark6)),
+            float3(_RimEdgeSoftness7, _RimType7, saturate(_RimDark7)),
         }; 
 
 
@@ -1017,31 +994,9 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
             rim_values[ID].xyz = lut_rimval.yxz; 
         }
 
-        float feather = rim_values[ID].x;
-        float type = rim_values[ID].y;
-        float dark = rim_values[ID].z;
+        rim_lighting(lightmap.xy, light, selfshadow, i.screenpos, i.pos, view, normal, rim_color[ID].xyz, rim_values[ID].xyz, output);
 
-        float3 darkening = (shadow_area * dark + (-dark)) + 1.0f;
-    
-        rim_depth = pow(max(rim_depth - org_depth, 9.99999997e-07), _RimEdge * 2.5);
-        rim_depth = smoothstep(0.82, 1.0, rim_depth);
-        rim_depth = (rim_depth > feather) ? rim_depth : 0;
-
-        float3 rim = (rim_color[ID].xyz * rim_depth) * _Rimintensity;
-
-        darkening = saturate(output * dot(rim, float3(0.212670997, 0.715160012, 0.0721689984))) * darkening;
-
-        float3 add_rim = lerp(darkening, rim, shadow_area*rim_depth);
-        add_rim = rim  + add_rim;
-
-        float3 darkened = pow(max(1.0f-shadow_area, 0.001f), dark) + 1.0f; 
-
-        float3 addened = pow(0, darkened);
-
-        rim = lerp(addened, rim, rim_depth * darkening);
-        rim = max(rim, 0.0f);
-        rim = rim * _ES_RimLightAddMode;
-        output.xyz = output.xyz + rim;
+        
     }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // Starry Sky Cloak

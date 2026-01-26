@@ -88,6 +88,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
         [Advanced(Scripted Values)] [Sub(RimGroup)] _ES_RimLightWidth ("ES Rim Width", float) = 1.0
         [Advanced][Sub(RimGroup)] _ES_RimLightOffset ("Rim Offset", vector) = (0,0,0,0)
         [Advanced][Sub(RimGroup)] _ES_RimLightAddMode ("Rim Light Add Mode", Float) = 0.07
+        [Advanced][Sub(RimGroup)] _ES_RimLightIntensity ("Rim Light Intensity", Float) = 1.0
+        [Advanced][Sub(RimGroup)] _ES_RimLightColor ("Rim Light Color", Color) = (1,1,1,1)
         
         [SubGroup(LightingGroup, RimShadowGroup, _, off, off)] _RimShadowGroup ("Rim Shadow", Float) = 0
         [Sub(RimShadowGroup)] [HideInInspector] _RimShadowCt ("Rim Shadow Ct", Float) = 1
@@ -172,7 +174,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
 		}
         Blend SrcAlpha OneMinusSrcAlpha 
         HLSLINCLUDE 
-        // #define is_hairshader
+        #define is_hairshader
         #include "UnityCG.cginc"
         #include "Lighting.cginc"
         #include "AutoLight.cginc"

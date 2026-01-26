@@ -185,7 +185,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
         [Sub(RenderingSettings)] _StencilRefA ("Stencil Reference Value", Range(0, 255)) = 2
         [Sub(RenderingSettings)] _StencilRefB ("Stencil Reference Value", Range(0, 255)) = 26
         
-        [HiddenInInspector] _IsYup ("_IsYUp", Float) = 0
+        [HideInInspector] _IsYup ("_IsYUp", Float) = 0
         
         
 

@@ -45,6 +45,9 @@ namespace HoyoToon.Prerequisites
         // This is intentionally NOT persisted (no EditorPrefs) to keep the system global and dependency-free.
         private static bool? s_isVrcOverride;
 
+        // Debug-only force override (ignores actual SDK presence). Intended for testing.
+        private static bool? s_debugForceIsVrc;
+
         /// <summary>
         /// Global feature toggle for VRChat-specific behavior.
         /// Defaults to auto-detection, but can be overridden in-memory.
@@ -58,6 +61,8 @@ namespace HoyoToon.Prerequisites
             get
             {
                 EnsureCached();
+                if (s_debugForceIsVrc.HasValue)
+                    return s_debugForceIsVrc.Value;
                 // Accurate by construction: if the SDK isn't installed, IsVRC must be false.
                 return s_cached && (s_isVrcOverride ?? true);
             }
@@ -73,6 +78,14 @@ namespace HoyoToon.Prerequisites
         /// Clears the in-memory override so IsVRC returns to auto-detection.
         /// </summary>
         public static void ClearIsVRCOverride() => s_isVrcOverride = null;
+
+        /// <summary>
+        /// Debug-only: forces IsVRC on/off regardless of SDK presence. Pass null to clear.
+        /// </summary>
+        public static void SetDebugForceIsVRC(bool? force)
+        {
+            s_debugForceIsVrc = force;
+        }
 
         /// <summary>
         /// True if a VRChat SDK appears to be installed.
@@ -172,9 +185,12 @@ namespace HoyoToon.Prerequisites
             EnsureCached();
 
             var isOverriddenOff = s_isVrcOverride.HasValue && s_isVrcOverride.Value == false;
-            var isVrcModeSuffix = isOverriddenOff
-                ? "IsVRC: false (user-disabled)"
-                : $"IsVRC: {IsVRC.ToString().ToLowerInvariant()}";
+            var debugForced = s_debugForceIsVrc.HasValue;
+            var isVrcModeSuffix = debugForced
+                ? $"IsVRC: {IsVRC.ToString().ToLowerInvariant()} (debug-forced)"
+                : (isOverriddenOff
+                    ? "IsVRC: false (user-disabled)"
+                    : $"IsVRC: {IsVRC.ToString().ToLowerInvariant()}");
 
             if (s_cached)
             {

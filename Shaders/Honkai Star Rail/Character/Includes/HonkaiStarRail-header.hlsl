@@ -130,6 +130,8 @@ int _ShowPartID;
 
 float _ES_CharacterToonRampMode;
 float _ES_RimLightWidth;
+float4 _ES_RimLightColor;
+float _ES_RimLightIntensity;
 float4 _ES_RimLightOffset;
 float _ES_RimLightAddMode;
 float4 _ES_RimShadowColor;

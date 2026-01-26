@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -422,7 +423,7 @@ namespace HoyoToon.Materials
                     {
                         if (list == null) continue;
                         foreach (var kw in list)
-                            if (!string.IsNullOrEmpty(kw) && presentKeys.Contains(kw)) keywordHitsTotal++;
+                            if (!string.IsNullOrEmpty(kw) && KeywordMatches(materialData, presentKeys, kw)) keywordHitsTotal++;
                     }
                 }
 
@@ -452,7 +453,7 @@ namespace HoyoToon.Materials
                 {
                     var shaderKey = kvp.Key; var list = kvp.Value ?? new List<string>();
                     int hits = 0;
-                    foreach (var kw in list) if (!string.IsNullOrEmpty(kw) && presentKeys.Contains(kw)) hits++;
+                    foreach (var kw in list) if (!string.IsNullOrEmpty(kw) && KeywordMatches(materialData, presentKeys, kw)) hits++;
                     if (hits > bestShaderHits)
                     {
                         bestShaderHits = hits;
@@ -526,6 +527,188 @@ namespace HoyoToon.Materials
             }
 
             return set;
+        }
+
+        private enum KeywordOp
+        {
+            None,
+            Eq,
+            Ne,
+            Gt,
+            Lt,
+            Ge,
+            Le
+        }
+
+        private readonly struct KeywordCondition
+        {
+            public readonly string Property;
+            public readonly KeywordOp Op;
+            public readonly string RawValue;
+            public readonly float? Number;
+            public readonly bool? Bool;
+
+            public KeywordCondition(string property, KeywordOp op)
+            {
+                Property = property;
+                Op = op;
+                RawValue = null;
+                Number = null;
+                Bool = null;
+            }
+
+            public KeywordCondition(string property, KeywordOp op, string rawValue, float? number, bool? boolean)
+            {
+                Property = property;
+                Op = op;
+                RawValue = rawValue;
+                Number = number;
+                Bool = boolean;
+            }
+        }
+
+        private static bool KeywordMatches(MaterialJsonStructure data, HashSet<string> presentKeys, string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+
+            // Backward compatible behavior: plain property name means "property exists".
+            if (!TryParseKeywordCondition(raw, out var cond) || cond.Op == KeywordOp.None)
+            {
+                var key = raw.Trim();
+                return !string.IsNullOrEmpty(key) && presentKeys != null && presentKeys.Contains(key);
+            }
+
+            // Operator behavior: property must exist AND value must match.
+            if (string.IsNullOrEmpty(cond.Property)) return false;
+            if (presentKeys == null || !presentKeys.Contains(cond.Property)) return false;
+
+            // Currently we evaluate numeric/bool comparisons against JSON scalar/int/switch values.
+            if (!TryGetNumericPropertyValue(data, cond.Property, out var actual)) return false;
+
+            float expected;
+            if (cond.Bool.HasValue)
+                expected = cond.Bool.Value ? 1f : 0f;
+            else if (cond.Number.HasValue)
+                expected = cond.Number.Value;
+            else
+                return false; // unsupported (e.g., string comparisons) for now
+
+            switch (cond.Op)
+            {
+                case KeywordOp.Eq: return actual == expected;
+                case KeywordOp.Ne: return actual != expected;
+                case KeywordOp.Gt: return actual > expected;
+                case KeywordOp.Lt: return actual < expected;
+                case KeywordOp.Ge: return actual >= expected;
+                case KeywordOp.Le: return actual <= expected;
+                default: return false;
+            }
+        }
+
+        private static bool TryParseKeywordCondition(string raw, out KeywordCondition condition)
+        {
+            condition = default;
+            if (string.IsNullOrWhiteSpace(raw)) return false;
+
+            var s = raw.Trim();
+
+            // Longest-first operator scan to avoid splitting "==" as "=" etc.
+            // Supported operators: ==, =, !=, >, <, >=, <=
+            (string token, KeywordOp op)[] ops =
+            {
+                (">=", KeywordOp.Ge),
+                ("<=", KeywordOp.Le),
+                ("!=", KeywordOp.Ne),
+                ("==", KeywordOp.Eq),
+                (">", KeywordOp.Gt),
+                ("<", KeywordOp.Lt),
+                ("=", KeywordOp.Eq),
+            };
+
+            foreach (var (token, op) in ops)
+            {
+                var idx = s.IndexOf(token, StringComparison.Ordinal);
+                if (idx <= 0) continue; // property must have at least 1 char
+                if (idx + token.Length >= s.Length) continue; // needs a value
+
+                var left = s.Substring(0, idx).Trim();
+                var right = s.Substring(idx + token.Length).Trim();
+                if (string.IsNullOrEmpty(left) || string.IsNullOrEmpty(right)) continue;
+
+                // Parse boolean first
+                if (bool.TryParse(right, out var b))
+                {
+                    condition = new KeywordCondition(left, op, right, null, b);
+                    return true;
+                }
+
+                // Parse number (InvariantCulture)
+                if (float.TryParse(right, NumberStyles.Float, CultureInfo.InvariantCulture, out var f))
+                {
+                    condition = new KeywordCondition(left, op, right, f, null);
+                    return true;
+                }
+
+                // If value isn't numeric/bool, we still treat it as a condition (future string support)
+                condition = new KeywordCondition(left, op, right, null, null);
+                return true;
+            }
+
+            // No operator found => plain property name
+            condition = new KeywordCondition(s, KeywordOp.None);
+            return true;
+        }
+
+        private static bool TryGetNumericPropertyValue(MaterialJsonStructure data, string property, out float value)
+        {
+            value = 0f;
+            if (data == null || string.IsNullOrEmpty(property)) return false;
+
+            // Unity material JSON
+            if (data.IsUnityFormat && data.m_SavedProperties != null)
+            {
+                if (data.m_SavedProperties.m_Floats != null && data.m_SavedProperties.m_Floats.TryGetValue(property, out var f))
+                {
+                    value = f;
+                    return true;
+                }
+                if (data.m_SavedProperties.m_Ints != null && data.m_SavedProperties.m_Ints.TryGetValue(property, out var i))
+                {
+                    value = i;
+                    return true;
+                }
+            }
+
+            // Unreal material JSON
+            if (data.IsUnrealFormat && data.Parameters != null)
+            {
+                if (data.Parameters.Scalars != null && data.Parameters.Scalars.TryGetValue(property, out var s))
+                {
+                    value = s;
+                    return true;
+                }
+                if (data.Parameters.Switches != null && data.Parameters.Switches.TryGetValue(property, out var sw))
+                {
+                    value = sw ? 1f : 0f;
+                    return true;
+                }
+                if (data.Parameters.Properties != null && data.Parameters.Properties.TryGetValue(property, out var obj) && obj != null)
+                {
+                    // Best-effort numeric extraction for loosely-typed properties
+                    switch (obj)
+                    {
+                        case int oi: value = oi; return true;
+                        case long ol: value = ol; return true;
+                        case float of: value = of; return true;
+                        case double od: value = (float)od; return true;
+                        case bool ob: value = ob ? 1f : 0f; return true;
+                        case string os when float.TryParse(os, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed):
+                            value = parsed; return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         private static string ResolveShaderPath(string candidateFromMeta)

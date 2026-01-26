@@ -4,6 +4,7 @@ using System.Linq;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using HoyoToon;
+using System.Text.RegularExpressions;
 
 namespace HoyoToon.EditorTools.ManagerScene
 {
@@ -40,6 +41,7 @@ namespace HoyoToon.EditorTools.ManagerScene
             public Color HeightLerpBottomColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
             public bool RimLightEnable = false;
+            public Color RimLightColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
             public float RimLightWidth = 1.0f;
             public float RimLightIntensity = 1.0f;
             public Vector4 RimLightOffset = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
@@ -999,12 +1001,16 @@ namespace HoyoToon.EditorTools.ManagerScene
                         mat.SetFloat("_ES_RimLightWidth", settings.RimLightWidth);
                         mat.SetFloat("_ES_RimLightAddMode", settings.RimLightIntensity);
                         mat.SetVector("_ES_RimLightOffset", settings.RimLightOffset);
+                        mat.SetColor("_ES_RimLightColor", settings.RimLightColor);
+                        mat.SetFloat("_ES_RimLightIntensity", settings.RimLightIntensity);
                     }
                     else
                     {
                         mat.SetFloat("_ES_RimLightWidth", 1.0f);
                         mat.SetFloat("_ES_RimLightAddMode", 0.07f);
                         mat.SetVector("_ES_RimLightOffset", Vector4.zero);
+                        mat.SetColor("_ES_RimLightColor", Color.white);
+                        mat.SetFloat("_ES_RimLightIntensity", 0.1f);
                     }
 
                     if (settings.RimShadowEnable)

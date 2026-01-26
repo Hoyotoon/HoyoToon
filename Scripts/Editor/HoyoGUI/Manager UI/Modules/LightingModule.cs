@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Rendering;
 
@@ -27,14 +28,23 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             public static readonly GUIContent ShadowBiasLabel = new GUIContent("Bias");
             public static readonly GUIContent ShadowNormalBiasLabel = new GUIContent("Normal Bias");
             public static readonly GUIContent ShadowNearPlaneLabel = new GUIContent("Near Plane");
-            public static readonly GUIContent PositionLabel = new GUIContent("Position");
             public static readonly GUIContent RotationLabel = new GUIContent("Rotation");
-            public static readonly GUIContent ScaleLabel = new GUIContent("Scale");
+            public static readonly GUIContent AutoRotateLabel = new GUIContent("Auto Rotate");
+            public static readonly GUIContent AutoRotateSpeedLabel = new GUIContent("Auto Rotate Speed");
+            public static readonly GUIContent AutoRotateDirectionLabel = new GUIContent("Direction");
         }
 
         private const float MinColorTemperature = 1000f;
         private const float MaxColorTemperature = 20000f;
+        private const float DefaultDirectionalYaw = 180f;
+        private const float DefaultAutoRotateSpeed = 50f;
         private static Texture2D _colorTemperatureTexture;
+
+        private enum AutoRotateDirection
+        {
+            Clockwise,
+            CounterClockwise
+        }
 
         private readonly List<Light> _sceneLights = new List<Light>();
         private readonly HashSet<Light> _selectedLights = new HashSet<Light>();
@@ -42,11 +52,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private bool _lightCacheDirty = true;
         private bool _disposed;
         private LightType _pendingLightType = LightType.Directional;
+        private bool _autoRotate;
+        private float _autoRotateSpeed = DefaultAutoRotateSpeed;
+        private AutoRotateDirection _autoRotateDirection = AutoRotateDirection.Clockwise;
+        private double _lastAutoRotateTime;
 
         public LightingModule()
         {
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            EditorApplication.update += HandleEditorUpdate;
         }
 
         public override void OnGUI(HoyoToonManager targetManager)
@@ -273,7 +288,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUI.EndDisabledGroup();
             if (useColorTemp && !Mathf.Approximately(newTemp, reference.colorTemperature))
             {
-                ApplyToLights(targets, "Adjust Color Temperature", l => l.colorTemperature = newTemp);
+                ApplyToLights(targets, "Adjust Color Temperature", l => l.colorTemperature = Mathf.Clamp(newTemp, MinColorTemperature, MaxColorTemperature));
             }
 
             EditorGUI.indentLevel--;
@@ -358,26 +373,31 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private void DrawTransformControls(List<Light> targets)
         {
             Transform reference = targets[0].transform;
-            EditorGUILayout.LabelField("Transform", EditorStyles.boldLabel);
+            EditorGUILayout.LabelField("Rotation", EditorStyles.boldLabel);
             EditorGUI.indentLevel++;
 
-            Vector3 newPosition = EditorGUILayout.Vector3Field(Styles.PositionLabel, reference.localPosition);
-            if (Vector3.Distance(newPosition, reference.localPosition) > 0.0001f)
+            float currentYaw = reference.localEulerAngles.y;
+            float newYaw = EditorGUILayout.Slider(Styles.RotationLabel, currentYaw, 0f, 360f);
+            if (!Mathf.Approximately(newYaw, currentYaw))
             {
-                ApplyToLightTransforms(targets, "Adjust Light Position", t => t.localPosition = newPosition);
+                ApplyToLightTransforms(targets, "Adjust Light Rotation", t => t.localEulerAngles = new Vector3(0f, newYaw, 0f));
             }
 
-            Vector3 newRotation = EditorGUILayout.Vector3Field(Styles.RotationLabel, reference.localEulerAngles);
-            if (Vector3.Distance(newRotation, reference.localEulerAngles) > 0.0001f)
+            bool newAutoRotate = EditorGUILayout.Toggle(Styles.AutoRotateLabel, _autoRotate);
+            if (newAutoRotate != _autoRotate)
             {
-                ApplyToLightTransforms(targets, "Adjust Light Rotation", t => t.localEulerAngles = newRotation);
+                _autoRotate = newAutoRotate;
+                _lastAutoRotateTime = EditorApplication.timeSinceStartup;
             }
 
-            Vector3 newScale = EditorGUILayout.Vector3Field(Styles.ScaleLabel, reference.localScale);
-            if (Vector3.Distance(newScale, reference.localScale) > 0.0001f)
+            EditorGUI.BeginDisabledGroup(!_autoRotate);
+            _autoRotateDirection = (AutoRotateDirection)EditorGUILayout.EnumPopup(Styles.AutoRotateDirectionLabel, _autoRotateDirection);
+            float newAutoRotateSpeed = EditorGUILayout.Slider(Styles.AutoRotateSpeedLabel, _autoRotateSpeed, 0f, 180f);
+            if (!Mathf.Approximately(newAutoRotateSpeed, _autoRotateSpeed))
             {
-                ApplyToLightTransforms(targets, "Adjust Light Scale", t => t.localScale = newScale);
+                _autoRotateSpeed = Mathf.Max(0f, newAutoRotateSpeed);
             }
+            EditorGUI.EndDisabledGroup();
 
             EditorGUI.indentLevel--;
         }
@@ -414,6 +434,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 case LightType.Directional:
                     RenderSettings.sun = light;
+                    rotation = Quaternion.Euler(0f, DefaultDirectionalYaw, 0f);
                     break;
                 case LightType.Point:
                     light.range = 10f;
@@ -600,6 +621,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             EditorApplication.hierarchyChanged -= HandleHierarchyChanged;
             AssemblyReloadEvents.beforeAssemblyReload -= HandleBeforeAssemblyReload;
+            EditorApplication.update -= HandleEditorUpdate;
             if (_colorTemperatureTexture)
             {
                 UnityEngine.Object.DestroyImmediate(_colorTemperatureTexture);
@@ -616,6 +638,45 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private void HandleBeforeAssemblyReload()
         {
             Dispose();
+        }
+
+        private void HandleEditorUpdate()
+        {
+            if (!_autoRotate || _disposed)
+            {
+                return;
+            }
+
+            EnsureSceneLights();
+            var targets = GetActiveTargets();
+            if (targets.Count == 0)
+            {
+                _lastAutoRotateTime = EditorApplication.timeSinceStartup;
+                return;
+            }
+
+            double now = EditorApplication.timeSinceStartup;
+            float delta = (float)(now - _lastAutoRotateTime);
+            if (delta <= 0f)
+            {
+                return;
+            }
+
+            _lastAutoRotateTime = now;
+            float direction = _autoRotateDirection == AutoRotateDirection.Clockwise ? 1f : -1f;
+            float deltaYaw = _autoRotateSpeed * delta * direction;
+
+            foreach (var light in targets)
+            {
+                if (!light) continue;
+                Transform t = light.transform;
+                Vector3 euler = t.localEulerAngles;
+                float newYaw = Mathf.Repeat(euler.y + deltaYaw, 360f);
+                t.localEulerAngles = new Vector3(0f, newYaw, 0f);
+                EditorUtility.SetDirty(t);
+            }
+
+            InternalEditorUtility.RepaintAllViews();
         }
     }
 }
