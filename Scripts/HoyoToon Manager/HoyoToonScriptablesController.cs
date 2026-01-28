@@ -10,7 +10,8 @@ namespace HoyoToon.EditorTools.ManagerScene
 {
     [ExecuteAlways]
     [DisallowMultipleComponent]
-    public sealed class HoyoToonSceneLightController : MonoBehaviour
+    [AddComponentMenu("")]
+    public sealed class HoyoToonScriptablesController : MonoBehaviour
     {
         [Serializable]
         public sealed class RendererGroup
@@ -23,6 +24,7 @@ namespace HoyoToon.EditorTools.ManagerScene
         [Serializable]
         public sealed class HsrLightingSettings
         {
+            [HideInInspector]
             public bool Enabled = true;
             public bool UseColdRamp = false;
             public bool SPColorEnable = false;
@@ -97,6 +99,58 @@ namespace HoyoToon.EditorTools.ManagerScene
             public Hi3LightingSettings HonkaiImpact3rd = new Hi3LightingSettings();
             public ZzzLightingSettings ZenlessZoneZero = new ZzzLightingSettings();
         }
+
+#if UNITY_EDITOR
+        internal sealed class UiGroupDefinition
+        {
+            public UiGroupDefinition(string defaultGroup, Dictionary<string, string[]> groups)
+            {
+                DefaultGroup = string.IsNullOrWhiteSpace(defaultGroup) ? "Settings" : defaultGroup;
+                Groups = groups ?? new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            public string DefaultGroup { get; }
+            public IReadOnlyDictionary<string, string[]> Groups { get; }
+        }
+
+        private static readonly Dictionary<string, UiGroupDefinition> UiGroupings = new Dictionary<string, UiGroupDefinition>(StringComparer.OrdinalIgnoreCase)
+        {
+            {
+                "Honkai Star Rail",
+                new UiGroupDefinition("Other", new Dictionary<string, string[]>(StringComparer.OrdinalIgnoreCase)
+                {
+                    { "General", new[] { "UseColdRamp" } },
+                    { "Shadows", new[] { "EnableShadowBoost", "ShadowBoost" } },
+                    { "Specular Highlight", new[] { "SPColor*", "SPIntensity*" } },
+                    { "Height Lerp", new[] { "HeightLerp*" } },
+                    { "Rim Light", new[] { "RimLight*" } },
+                    { "Rim Shadow", new[] { "RimShadow*" } },
+                    { "Level Adjust", new[] { "Level*" } },
+                    { "Directional & Fog", new[] { "UseFakeDirectionalLight", "UseFakeFog", "FakeFog*" } }
+                })
+            }
+        };
+
+        public static bool TryGetUiGrouping(string gameKey, out IReadOnlyDictionary<string, string[]> groups, out string defaultGroup)
+        {
+            groups = null;
+            defaultGroup = "Settings";
+
+            if (string.IsNullOrEmpty(gameKey))
+            {
+                return false;
+            }
+
+            if (UiGroupings.TryGetValue(gameKey, out var definition))
+            {
+                groups = definition.Groups;
+                defaultGroup = definition.DefaultGroup;
+                return true;
+            }
+
+            return false;
+        }
+#endif
 
         [Header("Manager")]
         public bool AutoFindManager = true;
@@ -301,14 +355,14 @@ namespace HoyoToon.EditorTools.ManagerScene
             }
         }
 
-        public static HoyoToonSceneLightController EnsureForManager(HoyoToonManager manager, string gameKey = null)
+        public static HoyoToonScriptablesController EnsureForManager(HoyoToonManager manager, string gameKey = null)
         {
             if (manager == null)
             {
                 return null;
             }
 
-            var existing = FindObjectsOfType<HoyoToonSceneLightController>(true)
+            var existing = FindObjectsOfType<HoyoToonScriptablesController>(true)
                 .FirstOrDefault(controller => controller != null && controller.Manager == manager);
 
             if (existing != null)
@@ -321,9 +375,9 @@ namespace HoyoToon.EditorTools.ManagerScene
                 return existing;
             }
 
-            var go = new GameObject("HoyoToon Scene Light Controller");
+            var go = new GameObject("HoyoToon Scriptables Controller");
             go.transform.SetParent(manager.transform, false);
-            var controllerNew = go.AddComponent<HoyoToonSceneLightController>();
+            var controllerNew = go.AddComponent<HoyoToonScriptablesController>();
             controllerNew.Manager = manager;
             if (!string.IsNullOrEmpty(gameKey))
             {
@@ -333,14 +387,14 @@ namespace HoyoToon.EditorTools.ManagerScene
             return controllerNew;
         }
 
-        public static HoyoToonSceneLightController EnsureForManager(HoyoToonManager manager, Transform parent, string gameKey)
+        public static HoyoToonScriptablesController EnsureForManager(HoyoToonManager manager, Transform parent, string gameKey)
         {
             if (manager == null)
             {
                 return null;
             }
 
-            var existing = FindObjectsOfType<HoyoToonSceneLightController>(true)
+            var existing = FindObjectsOfType<HoyoToonScriptablesController>(true)
                 .FirstOrDefault(controller => controller != null && controller.Manager == manager);
 
             if (existing != null)
@@ -359,7 +413,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                 return existing;
             }
 
-            var go = new GameObject("HoyoToon Scene Light Controller");
+            var go = new GameObject("HoyoToon Scriptables Controller");
             if (parent != null)
             {
                 go.transform.SetParent(parent, false);
@@ -369,7 +423,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                 go.transform.SetParent(manager.transform, false);
             }
 
-            var controllerNew = go.AddComponent<HoyoToonSceneLightController>();
+            var controllerNew = go.AddComponent<HoyoToonScriptablesController>();
             controllerNew.Manager = manager;
             if (!string.IsNullOrEmpty(gameKey))
             {
@@ -386,7 +440,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                 return;
             }
 
-            var controllers = FindObjectsOfType<HoyoToonSceneLightController>(true)
+            var controllers = FindObjectsOfType<HoyoToonScriptablesController>(true)
                 .Where(controller => controller != null && controller.Manager == manager);
 
             foreach (var controller in controllers)

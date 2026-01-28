@@ -8,6 +8,7 @@ using HoyoToon;
 using HoyoToon.Materials;
 using HoyoToon.Prerequisites;
 using HoyoToon.Utilities;
+using HoyoToon.API;
 
 namespace HoyoToon.EditorTools.ManagerUI
 {
@@ -64,6 +65,7 @@ namespace HoyoToon.EditorTools.ManagerUI
             public string DetectedShaderPath { get; set; }
             public string DetectedSourceJson { get; set; }
             public IReadOnlyList<(string gameKey, string shaderPath, string sourceJson)> MaterialSources { get; set; }
+            public GameMetadata DetectedGameMetadata { get; set; }
             public GameObject ExistingInstance { get; set; }
             public GameObject CreatedInstance { get; set; }
 
@@ -77,6 +79,7 @@ namespace HoyoToon.EditorTools.ManagerUI
                 DetectedShaderPath = shaderPath;
                 DetectedSourceJson = sourceJson;
                 MaterialSources = MaterialDetection.DetectGameAndShaderAutoWithSourceMany(asset, assetPath);
+                DetectedGameMetadata = ResolveGameMetadata(DetectedGameKey);
                 ExistingInstance = HoyoToonSetupSceneHelper.FindExistingSceneInstance(Manager, asset, assetPath);
 
                 HoyoToonSetupLoggingHelper.LogContextSummary(this);
@@ -234,12 +237,29 @@ namespace HoyoToon.EditorTools.ManagerUI
             context.DetectedShaderPath = shaderPath;
             context.DetectedSourceJson = sourceJson;
             context.MaterialSources = MaterialDetection.DetectGameAndShaderAutoWithSourceMany(asset, assetPath);
+            context.DetectedGameMetadata = ResolveGameMetadata(context.DetectedGameKey);
             context.ExistingInstance = HoyoToonSetupSceneHelper.FindExistingSceneInstance(manager, asset, assetPath);
             context.IsVrcSdkInstalled = VRCSDKInstalledCheck.IsVRCSDKInstalled;
             context.VrcSdkKind = VRCSDKInstalledCheck.InstalledKind;
 
             HoyoToonSetupLoggingHelper.LogContextSummary(context);
             return context;
+        }
+
+        private static GameMetadata ResolveGameMetadata(string gameKey)
+        {
+            if (string.IsNullOrEmpty(gameKey))
+            {
+                return null;
+            }
+
+            var metaMap = HoyoToonApi.GetGameMetadata();
+            if (metaMap == null)
+            {
+                return null;
+            }
+
+            return metaMap.TryGetValue(gameKey, out var meta) ? meta : null;
         }
 
         private static bool TryRunSetupPlan(SetupContext context)

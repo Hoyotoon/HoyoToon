@@ -15,6 +15,9 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
     {
         private const float LabelColumnWidth = 110f;
         private static readonly GUIContent s_TempContent = new GUIContent();
+        private bool _showBaseInfo = true;
+        private bool _showContentInfo = true;
+        private bool _showFbxInfo = true;
 
         public override string DisplayName => "Main";
 
@@ -25,18 +28,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            DrawValidationSection();
             DrawModelInfoSection(targetManager);
-        }
-
-        private static void DrawValidationSection()
-        {
-            var pendingValidation = HoyoToonManagerValidationUtility.GetPendingModelValidation();
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField("Validation", EditorStyles.boldLabel);
-                EditorGUILayout.HelpBox(pendingValidation.Summary, pendingValidation.MessageType);
-            }
         }
 
         private readonly struct ModelInfoSummary
@@ -44,19 +36,17 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             public readonly string GameKey;
             public readonly string CharacterName;
             public readonly string AssetPath;
-            public readonly string SourceJsonPath;
             public readonly int MaterialCount;
             public readonly int TextureCount;
             public readonly int VertexCount;
             public readonly HoyoToonModelImportSnapshot Snapshot;
             public readonly bool HasSnapshot;
 
-            public ModelInfoSummary(string gameKey, string characterName, string assetPath, string sourceJsonPath, int materialCount, int textureCount, int vertexCount, HoyoToonModelImportSnapshot snapshot, bool hasSnapshot)
+            public ModelInfoSummary(string gameKey, string characterName, string assetPath, int materialCount, int textureCount, int vertexCount, HoyoToonModelImportSnapshot snapshot, bool hasSnapshot)
             {
                 GameKey = gameKey;
                 CharacterName = characterName;
                 AssetPath = assetPath;
-                SourceJsonPath = sourceJsonPath;
                 MaterialCount = materialCount;
                 TextureCount = textureCount;
                 VertexCount = vertexCount;
@@ -65,7 +55,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
         }
 
-        private static void DrawModelInfoSection(HoyoToonManager manager)
+        private void DrawModelInfoSection(HoyoToonManager manager)
         {
             if (!TryBuildModelInfo(manager, out var info))
             {
@@ -79,21 +69,21 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 EditorGUILayout.LabelField("Model Info", EditorStyles.boldLabel);
 
-                DrawSection("Base Info", () =>
+                _showBaseInfo = DrawFoldoutSection("Base Info", _showBaseInfo, () =>
                 {
                     DrawInfoRow("Game", info.GameKey);
                     DrawInfoRow("Character", info.CharacterName);
                 });
 
-                DrawSection("Content", () =>
+                _showContentInfo = DrawFoldoutSection("Content", _showContentInfo, () =>
                 {
                     DrawInfoRow("Materials", info.MaterialCount.ToString());
                     DrawInfoRow("Textures", info.TextureCount.ToString());
                 });
 
-                if (info.HasSnapshot)
+                _showFbxInfo = DrawFoldoutSection("FBX Settings", _showFbxInfo, () =>
                 {
-                    DrawSection("FBX Settings", () =>
+                    if (info.HasSnapshot)
                     {
                         DrawInfoRow("Global Scale", info.Snapshot.globalScale.ToString("0.###"));
                         DrawInfoRow("Rig Type", info.Snapshot.importAnimation ? info.Snapshot.animationType.ToString() : "Disabled");
@@ -101,28 +91,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         DrawInfoRow("Meshes", $"Skinned: {info.Snapshot.skinnedMeshCount} || Normal: {info.Snapshot.meshCount}");
                         DrawInfoRow("Bone count", info.Snapshot.boneCount.ToString());
                         DrawInfoRow("Vertices", info.VertexCount.ToString("N0"));
-                    });
-                }
-                else
-                {
-                    EditorGUILayout.Space(4f);
-                    EditorGUILayout.HelpBox("Could not read FBX importer settings for this asset.", MessageType.Info);
-                }
-            }
-        }
-
-        private static void DrawSection(string title, Action renderBody)
-        {
-            if (string.IsNullOrEmpty(title) || renderBody == null)
-            {
-                return;
-            }
-
-            EditorGUILayout.Space(4f);
-            EditorGUILayout.LabelField(title, EditorStyles.miniBoldLabel);
-            using (new EditorGUI.IndentLevelScope())
-            {
-                renderBody();
+                    }
+                    else
+                    {
+                        EditorGUILayout.HelpBox("Could not read FBX importer settings for this asset.", MessageType.Info);
+                    }
+                });
             }
         }
 
@@ -157,7 +131,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             var sourceAsset = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
 
-            var (gameKey, sourceJson) = MaterialDetection.DetectGameAutoOnly(sourceAsset ?? activeModel, assetPath);
+            var (gameKey, _) = MaterialDetection.DetectGameAutoOnly(sourceAsset ?? activeModel, assetPath);
             if (string.IsNullOrEmpty(gameKey))
             {
                 return false;
@@ -171,7 +145,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             var (materialCount, textureCount, vertexCount) = BuildRendererStats(activeModel);
             var hasSnapshot = ModelImportRulesApplier.TryReadModelSnapshot(assetPath, out var snapshot);
-            info = new ModelInfoSummary(gameKey, character, assetPath, sourceJson, materialCount, textureCount, vertexCount, snapshot, hasSnapshot);
+            info = new ModelInfoSummary(gameKey, character, assetPath, materialCount, textureCount, vertexCount, snapshot, hasSnapshot);
             return true;
         }
 
@@ -290,8 +264,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             var trimmed = original.Replace('_', ' ').Replace('-', ' ').Trim();
             return string.IsNullOrEmpty(trimmed) ? original : trimmed;
         }
-
-        private static string FormatToggle(bool value) => value ? "Enabled" : "Disabled";
 
         private static bool TryResolveSourceFbxPath(GameObject activeModel, out string assetPath)
         {

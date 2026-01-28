@@ -6,7 +6,6 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
-using HoyoToon.Utilities;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -22,6 +21,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 		private Vector2 _profileScroll;
 		private bool _resourceProfilesDirty = true;
 		private bool _disposed;
+		private bool _showProfileSelection = true;
+		private bool _showProfileOverrides = true;
 
 		private PostProcessProfile _referenceProfile;
 		private Editor _profileEditor;
@@ -39,34 +40,32 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		public override void OnGUI(HoyoToonManager targetManager)
 		{
-			DrawProfileSelectionBlock(targetManager);
+			_showProfileSelection = DrawFoldoutSection("Profile Selection", _showProfileSelection, () =>
+			{
+				DrawProfileSelectionBlock(targetManager);
+			});
 			ApplyProfileToScene(targetManager);
 
 			if (_referenceProfile != null && IsCustomProfileSelected())
 			{
 				EditorGUILayout.Space(8f);
-				DrawProfileInspector();
+				_showProfileOverrides = DrawFoldoutSection("Profile Overrides", _showProfileOverrides, DrawProfileInspector);
 			}
 		}
 
 		private void DrawProfileSelectionBlock(HoyoToonManager targetManager)
 		{
-			using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+			EnsureResourceProfiles();
+			SyncSelectionFromScene(targetManager);
+			DrawResourceProfileDropdown();
+
+			if (_referenceProfile == null)
 			{
-				EditorGUILayout.LabelField("Profile Selection", EditorStyles.boldLabel);
-
-				EnsureResourceProfiles();
-				SyncSelectionFromScene(targetManager);
-				DrawResourceProfileDropdown();
-
-				if (_referenceProfile == null)
-				{
-					EditorGUILayout.HelpBox("Select a profile from Resources/Post Processing to continue.", MessageType.Info);
-					return;
-				}
-
-				DrawSelectionDetails();
+				EditorGUILayout.HelpBox("Select a profile from Resources/Post Processing to continue.", MessageType.Info);
+				return;
 			}
+
+			DrawSelectionDetails();
 		}
 
 		private void SyncSelectionFromScene(HoyoToonManager manager)
@@ -159,45 +158,40 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		private void DrawProfileInspector()
 		{
-			using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+			if (!IsCustomProfileSelected())
 			{
-				EditorGUILayout.LabelField("Profile Overrides", EditorStyles.boldLabel);
-
-				if (!IsCustomProfileSelected())
-				{
-					EnsureProfileEditor(null);
-					EditorGUILayout.HelpBox("Select the Custom profile to edit overrides.", MessageType.Info);
-					return;
-				}
-
-				if (_bindingState == VolumeBindingState.MissingCamera)
-				{
-					EditorGUILayout.HelpBox("No camera was found in the scene. Add or enable a camera so post-processing previews can update.", MessageType.Warning);
-				}
-				else if (_bindingState == VolumeBindingState.MissingVolume)
-				{
-					EditorGUILayout.HelpBox("Unable to locate a PostProcessVolume near the main camera. Add a global volume so the selected profile is actually used.", MessageType.Warning);
-				}
-
-				var target = GetEditableTarget();
-				if (target == null)
-				{
-					EnsureProfileEditor(null);
-					EditorGUILayout.HelpBox("Custom profile missing or invalid.", MessageType.Info);
-					return;
-				}
-
-				EnsureProfileEditor(target);
-				if (_profileEditor == null)
-				{
-					EditorGUILayout.HelpBox("Unable to create an inspector for the selected profile.", MessageType.Error);
-					return;
-				}
-
-				_profileScroll = EditorGUILayout.BeginScrollView(_profileScroll, GUILayout.MinHeight(220f));
-				_profileEditor.OnInspectorGUI();
-				EditorGUILayout.EndScrollView();
+				EnsureProfileEditor(null);
+				EditorGUILayout.HelpBox("Select the Custom profile to edit overrides.", MessageType.Info);
+				return;
 			}
+
+			if (_bindingState == VolumeBindingState.MissingCamera)
+			{
+				EditorGUILayout.HelpBox("No camera was found in the scene. Add or enable a camera so post-processing previews can update.", MessageType.Warning);
+			}
+			else if (_bindingState == VolumeBindingState.MissingVolume)
+			{
+				EditorGUILayout.HelpBox("Unable to locate a PostProcessVolume near the main camera. Add a global volume so the selected profile is actually used.", MessageType.Warning);
+			}
+
+			var target = GetEditableTarget();
+			if (target == null)
+			{
+				EnsureProfileEditor(null);
+				EditorGUILayout.HelpBox("Custom profile missing or invalid.", MessageType.Info);
+				return;
+			}
+
+			EnsureProfileEditor(target);
+			if (_profileEditor == null)
+			{
+				EditorGUILayout.HelpBox("Unable to create an inspector for the selected profile.", MessageType.Error);
+				return;
+			}
+
+			_profileScroll = EditorGUILayout.BeginScrollView(_profileScroll, GUILayout.MinHeight(220f));
+			_profileEditor.OnInspectorGUI();
+			EditorGUILayout.EndScrollView();
 		}
 
 		private PostProcessProfile GetEditableTarget()

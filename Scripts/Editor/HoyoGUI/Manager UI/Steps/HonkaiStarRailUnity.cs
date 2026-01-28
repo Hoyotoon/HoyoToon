@@ -132,13 +132,13 @@ namespace HoyoToon.EditorTools.ManagerUI.Steps
                 new HoyoToonModelSetupUtility.SetupStep
                 {
                     Id = "scene-light-controller",
-                    Title = "Configuring scene light controller",
+                    Title = "Configuring Scriptables Controller",
                     Enabled = true,
                     IsApplicable = ctx => ctx.Manager != null,
                     IsRequired = ctx =>
                     {
                         var manager = ctx.Manager;
-                        var controller = UnityEngine.Object.FindObjectsOfType<HoyoToonSceneLightController>(true)
+                        var controller = UnityEngine.Object.FindObjectsOfType<HoyoToonScriptablesController>(true)
                             .FirstOrDefault(item => item != null && item.Manager == manager);
                         return controller == null || !controller.IsValidForManager(manager, ctx.DetectedGameKey);
                     },
@@ -150,7 +150,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Steps
                             return;
                         }
 
-                        HoyoToonLogger.ManagerInfo("Auto Setup: Ensuring Scene Light Controller under HoyoToon Manager/Scripts.");
+                        HoyoToonLogger.ManagerInfo("Auto Setup: Ensuring Scriptables Controller under HoyoToon Manager/Scripts.");
 
                         var scriptsParent = manager.transform.Find("Scripts");
                         if (scriptsParent == null)
@@ -160,14 +160,14 @@ namespace HoyoToon.EditorTools.ManagerUI.Steps
                             scriptsParent = scriptsGo.transform;
                         }
 
-                        var controller = HoyoToonSceneLightController.EnsureForManager(manager, scriptsParent, ctx.DetectedGameKey);
+                        var controller = HoyoToonScriptablesController.EnsureForManager(manager, scriptsParent, ctx.DetectedGameKey);
                         if (controller == null)
                         {
-                            HoyoToonLogger.ManagerWarning("Auto Setup: Scene Light Controller could not be created.");
+                            HoyoToonLogger.ManagerWarning("Auto Setup: Scriptables Controller could not be created.");
                         }
                         else
                         {
-                            HoyoToonLogger.ManagerInfo($"Auto Setup: Scene Light Controller ready (Game='{controller.GameKey ?? "<none>"}').");
+                            HoyoToonLogger.ManagerInfo($"Auto Setup: Scriptables Controller ready (Game='{controller.GameKey ?? "<none>"}').");
                         }
                     }
                 },
@@ -319,6 +319,49 @@ namespace HoyoToon.EditorTools.ManagerUI.Steps
                         }
 
                         applier.RunOnce();
+
+                        if (target.scene.IsValid())
+                        {
+                            EditorSceneManager.MarkSceneDirty(target.scene);
+                        }
+                    }
+                },
+
+                new HoyoToonModelSetupUtility.SetupStep
+                {
+                    Id = "apply-bone-constraints",
+                    Title = "Applying bone constraints",
+                    Enabled = true,
+                    IsApplicable = ctx => ctx.Manager != null,
+                    IsRequired = ctx =>
+                    {
+                        var meta = ctx.DetectedGameMetadata;
+                        if (meta?.BoneConstraints == null || meta.BoneConstraints.Count == 0)
+                        {
+                            return false;
+                        }
+
+                        return ctx.ExistingInstance != null
+                               || (ctx.Options == null || ctx.Options.InstantiateInScene);
+                    },
+                    Execute = ctx =>
+                    {
+                        var target = ctx.CreatedInstance ?? ctx.ExistingInstance;
+                        if (target == null)
+                        {
+                            return;
+                        }
+
+                        var meta = ctx.DetectedGameMetadata;
+                        if (meta == null)
+                        {
+                            return;
+                        }
+
+                        int applied = HoyoToonSceneConstraintApplier.ApplyConstraints(target.transform, meta, false, true);
+                        HoyoToonLogger.ManagerInfo(applied > 0
+                            ? $"Auto Setup: Applied {applied} bone constraint(s)."
+                            : "Auto Setup: No bone constraints were applied.");
 
                         if (target.scene.IsValid())
                         {

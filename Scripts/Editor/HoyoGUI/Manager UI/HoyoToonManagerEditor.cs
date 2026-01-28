@@ -49,7 +49,6 @@ namespace HoyoToon.EditorTools.ManagerUI
         private bool _modelsDirty = true;
         private GameObject _pendingModelAsset;
         private bool _pendingModelIsReady;
-        private HoyoToonManagerValidationUtility.ValidationResult _pendingValidationResult;
 
         private void OnEnable()
         {
@@ -64,7 +63,6 @@ namespace HoyoToon.EditorTools.ManagerUI
             _modelsDirty = true;
             _pendingModelAsset = TryGetCachedPendingModel(target, out var cached) ? cached : null;
             _pendingModelIsReady = false;
-            _pendingValidationResult = HoyoToonManagerValidationUtility.GetPendingModelValidation();
             EditorApplication.hierarchyChanged += HandleHierarchyChanged;
         }
 
@@ -97,7 +95,6 @@ namespace HoyoToon.EditorTools.ManagerUI
                 {
                     AutoDiscoverSceneModels((HoyoToonManager)target);
                 }
-                UpdateValidationState();
                 DrawHeaderSection();
 
                 // Push header edits (like active model selection) immediately so downstream UI reads fresh data.
@@ -114,10 +111,15 @@ namespace HoyoToon.EditorTools.ManagerUI
 
                 serializedObject.ApplyModifiedProperties();
             }
+            catch (ExitGUIException)
+            {
+                throw;
+            }
             catch (Exception ex)
             {
                 serializedObject.ApplyModifiedProperties();
-                EditorGUILayout.HelpBox($"HoyoToon Manager UI error: {ex.Message}", MessageType.Error);
+                Debug.LogException(ex);
+                GUIUtility.ExitGUI();
             }
         }
 
@@ -138,11 +140,6 @@ namespace HoyoToon.EditorTools.ManagerUI
             _moduleNavbar.Draw();
         }
 
-        private void UpdateValidationState()
-        {
-            var manager = (HoyoToonManager)target;
-            _pendingModelIsReady = HoyoToonManagerValidationUtility.CanProcessModel(manager, _pendingModelAsset, out _pendingValidationResult);
-        }
 
         private void DrawHeaderSection()
         {
@@ -160,29 +157,16 @@ namespace HoyoToon.EditorTools.ManagerUI
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                if (ShouldShowCrossTabValidationWarning())
-                {
-                    EditorGUILayout.HelpBox("Validation issues detected. Switch to the Main tab to review details.", MessageType.Error);
-                }
                 EditorGUILayout.Space(6f);
+                var manager = target as HoyoToonManager;
+                if (manager == null || manager.ActiveModel == null)
+                {
+                    EditorGUILayout.HelpBox("No active model selected. Add a model above or choose one in Active Model.", MessageType.Info);
+                    return;
+                }
+
                 DrawSelectedModule();
             }
-        }
-
-        private bool ShouldShowCrossTabValidationWarning()
-        {
-            var selectedIndex = _moduleNavbar?.SelectedIndex ?? -1;
-            if (selectedIndex <= 0)
-            {
-                return false;
-            }
-
-            if (_pendingModelAsset != null && !_pendingValidationResult.IsReady)
-            {
-                return true;
-            }
-
-            return false;
         }
 
         private void DrawActiveModelRow()
@@ -212,7 +196,7 @@ namespace HoyoToon.EditorTools.ManagerUI
                 {
                     _activeModelIndexProperty.intValue = newStoredIndex;
                     var manager = (HoyoToonManager)target;
-                    HoyoToonSceneLightController.RefreshForManager(manager);
+                    HoyoToonScriptablesController.RefreshForManager(manager);
                 }
 
                 using (new EditorGUI.DisabledScope(newStoredIndex < 0 || newStoredIndex >= modelCount))
@@ -256,6 +240,7 @@ namespace HoyoToon.EditorTools.ManagerUI
                     _pendingModelAsset = newPending;
                     CachePendingModel(target, _pendingModelAsset);
                 }
+                _pendingModelIsReady = IsPendingModelReady(_pendingModelAsset);
                 using (new EditorGUI.DisabledScope(!_pendingModelIsReady))
                 {
                     string buttonLabel = ResolveAddModelButtonLabel(_pendingModelAsset);
@@ -588,6 +573,23 @@ namespace HoyoToon.EditorTools.ManagerUI
             return "Auto Setup";
         }
 
+        private static bool IsPendingModelReady(GameObject pendingAsset)
+        {
+            if (pendingAsset == null)
+            {
+                return false;
+            }
+
+            var assetPath = AssetDatabase.GetAssetPath(pendingAsset);
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                return false;
+            }
+
+            return assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)
+                   || assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase);
+        }
+
         private GameObject GetActiveManagedModel()
         {
             var manager = (HoyoToonManager)target;
@@ -749,8 +751,9 @@ namespace HoyoToon.EditorTools.ManagerUI
 
             navbar.RegisterModule(new Modules.MainModule());
             navbar.RegisterModule(new Modules.LightingModule());
-            navbar.RegisterModule(new Modules.MaterialsModule());
+            navbar.RegisterModule(new Modules.ScriptablesModule());
             navbar.RegisterModule(new Modules.PostProcessingModule());
+            navbar.RegisterModule(new Modules.RendersModule());
         }
 
         private static void ReleaseNavbarForTarget(UnityEngine.Object targetObject)

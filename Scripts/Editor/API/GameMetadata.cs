@@ -51,6 +51,9 @@ namespace HoyoToon.API
     // Converter profiles scoped per game
     public ConverterProfile Hoyo2Unity { get; set; }
     public ConverterProfile Hoyo2VRC { get; set; }
+
+    // Optional armature constraint rules (bone mapping)
+    public List<BoneConstraintRule> BoneConstraints { get; set; } = new List<BoneConstraintRule>();
     }
 
     [Serializable]
@@ -196,6 +199,67 @@ namespace HoyoToon.API
     public class ConverterRenameConfig
     {
         public string Mapping { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Constraint rule for a target bone, sourced from another bone.
+    /// </summary>
+    [Serializable]
+    public class BoneConstraintRule
+    {
+        public string TargetBone { get; set; }
+        public string SourceBone { get; set; }
+
+        /// <summary>
+        /// Constraint type (Parent, Rotation, Position). Accepts common variants.
+        /// </summary>
+        public string ConstraintType { get; set; }
+
+        /// <summary>
+        /// Overall constraint weight (0-1). Optional.
+        /// </summary>
+        public float? Weight { get; set; }
+
+        /// <summary>
+        /// Source weight (0-1). Optional.
+        /// </summary>
+        public float? SourceWeight { get; set; }
+
+        /// <summary>
+        /// Per-axis settings for position/translation.
+        /// </summary>
+        public ConstraintAxisConfig PositionAxes { get; set; } = new ConstraintAxisConfig();
+
+        /// <summary>
+        /// Per-axis settings for rotation.
+        /// </summary>
+        public ConstraintAxisConfig RotationAxes { get; set; } = new ConstraintAxisConfig();
+
+        /// <summary>
+        /// Maintain current offset when applying the constraint.
+        /// </summary>
+        public bool? MaintainOffset { get; set; }
+
+        /// <summary>
+        /// Whether the constraint is active after setup.
+        /// </summary>
+        public bool? Active { get; set; }
+
+        /// <summary>
+        /// Whether the constraint is locked after setup.
+        /// </summary>
+        public bool? Locked { get; set; }
+    }
+
+    /// <summary>
+    /// Optional axis mask for constraint settings. Null values mean "use default".
+    /// </summary>
+    [Serializable]
+    public class ConstraintAxisConfig
+    {
+        public bool? X { get; set; }
+        public bool? Y { get; set; }
+        public bool? Z { get; set; }
     }
 }
 #endif

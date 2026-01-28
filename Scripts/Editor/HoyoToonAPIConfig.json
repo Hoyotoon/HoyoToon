@@ -308,7 +308,29 @@
         "RenameBones": {
           "Mapping": ""
         }
-      }
+      },
+      "BoneConstraints": [
+        {
+          "TargetBone": "Example Twist",
+          "SourceBone": "Example Humanoid",
+          "ConstraintType": "Parent",
+          "Weight": 1,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "RotationAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "MaintainOffset": true,
+          "Active": true,
+          "Locked": false
+        }
+      ]
     },
     {
       "Key": "Honkai Impact 3rd",
@@ -654,7 +676,29 @@
         "RenameBones": {
           "Mapping": ""
         }
-      }
+      },
+      "BoneConstraints": [
+        {
+          "TargetBone": "Example Twist",
+          "SourceBone": "Example Humanoid",
+          "ConstraintType": "Parent",
+          "Weight": 1,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "RotationAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "MaintainOffset": true,
+          "Active": true,
+          "Locked": false
+        }
+      ]
     },
     {
       "Key": "Genshin Impact",
@@ -1081,7 +1125,149 @@
         "RenameBones": {
           "Mapping": ""
         }
-      }
+      },
+      "BoneConstraints": [
+        {
+          "TargetBone": "+PelvisTwist CF A01",
+          "SourceBone": "Bip001 Pelvis",
+          "ConstraintType": "Parent",
+          "Weight": 1,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "RotationAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "MaintainOffset": true,
+          "Active": true,
+          "Locked": true
+        },
+        {
+          "TargetBone": "+UpperArmTwist L A01",
+          "SourceBone": "Bip001 L UpperArm",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "+UpperArmTwist R A01",
+          "SourceBone": "Bip001 R UpperArm",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "+UpperArmTwist L A02",
+          "SourceBone": "Bip001 L UpperArm",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "+UpperArmTwist R A02",
+          "SourceBone": "Bip001 R UpperArm",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "Bone_ForearmTwist01_L",
+          "SourceBone": "Bip001 L Forearm",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "Bone_ForearmTwist01_R",
+          "SourceBone": "Bip001 R Forearm",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        }
+      ]
     },
     {
       "Key": "Honkai Star Rail",
@@ -1544,7 +1730,149 @@
         "RenameBones": {
           "Mapping": ""
         }
-      }
+      },
+      "BoneConstraints": [
+        {
+          "TargetBone": "Example Twist",
+          "SourceBone": "Example Humanoid",
+          "ConstraintType": "Parent",
+          "Weight": 1,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "RotationAxes": {
+            "X": true,
+            "Y": true,
+            "Z": true
+          },
+          "MaintainOffset": true,
+          "Active": true,
+          "Locked": false
+        },
+        {
+          "TargetBone": "HipPart1_L",
+          "SourceBone": "Hip_L",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "HipPart1_R",
+          "SourceBone": "Hip_R",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "ShoulderPart1_L",
+          "SourceBone": "Shoulder_L",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "ShoulderPart1_R",
+          "SourceBone": "Shoulder_R",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "ElbowPart1_L",
+          "SourceBone": "Elbow_L",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        },
+        {
+          "TargetBone": "ElbowPart1_R",
+          "SourceBone": "Elbow_R",
+          "ConstraintType": "Rotation",
+          "Weight": 0.5,
+          "SourceWeight": 1,
+          "PositionAxes": {
+            "X": null,
+            "Y": null,
+            "Z": null
+          },
+          "RotationAxes": {
+            "X": false,
+            "Y": true,
+            "Z": false
+          },
+          "MaintainOffset": true,
+          "Active": null,
+          "Locked": true
+        }
+      ]
     }
   ],
   "Converters": [

@@ -17,6 +17,27 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         public virtual void Dispose()
         {
         }
+
+        protected static bool DrawFoldoutSection(string title, bool expanded, Action drawer, float indent = 8f)
+        {
+            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    GUILayout.Space(10f);
+                    expanded = EditorGUILayout.Foldout(expanded, title, true, EditorStyles.foldout);
+                }
+
+                if (!expanded)
+                {
+                    return false;
+                }
+
+                EditorGUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
+                drawer?.Invoke();
+                return true;
+            }
+        }
     }
 }
 #endif

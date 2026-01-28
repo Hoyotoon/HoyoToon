@@ -20,6 +20,7 @@ namespace HoyoToon.EditorTools.ManagerUI
             HoyoToonLogger.ManagerInfo($"- Shader: {context.DetectedShaderPath ?? "<unknown>"}");
             HoyoToonLogger.ManagerInfo($"- Source JSON: {context.DetectedSourceJson ?? "<none>"}");
             HoyoToonLogger.ManagerInfo($"- Material JSON count: {(context.MaterialSources?.Count ?? 0)}");
+            HoyoToonLogger.ManagerInfo($"- Game Metadata: {(context.DetectedGameMetadata != null ? "Loaded" : "<none>")}");
             HoyoToonLogger.ManagerInfo($"- VRC SDK Installed: {context.IsVrcSdkInstalled} ({context.VrcSdkKind})");
             HoyoToonLogger.ManagerInfo($"- Existing Scene Instance: {(context.ExistingInstance != null ? context.ExistingInstance.name : "<none>")}");
         }

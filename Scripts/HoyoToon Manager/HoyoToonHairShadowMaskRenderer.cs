@@ -283,7 +283,7 @@ namespace HoyoToon.EditorTools.ManagerScene
 
 
         /// <summary>
-        /// Finds the camera to mirror based on whether the application is in Play Mode (Main Camera) or Edit Mode (Scene View).
+        /// Finds the camera to mirror based on whether the application is in Play Mode or Edit Mode.
         /// </summary>
         private Camera GetActiveCamera()
         {
@@ -296,27 +296,53 @@ namespace HoyoToon.EditorTools.ManagerScene
                     return sceneView.camera;
                 }
 #endif
-                // Play Mode: Use the camera tagged "MainCamera"
                 return Camera.main;
             }
 #if UNITY_EDITOR
-        else
-        {
-            // Edit Mode: Use the camera from the last active Scene View.
-            SceneView sceneView = SceneView.lastActiveSceneView;
-            if (sceneView != null)
+            if (IsGameViewFocused())
             {
-                return sceneView.camera;
+                var mainCamera = Camera.main;
+                if (mainCamera != null)
+                {
+                    return mainCamera;
+                }
             }
+
+            SceneView scene = SceneView.lastActiveSceneView;
+            if (scene != null)
+            {
+                return scene.camera;
+            }
+
+            return Camera.main;
+#else
+            return Camera.main;
+#endif
+        }
+
+#if UNITY_EDITOR
+        private static bool IsGameViewFocused()
+        {
+            var focused = EditorWindow.focusedWindow;
+            if (focused == null)
+            {
+                return false;
+            }
+
+            return focused.GetType().Name == "GameView";
         }
 #endif
-            return null;
-        }
 
         /// <summary>
         /// Executes every frame, swapping materials on all meshes for a single-pass render.
         /// </summary>
         void LateUpdate()
+        {
+            Camera sourceCamera = GetActiveCamera();
+            RenderForCamera(sourceCamera, 0, 0);
+        }
+
+        public void RenderForCamera(Camera sourceCamera, int overrideWidth, int overrideHeight)
         {
             // Critical: Re-initialize if resources are somehow lost during scene transition
             if (!isInitialized && !InitializeResources())
@@ -324,8 +350,6 @@ namespace HoyoToon.EditorTools.ManagerScene
                 Shader.SetGlobalTexture(HairMaskRT_ID, null);
                 return;
             }
-
-            Camera sourceCamera = GetActiveCamera();
 
             if (sourceCamera == null)
             {
@@ -339,18 +363,38 @@ namespace HoyoToon.EditorTools.ManagerScene
             }
 
             // --- 1. Setup RenderTexture (Resolution Check) ---
-            // Ensure the RT matches the current active camera's resolution
+            int targetWidth = overrideWidth > 0 ? overrideWidth : sourceCamera.pixelWidth;
+            int targetHeight = overrideHeight > 0 ? overrideHeight : sourceCamera.pixelHeight;
+
+            if ((targetWidth <= 0 || targetHeight <= 0) && sourceCamera.targetTexture != null)
+            {
+                targetWidth = sourceCamera.targetTexture.width;
+                targetHeight = sourceCamera.targetTexture.height;
+            }
+
+#if UNITY_EDITOR
+            if (targetWidth <= 0 || targetHeight <= 0)
+            {
+                Vector2 gameViewSize = Handles.GetMainGameViewSize();
+                targetWidth = Mathf.Max(1, Mathf.RoundToInt(gameViewSize.x));
+                targetHeight = Mathf.Max(1, Mathf.RoundToInt(gameViewSize.y));
+            }
+#else
+            targetWidth = Mathf.Max(1, targetWidth);
+            targetHeight = Mathf.Max(1, targetHeight);
+#endif
+
             bool needsNewRT = currentFrameMaskRT == null ||
-                              currentFrameMaskRT.width != sourceCamera.pixelWidth ||
-                              currentFrameMaskRT.height != sourceCamera.pixelHeight;
+                              currentFrameMaskRT.width != targetWidth ||
+                              currentFrameMaskRT.height != targetHeight;
 
             if (needsNewRT)
             {
                 if (currentFrameMaskRT != null) RenderTexture.ReleaseTemporary(currentFrameMaskRT);
                 // ARGB32 for Red (Mask) and Green (Depth)
                 currentFrameMaskRT = RenderTexture.GetTemporary(
-                    sourceCamera.pixelWidth,
-                    sourceCamera.pixelHeight,
+                    targetWidth,
+                    targetHeight,
                     16, // Depth bits
                     RenderTextureFormat.ARGB32
                 );
@@ -481,16 +525,6 @@ namespace HoyoToon.EditorTools.ManagerScene
                     // We assume all hair submeshes use the same unique properties. 
                     // We copy properties from the FIRST original material (slot 0).
                     Material originalMat = originalSharedMats[0];
-
-                    // // --- TEXTURE COPYING ---
-                    // if (originalMat.HasProperty(DissolveMap_ID))
-                    // {
-                    //     temporaryMaskMaterial.SetTexture(DissolveMap_ID, originalMat.GetTexture(DissolveMap_ID));
-                    // }
-                    // if (originalMat.HasProperty(DissolveMask_ID))
-                    // {
-                    //     temporaryMaskMaterial.SetTexture(DissolveMask_ID, originalMat.GetTexture(DissolveMask_ID));
-                    // }
 
                     // --- FLOAT/INT/VECTOR/COLOR COPYING ---
 

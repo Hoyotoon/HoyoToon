@@ -14,8 +14,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private static class Styles
         {
-            public static readonly GUIContent SceneLightsHeader = new GUIContent("Scene Lights", "Automatically harvested lights in the open scene(s).");
-            public static readonly GUIContent MainSunHeader = new GUIContent("Primary Sun Controls", "Tweak the RenderSettings sun or your selected directional lights.");
             public static readonly GUIContent UseColorTemperatureLabel = new GUIContent("Use color temperature mode");
             public static readonly GUIContent ColorFilterLabel = new GUIContent("Filter");
             public static readonly GUIContent ColorTemperatureLabel = new GUIContent("Temperature");
@@ -53,6 +51,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private Vector2 _lightListScroll;
         private bool _lightCacheDirty = true;
         private bool _disposed;
+        private bool _showSceneLights = true;
+        private bool _showPrimaryControls = true;
         private LightType _pendingLightType = LightType.Directional;
         private bool _autoRotate;
         private float _autoRotateSpeed = DefaultAutoRotateSpeed;
@@ -73,21 +73,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         {
             EnsureSceneLights();
 
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+            _showSceneLights = DrawFoldoutSection("Scene Lights", _showSceneLights, () =>
             {
-                EditorGUILayout.LabelField(Styles.SceneLightsHeader, EditorStyles.boldLabel);
                 DrawSceneLightsList();
                 EditorGUILayout.Space(4f);
                 DrawCreateLightControls();
-            }
+            });
 
             EditorGUILayout.Space(8f);
 
-            using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
-            {
-                EditorGUILayout.LabelField(Styles.MainSunHeader, EditorStyles.boldLabel);
-                DrawPrimaryLightControls();
-            }
+            _showPrimaryControls = DrawFoldoutSection("Primary Sun Controls", _showPrimaryControls, DrawPrimaryLightControls);
         }
 
         private void EnsureSceneLights()
