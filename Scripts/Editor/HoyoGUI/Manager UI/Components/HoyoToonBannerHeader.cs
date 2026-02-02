@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
+using HoyoToon.Utilities;
 
 namespace HoyoToon.EditorTools.ManagerUI.Components
 {
@@ -170,7 +171,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
             var texture = Resources.Load<Texture2D>(resourcePath);
             if (texture == null)
             {
-                Debug.LogWarning($"HoyoToon banner texture not found at Resources/{resourcePath}");
+                HoyoToonLogCore.WarnCategory("UI", $"Banner texture not found at Resources/{resourcePath}");
             }
             return texture;
         }

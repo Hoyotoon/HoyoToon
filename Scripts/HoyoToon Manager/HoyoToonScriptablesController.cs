@@ -284,7 +284,7 @@ namespace HoyoToon.EditorTools.ManagerScene
 
             if (EnableLogs)
             {
-                Debug.Log($"[HoyoToon] SceneLightController refreshed. Groups={RendererGroups?.Count ?? 0}, Renderers={Renderers?.Length ?? 0}", this);
+                Debug.Log($"SceneLightController refreshed. Groups={RendererGroups?.Count ?? 0}, Renderers={Renderers?.Length ?? 0}", this);
             }
 
 #if UNITY_EDITOR
@@ -721,7 +721,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                 {
                     if (EnableLogs)
                     {
-                        Debug.Log($"[HoyoToon] SceneLightController detected game '{detected}' from root '{root.name}'.", this);
+                        Debug.Log($"SceneLightController detected game '{detected}' from root '{root.name}'.", this);
                     }
                     return detected;
                 }
@@ -731,7 +731,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                 {
                     if (EnableLogs)
                     {
-                        Debug.Log($"[HoyoToon] SceneLightController detected game '{detectedFromRenderer}' from renderer under '{root.name}'.", this);
+                        Debug.Log($"SceneLightController detected game '{detectedFromRenderer}' from renderer under '{root.name}'.", this);
                     }
                     return detectedFromRenderer;
                 }

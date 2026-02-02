@@ -4,6 +4,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
+using HoyoToon.Utilities;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -18,6 +19,15 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private const string WatermarkResourcePath = "UI/hoyotoon";
         private const float WatermarkWidthPercent = 0.22f;
         private const float WatermarkPaddingPercent = 0.02f;
+        private const string PrefKeyPrefix = "HoyoToon.Render.";
+        private const string PrefKeyResWidth = PrefKeyPrefix + "ResWidth";
+        private const string PrefKeyResHeight = PrefKeyPrefix + "ResHeight";
+        private const string PrefKeyScale = PrefKeyPrefix + "Scale";
+        private const string PrefKeySavePath = PrefKeyPrefix + "SavePath";
+        private const string PrefKeyTransparent = PrefKeyPrefix + "Transparent";
+        private const string PrefKeyOpenAfter = PrefKeyPrefix + "OpenAfter";
+        private const string PrefKeyWatermark = PrefKeyPrefix + "Watermark";
+        private const string PrefKeyCameraId = PrefKeyPrefix + "CameraId";
 
         private int _resWidth = DefaultWidth;
         private int _resHeight = DefaultHeight;
@@ -32,6 +42,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private Camera _syncedCamera;
         private CameraState _syncedState;
         private bool _disposed;
+        private bool _prefsLoaded;
         private static Shader _maskShader;
         private static Texture2D _watermarkTexture;
         private static Texture2D _watermarkReadable;
@@ -52,14 +63,18 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         {
             EditorApplication.update += HandleEditorUpdate;
             AssemblyReloadEvents.beforeAssemblyReload += HandleBeforeAssemblyReload;
+            LoadPrefs();
         }
 
         public override void OnGUI(HoyoToonManager targetManager)
         {
+            EnsurePrefsLoaded();
             if (_camera == null)
             {
                 _camera = Camera.main;
             }
+
+            EditorGUI.BeginChangeCheck();
             DrawCameraSection();
             EditorGUILayout.Space(6f);
             DrawResolutionSection();
@@ -67,7 +82,91 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             DrawSaveSection();
             EditorGUILayout.Space(6f);
             DrawActionsSection();
+            if (EditorGUI.EndChangeCheck())
+            {
+                SavePrefs();
+            }
         }
+
+        private void EnsurePrefsLoaded()
+        {
+            if (_prefsLoaded)
+            {
+                return;
+            }
+
+            LoadPrefs();
+        }
+
+        private void LoadPrefs()
+        {
+            _prefsLoaded = true;
+
+            _resWidth = EditorPrefs.GetInt(PrefKeyResWidth, _resWidth);
+            _resHeight = EditorPrefs.GetInt(PrefKeyResHeight, _resHeight);
+            _scale = Mathf.Clamp(EditorPrefs.GetInt(PrefKeyScale, _scale), MinScale, MaxScale);
+            _savePath = EditorPrefs.GetString(PrefKeySavePath, _savePath);
+            _transparent = EditorPrefs.GetBool(PrefKeyTransparent, _transparent);
+            _openAfter = EditorPrefs.GetBool(PrefKeyOpenAfter, _openAfter);
+            _watermark = EditorPrefs.GetBool(PrefKeyWatermark, _watermark);
+
+            var cameraId = EditorPrefs.GetString(PrefKeyCameraId, string.Empty);
+            var persistedCamera = ResolveCamera(cameraId);
+            if (persistedCamera != null)
+            {
+                _camera = persistedCamera;
+            }
+        }
+
+        private void SavePrefs()
+        {
+            EditorPrefs.SetInt(PrefKeyResWidth, _resWidth);
+            EditorPrefs.SetInt(PrefKeyResHeight, _resHeight);
+            EditorPrefs.SetInt(PrefKeyScale, _scale);
+            EditorPrefs.SetString(PrefKeySavePath, _savePath ?? string.Empty);
+            EditorPrefs.SetBool(PrefKeyTransparent, _transparent);
+            EditorPrefs.SetBool(PrefKeyOpenAfter, _openAfter);
+            EditorPrefs.SetBool(PrefKeyWatermark, _watermark);
+            EditorPrefs.SetString(PrefKeyCameraId, SerializeCameraId(_camera));
+        }
+
+#if UNITY_2019_2_OR_NEWER
+        private static string SerializeCameraId(Camera camera)
+        {
+            if (camera == null)
+            {
+                return string.Empty;
+            }
+
+            GlobalObjectId id = GlobalObjectId.GetGlobalObjectIdSlow(camera);
+            return id.ToString();
+        }
+
+        private static Camera ResolveCamera(string id)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                return null;
+            }
+
+            if (!GlobalObjectId.TryParse(id, out var globalId))
+            {
+                return null;
+            }
+
+            return GlobalObjectId.GlobalObjectIdentifierToObjectSlow(globalId) as Camera;
+        }
+#else
+        private static string SerializeCameraId(Camera camera)
+        {
+            return string.Empty;
+        }
+
+        private static Camera ResolveCamera(string id)
+        {
+            return null;
+        }
+#endif
 
         private void DrawCameraSection()
         {
@@ -198,20 +297,20 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         {
             if (_camera == null)
             {
-                Debug.LogWarning("Select a camera before taking a screenshot.");
+                HoyoToonLogCore.WarnCategory("Renders", "Select a camera before taking a screenshot.");
                 return;
             }
 
             if (string.IsNullOrEmpty(_savePath))
             {
-                Debug.LogWarning("Select a save path before taking a screenshot.");
+                HoyoToonLogCore.WarnCategory("Renders", "Select a save path before taking a screenshot.");
                 return;
             }
 
             var absoluteSavePath = GetAbsoluteSavePath();
             if (string.IsNullOrEmpty(absoluteSavePath))
             {
-                Debug.LogWarning("Save path is invalid.");
+                HoyoToonLogCore.WarnCategory("Renders", "Save path is invalid.");
                 return;
             }
 
@@ -307,7 +406,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
             }
             finally
             {
@@ -433,13 +532,13 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             var absolutePath = GetAbsoluteSavePath();
             if (string.IsNullOrEmpty(absolutePath))
             {
-                Debug.LogWarning("Save path is empty.");
+                HoyoToonLogCore.WarnCategory("Renders", "Save path is empty.");
                 return;
             }
 
             if (!Directory.Exists(absolutePath))
             {
-                Debug.LogWarning("Save path does not exist.");
+                HoyoToonLogCore.WarnCategory("Renders", "Save path does not exist.");
                 return;
             }
 
@@ -450,13 +549,13 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         {
             if (string.IsNullOrEmpty(_lastScreenshot))
             {
-                Debug.LogWarning("No screenshot has been taken yet.");
+                HoyoToonLogCore.WarnCategory("Renders", "No screenshot has been taken yet.");
                 return;
             }
 
             if (!File.Exists(_lastScreenshot))
             {
-                Debug.LogWarning("Last screenshot file does not exist.");
+                HoyoToonLogCore.WarnCategory("Renders", "Last screenshot file does not exist.");
                 return;
             }
 
@@ -541,7 +640,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             if (_watermarkTexture == null && !_watermarkMissingLogged)
             {
                 _watermarkMissingLogged = true;
-                Debug.LogWarning("HoyoToon watermark texture not found. Place a PNG at Resources/UI/hoyotoon.png.");
+                HoyoToonLogCore.WarnCategory("Renders", "HoyoToon watermark texture not found. Place a PNG at Resources/UI/hoyotoon.png.");
             }
 
             return _watermarkTexture;
@@ -581,7 +680,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
             catch (Exception ex)
             {
-                Debug.LogException(ex);
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
                 return null;
             }
             finally

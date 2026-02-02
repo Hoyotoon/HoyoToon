@@ -118,7 +118,7 @@ namespace HoyoToon.EditorTools.ManagerUI
             catch (Exception ex)
             {
                 serializedObject.ApplyModifiedProperties();
-                Debug.LogException(ex);
+                HoyoToonLogger.Always("ManagerUI", ex.ToString(), LogType.Exception);
                 GUIUtility.ExitGUI();
             }
         }

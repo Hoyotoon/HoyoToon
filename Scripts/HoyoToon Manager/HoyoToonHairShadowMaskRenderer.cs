@@ -804,7 +804,7 @@ namespace HoyoToon.EditorTools.ManagerScene
                 _lastHairWarningTime = now;
             }
 #endif
-            Debug.LogWarning("[HoyoToon] Tag 'Hair' not found. Hair shadow mask will be disabled until the tag is created.");
+            Debug.LogWarning("Tag 'Hair' not found. Hair shadow mask will be disabled until the tag is created.");
         }
     }
 }

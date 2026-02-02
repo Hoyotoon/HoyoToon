@@ -1,4 +1,5 @@
 # Scripts
 
-- Fixed transparency issue with the renders made with transparency enabled
-- Added a new model downloader that directly downloads models from the CDN
+- Fixed an issue where settings from the mnanager were not persisting correctly.
+- Added a toggle to automatically setup models when downloaded]
+- Added search bar to the character list

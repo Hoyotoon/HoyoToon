@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
@@ -18,6 +19,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private const string DefaultVariantName = "Default";
         private const string DownloadPathPrefKey = "HoyoToon.ModelsDownloader.DownloadRoot";
         private const string DefaultDownloadRoot = "Assets/HoyoToon/Characters";
+        private const string AutoSetupPrefKey = "HoyoToon.ModelsDownloader.AutoSetupAfterDownload";
 
         private static readonly int MainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 
@@ -35,11 +37,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private bool _isRefreshing;
         private string _statusMessage;
         private string _downloadRoot;
+        private bool _hasLoadedAutoSetupPreference;
+        private bool _autoSetupAfterDownload = true;
+        private string _characterSearch;
         private Vector2 _gameScroll;
         private Vector2 _characterScroll;
         private Vector2 _variantScroll;
-        private bool _showSelection = true;
-        private bool _showDownload = true;
 
         public override string DisplayName => "Models";
 
@@ -52,6 +55,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
 
             EnsureDownloadRoot();
+            EnsureAutoSetupPreference();
             EnsureInitialLoad();
 
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
@@ -62,6 +66,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 DrawGameSelection();
                 DrawCharacterSelection();
                 DrawVariantSelection();
+                DrawAutoSetupToggle();
                 DrawDownloadButton(targetManager);
             }
         }
@@ -78,6 +83,17 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 _downloadRoot = DefaultDownloadRoot;
             }
+        }
+
+        private void EnsureAutoSetupPreference()
+        {
+            if (_hasLoadedAutoSetupPreference)
+            {
+                return;
+            }
+
+            _hasLoadedAutoSetupPreference = true;
+            _autoSetupAfterDownload = EditorPrefs.GetBool(AutoSetupPrefKey, true);
         }
 
         private void EnsureInitialLoad()
@@ -146,21 +162,144 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            int current = NormalizeSelectionIndex(_selectedCharacterIndex, _characters.Count);
+            DrawCharacterSearchBar();
+
+            var filteredCharacters = GetFilteredCharacters();
+            if (!string.IsNullOrWhiteSpace(_characterSearch) && _characters != null)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField($"Showing {filteredCharacters.Count:N0} / {_characters.Count:N0}", EditorStyles.miniLabel);
+                }
+            }
+
+            string currentName = _selectedCharacterIndex >= 0 && _selectedCharacterIndex < _characters.Count
+                ? _characters[_selectedCharacterIndex]
+                : null;
+
+            int current = !string.IsNullOrEmpty(currentName)
+                ? filteredCharacters.FindIndex(name => string.Equals(name, currentName, StringComparison.OrdinalIgnoreCase))
+                : -1;
+
+            string emptyMessage = string.IsNullOrWhiteSpace(_characterSearch)
+                ? "No characters are available for this game."
+                : "No characters match the search filter.";
             int newIndex = DrawScrollableSelection(
                 "Character",
-                _characters,
+                filteredCharacters,
                 current,
                 ref _characterScroll,
                 _isRefreshing,
-                "No characters are available for this game.");
+                emptyMessage);
 
             if (newIndex != current)
             {
-                _selectedCharacterIndex = newIndex;
-                ClearVariantSelection();
-                EnsureVariantsLoaded();
+                if (newIndex >= 0 && newIndex < filteredCharacters.Count)
+                {
+                    string selectedName = filteredCharacters[newIndex];
+                    _selectedCharacterIndex = _characters.FindIndex(name => string.Equals(name, selectedName, StringComparison.OrdinalIgnoreCase));
+                    ClearVariantSelection();
+                    EnsureVariantsLoaded();
+                }
             }
+        }
+
+        private void DrawCharacterSearchBar()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField("Search", GUILayout.Width(50f));
+                string newSearch = EditorGUILayout.TextField(_characterSearch ?? string.Empty, EditorStyles.toolbarSearchField);
+                var clearStyle = GetToolbarSearchCancelStyle(string.IsNullOrEmpty(newSearch));
+                if (GUILayout.Button(GUIContent.none, clearStyle))
+                {
+                    newSearch = string.Empty;
+                    GUI.FocusControl(null);
+                }
+
+                if (!string.Equals(_characterSearch, newSearch, StringComparison.Ordinal))
+                {
+                    _characterSearch = newSearch;
+                }
+            }
+        }
+
+        private static GUIStyle _toolbarSearchCancelButton;
+        private static GUIStyle _toolbarSearchCancelButtonEmpty;
+
+        private static GUIStyle GetToolbarSearchCancelStyle(bool empty)
+        {
+            if (empty)
+            {
+                if (_toolbarSearchCancelButtonEmpty == null)
+                {
+                    _toolbarSearchCancelButtonEmpty = FindStyle(
+                        "ToolbarSearchFieldCancelButtonEmpty",
+                        "ToolbarSeachFieldCancelButtonEmpty",
+                        "ToolbarSearchCancelButtonEmpty");
+                    if (_toolbarSearchCancelButtonEmpty == null)
+                    {
+                        _toolbarSearchCancelButtonEmpty = GUI.skin.button;
+                    }
+                }
+
+                return _toolbarSearchCancelButtonEmpty;
+            }
+
+            if (_toolbarSearchCancelButton == null)
+            {
+                _toolbarSearchCancelButton = FindStyle(
+                    "ToolbarSearchFieldCancelButton",
+                    "ToolbarSeachFieldCancelButton",
+                    "ToolbarSearchCancelButton");
+                if (_toolbarSearchCancelButton == null)
+                {
+                    _toolbarSearchCancelButton = GUI.skin.button;
+                }
+            }
+
+            return _toolbarSearchCancelButton;
+        }
+
+        private static GUIStyle FindStyle(params string[] names)
+        {
+            if (GUI.skin == null || names == null)
+            {
+                return null;
+            }
+
+            foreach (string name in names)
+            {
+                if (string.IsNullOrEmpty(name))
+                {
+                    continue;
+                }
+
+                var style = GUI.skin.FindStyle(name);
+                if (style != null)
+                {
+                    return style;
+                }
+            }
+
+            return null;
+        }
+
+        private List<string> GetFilteredCharacters()
+        {
+            if (_characters == null)
+            {
+                return new List<string>();
+            }
+
+            if (string.IsNullOrWhiteSpace(_characterSearch))
+            {
+                return _characters.ToList();
+            }
+
+            return _characters
+                .Where(name => !string.IsNullOrEmpty(name) && name.IndexOf(_characterSearch, StringComparison.OrdinalIgnoreCase) >= 0)
+                .ToList();
         }
 
         private void DrawVariantSelection()
@@ -184,6 +323,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             if (newIndex != current)
             {
                 _selectedVariantIndex = newIndex;
+            }
+        }
+
+        private void DrawAutoSetupToggle()
+        {
+            bool newValue = EditorGUILayout.ToggleLeft("Auto setup after download", _autoSetupAfterDownload);
+            if (newValue != _autoSetupAfterDownload)
+            {
+                _autoSetupAfterDownload = newValue;
+                EditorPrefs.SetBool(AutoSetupPrefKey, _autoSetupAfterDownload);
             }
         }
 
@@ -463,7 +612,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 var fbxFiles = files.Where(file => file.RelativePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)).ToList();
                 if (fbxFiles.Count > 1)
                 {
-                    int choice = await PromptFbxChoiceAsync(fbxFiles, characterName, variant.Name);
+                    var orderedFbxFiles = fbxFiles
+                        .OrderBy(file => Path.GetFileNameWithoutExtension(file.RelativePath) ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+                    int choice = await PromptFbxChoiceAsync(orderedFbxFiles, characterName, variant.Name);
                     if (choice == -2)
                     {
                         // Both: keep all FBX files
@@ -476,7 +628,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
                     if (choice >= 0)
                     {
-                        var chosen = fbxFiles[choice];
+                        var chosen = orderedFbxFiles[choice];
                         files = files.Where(file => !file.RelativePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
                             .Concat(new[] { chosen })
                             .ToList();
@@ -550,10 +702,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void ShowPostDownloadPrompt(HoyoToonManager manager, string assetTarget, string gameKey, string gameName, string characterName, string variantName)
         {
+            if (_autoSetupAfterDownload)
+            {
+                TryAutoSetupDownloaded(manager, assetTarget, gameKey, gameName, characterName, variantName);
+                return;
+            }
+
             var message = $"Downloaded {characterName} ({variantName}) for {gameName}.\n\nWhat would you like to do next?";
             var buttons = new[] { "Auto Setup", "Do Nothing" };
 
-            HoyoToonDialogWindow.ShowCustom("Model Downloaded", message, MessageType.Info, buttons, 0, 1, result =>
+            HoyoToonDialogWindow.ShowCustom("Model Downloaded", message, MessageType.Info, buttons, 1, 1, result =>
             {
                 switch (result)
                 {
@@ -783,16 +941,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return tcs.Task;
             }
 
-            var ordered = fbxs
-                .OrderBy(file => Path.GetFileNameWithoutExtension(file.RelativePath) ?? string.Empty, StringComparer.OrdinalIgnoreCase)
-                .ToList();
-
-            var labels = ordered
+            var labels = fbxs
                 .Take(2)
                 .Select(file => BuildFbxLabel(file.RelativePath, characterName, variantName))
                 .ToList();
 
-            if (ordered.Count > 1)
+            if (fbxs.Count > 1)
             {
                 labels.Add("Both");
             }
@@ -810,7 +964,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         return;
                     }
 
-                    int maxSingle = Math.Min(ordered.Count, 2);
+                    int maxSingle = Math.Min(fbxs.Count, 2);
                     if (result < maxSingle)
                     {
                         tcs.SetResult(result);
@@ -855,13 +1009,70 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private static string BuildFbxLabel(string path, string characterName, string variantName)
         {
             var fileName = Path.GetFileNameWithoutExtension(path) ?? "FBX";
-            var lower = fileName.ToLowerInvariant();
-            var hint = lower.Contains("anim") || lower.Contains("animation") ? "(With Anims)" : lower.Contains("noanim") || lower.Contains("no_anims") || lower.Contains("no-anim") ? "(No Anims)" : string.Empty;
-            if (string.IsNullOrEmpty(hint))
+            var fbxType = GetFbxVariantType(fileName);
+            string hint = fbxType switch
             {
-                hint = string.Empty;
-            }
+                FbxVariantType.WithAnims => "(With Anims)",
+                FbxVariantType.NoAnims => "(No Anims)",
+                _ => string.Empty
+            };
+
             return string.IsNullOrEmpty(hint) ? fileName : $"{fileName} {hint}";
+        }
+
+        private static FbxVariantType GetFbxVariantType(string fileName)
+        {
+            if (string.IsNullOrEmpty(fileName))
+            {
+                return FbxVariantType.Unknown;
+            }
+
+            var tokens = ExtractTokens(fileName);
+            bool hasNo = tokens.Contains("no");
+            bool hasWith = tokens.Contains("with");
+            bool hasAnim = tokens.Contains("anim") || tokens.Contains("anims") || tokens.Contains("animation") || tokens.Contains("animations");
+
+            if (tokens.Contains("noanim") || tokens.Contains("noanims") || tokens.Contains("noanimation") || tokens.Contains("noanimations") || (hasNo && hasAnim))
+            {
+                return FbxVariantType.NoAnims;
+            }
+
+            if (tokens.Contains("withanim") || tokens.Contains("withanims") || tokens.Contains("withanimation") || tokens.Contains("withanimations") || (hasWith && hasAnim) || hasAnim)
+            {
+                return FbxVariantType.WithAnims;
+            }
+
+            return FbxVariantType.Unknown;
+        }
+
+        private static List<string> ExtractTokens(string value)
+        {
+            var tokens = new List<string>();
+            if (string.IsNullOrEmpty(value))
+            {
+                return tokens;
+            }
+
+            var buffer = new StringBuilder();
+            foreach (var character in value)
+            {
+                if (char.IsLetterOrDigit(character))
+                {
+                    buffer.Append(char.ToLowerInvariant(character));
+                }
+                else if (buffer.Length > 0)
+                {
+                    tokens.Add(buffer.ToString());
+                    buffer.Clear();
+                }
+            }
+
+            if (buffer.Length > 0)
+            {
+                tokens.Add(buffer.ToString());
+            }
+
+            return tokens;
         }
 
         private static string SelectBestCandidate(List<string> paths, string characterName, string variantName)
@@ -1227,6 +1438,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             _characters = new List<string>();
             _selectedCharacterIndex = -1;
             _characterScroll = Vector2.zero;
+            _characterSearch = string.Empty;
             ClearVariantSelection();
         }
 
@@ -1293,6 +1505,13 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             public string FolderName { get; }
             public string Key => Config?.Key;
             public string DisplayName => string.IsNullOrEmpty(Config?.DisplayName) ? Config?.Key : Config.DisplayName;
+        }
+
+        private enum FbxVariantType
+        {
+            Unknown,
+            WithAnims,
+            NoAnims
         }
     }
 }
