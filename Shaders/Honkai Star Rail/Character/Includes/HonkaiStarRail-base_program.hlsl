@@ -784,19 +784,17 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
 
         float matcap_area = lightmap.z * matcap_mask;
 
-        float matcap_strength = ((saturate(((shadow_area * 5.0) + -4.0)) * (((-_MatCapStrengthInShadow) * _MatCapStrength) + _MatCapStrength)) + (_MatCapStrength * _MatCapStrengthInShadow));
-        float3 matcap_color = (matcap_strength * matcap.xyz); // mask * matcap * matcap_color
+        // improved the fucking readability here after unlocking more of brain to determine what is just a funny looking lerp
+        float matcap_strength = lerp(_MatCapStrengthInShadow *  _MatCapStrength, _MatCapStrength, saturate(((shadow_area * 5.0) - 4.0)));
+        float3 matcap_color = (matcap_strength * matcap.xyz);
         matcap_color.xyz = (matcap_color.xyz * _MatCapColor.xyz);
-        matcap_color.xyz = (matcap_area * matcap_color.xyz); // * spec color
-        matcap_color.xyz = (specular_color[ID].xyz * matcap_color.xyz); // * spec intensity
-        matcap_color.xyz = (specular_values[ID].z * matcap_color.xyz);
+        matcap_color.xyz = (matcap_area * matcap_color.xyz); 
+        matcap_color.xyz = (specular_color[ID].xyz * matcap_color.xyz);
+        matcap_color.xyz = ((specular_values[ID].z * _ES_SPIntensity) * matcap_color.xyz);
 
-        float matcap_ceil = ((matcap_mask * lightmap.z) + -0.0099999998);
-        matcap_ceil = clamp(matcap_ceil, 0.0, 1.0);
-        matcap_ceil = ceil(matcap_ceil);
+        float matcap_ceil = ceil(saturate((matcap_mask * lightmap.z) -0.01f));
 
-        matcap.xyz = (matcap_color.xyz * matcap_ceil);
-    if(_UseMatcap)output.xyz = output  + matcap;
+    if (_UseMatcap) output.xyz = lerp(output.xyz, matcap_color + output, matcap_ceil);
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // emission
@@ -1062,7 +1060,7 @@ vertex_output outline_vertex(vertex_input v)
     outline_scale = outline_scale * v.color.w;
     outline_scale = outline_scale * outline_fov;
 
-    outline_scale = UNITY_MATRIX_P[3][3] == 0 ? outline_scale :  (((_OutlineWidth * _OutlineScale) * v.color.w))*(_OutlineScale * 2500);
+    outline_scale = UNITY_MATRIX_P[3][3] == 0 ? outline_scale :  (((_OutlineWidth * _OutlineScale) * (v.color.w)))*(_OutlineScale * 1);
 
 
     o.view = normalize(_WorldSpaceCameraPos.xyz - mul(unity_ObjectToWorld, v.vertex).xyz);

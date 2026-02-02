@@ -159,13 +159,26 @@ namespace HoyoToon.EditorTools.ManagerUI
             {
                 EditorGUILayout.Space(6f);
                 var manager = target as HoyoToonManager;
-                if (manager == null || manager.ActiveModel == null)
+                if (manager == null)
+                {
+                    EditorGUILayout.HelpBox("No HoyoToon Manager target found.", MessageType.Info);
+                    return;
+                }
+
+                var module = _moduleNavbar != null ? _moduleNavbar.GetSelectedModule() : null;
+                if (module == null)
+                {
+                    EditorGUILayout.HelpBox("Selected module is missing.", MessageType.Warning);
+                    return;
+                }
+
+                if (manager.ActiveModel == null && module is Modules.MainModule)
                 {
                     EditorGUILayout.HelpBox("No active model selected. Add a model above or choose one in Active Model.", MessageType.Info);
                     return;
                 }
 
-                DrawSelectedModule();
+                module.OnGUI(manager);
             }
         }
 
@@ -750,6 +763,7 @@ namespace HoyoToon.EditorTools.ManagerUI
             }
 
             navbar.RegisterModule(new Modules.MainModule());
+            navbar.RegisterModule(new Modules.ModelsModule());
             navbar.RegisterModule(new Modules.LightingModule());
             navbar.RegisterModule(new Modules.ScriptablesModule());
             navbar.RegisterModule(new Modules.PostProcessingModule());

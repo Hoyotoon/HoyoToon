@@ -289,11 +289,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
                 if (_transparent)
                 {
-                    if (alphaMask != null)
-                    {
-                        ApplyAlphaMask(screenshot, alphaMask);
-                    }
-                    SetAlphaChannel(screenshot);
+                    SetAlphaChannel(screenshot, alphaMask);
                 }
 
                 if (_watermark)
@@ -339,14 +335,22 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
         }
 
-        private void SetAlphaChannel(Texture2D screenshot)
+        private void SetAlphaChannel(Texture2D screenshot, Texture2D mask)
         {
             var pixels = screenshot.GetPixels32();
+            var maskPixels = mask != null ? mask.GetPixels32() : null;
+            int maskCount = maskPixels != null ? maskPixels.Length : 0;
             for (int i = 0; i < pixels.Length; i++)
             {
-                if (pixels[i].a > 0)
+                byte baseAlpha = pixels[i].a > 0 ? (byte)255 : (byte)0;
+                if (maskPixels != null && i < maskCount)
                 {
-                    pixels[i].a = 255;
+                    int combined = baseAlpha + maskPixels[i].a;
+                    pixels[i].a = (byte)Mathf.Clamp(combined, 0, 255);
+                }
+                else
+                {
+                    pixels[i].a = baseAlpha;
                 }
             }
             screenshot.SetPixels32(pixels);
@@ -360,7 +364,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             int count = Mathf.Min(pixels.Length, maskPixels.Length);
             for (int i = 0; i < count; i++)
             {
-                pixels[i].a = maskPixels[i].a > 0 ? (byte)255 : (byte)0;
+                int combined = pixels[i].a + maskPixels[i].a;
+                pixels[i].a = (byte)Mathf.Clamp(combined, 0, 255);
             }
             screenshot.SetPixels32(pixels);
             screenshot.Apply();

@@ -206,8 +206,8 @@ Shader "Hidden/StarRail/PostProcessingUber"
                 float4 output = float4(0,0,0,0);
                 float4 main = _MainTex.Sample(sampler_linear_clamp, uv);
                 float4 bloom = _MainTex1.Sample(sampler_linear_clamp, uv);
-                output = bloom * _BloomIntensity + main;
-
+                output.xyz = bloom * _BloomIntensity + main;
+                output.w = main.w;
                 if(_EnableEffect0 > 0)
                 {
                     

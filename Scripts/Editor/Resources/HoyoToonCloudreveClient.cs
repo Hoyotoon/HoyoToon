@@ -31,6 +31,14 @@ namespace HoyoToon
         /// </summary>
         public static async Task<List<RemoteFileInfo>> GetFileListAsync(string shareUrl)
         {
+            return await GetFileListAsync(shareUrl, string.Empty, true);
+        }
+
+        /// <summary>
+        /// Get file list from Cloudreve public share, optionally scoped to a subdirectory.
+        /// </summary>
+        public static async Task<List<RemoteFileInfo>> GetFileListAsync(string shareUrl, string relativePath, bool recursive)
+        {
             if (string.IsNullOrWhiteSpace(shareUrl))
                 throw new ArgumentException("shareUrl is required");
 
@@ -40,8 +48,11 @@ namespace HoyoToon
                 throw new Exception($"Could not parse Cloudreve share URL: {shareUrl}");
             }
 
-            HoyoToonLogger.ResourcesInfo($"Starting Cloudreve V4 file discovery for: {shareUrl}");
-            
+            var normalizedPath = relativePath ?? string.Empty;
+            normalizedPath = normalizedPath.Trim().Trim('/');
+
+            HoyoToonLogger.ResourcesInfo($"Starting Cloudreve V4 file discovery for: {shareUrl} (path='{normalizedPath}')");
+
             // Public share: we only need the 'share' filesystem.
             var preferredHosts = new[] { "share" };
             var allFiles = new List<RemoteFileInfo>();
@@ -49,13 +60,28 @@ namespace HoyoToon
 
             foreach (var host in preferredHosts)
             {
-                var rootAuthority = string.IsNullOrEmpty(password)
-                    ? $"cloudreve://{shareId}@{host}"
-                    : $"cloudreve://{shareId}:{password}@{host}";
-                
+                var rootAuthority = BuildRootAuthority(shareId, password, host);
+
                 try
                 {
-                    await TraverseDirectoryV4Async(SharedHttpClient, baseApiUrl, rootAuthority, "", allFiles);
+                    if (recursive)
+                    {
+                        await TraverseDirectoryV4Async(SharedHttpClient, baseApiUrl, rootAuthority, normalizedPath, allFiles);
+                    }
+                    else
+                    {
+                        var entries = await ListDirectoryV4Async(SharedHttpClient, baseApiUrl, rootAuthority, normalizedPath);
+                        foreach (var entry in entries)
+                        {
+                            allFiles.Add(new RemoteFileInfo
+                            {
+                                RelativePath = entry.RelativePath,
+                                Size = entry.Size,
+                                IsDirectory = entry.IsDirectory
+                            });
+                        }
+                    }
+
                     success = true;
                     break; // Success with this host
                 }
@@ -70,8 +96,29 @@ namespace HoyoToon
                 throw new Exception("Failed to list files from Cloudreve share using all available hosts.");
             }
 
-            HoyoToonLogger.ResourcesInfo($"Cloudreve discovery completed, found {allFiles.Count} total files");
+            HoyoToonLogger.ResourcesInfo($"Cloudreve discovery completed, found {allFiles.Count} total entries");
             return allFiles;
+        }
+
+        /// <summary>
+        /// List entries within a single Cloudreve directory (non-recursive).
+        /// </summary>
+        public static async Task<List<RemoteEntryInfo>> GetDirectoryEntriesAsync(string shareUrl, string relativePath)
+        {
+            if (string.IsNullOrWhiteSpace(shareUrl))
+                throw new ArgumentException("shareUrl is required");
+
+            var (baseApiUrl, shareId, password) = ParseCloudreveShareUrl(shareUrl);
+            if (string.IsNullOrEmpty(baseApiUrl) || string.IsNullOrEmpty(shareId))
+            {
+                throw new Exception($"Could not parse Cloudreve share URL: {shareUrl}");
+            }
+
+            var normalizedPath = relativePath ?? string.Empty;
+            normalizedPath = normalizedPath.Trim().Trim('/');
+
+            var rootAuthority = BuildRootAuthority(shareId, password, "share");
+            return await ListDirectoryV4Async(SharedHttpClient, baseApiUrl, rootAuthority, normalizedPath);
         }
 
         private static async Task TraverseDirectoryV4Async(HttpClient client, string baseApiUrl, string rootAuthority, string currentPath, List<RemoteFileInfo> allFiles)
@@ -182,6 +229,75 @@ namespace HoyoToon
             }
         }
 
+        private static async Task<List<RemoteEntryInfo>> ListDirectoryV4Async(HttpClient client, string baseApiUrl, string rootAuthority, string currentPath)
+        {
+            var entries = new List<RemoteEntryInfo>();
+            var uri = BuildShareUri(rootAuthority, currentPath);
+
+            string nextPageToken = "";
+            int page = 1;
+            bool isCursor = true;
+
+            do
+            {
+                var listUrlBuilder = new StringBuilder();
+                listUrlBuilder.Append($"{baseApiUrl}/file?uri={Uri.EscapeDataString(uri)}");
+
+                if (!string.IsNullOrEmpty(nextPageToken))
+                {
+                    listUrlBuilder.Append($"&next_page_token={Uri.EscapeDataString(nextPageToken)}");
+                }
+
+                listUrlBuilder.Append($"&page={page}&page_size=1000");
+
+                var response = await client.GetAsync(listUrlBuilder.ToString());
+                if (!response.IsSuccessStatusCode)
+                {
+                    throw new Exception($"List files HTTP {response.StatusCode}");
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var result = JsonSerializer.Deserialize<CloudreveV4ListResponse>(json);
+
+                if (result.Code != 0)
+                {
+                    throw new Exception($"Cloudreve list error: {result.Msg} (code {result.Code})");
+                }
+
+                if (result.Data == null) break;
+
+                nextPageToken = result.Data.NextPageToken;
+                if (result.Data.Pagination != null)
+                {
+                    isCursor = result.Data.Pagination.IsCursor;
+                    page = result.Data.Pagination.Page;
+                }
+
+                if (result.Data.Files != null)
+                {
+                    foreach (var f in result.Data.Files)
+                    {
+                        var name = f.Name;
+                        var type = f.Type;
+                        var nextPath = string.IsNullOrEmpty(currentPath) ? name : $"{currentPath}/{name}";
+                        var decodedRelPath = nextPath.Replace("\\", "/");
+
+                        entries.Add(new RemoteEntryInfo
+                        {
+                            Name = name,
+                            RelativePath = decodedRelPath,
+                            IsDirectory = type == 1,
+                            Size = f.Size
+                        });
+                    }
+                }
+
+                if (!isCursor) page++;
+            } while (isCursor && !string.IsNullOrEmpty(nextPageToken));
+
+            return entries;
+        }
+
         private static async Task<List<string>> CreateDownloadUrlsAsync(HttpClient client, string baseApiUrl, List<string> uris, string contextHint)
         {
             var result = new List<string>(new string[uris.Count]);
@@ -285,6 +401,15 @@ namespace HoyoToon
                         break;
                     }
                 }
+
+                if (string.IsNullOrEmpty(shareId))
+                {
+                    var pathParam = GetQueryParam(uri, "path");
+                    if (!string.IsNullOrEmpty(pathParam) && pathParam.StartsWith("cloudreve://", StringComparison.OrdinalIgnoreCase))
+                    {
+                        TryParseCloudreveAuthority(pathParam, out shareId, out password);
+                    }
+                }
                 return (baseApi, shareId, password);
             }
             catch (Exception ex)
@@ -294,12 +419,84 @@ namespace HoyoToon
             }
         }
 
+        private static string BuildRootAuthority(string shareId, string password, string host)
+        {
+            return string.IsNullOrEmpty(password)
+                ? $"cloudreve://{shareId}@{host}"
+                : $"cloudreve://{shareId}:{password}@{host}";
+        }
+
+        private static bool TryParseCloudreveAuthority(string cloudrevePath, out string shareId, out string password)
+        {
+            shareId = null;
+            password = null;
+            if (string.IsNullOrEmpty(cloudrevePath))
+            {
+                return false;
+            }
+
+            var working = cloudrevePath.StartsWith("cloudreve://", StringComparison.OrdinalIgnoreCase)
+                ? cloudrevePath.Substring("cloudreve://".Length)
+                : cloudrevePath;
+
+            var atIndex = working.IndexOf('@');
+            var userInfo = atIndex >= 0 ? working.Substring(0, atIndex) : working;
+            if (string.IsNullOrEmpty(userInfo))
+            {
+                return false;
+            }
+
+            var parts = userInfo.Split(new[] { ':' }, 2, StringSplitOptions.None);
+            shareId = parts.Length > 0 ? parts[0] : null;
+            password = parts.Length > 1 ? parts[1] : null;
+
+            return !string.IsNullOrEmpty(shareId);
+        }
+
+        private static string GetQueryParam(Uri uri, string key)
+        {
+            if (uri == null || string.IsNullOrEmpty(uri.Query) || string.IsNullOrEmpty(key))
+            {
+                return null;
+            }
+
+            var query = uri.Query;
+            if (query.StartsWith("?", StringComparison.Ordinal))
+            {
+                query = query.Substring(1);
+            }
+
+            var pairs = query.Split(new[] { '&' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var pair in pairs)
+            {
+                var idx = pair.IndexOf('=');
+                var k = idx >= 0 ? pair.Substring(0, idx) : pair;
+                if (!string.Equals(k, key, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var v = idx >= 0 ? pair.Substring(idx + 1) : string.Empty;
+                return Uri.UnescapeDataString(v ?? string.Empty);
+            }
+
+            return null;
+        }
+
         private static string BuildShareUri(string rootAuthority, string path)
         {
             if (string.IsNullOrEmpty(path)) return rootAuthority;
             var segments = path.Split(new[] {'/'}, StringSplitOptions.RemoveEmptyEntries)
                                .Select(s => Uri.EscapeDataString(s));
             return $"{rootAuthority}/{string.Join("/", segments)}";
+        }
+
+        public class RemoteEntryInfo
+        {
+            public string Name { get; set; }
+            public string RelativePath { get; set; }
+            public long Size { get; set; }
+            public bool IsDirectory { get; set; }
         }
 
         // DTOs

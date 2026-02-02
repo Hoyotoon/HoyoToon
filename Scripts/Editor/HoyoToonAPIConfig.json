@@ -710,12 +710,6 @@
         "HoyoToon/Genshin Impact/Character/BaseUber": [
 
         ],
-        "HoyoToon/Genshin Impact/Character/BaseUber_FaceStencil": [
-          "_UseEyeMask == 1"
-        ],
-        "HoyoToon/Genshin Impact/Character/BaseUber_HairStencil": [
-          "_UseHairAlphaLimitation == 1"
-        ],
         "HoyoToon/Genshin Impact/Character/FaceDecal": [
           "_EnableCharacterFaceDecal"
         ],

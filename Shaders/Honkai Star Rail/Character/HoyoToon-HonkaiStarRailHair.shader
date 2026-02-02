@@ -159,7 +159,10 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
         [Sub(DitherGroup)] _DitherAlpha ("Dither Alpha Value", Range(0, 1)) = 1
         
         [Main(RenderingSettings, _, off, off)] _RenderingSettings ("Rendering Settings", Float) = 0
-        
+        [Sub(RenderingSettings)] _PolygonOffsetFactor ("Polygon Offset Factor", Float) = 0
+        [Sub(RenderingSettings)] _PolygonOffsetUnits ("Polygon Offset Units", Float) = 0
+        [Sub(RenderingSettings)] _OutlinePolygonOffsetFactor ("Outline Polygon Offset Factor", Float) = 0
+        [Sub(RenderingSettings)] _OutlinePolygonOffsetUnits ("Outline Polygon Offset Units", Float) = 0
         [Sub(RenderingSettings)] _StencilRefA ("Stencil Reference Value", Range(0, 255)) = 25
         [Sub(RenderingSettings)] _StencilRefB ("Stencil Reference Value", Range(0, 255)) = 27
         [Enum(UnityEngine.Rendering.CullMode)] [Sub(RenderingSettings)] _CullMode ("Cull Mode", Float) = 2
@@ -188,6 +191,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
         {
             Name "Base Pass"
             Tags{ "LightMode" = "ForwardBase" }
+            Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Cull [_CullMode]
             Stencil
             {
@@ -209,6 +213,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
         {
             Name "HairEye Pass"
             Tags{ "LightMode" = "ForwardBase" }
+            Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Cull Back
             Stencil
             {
@@ -232,6 +237,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
         {
             Name "Outline Pass"
             Tags{ "LightMode" = "ForwardBase" }
+            Offset [_OutlinePolygonOffsetFactor], [_OutlinePolygonOffsetUnits]
             Cull Front
             Stencil
             {

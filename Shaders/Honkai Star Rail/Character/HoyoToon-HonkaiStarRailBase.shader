@@ -445,6 +445,10 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [Sub(DitherGroup)] _DitherAlpha ("Dither Alpha Value", Range(0, 1)) = 1
 
         [Main(RenderinGroup, _, off, off)] _renderinggroup("Rendering Settings", float) = 0
+        [Sub(RenderinGroup)] _PolygonOffsetFactor ("Polygon Offset Factor", Float) = 0
+        [Sub(RenderinGroup)] _PolygonOffsetUnits ("Polygon Offset Units", Float) = 0
+        [Sub(RenderinGroup)] _OutlinePolygonOffsetFactor ("Outline Polygon Offset Factor", Float) = 0
+        [Sub(RenderinGroup)] _OutlinePolygonOffsetUnits ("Outline Polygon Offset Units", Float) = 0
         [Sub(RenderinGroup)] _StencilRef ("Stencil Ref", Float) = 16
         [Sub(RenderinGroup)] _StencilOP ("Stencil Op", Float) = 2
         [Sub(RenderinGroup)] _StencilComp ("Stencil Comp", Float) = 8
@@ -480,7 +484,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
 
         Pass
         {
-            Name "Base Pass"    
+            Name "Base Pass"
+            Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Cull [_CullMode]
             Blend [_SourceBlend] [_DestBlend] 
 
@@ -507,8 +512,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         {
             Name "Outline Pass"
             Tags{ "LightMode" = "ForwardBase" }
+            Offset [_OutlinePolygonOffsetFactor], [_OutlinePolygonOffsetUnits]
             Cull Front
-            Offset 1, 1
             Stencil
             {
                 Ref 10

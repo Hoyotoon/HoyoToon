@@ -181,9 +181,13 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
         [SubToggle(DitherGroup)] _DITHER_FADE_IN ("_DITHER_FADE_IN", Float) = 0
         [Sub(DitherGroup)] _DitherAlpha ("Dither Alpha Value", Range(0, 1)) = 1
         [Main(RenderingSettings, _, off, off)] _RenderingSettings ("Rendering Settings", Float) = 0
-
+        [Sub(RenderingSettings)] _PolygonOffsetFactor ("Polygon Offset Factor", Float) = 0
+        [Sub(RenderingSettings)] _PolygonOffsetUnits ("Polygon Offset Units", Float) = 0
+        [Sub(RenderingSettings)] _OutlinePolygonOffsetFactor ("Outline Polygon Offset Factor", Float) = 0
+        [Sub(RenderingSettings)] _OutlinePolygonOffsetUnits ("Outline Polygon Offset Units", Float) = 0
         [Sub(RenderingSettings)] _StencilRefA ("Stencil Reference Value", Range(0, 255)) = 2
         [Sub(RenderingSettings)] _StencilRefB ("Stencil Reference Value", Range(0, 255)) = 26
+        
         
         [HideInInspector] _IsYup ("_IsYUp", Float) = 0
         
@@ -211,8 +215,9 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
 
         Pass
         {
-            Name "Base Pass"
+            Name "Forward Base Pass"
             Tags{ "LightMode" = "ForwardBase" }//  first alpha testing : 
+             Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Stencil
             {
                 Ref [_StencilRefA]
@@ -232,6 +237,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
         {
             Name "Eye Mask"
             Tags{ "LightMode" = "ForwardBase" }
+            Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Blend SrcAlpha OneMinusSrcAlpha 
             Stencil
             {
@@ -255,6 +261,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
         {
             Name "Outline Pass"
             Tags{ "LightMode" = "ForwardBase" }
+            Offset [_OutlinePolygonOffsetFactor], [_OutlinePolygonOffsetUnits]
             Cull Front
             Offset 2, 1
             Stencil
