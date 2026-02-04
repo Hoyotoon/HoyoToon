@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using HoyoToon.EditorTools.ManagerUI.Components;
 using HoyoToon.EditorTools.ManagerScene;
+using HoyoToon.Materials;
 using HoyoToon.Utilities;
 
 namespace HoyoToon.EditorTools.ManagerUI
@@ -49,6 +50,9 @@ namespace HoyoToon.EditorTools.ManagerUI
         private bool _modelsDirty = true;
         private GameObject _pendingModelAsset;
         private bool _pendingModelIsReady;
+        private DefaultAsset _pendingFolderAsset;
+        private bool _includeSubfolders = true;
+        private readonly List<GameObject> _queuedBatchAssets = new List<GameObject>();
 
         private void OnEnable()
         {
@@ -58,7 +62,8 @@ namespace HoyoToon.EditorTools.ManagerUI
             _footer = new HoyoToonManagerFooter(
                 activeModelProvider: GetActiveManagedModel,
                 prefabFolderResolver: ResolveActiveModelFolder,
-                createPrefabAction: CreatePrefabFromActiveModel);
+                createPrefabAction: CreatePrefabFromActiveModel,
+                regenerateMaterialsAction: RegenerateMaterialsForActiveModel);
             CacheSerializedProperties();
             _modelsDirty = true;
             _pendingModelAsset = TryGetCachedPendingModel(target, out var cached) ? cached : null;
@@ -145,11 +150,32 @@ namespace HoyoToon.EditorTools.ManagerUI
         {
             using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
             {
-                EditorGUILayout.LabelField("Setup", EditorStyles.boldLabel);
-                DrawAddModelRow();
+                DrawSectionHeader("Setup", "Auto setup for FBX assets.");
+                using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+                {
+                    DrawAddModelRow();
+                    DrawBatchInputRow();
+                }
                 EditorGUILayout.Space(6f);
-                EditorGUILayout.LabelField("Active Model", EditorStyles.boldLabel);
-                DrawActiveModelRow();
+                DrawSectionHeader("Active Model", "Select the model that modules operate on.");
+                using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+                {
+                    DrawActiveModelRow();
+                }
+            }
+        }
+
+        private static void DrawSectionHeader(string title, string subtitle)
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField(title, EditorStyles.boldLabel);
+                GUILayout.FlexibleSpace();
+            }
+
+            if (!string.IsNullOrEmpty(subtitle))
+            {
+                EditorGUILayout.LabelField(subtitle, EditorStyles.miniLabel);
             }
         }
 
@@ -245,6 +271,8 @@ namespace HoyoToon.EditorTools.ManagerUI
 
         private void DrawAddModelRow()
         {
+            var selectionAssets = GetSupportedAssetsFromSelection();
+            bool hasBatchSelection = selectionAssets.Count > 1;
             using (new EditorGUILayout.HorizontalScope())
             {
                 var newPending = (GameObject)EditorGUILayout.ObjectField("Add Model", _pendingModelAsset, typeof(GameObject), false);
@@ -253,19 +281,382 @@ namespace HoyoToon.EditorTools.ManagerUI
                     _pendingModelAsset = newPending;
                     CachePendingModel(target, _pendingModelAsset);
                 }
-                _pendingModelIsReady = IsPendingModelReady(_pendingModelAsset);
+                _pendingModelIsReady = IsPendingModelReady(_pendingModelAsset) || selectionAssets.Count > 0;
+                if (selectionAssets.Count > 0)
+                {
+                    EditorGUILayout.LabelField($"{selectionAssets.Count} selected", EditorStyles.miniLabel, GUILayout.Width(90f));
+                }
                 using (new EditorGUI.DisabledScope(!_pendingModelIsReady))
                 {
-                    string buttonLabel = ResolveAddModelButtonLabel(_pendingModelAsset);
+                    string buttonLabel = ResolveAddModelButtonLabel(_pendingModelAsset, hasBatchSelection);
                     if (GUILayout.Button(buttonLabel, GUILayout.Width(110f)))
                     {
-                        if (TryAddModelFromAsset(_pendingModelAsset, out var resolvedAsset))
+                        if (hasBatchSelection)
+                        {
+                            RunBatchSetup(selectionAssets);
+                            return;
+                        }
+
+                        var targetAsset = _pendingModelAsset;
+                        if (targetAsset == null && selectionAssets.Count == 1)
+                        {
+                            targetAsset = selectionAssets[0];
+                        }
+
+                        if (TryAddModelFromAsset(targetAsset, out var resolvedAsset))
                         {
                             _pendingModelAsset = resolvedAsset ?? _pendingModelAsset;
                             CachePendingModel(target, _pendingModelAsset);
                         }
                     }
                 }
+            }
+
+            if (hasBatchSelection)
+            {
+                EditorGUILayout.LabelField("Batch mode uses the Project view selection (FBX only).", EditorStyles.miniLabel);
+            }
+            else
+            {
+                EditorGUILayout.LabelField("Tip: multi-select FBX assets in the Project view to batch auto setup.", EditorStyles.miniLabel);
+            }
+        }
+
+        private void DrawBatchInputRow()
+        {
+            EditorGUILayout.Space(4f);
+            DrawDragAndDropBox();
+            EditorGUILayout.Space(4f);
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                _pendingFolderAsset = (DefaultAsset)EditorGUILayout.ObjectField("Folder", _pendingFolderAsset, typeof(DefaultAsset), false);
+                _includeSubfolders = EditorGUILayout.ToggleLeft("Include subfolders", _includeSubfolders, GUILayout.Width(140f));
+                using (new EditorGUI.DisabledScope(_pendingFolderAsset == null))
+                {
+                    if (GUILayout.Button("Queue Folder", GUILayout.Width(100f)))
+                    {
+                        var assets = GetSupportedAssetsFromFolder(_pendingFolderAsset, _includeSubfolders);
+                        AddQueuedAssets(assets);
+                    }
+                }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField($"Queued: {_queuedBatchAssets.Count}", EditorStyles.miniLabel, GUILayout.Width(120f));
+                GUILayout.FlexibleSpace();
+                using (new EditorGUI.DisabledScope(_queuedBatchAssets.Count == 0))
+                {
+                    if (GUILayout.Button("Run Queue", GUILayout.Width(90f)))
+                    {
+                        var assets = new List<GameObject>(_queuedBatchAssets);
+                        _queuedBatchAssets.Clear();
+                        RunSetupForAssets(assets);
+                    }
+                }
+
+                if (GUILayout.Button("Clear", GUILayout.Width(60f)))
+                {
+                    _queuedBatchAssets.Clear();
+                }
+            }
+        }
+
+        private void DrawDragAndDropBox()
+        {
+            var dropRect = GUILayoutUtility.GetRect(0f, 46f, GUILayout.ExpandWidth(true));
+            GUI.Box(dropRect, "Drag FBX assets here to queue", EditorStyles.helpBox);
+
+            var evt = Event.current;
+            if (evt == null)
+            {
+                return;
+            }
+
+            if (!dropRect.Contains(evt.mousePosition))
+            {
+                return;
+            }
+
+            if (evt.type == EventType.DragUpdated || evt.type == EventType.DragPerform)
+            {
+                var draggedAssets = GetSupportedAssetsFromObjects(DragAndDrop.objectReferences);
+                if (draggedAssets.Count > 0)
+                {
+                    DragAndDrop.visualMode = DragAndDropVisualMode.Copy;
+                    if (evt.type == EventType.DragPerform)
+                    {
+                        DragAndDrop.AcceptDrag();
+                        AddQueuedAssets(draggedAssets);
+                    }
+
+                    evt.Use();
+                }
+            }
+        }
+
+        private void RunSetupForAssets(List<GameObject> assets)
+        {
+            if (assets == null || assets.Count == 0)
+            {
+                HoyoToonDialogWindow.ShowWarning("Batch Auto Setup", "No valid FBX assets were provided.");
+                return;
+            }
+
+            if (assets.Count == 1)
+            {
+                if (TryAddModelFromAsset(assets[0], out _))
+                {
+                    _modelsDirty = true;
+                }
+
+                return;
+            }
+
+            RunBatchSetup(assets);
+        }
+
+        private void AddQueuedAssets(List<GameObject> assets)
+        {
+            if (assets == null || assets.Count == 0)
+            {
+                return;
+            }
+
+            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var asset in _queuedBatchAssets)
+            {
+                if (TryGetSupportedAssetPath(asset, out var assetPath))
+                {
+                    existingPaths.Add(assetPath);
+                }
+            }
+
+            foreach (var asset in assets)
+            {
+                if (TryGetSupportedAssetPath(asset, out var assetPath) && existingPaths.Add(assetPath))
+                {
+                    _queuedBatchAssets.Add(asset);
+                }
+            }
+        }
+
+        private static List<GameObject> GetSupportedAssetsFromObjects(UnityEngine.Object[] objects)
+        {
+            var results = new List<GameObject>();
+            if (objects == null || objects.Length == 0)
+            {
+                return results;
+            }
+
+            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var obj in objects)
+            {
+                var asset = obj as GameObject;
+                if (!TryGetSupportedAssetPath(asset, out var assetPath))
+                {
+                    continue;
+                }
+
+                if (existingPaths.Add(assetPath))
+                {
+                    results.Add(asset);
+                }
+            }
+
+            return results;
+        }
+
+        private static List<GameObject> GetSupportedAssetsFromFolder(DefaultAsset folderAsset, bool includeSubfolders)
+        {
+            var results = new List<GameObject>();
+            if (folderAsset == null)
+            {
+                return results;
+            }
+
+            var folderPath = AssetDatabase.GetAssetPath(folderAsset);
+            if (string.IsNullOrEmpty(folderPath) || !AssetDatabase.IsValidFolder(folderPath))
+            {
+                return results;
+            }
+
+            if (!includeSubfolders)
+            {
+                var immediateAssets = AssetDatabase.FindAssets("t:GameObject", new[] { folderPath });
+                return FilterFolderAssets(immediateAssets, folderPath, true);
+            }
+
+            var guids = AssetDatabase.FindAssets("t:GameObject", new[] { folderPath });
+            if (guids == null || guids.Length == 0)
+            {
+                return results;
+            }
+
+            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var guid in guids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    continue;
+                }
+
+                if (!assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var asset = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                if (asset == null)
+                {
+                    continue;
+                }
+
+                if (existingPaths.Add(assetPath))
+                {
+                    results.Add(asset);
+                }
+            }
+
+            return results;
+        }
+
+        private static List<GameObject> FilterFolderAssets(string[] guids, string folderPath, bool requireImmediateChild)
+        {
+            var results = new List<GameObject>();
+            if (guids == null || guids.Length == 0)
+            {
+                return results;
+            }
+
+            var normalizedFolder = folderPath.Replace('\\', '/');
+            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (var guid in guids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(assetPath))
+                {
+                    continue;
+                }
+
+                var normalizedAsset = assetPath.Replace('\\', '/');
+                if (requireImmediateChild)
+                {
+                    var parent = Path.GetDirectoryName(normalizedAsset)?.Replace('\\', '/');
+                    if (!string.Equals(parent, normalizedFolder, StringComparison.OrdinalIgnoreCase))
+                    {
+                        continue;
+                    }
+                }
+
+                if (!normalizedAsset.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var asset = AssetDatabase.LoadAssetAtPath<GameObject>(assetPath);
+                if (asset == null)
+                {
+                    continue;
+                }
+
+                if (existingPaths.Add(assetPath))
+                {
+                    results.Add(asset);
+                }
+            }
+
+            return results;
+        }
+
+        private static List<GameObject> GetSupportedAssetsFromSelection()
+        {
+            var results = new List<GameObject>();
+            var selection = Selection.objects;
+            if (selection == null || selection.Length == 0)
+            {
+                return results;
+            }
+
+            var existingPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var obj in selection)
+            {
+                var asset = obj as GameObject;
+                if (!TryGetSupportedAssetPath(asset, out var assetPath))
+                {
+                    continue;
+                }
+
+                if (existingPaths.Add(assetPath))
+                {
+                    results.Add(asset);
+                }
+            }
+
+            return results;
+        }
+
+        private void RunBatchSetup(List<GameObject> assets)
+        {
+            var manager = (HoyoToonManager)target;
+            if (manager == null)
+            {
+                HoyoToonDialogWindow.ShowError("Manager Missing", "Cannot setup without an active HoyoToon Manager in the scene.");
+                return;
+            }
+
+            if (assets == null || assets.Count == 0)
+            {
+                HoyoToonDialogWindow.ShowWarning("Batch Auto Setup", "No valid FBX assets were provided.");
+                return;
+            }
+
+            int successCount = 0;
+            int failCount = 0;
+            GameObject lastInstance = null;
+
+            foreach (var asset in assets)
+            {
+                if (!TryGetSupportedAssetPath(asset, out var assetPath))
+                {
+                    failCount++;
+                    continue;
+                }
+
+                bool success = HoyoToonModelSetupUtility.TryProcessFbxAndInstantiate(manager, asset, out var instance);
+
+                if (success)
+                {
+                    successCount++;
+                    if (instance != null)
+                    {
+                        AddManagedModelInstance(instance, false);
+                        lastInstance = instance;
+                    }
+                }
+                else
+                {
+                    failCount++;
+                }
+            }
+
+            if (lastInstance != null)
+            {
+                AddManagedModelInstance(lastInstance, true);
+            }
+
+            _modelsDirty = true;
+
+            if (failCount > 0)
+            {
+                HoyoToonDialogWindow.ShowWarning("Batch Auto Setup Complete", $"Completed with {successCount} success(es) and {failCount} failure(s). Check the console for details.");
+            }
+            else
+            {
+                HoyoToonDialogWindow.ShowInfo("Batch Auto Setup Complete", $"Successfully set up {successCount} model(s).");
             }
         }
 
@@ -310,7 +701,7 @@ namespace HoyoToon.EditorTools.ManagerUI
             var assetPath = AssetDatabase.GetAssetPath(modelAsset);
             if (string.IsNullOrEmpty(assetPath))
             {
-                HoyoToonDialogWindow.ShowError("Unsupported Asset", "Please select an FBX or prefab asset.");
+                HoyoToonDialogWindow.ShowError("Unsupported Asset", "Please select an FBX asset.");
                 return false;
             }
 
@@ -327,20 +718,7 @@ namespace HoyoToon.EditorTools.ManagerUI
                 return false;
             }
 
-            if (assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
-            {
-                if (HoyoToonModelSetupUtility.TryInstantiatePrefabAsset(manager, modelAsset, out var instance, out var resolved))
-                {
-                    AddManagedModelInstance(instance);
-                    resolvedAsset = resolved ?? modelAsset;
-                    _modelsDirty = true;
-                    return true;
-                }
-
-                return false;
-            }
-
-            HoyoToonDialogWindow.ShowError("Unsupported Asset", "Only FBX and prefab assets are supported.");
+            HoyoToonDialogWindow.ShowError("Unsupported Asset", "Only FBX assets are supported right now.");
             return false;
         }
 
@@ -570,17 +948,11 @@ namespace HoyoToon.EditorTools.ManagerUI
             _modelsDirty = true;
         }
         
-        private static string ResolveAddModelButtonLabel(GameObject pendingAsset)
+        private static string ResolveAddModelButtonLabel(GameObject pendingAsset, bool isBatchSelection)
         {
-            if (pendingAsset == null)
+            if (isBatchSelection)
             {
-                return "Auto Setup";
-            }
-
-            var assetPath = AssetDatabase.GetAssetPath(pendingAsset);
-            if (!string.IsNullOrEmpty(assetPath) && assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase))
-            {
-                return "Add Prefab";
+                return "Auto Setup (Batch)";
             }
 
             return "Auto Setup";
@@ -599,8 +971,24 @@ namespace HoyoToon.EditorTools.ManagerUI
                 return false;
             }
 
-            return assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)
-                   || assetPath.EndsWith(".prefab", StringComparison.OrdinalIgnoreCase);
+                 return assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryGetSupportedAssetPath(GameObject asset, out string assetPath)
+        {
+            assetPath = null;
+            if (asset == null)
+            {
+                return false;
+            }
+
+            assetPath = AssetDatabase.GetAssetPath(asset);
+            if (string.IsNullOrEmpty(assetPath))
+            {
+                return false;
+            }
+
+                 return assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase);
         }
 
         private GameObject GetActiveManagedModel()
@@ -683,6 +1071,17 @@ namespace HoyoToon.EditorTools.ManagerUI
                 HoyoToonLogger.ManagerError($"Failed to create prefab for {activeModel.name}: {ex.Message}");
                 HoyoToonDialogWindow.ShowError("Prefab Creation Failed", $"Could not create prefab: {ex.Message}");
             }
+        }
+
+        private void RegenerateMaterialsForActiveModel(GameObject activeModel)
+        {
+            if (activeModel == null)
+            {
+                HoyoToonDialogWindow.ShowWarning("Regenerate Materials", "No active model selected.");
+                return;
+            }
+
+            MaterialGeneration.GenerateAuto(activeModel, null, null, null, true);
         }
 
         private static GameObject ResolveRendererRoot(Renderer renderer, HoyoToonManager manager)

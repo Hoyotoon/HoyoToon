@@ -76,11 +76,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             _showSceneLights = DrawFoldoutSection("Scene Lights", _showSceneLights, () =>
             {
                 DrawSceneLightsList();
-                EditorGUILayout.Space(4f);
                 DrawCreateLightControls();
             });
 
-            EditorGUILayout.Space(8f);
+            EditorGUILayout.Space(4f);
 
             _showPrimaryControls = DrawFoldoutSection("Primary Sun Controls", _showPrimaryControls, DrawPrimaryLightControls);
         }
@@ -129,7 +128,28 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            using (var scroll = new EditorGUILayout.ScrollViewScope(_lightListScroll, GUILayout.MinHeight(80), GUILayout.MaxHeight(180)))
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                EditorGUILayout.LabelField($"Lights ({_sceneLights.Count})", EditorStyles.boldLabel);
+                GUILayout.FlexibleSpace();
+                if (GUILayout.Button("All", EditorStyles.miniButton, GUILayout.Width(40f)))
+                {
+                    _selectedLights.Clear();
+                    foreach (var light in _sceneLights)
+                    {
+                        if (light) _selectedLights.Add(light);
+                    }
+                }
+
+                if (GUILayout.Button("None", EditorStyles.miniButton, GUILayout.Width(50f)))
+                {
+                    _selectedLights.Clear();
+                }
+            }
+
+            float rowHeight = EditorGUIUtility.singleLineHeight + 4f;
+            float targetHeight = Mathf.Clamp(rowHeight * _sceneLights.Count, 36f, 140f);
+            using (var scroll = new EditorGUILayout.ScrollViewScope(_lightListScroll, GUILayout.MinHeight(targetHeight), GUILayout.MaxHeight(targetHeight)))
             {
                 _lightListScroll = scroll.scrollPosition;
                 foreach (var light in _sceneLights)
@@ -158,32 +178,13 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     }
                 }
             }
-
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                if (GUILayout.Button("Select All", EditorStyles.miniButton))
-                {
-                    _selectedLights.Clear();
-                    foreach (var light in _sceneLights)
-                    {
-                        if (light) _selectedLights.Add(light);
-                    }
-                }
-
-                if (GUILayout.Button("Clear Selection", EditorStyles.miniButton))
-                {
-                    _selectedLights.Clear();
-                }
-
-                GUILayout.FlexibleSpace();
-            }
         }
 
         private void DrawCreateLightControls()
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                _pendingLightType = (LightType)EditorGUILayout.EnumPopup("Create Light", _pendingLightType);
+                _pendingLightType = (LightType)EditorGUILayout.EnumPopup("Create", _pendingLightType);
                 using (new EditorGUI.DisabledScope(!Enum.IsDefined(typeof(LightType), _pendingLightType)))
                 {
                     if (GUILayout.Button("Add Light", GUILayout.Width(90f)))
@@ -456,6 +457,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             var go = new GameObject(lightName, typeof(Light));
             Undo.RegisterCreatedObjectUndo(go, $"Create {type} Light");
 
+            var parent = ResolveLightsParent();
+            if (parent != null)
+            {
+                go.transform.SetParent(parent, false);
+            }
+
             var light = go.GetComponent<Light>();
             light.type = type;
             light.color = Color.white;
@@ -504,6 +511,32 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
             MarkLightsDirty();
+        }
+
+        private Transform ResolveLightsParent()
+        {
+            var manager = FindHoyoToonManagerInScene();
+            if (manager == null)
+            {
+                return null;
+            }
+
+            var lightsParent = manager.transform.Find("Lights");
+            if (lightsParent != null)
+            {
+                return lightsParent;
+            }
+
+            var lightsObject = new GameObject("Lights");
+            Undo.RegisterCreatedObjectUndo(lightsObject, "Create Lights Group");
+            lightsObject.transform.SetParent(manager.transform, false);
+            return lightsObject.transform;
+        }
+
+        private static HoyoToonManager FindHoyoToonManagerInScene()
+        {
+            var managers = UnityEngine.Object.FindObjectsOfType<HoyoToonManager>(true);
+            return managers != null && managers.Length > 0 ? managers[0] : null;
         }
 
         private float DrawColorTemperatureSlider(float currentValue)

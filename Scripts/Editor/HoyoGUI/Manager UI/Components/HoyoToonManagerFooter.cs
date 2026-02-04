@@ -13,6 +13,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
         private readonly Func<GameObject> _activeModelProvider;
         private readonly Func<GameObject, string> _prefabFolderResolver;
         private readonly Action<GameObject> _createPrefabAction;
+        private readonly Action<GameObject> _regenerateMaterialsAction;
 
         public HoyoToonManagerFooter(
             string title = "Global Controls",
@@ -20,7 +21,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
             Action renderBody = null,
             Func<GameObject> activeModelProvider = null,
             Func<GameObject, string> prefabFolderResolver = null,
-            Action<GameObject> createPrefabAction = null)
+            Action<GameObject> createPrefabAction = null,
+            Action<GameObject> regenerateMaterialsAction = null)
         {
             _title = string.IsNullOrEmpty(title) ? "Global Controls" : title;
             _message = message;
@@ -28,6 +30,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
             _activeModelProvider = activeModelProvider;
             _prefabFolderResolver = prefabFolderResolver;
             _createPrefabAction = createPrefabAction;
+            _regenerateMaterialsAction = regenerateMaterialsAction;
         }
 
         public void Draw()
@@ -48,35 +51,70 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
                     EditorGUILayout.HelpBox("Future global controls will appear here.", MessageType.Info);
                 }
 
-                DrawPrefabControls();
+                DrawActionRow();
             }
         }
 
-        private void DrawPrefabControls()
+        private void DrawActionRow()
         {
-            if (_createPrefabAction == null || _activeModelProvider == null)
+            if (_activeModelProvider == null)
             {
-            return;
+                return;
             }
 
-            EditorGUILayout.Space(4f);
-
             var activeModel = _activeModelProvider.Invoke();
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                DrawPrefabButton(activeModel);
+                DrawRegenerateButton(activeModel);
+
+            }
+        }
+
+        private void DrawRegenerateButton(GameObject activeModel)
+        {
+            if (_regenerateMaterialsAction == null)
+            {
+                return;
+            }
+
+            bool isValid = activeModel != null;
+            using (new EditorGUI.DisabledScope(!isValid))
+            {
+                var content = new GUIContent(
+                    "Regenerate Materials",
+                    isValid ? "Rebuild materials using detected JSON sources." : "No model selected");
+
+                if (GUILayout.Button(content, GUILayout.Width(160f)))
+                {
+                    _regenerateMaterialsAction.Invoke(activeModel);
+                }
+            }
+        }
+
+        private void DrawPrefabButton(GameObject activeModel)
+        {
+            if (_createPrefabAction == null)
+            {
+                return;
+            }
+
             string folder = _prefabFolderResolver?.Invoke(activeModel);
             bool hasFolder = !string.IsNullOrEmpty(folder);
             bool isValid = activeModel != null && hasFolder;
 
             using (new EditorGUI.DisabledScope(!isValid))
             {
-            var content = new GUIContent(
-                "Create Prefab",
-                isValid ? $"Create a prefab next to:\n{folder}" : 
-                activeModel == null ? "No model selected" : "Prefab source folder could not be located.");
+                var content = new GUIContent(
+                    "Create Prefab",
+                    isValid ? $"Create a prefab next to:\n{folder}" :
+                    activeModel == null ? "No model selected" : "Prefab source folder could not be located.");
 
-            if (GUILayout.Button(content, GUILayout.Width(140f)))
-            {
-                _createPrefabAction.Invoke(activeModel);
-            }
+                if (GUILayout.Button(content, GUILayout.Width(140f)))
+                {
+                    _createPrefabAction.Invoke(activeModel);
+                }
             }
         }
     }

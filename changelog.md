@@ -1,5 +1,14 @@
 # Scripts
-
-- Fixed an issue where settings from the mnanager were not persisting correctly.
-- Added a toggle to automatically setup models when downloaded]
-- Added search bar to the character list
+- Added the ability to batch download models from the manager.
+- Updated the Model Download UI to support batch downloads.
+- Added the ability to setup models in batches.
+    - Multi select models in your project window, then auto setup
+    - Drag and drop models into the marked area to queue them for setup.
+    - Select a folder in the manager and then queue the folder for setup. (Supports Subfolders)
+- Updated the UI for the Models Module.
+- Updated the UI for the Lighting Module.
+    - Now less space is being wasted and will automatically scale when there are more lights in the scene.
+- New Grid System for the Model Setup Scene.
+    - Models are now placed in a grid pattern instead of all inside eachother at the center of the scene.
+- Light sources created by the Manager will now be placed in a "HoyoToon Manager > Lights" GameObject for better organization.
+- Global button to regenerate the materials of the active model in the manager.

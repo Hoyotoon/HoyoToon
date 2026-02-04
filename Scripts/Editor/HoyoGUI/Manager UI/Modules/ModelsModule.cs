@@ -43,6 +43,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private Vector2 _gameScroll;
         private Vector2 _characterScroll;
         private Vector2 _variantScroll;
+        private Vector2 _variantSectionScroll;
+        private readonly Dictionary<string, Vector2> _variantScrollByCharacter = new Dictionary<string, Vector2>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _selectedCharacters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _selectedVariants = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, HashSet<string>> _selectedVariantsByCharacter = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+        private readonly HashSet<string> _loadingVariantsForCharacters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         public override string DisplayName => "Models";
 
@@ -62,12 +68,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 DrawStatus();
                 DrawRefreshRow();
-
+                EditorGUILayout.Space(4f);
                 DrawGameSelection();
                 DrawCharacterSelection();
                 DrawVariantSelection();
-                DrawAutoSetupToggle();
-                DrawDownloadButton(targetManager);
+                EditorGUILayout.Space(4f);
+                DrawDownloadActions(targetManager);
             }
         }
 
@@ -119,7 +125,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Refresh Game List", GUILayout.Width(160f)))
                 {
                     StartRefreshGameList();
@@ -128,7 +133,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
                 if (_isRefreshing)
                 {
-                    GUILayout.Space(8f);
                     EditorGUILayout.LabelField("Loading...", EditorStyles.miniLabel);
                 }
             }
@@ -136,21 +140,24 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void DrawGameSelection()
         {
-            var labels = _availableGames.Select(option => option.DisplayName).ToList();
-            int current = NormalizeSelectionIndex(_selectedGameIndex, labels.Count);
-            int newIndex = DrawScrollableSelection(
-                "Game",
-                labels,
-                current,
-                ref _gameScroll,
-                _isRefreshing,
-                "No games available from the API or CDN share.");
-
-            if (newIndex != current)
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
-                _selectedGameIndex = newIndex;
-                ClearCharacterSelection();
-                EnsureCharactersLoaded();
+                var labels = _availableGames.Select(option => option.DisplayName).ToList();
+                int current = NormalizeSelectionIndex(_selectedGameIndex, labels.Count);
+                int newIndex = DrawScrollableSelection(
+                    "Game",
+                    labels,
+                    current,
+                    ref _gameScroll,
+                    _isRefreshing,
+                    "No games available from the API or CDN share.");
+
+                if (newIndex != current)
+                {
+                    _selectedGameIndex = newIndex;
+                    ClearCharacterSelection();
+                    EnsureCharactersLoaded();
+                }
             }
         }
 
@@ -162,44 +169,47 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            DrawCharacterSearchBar();
-
-            var filteredCharacters = GetFilteredCharacters();
-            if (!string.IsNullOrWhiteSpace(_characterSearch) && _characters != null)
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
-                using (new EditorGUILayout.HorizontalScope())
+                DrawCharacterSearchBar();
+
+                var filteredCharacters = GetFilteredCharacters();
+                if (!string.IsNullOrWhiteSpace(_characterSearch) && _characters != null)
                 {
-                    EditorGUILayout.LabelField($"Showing {filteredCharacters.Count:N0} / {_characters.Count:N0}", EditorStyles.miniLabel);
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        EditorGUILayout.LabelField($"Showing {filteredCharacters.Count:N0} / {_characters.Count:N0}", EditorStyles.miniLabel);
+                    }
                 }
-            }
 
-            string currentName = _selectedCharacterIndex >= 0 && _selectedCharacterIndex < _characters.Count
-                ? _characters[_selectedCharacterIndex]
-                : null;
+                string emptyMessage = string.IsNullOrWhiteSpace(_characterSearch)
+                    ? "No characters are available for this game."
+                    : "No characters match the search filter.";
 
-            int current = !string.IsNullOrEmpty(currentName)
-                ? filteredCharacters.FindIndex(name => string.Equals(name, currentName, StringComparison.OrdinalIgnoreCase))
-                : -1;
+                DrawMultiSelectList(
+                    "Character",
+                    filteredCharacters,
+                    _selectedCharacters,
+                    ref _characterScroll,
+                    _isRefreshing,
+                    emptyMessage,
+                    110f,
+                    210f,
+                    selectedName =>
+                    {
+                        _selectedCharacterIndex = _characters.FindIndex(name => string.Equals(name, selectedName, StringComparison.OrdinalIgnoreCase));
+                        ClearVariantSelection();
+                        EnsureVariantsLoaded();
+                    });
 
-            string emptyMessage = string.IsNullOrWhiteSpace(_characterSearch)
-                ? "No characters are available for this game."
-                : "No characters match the search filter.";
-            int newIndex = DrawScrollableSelection(
-                "Character",
-                filteredCharacters,
-                current,
-                ref _characterScroll,
-                _isRefreshing,
-                emptyMessage);
-
-            if (newIndex != current)
-            {
-                if (newIndex >= 0 && newIndex < filteredCharacters.Count)
+                if (_selectedCharacters.Count == 0)
                 {
-                    string selectedName = filteredCharacters[newIndex];
-                    _selectedCharacterIndex = _characters.FindIndex(name => string.Equals(name, selectedName, StringComparison.OrdinalIgnoreCase));
-                    ClearVariantSelection();
-                    EnsureVariantsLoaded();
+                    _selectedCharacterIndex = -1;
+                }
+                else if (_selectedCharacterIndex < 0 || _selectedCharacterIndex >= _characters.Count
+                         || !_selectedCharacters.Contains(_characters[_selectedCharacterIndex]))
+                {
+                    _selectedCharacterIndex = _characters.FindIndex(name => _selectedCharacters.Contains(name));
                 }
             }
         }
@@ -310,30 +320,307 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            var variantNames = _variants.Select(v => v.Name).ToList();
-            int current = NormalizeSelectionIndex(_selectedVariantIndex, variantNames.Count);
-            int newIndex = DrawScrollableSelection(
-                "Variant",
-                variantNames,
-                current,
-                ref _variantScroll,
-                _isRefreshing,
-                "No variants are available for this character.");
-
-            if (newIndex != current)
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
-                _selectedVariantIndex = newIndex;
+                var selectedCharacters = GetSelectedCharacterList();
+                if (selectedCharacters.Count <= 1)
+                {
+                    var variantNames = _variants.Select(v => v.Name).ToList();
+                    DrawMultiSelectList(
+                        "Variant",
+                        variantNames,
+                        _selectedVariants,
+                        ref _variantScroll,
+                        _isRefreshing,
+                        "No variants are available for this character.",
+                        60f,
+                        110f,
+                        selectedName =>
+                        {
+                            _selectedVariantIndex = _variants.FindIndex(option => string.Equals(option.Name, selectedName, StringComparison.OrdinalIgnoreCase));
+                        });
+
+                    if (_selectedVariants.Count == 0)
+                    {
+                        _selectedVariantIndex = -1;
+                    }
+                    else if (_selectedVariantIndex < 0 || _selectedVariantIndex >= _variants.Count
+                             || !_selectedVariants.Contains(_variants[_selectedVariantIndex].Name))
+                    {
+                        _selectedVariantIndex = _variants.FindIndex(option => _selectedVariants.Contains(option.Name));
+                    }
+
+                    return;
+                }
+
+                DrawPerCharacterVariantLists(selectedCharacters);
             }
         }
 
-        private void DrawAutoSetupToggle()
+        private void DrawDownloadActions(HoyoToonManager manager)
         {
-            bool newValue = EditorGUILayout.ToggleLeft("Auto setup after download", _autoSetupAfterDownload);
-            if (newValue != _autoSetupAfterDownload)
+            using (new EditorGUILayout.HorizontalScope())
             {
-                _autoSetupAfterDownload = newValue;
-                EditorPrefs.SetBool(AutoSetupPrefKey, _autoSetupAfterDownload);
+                bool newValue = EditorGUILayout.ToggleLeft("Auto setup after download", _autoSetupAfterDownload);
+                if (newValue != _autoSetupAfterDownload)
+                {
+                    _autoSetupAfterDownload = newValue;
+                    EditorPrefs.SetBool(AutoSetupPrefKey, _autoSetupAfterDownload);
+                }
+
+                GUILayout.FlexibleSpace();
+                DrawDownloadButton(manager);
             }
+        }
+
+        private static void DrawMultiSelectList(
+            string label,
+            IReadOnlyList<string> items,
+            HashSet<string> selected,
+            ref Vector2 scroll,
+            bool disabled,
+            string emptyMessage,
+            float minHeight,
+            float maxHeight,
+            Action<string> onActivated = null)
+        {
+            using (new EditorGUI.DisabledScope(disabled))
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    EditorGUILayout.LabelField(label, EditorStyles.boldLabel);
+                    GUILayout.FlexibleSpace();
+                    if (items != null)
+                    {
+                        EditorGUILayout.LabelField($"{items.Count:N0} items", EditorStyles.miniLabel, GUILayout.Width(90f));
+                    }
+                }
+
+                if (items == null || items.Count == 0)
+                {
+                    EditorGUILayout.HelpBox(emptyMessage, MessageType.Info);
+                    return;
+                }
+
+                using (var scrollScope = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.MinHeight(minHeight), GUILayout.MaxHeight(maxHeight)))
+                {
+                    scroll = scrollScope.scrollPosition;
+                    DrawToggleGrid(items, selected, onActivated, EditorGUIUtility.currentViewWidth - 40f);
+                }
+            }
+        }
+
+        private List<string> GetSelectedCharacterList()
+        {
+            if (_selectedCharacters.Count > 0)
+            {
+                var ordered = new List<string>();
+                foreach (var name in _characters)
+                {
+                    if (_selectedCharacters.Contains(name))
+                    {
+                        ordered.Add(name);
+                    }
+                }
+
+                return ordered;
+            }
+
+            if (_selectedCharacterIndex >= 0 && _selectedCharacterIndex < _characters.Count)
+            {
+                return new List<string> { _characters[_selectedCharacterIndex] };
+            }
+
+            return new List<string>();
+        }
+
+        private void DrawPerCharacterVariantLists(List<string> characters)
+        {
+            if (characters == null || characters.Count == 0)
+            {
+                return;
+            }
+
+            var game = _selectedGameIndex >= 0 && _selectedGameIndex < _availableGames.Count ? _availableGames[_selectedGameIndex] : null;
+            float maxHeight = Mathf.Clamp(100f + characters.Count * 22f, 120f, 220f);
+            using (var scrollScope = new EditorGUILayout.ScrollViewScope(_variantSectionScroll, GUILayout.MinHeight(120f), GUILayout.MaxHeight(maxHeight)))
+            {
+                _variantSectionScroll = scrollScope.scrollPosition;
+                foreach (var characterName in characters)
+                {
+                    var selection = GetOrCreateVariantSelection(characterName);
+                    var variants = GetVariantsForCharacter(game, characterName);
+
+                    using (new EditorGUILayout.VerticalScope(EditorStyles.helpBox))
+                    {
+                        using (new EditorGUILayout.HorizontalScope())
+                        {
+                            EditorGUILayout.LabelField(characterName, EditorStyles.boldLabel);
+                            GUILayout.FlexibleSpace();
+                            if (variants != null)
+                            {
+                                EditorGUILayout.LabelField($"{selection.Count}/{variants.Count}", EditorStyles.miniLabel, GUILayout.Width(60f));
+                            }
+                        }
+
+                        if (variants == null)
+                        {
+                            EditorGUILayout.LabelField("Loading variants...", EditorStyles.miniLabel);
+                            continue;
+                        }
+
+                        var variantNames = variants.Select(v => v.Name).ToList();
+                        bool useScroll = variantNames.Count > 6;
+                        if (useScroll)
+                        {
+                            var scroll = GetVariantScroll(characterName);
+                            using (var variantsScroll = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.MinHeight(50f), GUILayout.MaxHeight(90f)))
+                            {
+                                scroll = variantsScroll.scrollPosition;
+                                DrawToggleGrid(variantNames, selection, null, EditorGUIUtility.currentViewWidth - 60f);
+                            }
+
+                            SetVariantScroll(characterName, scroll);
+                        }
+                        else
+                        {
+                            DrawToggleGrid(variantNames, selection, null, EditorGUIUtility.currentViewWidth - 60f);
+                        }
+                    }
+                }
+            }
+        }
+
+        private static void DrawToggleGrid(
+            IReadOnlyList<string> items,
+            HashSet<string> selected,
+            Action<string> onActivated,
+            float viewWidth)
+        {
+            if (items == null || items.Count == 0)
+            {
+                return;
+            }
+
+            float available = Mathf.Max(120f, viewWidth - 20f);
+            int columns = Mathf.Clamp(Mathf.FloorToInt(available / 150f), 1, 4);
+            float columnWidth = Mathf.Floor(available / columns);
+            int rowCount = Mathf.CeilToInt(items.Count / (float)columns);
+
+            for (int row = 0; row < rowCount; row++)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    for (int col = 0; col < columns; col++)
+                    {
+                        int index = row * columns + col;
+                        if (index >= items.Count)
+                        {
+                            GUILayout.FlexibleSpace();
+                            break;
+                        }
+
+                        var name = items[index];
+                        bool wasSelected = selected.Contains(name);
+                        bool toggled = GUILayout.Toggle(wasSelected, name, EditorStyles.miniButton, GUILayout.Width(columnWidth), GUILayout.Height(20f));
+                        if (toggled != wasSelected)
+                        {
+                            if (toggled)
+                            {
+                                selected.Add(name);
+                                onActivated?.Invoke(name);
+                            }
+                            else
+                            {
+                                selected.Remove(name);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private Vector2 GetVariantScroll(string characterName)
+        {
+            if (string.IsNullOrWhiteSpace(characterName))
+            {
+                return Vector2.zero;
+            }
+
+            if (!_variantScrollByCharacter.TryGetValue(characterName, out var scroll))
+            {
+                scroll = Vector2.zero;
+                _variantScrollByCharacter[characterName] = scroll;
+            }
+
+            return scroll;
+        }
+
+        private void SetVariantScroll(string characterName, Vector2 scroll)
+        {
+            if (string.IsNullOrWhiteSpace(characterName))
+            {
+                return;
+            }
+
+            _variantScrollByCharacter[characterName] = scroll;
+        }
+
+        private HashSet<string> GetOrCreateVariantSelection(string characterName)
+        {
+            if (string.IsNullOrWhiteSpace(characterName))
+            {
+                return new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            }
+
+            if (!_selectedVariantsByCharacter.TryGetValue(characterName, out var selection))
+            {
+                selection = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                _selectedVariantsByCharacter[characterName] = selection;
+            }
+
+            return selection;
+        }
+
+        private List<VariantOption> GetVariantsForCharacter(GameOption game, string characterName)
+        {
+            if (game == null || string.IsNullOrEmpty(characterName))
+            {
+                return null;
+            }
+
+            var cache = GetOrCreateCache(game);
+            if (cache != null && cache.VariantsByCharacter.TryGetValue(characterName, out var cached) && cached.Count > 0)
+            {
+                return cached;
+            }
+
+            EnsureVariantsLoadedForCharacter(game, characterName);
+            return null;
+        }
+
+        private void EnsureVariantsLoadedForCharacter(GameOption game, string characterName)
+        {
+            if (game == null || string.IsNullOrEmpty(characterName))
+            {
+                return;
+            }
+
+            if (_loadingVariantsForCharacters.Contains(characterName))
+            {
+                return;
+            }
+
+            _loadingVariantsForCharacters.Add(characterName);
+
+            HoyoToonAsyncUtil.RunFireAndForget(() => LoadVariantsAsync(game, characterName), "Load model variants", ex =>
+            {
+                ScheduleOnMainThread(() =>
+                {
+                    _loadingVariantsForCharacters.Remove(characterName);
+                    _statusMessage = $"Failed to load variants: {ex.Message}";
+                });
+            });
         }
 
         private void DrawDownloadPath()
@@ -362,10 +649,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void DrawDownloadButton(HoyoToonManager manager)
         {
-            bool ready = _selectedGameIndex >= 0 && _selectedCharacterIndex >= 0 && _selectedVariantIndex >= 0;
+            bool ready = TryGetBatchSelection(out _, out var characters, out var variants)
+                         && characters.Count > 0
+                         && variants.Count > 0;
             using (new EditorGUI.DisabledScope(!ready || _isRefreshing))
             {
-                if (GUILayout.Button("Download Selected Model", GUILayout.Height(28f)))
+                if (GUILayout.Button("Download Selected Model", GUILayout.Width(190f)))
                 {
                     StartDownloadSelected(manager);
                 }
@@ -572,21 +861,39 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void StartDownloadSelected(HoyoToonManager manager)
         {
-            if (!TryGetSelection(out var game, out var characterName, out var variant))
+            if (!TryGetBatchSelection(out var game, out var characters, out var variants))
             {
                 return;
             }
 
-            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadSelectedAsync(manager, game, characterName, variant), "Download model", ex =>
+            if (characters.Count == 1 && variants.Count == 1)
             {
-                ScheduleOnMainThread(() =>
+                string characterName = characters[0];
+                string variantName = variants[0];
+                var variant = ResolveVariantForCharacter(game, characterName, variantName);
+                if (variant == null)
                 {
-                    _statusMessage = $"Download failed: {ex.Message}";
-                });
-            });
+                    return;
+                }
+
+                HoyoToonAsyncUtil.RunFireAndForget(
+                    () => DownloadSelectedAsync(manager, game, characterName, variant, true, true, true),
+                    "Download model",
+                    ex => ScheduleOnMainThread(() => { _statusMessage = $"Download failed: {ex.Message}"; }));
+                return;
+            }
+
+            StartBatchDownload(game, characters, variants);
         }
 
-        private async Task DownloadSelectedAsync(HoyoToonManager manager, GameOption game, string characterName, VariantOption variant)
+        private async Task<string> DownloadSelectedAsync(
+            HoyoToonManager manager,
+            GameOption game,
+            string characterName,
+            VariantOption variant,
+            bool showProgress,
+            bool showPostDownloadPrompt,
+            bool refreshAssets)
         {
             var assetRoot = EnsureAssetsRoot(_downloadRoot);
             if (string.IsNullOrEmpty(assetRoot))
@@ -595,14 +902,20 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 {
                     HoyoToonDialogWindow.ShowError("Invalid Folder", "Please select a download folder inside Assets.");
                 });
-                return;
+                return null;
             }
 
             var assetTarget = BuildAssetTargetPath(assetRoot, game, characterName, variant);
             var absoluteTarget = AbsoluteFromAssetsPath(assetTarget);
             Directory.CreateDirectory(absoluteTarget);
 
-            HoyoToonProgressDialog.Start("Downloading Model", "Preparing download...");
+            if (showProgress)
+            {
+                if (showProgress)
+                {
+                    HoyoToonProgressDialog.Start("Downloading Model", "Preparing download...");
+                }
+            }
 
             var remoteFiles = await HoyoToonCloudreveClient.GetFileListAsync(ShareUrl, variant.RelativePath, true);
             var files = remoteFiles.Where(file => !file.IsDirectory).ToList();
@@ -622,8 +935,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     }
                     else if (choice < 0 || choice >= fbxFiles.Count)
                     {
-                        HoyoToonProgressDialog.End("Download cancelled.");
-                        return;
+                        if (showProgress)
+                        {
+                            HoyoToonProgressDialog.End("Download cancelled.");
+                        }
+                        return null;
                     }
 
                     if (choice >= 0)
@@ -656,8 +972,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 var overwrite = await PromptOverwriteAsync(existingFiles.Count, characterName, variant.Name);
                 if (!overwrite.HasValue)
                 {
-                    HoyoToonProgressDialog.End("Download cancelled.");
-                    return;
+                    if (showProgress)
+                    {
+                        HoyoToonProgressDialog.End("Download cancelled.");
+                    }
+                    return null;
                 }
 
                 if (overwrite.Value == false)
@@ -688,16 +1007,251 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
                 completed++;
                 var progress = total > 0 ? (float)completed / total : 1f;
-                HoyoToonProgressDialog.Update(progress, $"Downloading {Path.GetFileName(localPath)} ({completed}/{total})");
+                if (showProgress)
+                {
+                    HoyoToonProgressDialog.Update(progress, $"Downloading {Path.GetFileName(localPath)} ({completed}/{total})");
+                }
             }
 
-            HoyoToonProgressDialog.End("Download complete!");
+            if (showProgress)
+            {
+                HoyoToonProgressDialog.End("Download complete!");
+            }
+
+            if (refreshAssets || showPostDownloadPrompt)
+            {
+                ScheduleOnMainThread(() =>
+                {
+                    if (refreshAssets)
+                    {
+                        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
+                    }
+
+                    if (showPostDownloadPrompt)
+                    {
+                        ShowPostDownloadPrompt(manager, assetTarget, game.Key, game.DisplayName, characterName, variant.Name);
+                    }
+                });
+            }
+
+            return assetTarget;
+        }
+
+        private void StartBatchDownload(GameOption game, List<string> characters, List<string> variants)
+        {
+            if (game == null || characters == null || variants == null || characters.Count == 0 || variants.Count == 0)
+            {
+                return;
+            }
+
+            if (IsHonkaiStarRail(game.Key, game.DisplayName) && variants.Count > 1)
+            {
+                PromptBatchVariantChoice(variants, selectedVariant =>
+                {
+                    if (string.IsNullOrEmpty(selectedVariant))
+                    {
+                        return;
+                    }
+
+                    HoyoToonAsyncUtil.RunFireAndForget(
+                        () => DownloadBatchAsync(game, BuildBatchVariantMap(characters, new List<string> { selectedVariant })),
+                        "Batch download models",
+                        ex => ScheduleOnMainThread(() => { _statusMessage = $"Batch download failed: {ex.Message}"; }));
+                });
+                return;
+            }
+
+            HoyoToonAsyncUtil.RunFireAndForget(
+                () => DownloadBatchAsync(game, BuildBatchVariantMap(characters, variants)),
+                "Batch download models",
+                ex => ScheduleOnMainThread(() => { _statusMessage = $"Batch download failed: {ex.Message}"; }));
+        }
+
+        private async Task DownloadBatchAsync(GameOption game, Dictionary<string, List<string>> characterVariants)
+        {
+            var assetRoot = EnsureAssetsRoot(_downloadRoot);
+            if (string.IsNullOrEmpty(assetRoot))
+            {
+                ScheduleOnMainThread(() =>
+                {
+                    HoyoToonDialogWindow.ShowError("Invalid Folder", "Please select a download folder inside Assets.");
+                });
+                return;
+            }
+
+            if (game == null || characterVariants == null || characterVariants.Count == 0)
+            {
+                return;
+            }
+
+            var manager = UnityEngine.Object.FindObjectOfType<HoyoToonManager>(true);
+            var cache = GetOrCreateCache(game);
+            var downloaded = new List<(string assetTarget, string characterName, string variantName)>();
+
+            foreach (var entry in characterVariants)
+            {
+                var characterName = entry.Key;
+                var variantNames = entry.Value ?? new List<string>();
+                foreach (var variantName in variantNames)
+                {
+                    var variant = await ResolveVariantForCharacterAsync(game, cache, characterName, variantName);
+                    if (variant == null)
+                    {
+                        continue;
+                    }
+
+                    var assetTarget = await DownloadSelectedAsync(manager, game, characterName, variant, false, false, false);
+                    if (!string.IsNullOrEmpty(assetTarget))
+                    {
+                        downloaded.Add((assetTarget, characterName, variant.Name));
+                    }
+                }
+            }
 
             ScheduleOnMainThread(() =>
             {
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                ShowPostDownloadPrompt(manager, assetTarget, game.Key, game.DisplayName, characterName, variant.Name);
+
+                if (_autoSetupAfterDownload)
+                {
+                    foreach (var item in downloaded)
+                    {
+                        TryAutoSetupDownloaded(manager, item.assetTarget, game.Key, game.DisplayName, item.characterName, item.variantName);
+                    }
+                }
             });
+        }
+
+        private Dictionary<string, List<string>> BuildBatchVariantMap(List<string> characters, List<string> variants)
+        {
+            var map = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
+            if (characters == null || variants == null)
+            {
+                return map;
+            }
+
+            bool usePerCharacter = _selectedCharacters.Count > 1 && _selectedVariantsByCharacter.Count > 0;
+            foreach (var character in characters)
+            {
+                if (string.IsNullOrWhiteSpace(character))
+                {
+                    continue;
+                }
+
+                if (usePerCharacter && _selectedVariantsByCharacter.TryGetValue(character, out var selected) && selected.Count > 0)
+                {
+                    map[character] = selected.ToList();
+                }
+                else
+                {
+                    map[character] = new List<string>(variants);
+                }
+            }
+
+            return map;
+        }
+
+        private async Task<VariantOption> ResolveVariantForCharacterAsync(GameOption game, GameFolderCache cache, string characterName, string variantName)
+        {
+            if (cache != null && cache.VariantsByCharacter.TryGetValue(characterName, out var cached) && cached.Count > 0)
+            {
+                return PickVariant(cached, variantName);
+            }
+
+            var gameFolder = game.FolderName;
+            var charactersFolder = cache?.CharactersFolderName ?? CharactersFolderName;
+            var characterPath = CombineSharePath(gameFolder, charactersFolder, characterName);
+            var entries = await HoyoToonCloudreveClient.GetDirectoryEntriesAsync(ShareUrl, characterPath);
+            var variants = entries.Where(entry => entry.IsDirectory)
+                .Select(entry => new VariantOption(entry.Name, CombineSharePath(characterPath, entry.Name)))
+                .OrderBy(option => option.Name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            bool hasFiles = entries.Any(entry => !entry.IsDirectory);
+            if (hasFiles || variants.Count == 0)
+            {
+                variants.Insert(0, new VariantOption(DefaultVariantName, characterPath));
+            }
+
+            if (cache != null)
+            {
+                cache.VariantsByCharacter[characterName] = variants;
+            }
+
+            return PickVariant(variants, variantName);
+        }
+
+        private VariantOption ResolveVariantForCharacter(GameOption game, string characterName, string variantName)
+        {
+            if (game == null || string.IsNullOrEmpty(characterName))
+            {
+                return null;
+            }
+
+            var cache = GetOrCreateCache(game);
+            if (cache.VariantsByCharacter.TryGetValue(characterName, out var cached) && cached.Count > 0)
+            {
+                return PickVariant(cached, variantName);
+            }
+
+            if (IsSelectedCharacter(characterName) && _variants != null && _variants.Count > 0)
+            {
+                return PickVariant(_variants, variantName);
+            }
+
+            return null;
+        }
+
+        private void PromptBatchVariantChoice(List<string> variants, Action<string> onSelected)
+        {
+            if (variants == null || variants.Count == 0)
+            {
+                onSelected?.Invoke(null);
+                return;
+            }
+
+            var options = variants
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            options.Add("Cancel");
+
+            HoyoToonDialogWindow.ShowCustom(
+                "Choose Variant",
+                "Multiple variants are selected. Choose one variant to apply to all selected characters:",
+                MessageType.Info,
+                options.ToArray(),
+                0,
+                options.Count - 1,
+                result =>
+                {
+                    if (result < 0 || result >= options.Count - 1)
+                    {
+                        onSelected?.Invoke(null);
+                        return;
+                    }
+
+                    onSelected?.Invoke(options[result]);
+                });
+        }
+
+        private static VariantOption PickVariant(List<VariantOption> variants, string variantName)
+        {
+            if (variants == null || variants.Count == 0)
+            {
+                return null;
+            }
+
+            var match = variants.FirstOrDefault(option => string.Equals(option.Name, variantName, StringComparison.OrdinalIgnoreCase));
+            if (match != null)
+            {
+                return match;
+            }
+
+            return variants.FirstOrDefault(option => string.Equals(option.Name, DefaultVariantName, StringComparison.OrdinalIgnoreCase))
+                   ?? variants[0];
         }
 
         private void ShowPostDownloadPrompt(HoyoToonManager manager, string assetTarget, string gameKey, string gameName, string characterName, string variantName)
@@ -736,7 +1290,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 if (string.IsNullOrEmpty(assetPath))
                 {
-                    HoyoToonDialogWindow.ShowError("No Model Found", "Could not find an FBX or prefab in the downloaded folder.");
+                    HoyoToonDialogWindow.ShowError("No Model Found", "Could not find an FBX in the downloaded folder.");
                     return;
                 }
 
@@ -761,21 +1315,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         }
                     }
                     return;
-                }
-
-                if (isPrefab)
-                {
-                    if (HoyoToonModelSetupUtility.TryInstantiatePrefabAsset(manager, asset, out var instance))
-                    {
-                        if (instance != null)
-                        {
-                            RegisterAndSelect(manager, instance);
-                        }
-                        else
-                        {
-                            HoyoToonDialogWindow.ShowWarning("Auto Setup Complete", "No setup steps were applicable for this model. Try Instantiate to add it to the scene.");
-                        }
-                    }
                 }
             });
         }
@@ -809,46 +1348,19 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 onResolved(null, false, false);
                 return;
             }
-
-            if (IsHonkaiStarRail(gameKey, gameName))
+            if (fbxs.Count == 0)
             {
-                if (fbxs.Count == 0)
-                {
-                    onResolved(null, false, false);
-                    return;
-                }
-
-                if (fbxs.Count > 1)
-                {
-                    ShowFbxChoiceDialog(fbxs, characterName, variantName, onResolved);
-                    return;
-                }
-
-                onResolved(AssetsPathFromAbsolute(fbxs[0]), true, false);
+                onResolved(null, false, false);
                 return;
             }
 
-            var bestPrefab = SelectBestCandidate(prefabs, characterName, variantName);
-            if (!string.IsNullOrEmpty(bestPrefab))
-            {
-                onResolved(AssetsPathFromAbsolute(bestPrefab), false, true);
-                return;
-            }
-
-            if (IsHonkaiStarRail(gameKey, gameName) && fbxs.Count > 1)
+            if (fbxs.Count > 1)
             {
                 ShowFbxChoiceDialog(fbxs, characterName, variantName, onResolved);
                 return;
             }
 
-            var bestFbx = SelectBestCandidate(fbxs, characterName, variantName);
-            if (!string.IsNullOrEmpty(bestFbx))
-            {
-                onResolved(AssetsPathFromAbsolute(bestFbx), true, false);
-                return;
-            }
-
-            onResolved(null, false, false);
+            onResolved(AssetsPathFromAbsolute(fbxs[0]), true, false);
         }
 
         private static bool TryGatherAssetCandidates(string assetFolder, string characterName, string variantName, out List<string> prefabs, out List<string> fbxs)
@@ -862,9 +1374,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return false;
             }
 
-            prefabs = Directory.GetFiles(absoluteFolder, "*.prefab", SearchOption.AllDirectories).ToList();
             fbxs = Directory.GetFiles(absoluteFolder, "*.fbx", SearchOption.AllDirectories).ToList();
-            return prefabs.Count > 0 || fbxs.Count > 0;
+            return fbxs.Count > 0;
         }
 
         private static bool IsHonkaiStarRail(string gameKey, string gameName)
@@ -1163,7 +1674,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     GUILayout.FlexibleSpace();
                     if (items != null)
                     {
-                        EditorGUILayout.LabelField($"Total: {items.Count:N0}", EditorStyles.miniLabel, GUILayout.Width(90f));
+                        EditorGUILayout.LabelField($"{items.Count:N0} items", EditorStyles.miniLabel, GUILayout.Width(90f));
                     }
                 }
                 if (items == null || items.Count == 0)
@@ -1172,7 +1683,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     return -1;
                 }
 
-                using (var scrollScope = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.MinHeight(70f), GUILayout.MaxHeight(120f)))
+                using (var scrollScope = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.MinHeight(60f), GUILayout.MaxHeight(100f)))
                 {
                     scroll = scrollScope.scrollPosition;
                     for (int index = 0; index < items.Count; index++)
@@ -1384,31 +1895,63 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             return cache;
         }
 
-        private bool TryGetSelection(out GameOption game, out string characterName, out VariantOption variant)
+        private bool TryGetBatchSelection(out GameOption game, out List<string> characters, out List<string> variants)
         {
             game = null;
-            characterName = null;
-            variant = null;
+            characters = new List<string>();
+            variants = new List<string>();
 
             if (_selectedGameIndex < 0 || _selectedGameIndex >= _availableGames.Count)
             {
                 return false;
             }
 
-            if (_selectedCharacterIndex < 0 || _selectedCharacterIndex >= _characters.Count)
-            {
-                return false;
-            }
-
-            if (_selectedVariantIndex < 0 || _selectedVariantIndex >= _variants.Count)
-            {
-                return false;
-            }
-
             game = _availableGames[_selectedGameIndex];
-            characterName = _characters[_selectedCharacterIndex];
-            variant = _variants[_selectedVariantIndex];
-            return true;
+
+            if (_selectedCharacters.Count > 0)
+            {
+                foreach (var name in _characters)
+                {
+                    if (_selectedCharacters.Contains(name))
+                    {
+                        characters.Add(name);
+                    }
+                }
+            }
+            else if (_selectedCharacterIndex >= 0 && _selectedCharacterIndex < _characters.Count)
+            {
+                characters.Add(_characters[_selectedCharacterIndex]);
+            }
+
+            if (_selectedVariants.Count > 0)
+            {
+                foreach (var option in _variants)
+                {
+                    if (_selectedVariants.Contains(option.Name))
+                    {
+                        variants.Add(option.Name);
+                    }
+                }
+            }
+            else if (_selectedVariantIndex >= 0 && _selectedVariantIndex < _variants.Count)
+            {
+                variants.Add(_variants[_selectedVariantIndex].Name);
+            }
+            else if (_selectedCharacters.Count > 1 && _selectedVariantsByCharacter.Count > 0)
+            {
+                var distinct = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var selection in _selectedVariantsByCharacter.Values)
+                {
+                    foreach (var name in selection)
+                    {
+                        distinct.Add(name);
+                    }
+                }
+
+                variants.AddRange(distinct);
+            }
+
+            return characters.Count > 0 && variants.Count > 0;
         }
 
         private bool IsSelectedGame(string gameKey)
@@ -1439,6 +1982,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             _selectedCharacterIndex = -1;
             _characterScroll = Vector2.zero;
             _characterSearch = string.Empty;
+            _selectedCharacters.Clear();
             ClearVariantSelection();
         }
 
@@ -1447,6 +1991,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             _variants = new List<VariantOption>();
             _selectedVariantIndex = -1;
             _variantScroll = Vector2.zero;
+            _variantSectionScroll = Vector2.zero;
+            _selectedVariants.Clear();
+            _selectedVariantsByCharacter.Clear();
+            _loadingVariantsForCharacters.Clear();
+            _variantScrollByCharacter.Clear();
         }
 
         private static void ScheduleOnMainThread(Action action)
