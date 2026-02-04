@@ -218,7 +218,7 @@ Shader "HoyoToon/Genshin Impact/Legacy/Character/Monster_Asmoday_Cloak"
             #pragma target 4.6
             #pragma vertex vert
             #pragma hull hull
-            #pragma domain domain
+            #pragma domain domain_base
             #pragma fragment base_pixel
 
 

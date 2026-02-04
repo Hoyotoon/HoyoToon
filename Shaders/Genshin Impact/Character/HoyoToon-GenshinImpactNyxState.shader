@@ -295,7 +295,7 @@ Shader "HoyoToon/Genshin Impact/Character/NyxState"
 
         [Main(ADVANCED, _, off, off)] _AdvancedGroup("Advanced", Float) = 0
         [Sub(ADVANCED)] _IsVRC ("Vrchat toggle", Float) = 0
-    [HiddenInInspector] _IsYup ("_IsYUp", Float) = 0
+    [HideInInspector] _IsYup ("_IsYUp", Float) = 0
     }
     SubShader
     {
@@ -366,7 +366,7 @@ Shader "HoyoToon/Genshin Impact/Character/NyxState"
             #pragma target 4.6
             #pragma vertex vert
             #pragma hull hull
-            #pragma domain domain
+            #pragma domain domain_base
             #pragma fragment base_pixel
 
 

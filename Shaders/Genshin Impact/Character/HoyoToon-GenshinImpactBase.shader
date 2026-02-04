@@ -254,14 +254,18 @@ Shader "HoyoToon/Genshin Impact/Character/BaseUber"
         [Enum(UnityEngine.Rendering.CullMode)] _CullMode ("Cull Mode", Float) = 2
         [Space(10)] [Header(Depth Mode)] [Enum(Off, 0, On, 1)] _Zwrite ("ZWrite Mode", Float) = 1
         [Enum(UnityEngine.Rendering.CompareFunction)] _Ztest ("Ztest Mode", Float) = 4
-        [Header(Stencil)] [IntRange] _StencilRef ("Stencil Ref", Range(0, 255)) = 16
+    	
+        [Header(Forward Base Stencil)] [IntRange] _StencilRef ("Stencil Ref", Range(0, 255)) = 133
         [IntRange] _StencilWriteMask ("Stencil Write Mask", Range(0, 255)) = 255  
         [IntRange] _StencilReadMask ("Stencil Read Mask", Range(0, 255)) = 255
-        [IntRange] _ColorMask ("Color Mask", Range(0, 15)) = 15
-        [Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comp", Float) = 8
+    	[Enum(UnityEngine.Rendering.CompareFunction)] _StencilComp ("Stencil Comp", Float) = 8
         [Enum(UnityEngine.Rendering.StencilOp)] _StencilOP ("Stencil Op", Float) = 2
-        [Enum(UnityEngine.Rendering.StencilOp)] _StencilFailOp ("Stencil Fail Op", Float) = 0
-        [Enum(UnityEngine.Rendering.StencilOp)] _StencilZFailOp ("Stencil ZFail Op", Float) = 0
+    	
+//    	[Header(Forward Outline Stencil)] [IntRange] _StencilOutlineRef ("Stencil Ref", Range(0, 255)) = 133
+//        [IntRange] _StencilOutlineWriteMask ("Stencil Write Mask", Range(0, 255)) = 255  
+//        [IntRange] _StencilOutlineReadMask ("Stencil Read Mask", Range(0, 255)) = 255
+    	[IntRange] _ColorMask ("Color Mask", Range(0, 15)) = 15
+    	
         [Header(Blend Mode)] [Enum(UnityEngine.Rendering.BlendMode)] _SrcBlendMode ("Src Blend Mode", Float) = 1
         [Enum(UnityEngine.Rendering.BlendMode)] _DstBlendMode ("Dst Blend Mode", Float) = 0
         [Enum(UnityEngine.Rendering.BlendOp)] _BlendOP ("BlendOp Mode", Float) = 0
@@ -269,13 +273,13 @@ Shader "HoyoToon/Genshin Impact/Character/BaseUber"
 
         [Main(ADVANCED, _, off, off)] _AdvancedGroup("Advanced", Float) = 0
         [Sub(ADVANCED)] _IsVRC ("Vrchat toggle", Float) = 0
-[HiddenInInspector] _IsYup ("_IsYUp", Float) = 0
+		[HideInInspector] _IsYup ("_IsYUp", Float) = 0
     }
     SubShader
     {
         Tags
 		{ 
-		    "RenderType"="NonHair" 
+		    "RenderType"="GenshinForward" 
 			"Queue" = "Geometry" 
             "LightMode" = "ForwardBase"
 		}
@@ -292,27 +296,21 @@ Shader "HoyoToon/Genshin Impact/Character/BaseUber"
 
         Pass
         {
-            Name "Base Pass"    
+            Name "Forward Base Pass"    
             Cull [_CullMode]
             Blend [_SrcBlendMode] [_DstBlendMode] 
             Offset [_PolygonOffsetFactor], [_PolygonOffsetUnit]
-            ColorMask [_ColorMask]
             ZWrite [_Zwrite]
             ZTest [_Ztest]
+            ColorMask [_ColorMask]
 
             Stencil
             {
                 Ref [_StencilRef]
                 ReadMask [_StencilReadMask]
                 WriteMask [_StencilWriteMask]
-                CompFront [_StencilComp]
-                CompBack [_StencilComp]
-                PassFront [_StencilOP]
-                PassBack [_StencilOP]
-                FailFront [_StencilFailOp]
-                FailBack [_StencilFailOp]
-                ZFailFront [_StencilZFailOp]
-                ZFailBack [_StencilZFailOp]
+                Comp [_StencilComp]
+                Pass [_StencilOP]
             }
             HLSLPROGRAM
             #pragma shader_feature_local MATERIAL_MASK
@@ -340,9 +338,8 @@ Shader "HoyoToon/Genshin Impact/Character/BaseUber"
             #pragma target 4.6
             #pragma vertex vert
             #pragma hull hull
-            #pragma domain domain
+            #pragma domain domain_base
             #pragma fragment base_pixel
-
 
             ENDHLSL
         }

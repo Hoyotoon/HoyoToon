@@ -305,7 +305,7 @@ Shader "HoyoToon/Genshin Impact/Character/FaceDecal"
 
         [Main(ADVANCED, _, off, off)] _AdvancedGroup("Advanced", Float) = 0
         [Sub(ADVANCED)] _IsVRC ("Vrchat toggle", Float) = 0
-        [HiddenInInspector] _IsYup ("_IsYUp", Float) = 0
+        [HideInInspector] _IsYup ("_IsYUp", Float) = 0
     }
     SubShader
     {
@@ -343,14 +343,8 @@ Shader "HoyoToon/Genshin Impact/Character/FaceDecal"
                 Ref [_StencilRef]
                 ReadMask [_StencilReadMask]
                 WriteMask [_StencilWriteMask]
-                CompFront [_StencilComp]
-                CompBack [_StencilComp]
-                PassFront [_StencilOP]
-                PassBack [_StencilOP]
-                FailFront [_StencilFailOp]
-                FailBack [_StencilFailOp]
-                ZFailFront [_StencilZFailOp]
-                ZFailBack [_StencilZFailOp]
+                Comp [_StencilComp]
+                Pass [_StencilOP]
             }
             HLSLPROGRAM
             #pragma shader_feature_local MATERIAL_MASK
@@ -377,13 +371,14 @@ Shader "HoyoToon/Genshin Impact/Character/FaceDecal"
             #pragma target 4.6
             #pragma vertex vert
             #pragma hull hull
-            #pragma domain domain
+            #pragma domain domain_base
             #pragma fragment base_pixel
 
 
             ENDHLSL
         }
-        UsePass "Hidden/HoyoToon/GenshinImpact/DepthCaster/DepthCaster"
+
+    UsePass "Hidden/HoyoToon/GenshinImpact/DepthCaster/DepthCaster"
     }
     CustomEditor "LWGUI.LWGUI" 
 }
