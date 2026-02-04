@@ -91,12 +91,14 @@ namespace HoyoToon.Utilities
             }
             _onResultIndex = onResultIndex;
             _keepOpenOnClick = keepOpenOnClick;
+            _pendingResize = true;
             Repaint();
         }
 
         public void SetShowProgressBar(bool enabled)
         {
             _showProgressBar = enabled;
+            _pendingResize = true;
             Repaint();
         }
 

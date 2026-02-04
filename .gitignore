@@ -84,6 +84,15 @@ Scripts/Editor/ResourceCache.json.meta
 # HOYOTOON-UPDATER-KEEP START
 Dev
 Dev.meta
+Resources/Genshin.meta
+Resources/Genshin Impact
+Resources/Genshin Impact.meta
+Resources/Honkai Impact 3rd
+Resources/Honkai Impact 3rd.meta
+Resources/Honkai Star Rail
+Resources/Honkai Star Rail.meta
+Resources/Zenless Zone Zero
+Resources/Zenless Zone Zero.meta
 # HOYOTOON-UPDATER-KEEP END
 #
 # Inline syntax (each line defines a single pattern):
