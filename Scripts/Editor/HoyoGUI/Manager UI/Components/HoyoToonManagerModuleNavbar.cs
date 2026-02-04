@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon.EditorTools.ManagerUI.Modules;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Components
 {
@@ -58,6 +59,32 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
             return _modules[_selectedIndex];
         }
 
+        public bool SelectModuleByDisplayName(string displayName)
+        {
+            if (string.IsNullOrEmpty(displayName) || _modules.Count == 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < _modules.Count; i++)
+            {
+                var module = _modules[i];
+                if (string.Equals(module?.DisplayName, displayName, StringComparison.OrdinalIgnoreCase))
+                {
+                    if (_selectedIndex != i)
+                    {
+                        _selectedIndex = i;
+                        GUI.FocusControl(null);
+                        GUI.changed = true;
+                        HoyoToonGuidedTourController.NotifyModuleSelected(module?.DisplayName);
+                    }
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public void Dispose()
         {
             foreach (var module in _modules)
@@ -98,6 +125,33 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
                 _selectedIndex = index;
                 GUI.FocusControl(null);
                 GUI.changed = true;
+                HoyoToonGuidedTourController.NotifyModuleSelected(module?.DisplayName);
+            }
+
+            var buttonRect = GUILayoutUtility.GetLastRect();
+            if (string.Equals(module?.DisplayName, "Models", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.models", buttonRect, "Models");
+            }
+            else if (string.Equals(module?.DisplayName, "Main", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.main", buttonRect, "Main");
+            }
+            else if (string.Equals(module?.DisplayName, "Lighting", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.lighting", buttonRect, "Lighting");
+            }
+            else if (string.Equals(module?.DisplayName, "Scriptables", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.scriptables", buttonRect, "Scriptables");
+            }
+            else if (string.Equals(module?.DisplayName, "Post Processing", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.postprocessing", buttonRect, "Post FX");
+            }
+            else if (string.Equals(module?.DisplayName, "Renders", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.renders", buttonRect, "Renders");
             }
         }
     }

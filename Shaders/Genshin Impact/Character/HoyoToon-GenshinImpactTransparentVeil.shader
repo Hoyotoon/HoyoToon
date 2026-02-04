@@ -379,10 +379,10 @@ Shader "HoyoToon/Genshin Impact/Character/TransparentVeil"
 			#pragma skip_variants PROBE_VOLUMES_OFF PROBE_VOLUMES_L1 PROBE_VOLUMES_L2
 			#pragma skip_variants _SCREEN_SPACE_OCCLUSION
             #pragma multi_compile_fwdbase
-            #pragma target 4.6
-            #pragma vertex vert
-            #pragma hull hull
-            #pragma domain domain_base
+            // #pragma target 4.6
+            #pragma vertex base_vertex
+            // #pragma hull hull
+            // #pragma domain domain_base
             #pragma fragment base_pixel
 
 

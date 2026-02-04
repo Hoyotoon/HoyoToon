@@ -8,6 +8,7 @@ using HoyoToon.EditorTools.ManagerUI.Components;
 using HoyoToon.EditorTools.ManagerScene;
 using HoyoToon.Materials;
 using HoyoToon.Utilities;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI
 {
@@ -16,6 +17,7 @@ namespace HoyoToon.EditorTools.ManagerUI
     {
         private static readonly Dictionary<int, GameObject> s_PendingModelCache = new Dictionary<int, GameObject>();
         private static readonly Dictionary<int, HoyoToonManagerModuleNavbar> s_ModuleNavbarCache = new Dictionary<int, HoyoToonManagerModuleNavbar>();
+        private static readonly Dictionary<string, bool> s_TourCalloutLayoutCache = new Dictionary<string, bool>(StringComparer.Ordinal);
         private static bool s_AssemblyReloadHooked;
 
         private static class Styles
@@ -53,6 +55,7 @@ namespace HoyoToon.EditorTools.ManagerUI
         private DefaultAsset _pendingFolderAsset;
         private bool _includeSubfolders = true;
         private readonly List<GameObject> _queuedBatchAssets = new List<GameObject>();
+        private int _addModelPickerControlId = -1;
 
         private void OnEnable()
         {
@@ -87,7 +90,33 @@ namespace HoyoToon.EditorTools.ManagerUI
         {
             try
             {
+                if (target == null)
+                {
+                    EditorGUILayout.HelpBox("No HoyoToon Manager target found.", MessageType.Info);
+                    return;
+                }
+
+                if (_bannerHeader == null)
+                {
+                    _bannerHeader = new HoyoToonBannerHeader();
+                }
+
+                if (_moduleNavbar == null)
+                {
+                    _moduleNavbar = GetOrCreateNavbarForTarget(target as HoyoToonManager);
+                }
+
+                if (_footer == null)
+                {
+                    _footer = new HoyoToonManagerFooter(
+                        activeModelProvider: GetActiveManagedModel,
+                        prefabFolderResolver: ResolveActiveModelFolder,
+                        createPrefabAction: CreatePrefabFromActiveModel,
+                        regenerateMaterialsAction: RegenerateMaterialsForActiveModel);
+                }
+
                 serializedObject.Update();
+                HoyoToonGuidedTourController.NotifyManagerSeen(target as HoyoToonManager);
                 if (_managedModelsProperty == null || _activeModelIndexProperty == null)
                 {
                     CacheSerializedProperties();
@@ -107,6 +136,7 @@ namespace HoyoToon.EditorTools.ManagerUI
                 serializedObject.Update();
 
                 EditorGUILayout.Space(6f);
+                DrawNavbarTourCalloutIfNeeded();
                 DrawModuleNavbar();
 
                 EditorGUILayout.Space(8f);
@@ -153,7 +183,9 @@ namespace HoyoToon.EditorTools.ManagerUI
                 DrawSectionHeader("Setup", "Auto setup for FBX assets.");
                 using (new EditorGUILayout.VerticalScope(GUI.skin.box))
                 {
+                    DrawTourCalloutIfNeeded("mainmodule", "addmodel");
                     DrawAddModelRow();
+                    DrawTourCalloutIfNeeded("autosetup");
                     DrawBatchInputRow();
                 }
                 EditorGUILayout.Space(6f);
@@ -163,6 +195,69 @@ namespace HoyoToon.EditorTools.ManagerUI
                     DrawActiveModelRow();
                 }
             }
+        }
+
+        private static void DrawTourCalloutIfNeeded(params string[] stepIds)
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            if (Event.current == null)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (stepIds == null || stepIds.Length == 0)
+            {
+                return;
+            }
+
+            string key = string.Join("|", stepIds);
+            bool match = false;
+            if (Event.current.type == EventType.Layout)
+            {
+                foreach (var id in stepIds)
+                {
+                    if (string.Equals(step.id, id, StringComparison.OrdinalIgnoreCase))
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+
+                s_TourCalloutLayoutCache[key] = match;
+            }
+            else if (!s_TourCalloutLayoutCache.TryGetValue(key, out match))
+            {
+                foreach (var id in stepIds)
+                {
+                    if (string.Equals(step.id, id, StringComparison.OrdinalIgnoreCase))
+                    {
+                        match = true;
+                        break;
+                    }
+                }
+            }
+
+            if (!match)
+            {
+                return;
+            }
+
+            string body = step.instruction;
+            if (step.id == "model")
+            {
+                body = "Nice work! Your model is now in the scene. Next we will explore the rest of the manager together.";
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {step.title}",
+                body,
+                null,
+                null);
         }
 
         private static void DrawSectionHeader(string title, string subtitle)
@@ -205,6 +300,96 @@ namespace HoyoToon.EditorTools.ManagerUI
                 }
 
                 module.OnGUI(manager);
+            }
+        }
+
+        private void DrawNavbarTourCalloutIfNeeded()
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (string.Equals(step.id, "model", StringComparison.OrdinalIgnoreCase))
+            {
+                string body = "Nice work! Your model is now in the scene. Next we will walk through lighting and polish modules.";
+                HoyoToonTourCallout.Draw(
+                    $"Guided Tour: {step.title}",
+                    body,
+                    "Continue to Lighting",
+                    () =>
+                    {
+                        HoyoToonGuidedTourController.CompleteModelStep();
+                        HoyoToonGuidedTourController.Advance();
+                        if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "model", StringComparison.OrdinalIgnoreCase))
+                        {
+                            HoyoToonGuidedTourController.JumpToStep("lighting");
+                        }
+                        _moduleNavbar?.SelectModuleByDisplayName("Lighting");
+                    });
+                return;
+            }
+
+            if (!IsNavbarStep(step.id))
+            {
+                return;
+            }
+
+            if (_moduleNavbar == null)
+            {
+                return;
+            }
+
+            var selectedModule = _moduleNavbar.GetSelectedModule();
+            if (IsTargetModuleSelected(step.id, selectedModule))
+            {
+                return;
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {step.title}",
+                step.instruction,
+                null,
+                null);
+        }
+
+        private static bool IsNavbarStep(string stepId)
+        {
+            switch (stepId)
+            {
+                case "mainmodule":
+                case "lighting":
+                case "scriptables":
+                case "postprocessing":
+                case "renders":
+                    return true;
+                default:
+                    return false;
+            }
+        }
+
+        private static bool IsTargetModuleSelected(string stepId, object selectedModule)
+        {
+            if (selectedModule == null)
+            {
+                return false;
+            }
+
+            switch (stepId)
+            {
+                case "mainmodule":
+                    return selectedModule is Modules.MainModule;
+                case "lighting":
+                    return selectedModule is Modules.LightingModule;
+                case "scriptables":
+                    return selectedModule is Modules.ScriptablesModule;
+                case "postprocessing":
+                    return selectedModule is Modules.PostProcessingModule;
+                case "renders":
+                    return selectedModule is Modules.RendersModule;
+                default:
+                    return false;
             }
         }
 
@@ -275,13 +460,26 @@ namespace HoyoToon.EditorTools.ManagerUI
             bool hasBatchSelection = selectionAssets.Count > 1;
             using (new EditorGUILayout.HorizontalScope())
             {
-                var newPending = (GameObject)EditorGUILayout.ObjectField("Add Model", _pendingModelAsset, typeof(GameObject), false);
+                var addModelRect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight);
+                _addModelPickerControlId = GUIUtility.GetControlID(FocusType.Passive, addModelRect);
+                HandleTourObjectPickerOpen(addModelRect, _addModelPickerControlId);
+                bool pickerUpdated = HandleTourObjectPickerUpdates(_addModelPickerControlId);
+                var newPending = (GameObject)EditorGUI.ObjectField(addModelRect, "Add Model", _pendingModelAsset, typeof(GameObject), false);
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.manager.addmodel", addModelRect, "Add FBX");
+                if (pickerUpdated)
+                {
+                    newPending = _pendingModelAsset;
+                }
                 if (newPending != _pendingModelAsset)
                 {
                     _pendingModelAsset = newPending;
                     CachePendingModel(target, _pendingModelAsset);
                 }
                 _pendingModelIsReady = IsPendingModelReady(_pendingModelAsset) || selectionAssets.Count > 0;
+                if (HoyoToonGuidedTourController.IsActive && _pendingModelIsReady)
+                {
+                    HoyoToonGuidedTourController.NotifyPendingModelSelected();
+                }
                 if (selectionAssets.Count > 0)
                 {
                     EditorGUILayout.LabelField($"{selectionAssets.Count} selected", EditorStyles.miniLabel, GUILayout.Width(90f));
@@ -309,6 +507,8 @@ namespace HoyoToon.EditorTools.ManagerUI
                             CachePendingModel(target, _pendingModelAsset);
                         }
                     }
+                    var buttonRect = GUILayoutUtility.GetLastRect();
+                    HoyoToonTourOverlay.DrawHighlightIfActive("tour.manager.autosetup", buttonRect, "Auto Setup");
                 }
             }
 
@@ -320,6 +520,82 @@ namespace HoyoToon.EditorTools.ManagerUI
             {
                 EditorGUILayout.LabelField("Tip: multi-select FBX assets in the Project view to batch auto setup.", EditorStyles.miniLabel);
             }
+        }
+
+        private void HandleTourObjectPickerOpen(Rect fieldRect, int controlId)
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (!string.Equals(step.id, "addmodel", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            var evt = Event.current;
+            if (evt == null || evt.type != EventType.MouseDown || evt.button != 0 || !fieldRect.Contains(evt.mousePosition))
+            {
+                return;
+            }
+
+            var desiredAsset = FindTourFbxAsset();
+            EditorGUIUtility.ShowObjectPicker<GameObject>(desiredAsset, false, HoyoToonGuidedTourController.DesiredFbxAssetName, controlId);
+            evt.Use();
+        }
+
+        private bool HandleTourObjectPickerUpdates(int controlId)
+        {
+            var evt = Event.current;
+            if (evt == null || !string.Equals(evt.commandName, "ObjectSelectorUpdated", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            if (EditorGUIUtility.GetObjectPickerControlID() != controlId)
+            {
+                return false;
+            }
+
+            var picked = EditorGUIUtility.GetObjectPickerObject() as GameObject;
+            if (picked == null)
+            {
+                return false;
+            }
+
+            _pendingModelAsset = picked;
+            CachePendingModel(target, _pendingModelAsset);
+            Repaint();
+            return true;
+        }
+
+        private static GameObject FindTourFbxAsset()
+        {
+            var searchName = HoyoToonGuidedTourController.DesiredFbxAssetName;
+            var guids = AssetDatabase.FindAssets($"{searchName} t:GameObject");
+            if (guids == null || guids.Length == 0)
+            {
+                return null;
+            }
+
+            foreach (var guid in guids)
+            {
+                var path = AssetDatabase.GUIDToAssetPath(guid);
+                if (string.IsNullOrEmpty(path) || !path.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                var asset = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (asset != null)
+                {
+                    return asset;
+                }
+            }
+
+            return null;
         }
 
         private void DrawBatchInputRow()

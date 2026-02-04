@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
 using HoyoToon.Utilities;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -68,6 +69,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         public override void OnGUI(HoyoToonManager targetManager)
         {
+            DrawTourCalloutIfNeeded();
             EnsurePrefsLoaded();
             if (_camera == null)
             {
@@ -86,6 +88,30 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 SavePrefs();
             }
+        }
+
+        private static void DrawTourCalloutIfNeeded()
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (step.id != "renders")
+            {
+                return;
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {step.title}",
+                "Capture a preview to verify materials, lighting, and post FX. Save a quick render for reference before final tweaks.",
+                "Finish Tour",
+                () =>
+                {
+                    HoyoToonGuidedTourController.CompleteRendersStep();
+                    HoyoToonGuidedTourController.Advance();
+                });
         }
 
         private void EnsurePrefsLoaded()

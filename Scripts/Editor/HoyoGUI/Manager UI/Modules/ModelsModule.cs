@@ -11,6 +11,7 @@ using UnityEditor;
 using UnityEngine;
 using HoyoToon.API;
 using HoyoToon.Utilities;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -134,6 +135,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 {
                     StartRefreshGameList();
                 }
+                var refreshRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.models.refresh", refreshRect, "Refresh");
                 GUILayout.FlexibleSpace();
 
                 if (_isRefreshing)
@@ -145,23 +148,46 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void DrawGameSelection()
         {
+            DrawTourCalloutForStep("game");
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
                 var labels = _availableGames.Select(option => option.DisplayName).ToList();
+                bool lockSelection = HoyoToonGuidedTourController.ShouldLockGameSelection();
+                int desiredIndex = lockSelection
+                    ? _availableGames.FindIndex(option => string.Equals(option.DisplayName, HoyoToonGuidedTourController.DesiredGameName, StringComparison.OrdinalIgnoreCase))
+                    : -1;
                 int current = NormalizeSelectionIndex(_selectedGameIndex, labels.Count);
                 int newIndex = DrawScrollableSelection(
                     "Game",
                     labels,
                     current,
                     ref _gameScroll,
-                    _isRefreshing,
-                    "No games available from the API or CDN share.");
+                    _isRefreshing || (lockSelection && desiredIndex < 0),
+                    "No games available from the API or CDN share.",
+                    HoyoToonGuidedTourController.DesiredGameName,
+                    "tour.models.game",
+                    lockSelection);
+
+
+                if (lockSelection && desiredIndex < 0)
+                {
+                    EditorGUILayout.HelpBox($"Guided tour expects '{HoyoToonGuidedTourController.DesiredGameName}'. Waiting for that game to load.", MessageType.Info);
+                    return;
+                }
 
                 if (newIndex != current)
                 {
                     _selectedGameIndex = newIndex;
+                    if (_selectedGameIndex >= 0 && _selectedGameIndex < _availableGames.Count)
+                    {
+                        HoyoToonGuidedTourController.NotifyGameSelected(_availableGames[_selectedGameIndex].DisplayName);
+                    }
                     ClearCharacterSelection();
                     EnsureCharactersLoaded();
+                }
+                else if (lockSelection && desiredIndex == current && desiredIndex >= 0 && _selectedGameIndex >= 0 && _selectedGameIndex < _availableGames.Count)
+                {
+                    HoyoToonGuidedTourController.NotifyGameSelected(_availableGames[_selectedGameIndex].DisplayName);
                 }
             }
         }
@@ -174,11 +200,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
+            DrawTourCalloutForStep("character");
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
                 DrawCharacterSearchBar();
 
                 var filteredCharacters = GetFilteredCharacters();
+                if (HoyoToonGuidedTourController.ShouldLockCharacterSelection())
+                {
+                    ClearNonTourCharacterSelection();
+                }
                 if (!string.IsNullOrWhiteSpace(_characterSearch) && _characters != null)
                 {
                     using (new EditorGUILayout.HorizontalScope())
@@ -205,7 +236,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         _selectedCharacterIndex = _characters.FindIndex(name => string.Equals(name, selectedName, StringComparison.OrdinalIgnoreCase));
                         ClearVariantSelection();
                         EnsureVariantsLoaded();
-                    });
+                        HoyoToonGuidedTourController.NotifyCharacterSelected(selectedName);
+                    },
+                    HoyoToonGuidedTourController.DesiredCharacterName,
+                    "tour.models.character",
+                    HoyoToonGuidedTourController.ShouldLockCharacterSelection());
 
                 if (_selectedCharacters.Count == 0)
                 {
@@ -325,6 +360,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
+            DrawTourCalloutForStep("variant");
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
                 var game = _selectedGameIndex >= 0 && _selectedGameIndex < _availableGames.Count ? _availableGames[_selectedGameIndex] : null;
@@ -333,6 +369,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 if (!multipleCharacters)
                 {
                     var variantNames = _variants.Select(v => v.Name).ToList();
+                    if (HoyoToonGuidedTourController.ShouldLockVariantSelection())
+                    {
+                        ClearNonTourVariantSelection();
+                    }
                     DrawMultiSelectList(
                         "Variant",
                         variantNames,
@@ -345,7 +385,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         selectedName =>
                         {
                             _selectedVariantIndex = _variants.FindIndex(option => string.Equals(option.Name, selectedName, StringComparison.OrdinalIgnoreCase));
-                        });
+                            HoyoToonGuidedTourController.NotifyVariantSelected(selectedName);
+                        },
+                        HoyoToonGuidedTourController.DesiredVariantName,
+                        "tour.models.variant",
+                        HoyoToonGuidedTourController.ShouldLockVariantSelection());
 
                     if (_selectedVariants.Count == 0)
                     {
@@ -362,9 +406,9 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     DrawPerCharacterVariantLists(selectedCharacters);
                 }
 
-                bool hasBatchSelection = multipleCharacters || _selectedVariants.Count > 1;
-                if (hasBatchSelection)
+                if (game != null && IsHonkaiStarRail(game.Key, game.DisplayName) && selectedCharacters.Count > 0)
                 {
+                    DrawTourCalloutForStep("fbx");
                     DrawStarRailFbxSelection(game);
                 }
             }
@@ -372,10 +416,23 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void DrawDownloadActions(HoyoToonManager manager)
         {
+            DrawTourCalloutForStep("download");
             using (new EditorGUILayout.HorizontalScope())
             {
-                bool newValue = EditorGUILayout.ToggleLeft("Auto setup after download", _autoSetupAfterDownload);
-                if (newValue != _autoSetupAfterDownload)
+                bool tourActive = HoyoToonGuidedTourController.IsActive;
+                bool enforcedAutoSetup = tourActive ? false : _autoSetupAfterDownload;
+                bool newValue;
+                using (new EditorGUI.DisabledScope(tourActive))
+                {
+                    newValue = EditorGUILayout.ToggleLeft("Auto setup after download", enforcedAutoSetup);
+                }
+                var toggleRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.models.autosetup", toggleRect, "Auto setup");
+                if (tourActive)
+                {
+                    _autoSetupAfterDownload = false;
+                }
+                else if (newValue != _autoSetupAfterDownload)
                 {
                     _autoSetupAfterDownload = newValue;
                     EditorPrefs.SetBool(AutoSetupPrefKey, _autoSetupAfterDownload);
@@ -395,7 +452,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             string emptyMessage,
             float minHeight,
             float maxHeight,
-            Action<string> onActivated = null)
+            Action<string> onActivated = null,
+            string highlightName = null,
+            string highlightTargetId = null,
+            bool lockToHighlight = false)
         {
             using (new EditorGUI.DisabledScope(disabled))
             {
@@ -418,7 +478,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 using (var scrollScope = new EditorGUILayout.ScrollViewScope(scroll, false, true, GUILayout.MinHeight(minHeight), GUILayout.MaxHeight(maxHeight)))
                 {
                     scroll = scrollScope.scrollPosition;
-                    DrawToggleGrid(items, selected, onActivated, EditorGUIUtility.currentViewWidth - 40f);
+                    DrawToggleGrid(items, selected, onActivated, EditorGUIUtility.currentViewWidth - 40f, highlightName, highlightTargetId, lockToHighlight);
                 }
             }
         }
@@ -490,14 +550,14 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                             using (var variantsScroll = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.MinHeight(50f), GUILayout.MaxHeight(90f)))
                             {
                                 scroll = variantsScroll.scrollPosition;
-                                DrawToggleGrid(variantNames, selection, null, EditorGUIUtility.currentViewWidth - 60f);
+                                DrawToggleGrid(variantNames, selection, null, EditorGUIUtility.currentViewWidth - 60f, null, null, false);
                             }
 
                             SetVariantScroll(characterName, scroll);
                         }
                         else
                         {
-                            DrawToggleGrid(variantNames, selection, null, EditorGUIUtility.currentViewWidth - 60f);
+                            DrawToggleGrid(variantNames, selection, null, EditorGUIUtility.currentViewWidth - 60f, null, null, false);
                         }
                     }
                 }
@@ -508,7 +568,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             IReadOnlyList<string> items,
             HashSet<string> selected,
             Action<string> onActivated,
-            float viewWidth)
+            float viewWidth,
+            string highlightName,
+            string highlightTargetId,
+            bool lockToHighlight)
         {
             if (items == null || items.Count == 0)
             {
@@ -535,18 +598,32 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
                         var name = items[index];
                         bool wasSelected = selected.Contains(name);
-                        bool toggled = GUILayout.Toggle(wasSelected, name, EditorStyles.miniButton, GUILayout.Width(columnWidth), GUILayout.Height(20f));
-                        if (toggled != wasSelected)
+                        bool allowSelect = !lockToHighlight
+                                           || string.IsNullOrEmpty(highlightName)
+                                           || string.Equals(name, highlightName, StringComparison.OrdinalIgnoreCase);
+                        bool toggled;
+                        using (new EditorGUI.DisabledScope(!allowSelect))
                         {
-                            if (toggled)
+                            toggled = GUILayout.Toggle(wasSelected, name, EditorStyles.miniButton, GUILayout.Width(columnWidth), GUILayout.Height(20f));
+                            if (toggled != wasSelected)
                             {
-                                selected.Add(name);
-                                onActivated?.Invoke(name);
+                                if (toggled)
+                                {
+                                    selected.Add(name);
+                                    onActivated?.Invoke(name);
+                                }
+                                else
+                                {
+                                    selected.Remove(name);
+                                }
                             }
-                            else
-                            {
-                                selected.Remove(name);
-                            }
+                        }
+
+                        var buttonRect = GUILayoutUtility.GetLastRect();
+                        if (!string.IsNullOrEmpty(highlightName)
+                            && string.Equals(name, highlightName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            HoyoToonTourOverlay.DrawHighlightIfActive(highlightTargetId, buttonRect, name);
                         }
                     }
                 }
@@ -563,10 +640,33 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUILayout.Space(4f);
             EditorGUILayout.LabelField("FBX (Star Rail)", EditorStyles.boldLabel);
             var options = new[] { "With Anims", "No Anims", "Both" };
-            _hsrFbxChoice = (HsrFbxChoice)DrawSingleSelectGrid(options, (int)_hsrFbxChoice, EditorGUIUtility.currentViewWidth - 40f);
+            bool lockChoice = HoyoToonGuidedTourController.ShouldLockFbxSelection();
+            int newIndex = DrawSingleSelectGrid(
+                options,
+                (int)_hsrFbxChoice,
+                EditorGUIUtility.currentViewWidth - 40f,
+                HoyoToonGuidedTourController.DesiredFbxChoiceName,
+                "tour.models.fbx.noanims",
+                lockChoice);
+
+            if (newIndex != (int)_hsrFbxChoice)
+            {
+                _hsrFbxChoice = (HsrFbxChoice)newIndex;
+                HoyoToonGuidedTourController.NotifyFbxChoiceSelected(options[newIndex]);
+            }
+            else if (lockChoice)
+            {
+                HoyoToonGuidedTourController.NotifyFbxChoiceSelected(options[(int)_hsrFbxChoice]);
+            }
         }
 
-        private static int DrawSingleSelectGrid(IReadOnlyList<string> options, int selectedIndex, float viewWidth)
+        private static int DrawSingleSelectGrid(
+            IReadOnlyList<string> options,
+            int selectedIndex,
+            float viewWidth,
+            string highlightName,
+            string highlightTargetId,
+            bool lockToHighlight)
         {
             if (options == null || options.Count == 0)
             {
@@ -592,10 +692,24 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         }
 
                         bool isSelected = index == selectedIndex;
-                        bool toggled = GUILayout.Toggle(isSelected, options[index], EditorStyles.miniButton, GUILayout.Width(columnWidth), GUILayout.Height(20f));
-                        if (toggled && !isSelected)
+                        bool allowSelect = !lockToHighlight
+                                           || string.IsNullOrEmpty(highlightName)
+                                           || string.Equals(options[index], highlightName, StringComparison.OrdinalIgnoreCase);
+                        bool toggled;
+                        using (new EditorGUI.DisabledScope(!allowSelect))
                         {
-                            selectedIndex = index;
+                            toggled = GUILayout.Toggle(isSelected, options[index], EditorStyles.miniButton, GUILayout.Width(columnWidth), GUILayout.Height(20f));
+                            if (toggled && !isSelected)
+                            {
+                                selectedIndex = index;
+                            }
+                        }
+
+                        var buttonRect = GUILayoutUtility.GetLastRect();
+                        if (!string.IsNullOrEmpty(highlightName)
+                            && string.Equals(options[index], highlightName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            HoyoToonTourOverlay.DrawHighlightIfActive(highlightTargetId, buttonRect, options[index]);
                         }
                     }
                 }
@@ -722,6 +836,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 {
                     StartDownloadSelected(manager);
                 }
+                var downloadRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.models.download", downloadRect, "Download");
             }
         }
 
@@ -1083,6 +1199,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     {
                         ShowPostDownloadPrompt(manager, assetTarget, game.Key, game.DisplayName, characterName, variant.Name);
                     }
+
+                    HoyoToonGuidedTourController.NotifyModelDownloaded();
                 });
             }
 
@@ -1203,6 +1321,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 if (total > 0)
                 {
                     HoyoToonProgressDialog.End("Batch download complete!");
+                    HoyoToonGuidedTourController.NotifyModelDownloaded();
                 }
             }
 
@@ -1357,23 +1476,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             if (_autoSetupAfterDownload)
             {
                 TryAutoSetupDownloaded(manager, assetTarget, gameKey, gameName, characterName, variantName);
-                return;
             }
-
-            var message = $"Downloaded {characterName} ({variantName}) for {gameName}.\n\nWhat would you like to do next?";
-            var buttons = new[] { "Auto Setup", "Do Nothing" };
-
-            HoyoToonDialogWindow.ShowCustom("Model Downloaded", message, MessageType.Info, buttons, 1, 1, result =>
-            {
-                switch (result)
-                {
-                    case 0:
-                        TryAutoSetupDownloaded(manager, assetTarget, gameKey, gameName, characterName, variantName);
-                        break;
-                    default:
-                        break;
-                }
-            });
         }
 
         private void TryAutoSetupDownloaded(HoyoToonManager manager, string assetFolder, string gameKey, string gameName, string characterName, string variantName)
@@ -1406,6 +1509,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                         if (instance != null)
                         {
                             RegisterAndSelect(manager, instance);
+                            HoyoToonGuidedTourController.NotifyAutoSetupCompleted(instance);
                         }
                         else
                         {
@@ -1430,8 +1534,12 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 manager.ActiveModelIndex = manager.ManagedModels.Count - 1;
             }
 
-            Selection.activeObject = instance;
-            EditorGUIUtility.PingObject(instance);
+            if (!HoyoToonGuidedTourController.IsActive
+                || !string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "autosetup", StringComparison.OrdinalIgnoreCase))
+            {
+                Selection.activeObject = instance;
+                EditorGUIUtility.PingObject(instance);
+            }
         }
 
         private static void ResolvePrimaryAssetWithChoice(string assetFolder, string gameKey, string gameName, string characterName, string variantName, HsrFbxChoice fbxChoice, Action<string, bool, bool> onResolved)
@@ -1690,8 +1798,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             var fbxType = GetFbxVariantType(fileName);
             string hint = fbxType switch
             {
-                FbxVariantType.WithAnims => "(With Anims)",
                 FbxVariantType.NoAnims => "(No Anims)",
+                FbxVariantType.WithAnims => "(With Anims)",
                 _ => string.Empty
             };
 
@@ -1831,7 +1939,16 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             return Mathf.Clamp(index, 0, count - 1);
         }
 
-        private static int DrawScrollableSelection(string label, IReadOnlyList<string> items, int selectedIndex, ref Vector2 scroll, bool disabled, string emptyMessage)
+        private static int DrawScrollableSelection(
+            string label,
+            IReadOnlyList<string> items,
+            int selectedIndex,
+            ref Vector2 scroll,
+            bool disabled,
+            string emptyMessage,
+            string highlightName = null,
+            string highlightTargetId = null,
+            bool lockToHighlight = false)
         {
             using (new EditorGUI.DisabledScope(disabled))
             {
@@ -1856,10 +1973,24 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     for (int index = 0; index < items.Count; index++)
                     {
                         bool isSelected = index == selectedIndex;
-                        bool toggled = GUILayout.Toggle(isSelected, items[index], EditorStyles.miniButton);
-                        if (toggled && !isSelected)
+                        bool allowSelect = !lockToHighlight
+                                           || string.IsNullOrEmpty(highlightName)
+                                           || string.Equals(items[index], highlightName, StringComparison.OrdinalIgnoreCase);
+                        bool toggled;
+                        using (new EditorGUI.DisabledScope(!allowSelect))
                         {
-                            selectedIndex = index;
+                            toggled = GUILayout.Toggle(isSelected, items[index], EditorStyles.miniButton);
+                            if (toggled && !isSelected)
+                            {
+                                selectedIndex = index;
+                            }
+                        }
+
+                        var buttonRect = GUILayoutUtility.GetLastRect();
+                        if (!string.IsNullOrEmpty(highlightName)
+                            && string.Equals(items[index], highlightName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            HoyoToonTourOverlay.DrawHighlightIfActive(highlightTargetId, buttonRect, items[index]);
                         }
                     }
                 }
@@ -1867,6 +1998,66 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             return selectedIndex;
         }
+
+        private void ClearNonTourCharacterSelection()
+        {
+            if (string.IsNullOrEmpty(HoyoToonGuidedTourController.DesiredCharacterName))
+            {
+                return;
+            }
+
+            if (_selectedCharacters.Count == 1 && _selectedCharacters.Contains(HoyoToonGuidedTourController.DesiredCharacterName))
+            {
+                return;
+            }
+
+            _selectedCharacters.Clear();
+            _selectedCharacterIndex = -1;
+        }
+
+        private void ClearNonTourVariantSelection()
+        {
+            if (string.IsNullOrEmpty(HoyoToonGuidedTourController.DesiredVariantName))
+            {
+                return;
+            }
+
+            if (_selectedVariants.Count == 1 && _selectedVariants.Contains(HoyoToonGuidedTourController.DesiredVariantName))
+            {
+                return;
+            }
+
+            _selectedVariants.Clear();
+            _selectedVariantIndex = -1;
+        }
+
+        private static void DrawTourCalloutForStep(string stepId)
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (!string.Equals(step.id, stepId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            string body = step.instruction;
+            if (stepId == "game" && HoyoToonGuidedTourController.ShouldShowManagerHandoffInline())
+            {
+                body = $"{body}\n\nYou're now in the HoyoToon Manager. Follow the inline highlights to continue.";
+                HoyoToonGuidedTourController.MarkManagerHandoffShown();
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {step.title}",
+                body,
+                null,
+                null);
+        }
+
 
         private static string AssetsPathFromAbsolute(string absolutePath)
         {

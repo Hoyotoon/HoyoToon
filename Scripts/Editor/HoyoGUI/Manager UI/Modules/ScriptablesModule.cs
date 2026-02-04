@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEngine;
 using HoyoToon;
 using HoyoToon.EditorTools.ManagerScene;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -23,6 +24,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		public override void OnGUI(HoyoToonManager targetManager)
 		{
+			DrawTourCalloutIfNeeded();
 			if (targetManager == null)
 			{
 				EditorGUILayout.HelpBox("Assign a HoyoToon Manager to edit scriptable settings.", MessageType.Info);
@@ -31,6 +33,30 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 			EditorGUILayout.Space(8f);
 			DrawSceneLightSettingsPanel(targetManager);
+		}
+
+		private static void DrawTourCalloutIfNeeded()
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return;
+			}
+
+			var step = HoyoToonGuidedTourController.CurrentStep;
+			if (step.id != "scriptables")
+			{
+				return;
+			}
+
+			HoyoToonTourCallout.Draw(
+				$"Guided Tour: {step.title}",
+				"Scriptables contain global game profiles and shared shader settings. Review the active profile to match the game lighting style.",
+				"Continue to Post Processing",
+				() =>
+				{
+					HoyoToonGuidedTourController.CompleteScriptablesStep();
+					HoyoToonGuidedTourController.Advance();
+				});
 		}
 
 		private void DrawSceneLightSettingsPanel(HoyoToonManager manager)

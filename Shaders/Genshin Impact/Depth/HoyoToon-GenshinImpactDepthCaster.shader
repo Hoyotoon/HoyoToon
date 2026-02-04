@@ -52,10 +52,10 @@
             #include "Includes/depth_program.hlsl"
             
             
-            #pragma target 4.6
-            #pragma vertex vert
-            #pragma hull hull
-            #pragma domain domain
+            // #pragma target 4.6
+            #pragma vertex base_vertex
+            // #pragma hull hull
+            // #pragma domain domain
             #pragma fragment base_pixel
             ENDHLSL
         }

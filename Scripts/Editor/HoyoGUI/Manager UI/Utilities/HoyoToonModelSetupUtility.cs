@@ -9,6 +9,7 @@ using HoyoToon.Materials;
 using HoyoToon.Prerequisites;
 using HoyoToon.Utilities;
 using HoyoToon.API;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI
 {
@@ -96,6 +97,18 @@ namespace HoyoToon.EditorTools.ManagerUI
             public bool Enabled { get; set; }
         }
 
+        internal sealed class SetupPlanPreview
+        {
+            public SetupPlanPreview(SetupContext context, List<StepDecision> decisions)
+            {
+                Context = context;
+                Decisions = decisions ?? new List<StepDecision>();
+            }
+
+            public SetupContext Context { get; }
+            public List<StepDecision> Decisions { get; }
+        }
+
         internal readonly struct StepDecision
         {
             public StepDecision(SetupStep step, bool applicable, bool required)
@@ -156,6 +169,54 @@ namespace HoyoToon.EditorTools.ManagerUI
 
             instance = context.CreatedInstance;
             resolvedAsset = ResolveAssetFromContext(context) ?? fbxAsset;
+            if (instance != null)
+            {
+                HoyoToonGuidedTourController.NotifyAutoSetupCompleted(instance);
+            }
+            return true;
+        }
+
+        internal static bool TryBuildSetupPlanPreview(HoyoToonManager manager, GameObject fbxAsset, HoyoToonSetupOptions options, out SetupPlanPreview preview, out string error)
+        {
+            preview = null;
+            error = null;
+
+            if (manager == null)
+            {
+                error = "No active HoyoToon Manager found in the scene.";
+                return false;
+            }
+
+            if (fbxAsset == null)
+            {
+                error = "Please supply an FBX asset for preview.";
+                return false;
+            }
+
+            var assetPath = AssetDatabase.GetAssetPath(fbxAsset);
+            if (string.IsNullOrEmpty(assetPath) || !assetPath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Only FBX assets can be previewed by this setup flow.";
+                return false;
+            }
+
+            var context = BuildSetupContext(manager, fbxAsset, assetPath, options);
+            var steps = BuildSetupSteps(context);
+            var decisions = new List<StepDecision>();
+
+            foreach (var step in steps)
+            {
+                if (step == null)
+                {
+                    continue;
+                }
+
+                bool applicable = step.IsApplicable == null || step.IsApplicable(context);
+                bool required = step.IsRequired == null || step.IsRequired(context);
+                decisions.Add(new StepDecision(step, applicable, required));
+            }
+
+            preview = new SetupPlanPreview(context, decisions);
             return true;
         }
 
@@ -333,7 +394,14 @@ namespace HoyoToon.EditorTools.ManagerUI
                 catch (Exception ex)
                 {
                     HoyoToonLogger.ManagerError($"Auto setup failed for '{context?.Asset?.name}': {ex.Message}");
-                    HoyoToonDialogWindow.ShowError("Auto Setup Failed", $"An exception interrupted the setup process. See console for details.\n\n{ex.Message}");
+                    try
+                    {
+                        HoyoToonDialogWindow.ShowError("Auto Setup Failed", $"An exception interrupted the setup process. See console for details.\n\n{ex.Message}");
+                    }
+                    catch (Exception dialogEx)
+                    {
+                        HoyoToonLogger.ManagerWarning($"Auto Setup: Failed to show error dialog: {dialogEx.Message}");
+                    }
                     return false;
                 }
                 finally

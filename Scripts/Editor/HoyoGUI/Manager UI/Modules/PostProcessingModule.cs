@@ -6,6 +6,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Rendering.PostProcessing;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -40,6 +41,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		public override void OnGUI(HoyoToonManager targetManager)
 		{
+			DrawTourCalloutIfNeeded();
 			_showProfileSelection = DrawFoldoutSection("Profile Selection", _showProfileSelection, () =>
 			{
 				DrawProfileSelectionBlock(targetManager);
@@ -51,6 +53,30 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 				EditorGUILayout.Space(8f);
 				_showProfileOverrides = DrawFoldoutSection("Profile Overrides", _showProfileOverrides, DrawProfileInspector);
 			}
+		}
+
+		private static void DrawTourCalloutIfNeeded()
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return;
+			}
+
+			var step = HoyoToonGuidedTourController.CurrentStep;
+			if (step.id != "postprocessing")
+			{
+				return;
+			}
+
+			HoyoToonTourCallout.Draw(
+				$"Guided Tour: {step.title}",
+				"Pick a profile that matches the target game, then adjust bloom, exposure, and color grading for a final polish.",
+				"Continue to Renders",
+				() =>
+				{
+					HoyoToonGuidedTourController.CompletePostProcessingStep();
+					HoyoToonGuidedTourController.Advance();
+				});
 		}
 
 		private void DrawProfileSelectionBlock(HoyoToonManager targetManager)

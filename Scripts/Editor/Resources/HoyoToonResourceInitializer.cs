@@ -5,6 +5,7 @@ using System;
 using System.Linq;
 using System.Collections.Generic;
 using HoyoToon.Utilities;
+using HoyoToon.EditorTools.Onboarding;
 using System.Threading.Tasks;
 namespace HoyoToon
 {
@@ -74,7 +75,8 @@ namespace HoyoToon
             
             if (missingResources.Any())
             {
-                ShowFirstTimeSetupDialog(missingResources);
+                HoyoToonLogger.ResourcesInfo("First-time resources missing; defer to onboarding.");
+                CompleteFirstTimeSetup();
             }
             else
             {
@@ -88,42 +90,7 @@ namespace HoyoToon
         /// </summary>
         private static void ShowFirstTimeSetupDialog(string[] missingResources)
         {
-            var message = "Welcome to HoyoToon!\n\n" +
-                         "To get started, you need to download the required game assets:\n\n";
-
-            if (missingResources.Any())
-            {
-                string resourceList = string.Join("\n  - ", missingResources);
-                message += "Missing Resources:\n  - " + resourceList + "\n\n";
-            }
-
-            message += $"These assets contain textures, materials, and other files needed for HoyoToon to function properly.\n\n" +
-                      $"Would you like to download them now?";
-
-            HoyoToonDialogWindow.ShowCustom(
-                "HoyoToon First Time Setup",
-                message,
-                MessageType.Info,
-                new[] { "Download Now", "Skip for Now", "Don't Show Again" },
-                defaultIndex: 0,
-                cancelIndex: 1,
-                onResultIndex: result =>
-                {
-                    switch (result)
-                    {
-                        case 0: // Download Now
-                            HoyoToonAsyncUtil.RunFireAndForget(() => DownloadAllAssetsAndCompleteSetup(missingResources), "First-time setup download");
-                            break;
-                        case 1: // Skip for Now
-                            HoyoToonLogger.ResourcesInfo("User chose to skip asset download for now.");
-                            break;
-                        case 2: // Don't Show Again
-                            CompleteFirstTimeSetup();
-                            EditorPrefs.SetBool(SuppressNotificationsKey, true);
-                            HoyoToonLogger.ResourcesInfo("User chose to suppress asset notifications.");
-                            break;
-                    }
-                });
+            // Legacy dialog removed; resources are now handled in onboarding.
         }
 
         /// <summary>
@@ -391,7 +358,7 @@ namespace HoyoToon
         public static void ResetFirstTimeSetup()
         {
             HoyoToonDialogWindow.ShowOkCancel("Reset First-Time Setup",
-                "This will reset the first-time setup and show the welcome dialog again next time Unity starts. Continue?",
+                "This will reset the first-time setup and allow onboarding checks to run again next time Unity starts. Continue?",
                 MessageType.Warning,
                 onResult: ok =>
             {
@@ -400,7 +367,7 @@ namespace HoyoToon
                 EditorPrefs.DeleteKey(FirstTimeSetupKey);
                 EditorPrefs.DeleteKey(SuppressNotificationsKey);
 
-                HoyoToonDialogWindow.ShowInfo("Reset Complete", "First-time setup has been reset. The welcome dialog will appear next time Unity starts.");
+                HoyoToonDialogWindow.ShowInfo("Reset Complete", "First-time setup has been reset.");
 
                 HoyoToonLogger.ResourcesInfo("First-time setup reset completed.");
             });

@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Rendering;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Modules
 {
@@ -71,6 +72,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         public override void OnGUI(HoyoToonManager targetManager)
         {
+            DrawTourCalloutIfNeeded();
             EnsureSceneLights();
 
             _showSceneLights = DrawFoldoutSection("Scene Lights", _showSceneLights, () =>
@@ -82,6 +84,30 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUILayout.Space(4f);
 
             _showPrimaryControls = DrawFoldoutSection("Primary Sun Controls", _showPrimaryControls, DrawPrimaryLightControls);
+        }
+
+        private static void DrawTourCalloutIfNeeded()
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (step.id != "lighting")
+            {
+                return;
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {step.title}",
+                "Use Scene Lights to pick or create the key light, then tune Primary Sun for direction, intensity, and color temperature.",
+                "Continue to Scriptables",
+                () =>
+                {
+                    HoyoToonGuidedTourController.CompleteLightingStep();
+                    HoyoToonGuidedTourController.Advance();
+                });
         }
 
         private void EnsureSceneLights()
