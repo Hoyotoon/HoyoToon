@@ -8,9 +8,9 @@ namespace HoyoToon.EditorTools.ManagerUI
 {
     internal static class HoyoToonSetupSceneHelper
     {
-        private const int GridColumns = 4;
+        private const int GridColumns = 5;
         private const float GridSpacingX = 1f;
-        private const float GridSpacingZ = 1f;
+        private const float GridSpacingZ = -1f;
 
         public static bool ShouldInstantiateModel(HoyoToonModelSetupUtility.SetupContext context)
         {
@@ -58,10 +58,13 @@ namespace HoyoToon.EditorTools.ManagerUI
             int index = Mathf.Max(0, CountExistingModels(manager, instance));
             int columns = Mathf.Max(1, GridColumns);
             int row = index / columns;
-            int column = index % columns;
+            int slot = index % columns;
+            int columnOffset = slot == 0
+                ? 0
+                : (slot % 2 == 1 ? -((slot + 1) / 2) : (slot / 2));
 
             var origin = manager.transform.position;
-            var offset = new Vector3(column * GridSpacingX, 0f, row * GridSpacingZ);
+            var offset = new Vector3(columnOffset * GridSpacingX, 0f, row * GridSpacingZ);
             Undo.RecordObject(instance.transform, "Place Model On Grid");
             instance.transform.position = origin + offset;
         }

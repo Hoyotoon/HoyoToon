@@ -1,9 +1,11 @@
 #if UNITY_EDITOR
 using System;
 using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
@@ -20,6 +22,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private const string DownloadPathPrefKey = "HoyoToon.ModelsDownloader.DownloadRoot";
         private const string DefaultDownloadRoot = "Assets/HoyoToon/Characters";
         private const string AutoSetupPrefKey = "HoyoToon.ModelsDownloader.AutoSetupAfterDownload";
+        private const int MaxParallelDownloads = 8;
 
         private static readonly int MainThreadId = System.Threading.Thread.CurrentThread.ManagedThreadId;
 
@@ -49,6 +52,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private readonly HashSet<string> _selectedVariants = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         private readonly Dictionary<string, HashSet<string>> _selectedVariantsByCharacter = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         private readonly HashSet<string> _loadingVariantsForCharacters = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private HsrFbxChoice _hsrFbxChoice = HsrFbxChoice.WithAnims;
 
         public override string DisplayName => "Models";
 
@@ -125,6 +129,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         {
             using (new EditorGUILayout.HorizontalScope())
             {
+                GUILayout.FlexibleSpace();
                 if (GUILayout.Button("Refresh Game List", GUILayout.Width(160f)))
                 {
                     StartRefreshGameList();
@@ -322,8 +327,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
+                var game = _selectedGameIndex >= 0 && _selectedGameIndex < _availableGames.Count ? _availableGames[_selectedGameIndex] : null;
                 var selectedCharacters = GetSelectedCharacterList();
-                if (selectedCharacters.Count <= 1)
+                bool multipleCharacters = selectedCharacters.Count > 1;
+                if (!multipleCharacters)
                 {
                     var variantNames = _variants.Select(v => v.Name).ToList();
                     DrawMultiSelectList(
@@ -349,11 +356,17 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     {
                         _selectedVariantIndex = _variants.FindIndex(option => _selectedVariants.Contains(option.Name));
                     }
-
-                    return;
+                }
+                else
+                {
+                    DrawPerCharacterVariantLists(selectedCharacters);
                 }
 
-                DrawPerCharacterVariantLists(selectedCharacters);
+                bool hasBatchSelection = multipleCharacters || _selectedVariants.Count > 1;
+                if (hasBatchSelection)
+                {
+                    DrawStarRailFbxSelection(game);
+                }
             }
         }
 
@@ -402,7 +415,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     return;
                 }
 
-                using (var scrollScope = new EditorGUILayout.ScrollViewScope(scroll, GUILayout.MinHeight(minHeight), GUILayout.MaxHeight(maxHeight)))
+                using (var scrollScope = new EditorGUILayout.ScrollViewScope(scroll, false, true, GUILayout.MinHeight(minHeight), GUILayout.MaxHeight(maxHeight)))
                 {
                     scroll = scrollScope.scrollPosition;
                     DrawToggleGrid(items, selected, onActivated, EditorGUIUtility.currentViewWidth - 40f);
@@ -540,6 +553,57 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
         }
 
+        private void DrawStarRailFbxSelection(GameOption game)
+        {
+            if (game == null || !IsHonkaiStarRail(game.Key, game.DisplayName))
+            {
+                return;
+            }
+
+            EditorGUILayout.Space(4f);
+            EditorGUILayout.LabelField("FBX (Star Rail)", EditorStyles.boldLabel);
+            var options = new[] { "With Anims", "No Anims", "Both" };
+            _hsrFbxChoice = (HsrFbxChoice)DrawSingleSelectGrid(options, (int)_hsrFbxChoice, EditorGUIUtility.currentViewWidth - 40f);
+        }
+
+        private static int DrawSingleSelectGrid(IReadOnlyList<string> options, int selectedIndex, float viewWidth)
+        {
+            if (options == null || options.Count == 0)
+            {
+                return selectedIndex;
+            }
+
+            float available = Mathf.Max(120f, viewWidth - 20f);
+            int columns = Mathf.Clamp(Mathf.FloorToInt(available / 150f), 1, 3);
+            float columnWidth = Mathf.Floor(available / columns);
+            int rowCount = Mathf.CeilToInt(options.Count / (float)columns);
+
+            for (int row = 0; row < rowCount; row++)
+            {
+                using (new EditorGUILayout.HorizontalScope())
+                {
+                    for (int col = 0; col < columns; col++)
+                    {
+                        int index = row * columns + col;
+                        if (index >= options.Count)
+                        {
+                            GUILayout.FlexibleSpace();
+                            break;
+                        }
+
+                        bool isSelected = index == selectedIndex;
+                        bool toggled = GUILayout.Toggle(isSelected, options[index], EditorStyles.miniButton, GUILayout.Width(columnWidth), GUILayout.Height(20f));
+                        if (toggled && !isSelected)
+                        {
+                            selectedIndex = index;
+                        }
+                    }
+                }
+            }
+
+            return selectedIndex;
+        }
+
         private Vector2 GetVariantScroll(string characterName)
         {
             if (string.IsNullOrWhiteSpace(characterName))
@@ -654,7 +718,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                          && variants.Count > 0;
             using (new EditorGUI.DisabledScope(!ready || _isRefreshing))
             {
-                if (GUILayout.Button("Download Selected Model", GUILayout.Width(190f)))
+                if (GUILayout.Button("Download Selected Models", GUILayout.Width(190f)))
                 {
                     StartDownloadSelected(manager);
                 }
@@ -877,7 +941,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 }
 
                 HoyoToonAsyncUtil.RunFireAndForget(
-                    () => DownloadSelectedAsync(manager, game, characterName, variant, true, true, true),
+                    () => DownloadSelectedAsync(manager, game, characterName, variant, true, true, true, _hsrFbxChoice),
                     "Download model",
                     ex => ScheduleOnMainThread(() => { _statusMessage = $"Download failed: {ex.Message}"; }));
                 return;
@@ -893,7 +957,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             VariantOption variant,
             bool showProgress,
             bool showPostDownloadPrompt,
-            bool refreshAssets)
+            bool refreshAssets,
+            HsrFbxChoice fbxChoice)
         {
             var assetRoot = EnsureAssetsRoot(_downloadRoot);
             if (string.IsNullOrEmpty(assetRoot))
@@ -922,33 +987,20 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             if (IsHonkaiStarRail(game.Key, game.DisplayName))
             {
-                var fbxFiles = files.Where(file => file.RelativePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase)).ToList();
-                if (fbxFiles.Count > 1)
+                var rootEntries = await HoyoToonCloudreveClient.GetFileListAsync(ShareUrl, variant.RelativePath, false);
+                var rootFbxFiles = rootEntries
+                    .Where(file => !file.IsDirectory && file.RelativePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+                if (rootFbxFiles.Count > 0)
                 {
-                    var orderedFbxFiles = fbxFiles
+                    var orderedFbxFiles = rootFbxFiles
                         .OrderBy(file => Path.GetFileNameWithoutExtension(file.RelativePath) ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                         .ToList();
-                    int choice = await PromptFbxChoiceAsync(orderedFbxFiles, characterName, variant.Name);
-                    if (choice == -2)
-                    {
-                        // Both: keep all FBX files
-                    }
-                    else if (choice < 0 || choice >= fbxFiles.Count)
-                    {
-                        if (showProgress)
-                        {
-                            HoyoToonProgressDialog.End("Download cancelled.");
-                        }
-                        return null;
-                    }
-
-                    if (choice >= 0)
-                    {
-                        var chosen = orderedFbxFiles[choice];
-                        files = files.Where(file => !file.RelativePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
-                            .Concat(new[] { chosen })
-                            .ToList();
-                    }
+                    var chosen = FilterFbxFilesByChoice(orderedFbxFiles, fbxChoice);
+                    var chosenPaths = new HashSet<string>(chosen.Select(file => file.RelativePath), StringComparer.OrdinalIgnoreCase);
+                    files = files.Where(file => !file.RelativePath.EndsWith(".fbx", StringComparison.OrdinalIgnoreCase))
+                        .Concat(files.Where(file => chosenPaths.Contains(file.RelativePath)))
+                        .ToList();
                 }
             }
 
@@ -1086,8 +1138,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
             var manager = UnityEngine.Object.FindObjectOfType<HoyoToonManager>(true);
             var cache = GetOrCreateCache(game);
-            var downloaded = new List<(string assetTarget, string characterName, string variantName)>();
-
+            var resolved = new List<(string characterName, VariantOption variant)>();
             foreach (var entry in characterVariants)
             {
                 var characterName = entry.Key;
@@ -1095,16 +1146,63 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 foreach (var variantName in variantNames)
                 {
                     var variant = await ResolveVariantForCharacterAsync(game, cache, characterName, variantName);
-                    if (variant == null)
+                    if (variant != null)
                     {
-                        continue;
+                        resolved.Add((characterName, variant));
                     }
+                }
+            }
 
-                    var assetTarget = await DownloadSelectedAsync(manager, game, characterName, variant, false, false, false);
-                    if (!string.IsNullOrEmpty(assetTarget))
+            int total = resolved.Count;
+            int completed = 0;
+            var downloaded = new ConcurrentBag<(string assetTarget, string characterName, string variantName)>();
+
+            if (total > 0)
+            {
+                HoyoToonProgressDialog.Start("Downloading Models", "Preparing batch download...");
+            }
+
+            var gate = new SemaphoreSlim(MaxParallelDownloads, MaxParallelDownloads);
+            var tasks = new List<Task>();
+            foreach (var job in resolved)
+            {
+                tasks.Add(Task.Run(async () =>
+                {
+                    await gate.WaitAsync();
+                    try
                     {
-                        downloaded.Add((assetTarget, characterName, variant.Name));
+                        var assetTarget = await DownloadSelectedAsync(manager, game, job.characterName, job.variant, false, false, false, _hsrFbxChoice);
+                        if (!string.IsNullOrEmpty(assetTarget))
+                        {
+                            downloaded.Add((assetTarget, job.characterName, job.variant.Name));
+                        }
                     }
+                    finally
+                    {
+                        gate.Release();
+                        int done = Interlocked.Increment(ref completed);
+                        if (total > 0)
+                        {
+                            ScheduleOnMainThread(() =>
+                            {
+                                float progress = total > 0 ? (float)done / total : 1f;
+                                HoyoToonProgressDialog.Update(progress, $"Downloading {job.characterName} ({done}/{total})");
+                            });
+                        }
+                    }
+                }));
+            }
+
+            try
+            {
+                await Task.WhenAll(tasks);
+            }
+            finally
+            {
+                gate.Dispose();
+                if (total > 0)
+                {
+                    HoyoToonProgressDialog.End("Batch download complete!");
                 }
             }
 
@@ -1286,7 +1384,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            ResolvePrimaryAssetWithChoice(assetFolder, gameKey, gameName, characterName, variantName, (assetPath, isFbx, isPrefab) =>
+            ResolvePrimaryAssetWithChoice(assetFolder, gameKey, gameName, characterName, variantName, _hsrFbxChoice, (assetPath, isFbx, isPrefab) =>
             {
                 if (string.IsNullOrEmpty(assetPath))
                 {
@@ -1336,14 +1434,15 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUIUtility.PingObject(instance);
         }
 
-        private static void ResolvePrimaryAssetWithChoice(string assetFolder, string gameKey, string gameName, string characterName, string variantName, Action<string, bool, bool> onResolved)
+        private static void ResolvePrimaryAssetWithChoice(string assetFolder, string gameKey, string gameName, string characterName, string variantName, HsrFbxChoice fbxChoice, Action<string, bool, bool> onResolved)
         {
             if (onResolved == null)
             {
                 return;
             }
 
-            if (!TryGatherAssetCandidates(assetFolder, characterName, variantName, out var prefabs, out var fbxs))
+            bool isStarRail = IsHonkaiStarRail(gameKey, gameName);
+            if (!TryGatherAssetCandidates(assetFolder, characterName, variantName, isStarRail, out var prefabs, out var fbxs))
             {
                 onResolved(null, false, false);
                 return;
@@ -1354,16 +1453,19 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return;
             }
 
-            if (fbxs.Count > 1)
+            if (isStarRail)
             {
-                ShowFbxChoiceDialog(fbxs, characterName, variantName, onResolved);
-                return;
+                fbxs = FilterLocalFbxByChoice(fbxs, fbxChoice);
             }
 
-            onResolved(AssetsPathFromAbsolute(fbxs[0]), true, false);
+            string chosen = fbxs.Count > 1
+                ? SelectBestCandidate(fbxs, characterName, variantName)
+                : fbxs[0];
+
+            onResolved(AssetsPathFromAbsolute(chosen), true, false);
         }
 
-        private static bool TryGatherAssetCandidates(string assetFolder, string characterName, string variantName, out List<string> prefabs, out List<string> fbxs)
+        private static bool TryGatherAssetCandidates(string assetFolder, string characterName, string variantName, bool rootOnly, out List<string> prefabs, out List<string> fbxs)
         {
             prefabs = new List<string>();
             fbxs = new List<string>();
@@ -1374,8 +1476,41 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                 return false;
             }
 
-            fbxs = Directory.GetFiles(absoluteFolder, "*.fbx", SearchOption.AllDirectories).ToList();
+            var searchOption = rootOnly ? SearchOption.TopDirectoryOnly : SearchOption.AllDirectories;
+            fbxs = Directory.GetFiles(absoluteFolder, "*.fbx", searchOption).ToList();
             return fbxs.Count > 0;
+        }
+
+        private static List<string> FilterLocalFbxByChoice(List<string> fbxs, HsrFbxChoice choice)
+        {
+            if (fbxs == null || fbxs.Count == 0)
+            {
+                return fbxs ?? new List<string>();
+            }
+
+            if (choice == HsrFbxChoice.Both)
+            {
+                return fbxs;
+            }
+
+            var desired = choice == HsrFbxChoice.NoAnims ? FbxVariantType.NoAnims : FbxVariantType.WithAnims;
+            var matches = fbxs.Where(path =>
+            {
+                var name = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+                return GetFbxVariantType(name) == desired;
+            }).ToList();
+
+            if (matches.Count > 0)
+            {
+                return matches;
+            }
+
+            return fbxs.Where(path =>
+            {
+                var name = Path.GetFileNameWithoutExtension(path) ?? string.Empty;
+                var type = GetFbxVariantType(name);
+                return type == FbxVariantType.Unknown || type == desired;
+            }).ToList();
         }
 
         private static bool IsHonkaiStarRail(string gameKey, string gameName)
@@ -1515,6 +1650,38 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             });
 
             return tcs.Task;
+        }
+
+        private static List<RemoteFileInfo> FilterFbxFilesByChoice(List<RemoteFileInfo> fbxs, HsrFbxChoice choice)
+        {
+            if (fbxs == null || fbxs.Count == 0)
+            {
+                return fbxs ?? new List<RemoteFileInfo>();
+            }
+
+            if (choice == HsrFbxChoice.Both)
+            {
+                return fbxs;
+            }
+
+            var desired = choice == HsrFbxChoice.NoAnims ? FbxVariantType.NoAnims : FbxVariantType.WithAnims;
+            var matches = fbxs.Where(file =>
+            {
+                var fileName = Path.GetFileNameWithoutExtension(file.RelativePath) ?? string.Empty;
+                return GetFbxVariantType(fileName) == desired;
+            }).ToList();
+
+            if (matches.Count > 0)
+            {
+                return matches;
+            }
+
+            return fbxs.Where(file =>
+            {
+                var fileName = Path.GetFileNameWithoutExtension(file.RelativePath) ?? string.Empty;
+                var type = GetFbxVariantType(fileName);
+                return type == FbxVariantType.Unknown || type == desired;
+            }).ToList();
         }
 
         private static string BuildFbxLabel(string path, string characterName, string variantName)
@@ -1773,6 +1940,23 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
 
             return normalizedValue.TrimStart('/');
+        }
+
+        private static bool IsRootVariantFile(string variantPath, string filePath)
+        {
+            if (string.IsNullOrEmpty(filePath))
+            {
+                return false;
+            }
+
+            var relative = TrimPrefix(filePath, variantPath);
+            if (string.IsNullOrEmpty(relative))
+            {
+                return false;
+            }
+
+            var normalized = relative.Replace('\\', '/').TrimStart('/');
+            return normalized.IndexOf('/') < 0;
         }
 
         private static bool TryConvertToAssetsPath(string absolutePath, out string assetsPath)
@@ -2061,6 +2245,13 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             Unknown,
             WithAnims,
             NoAnims
+        }
+
+        private enum HsrFbxChoice
+        {
+            WithAnims,
+            NoAnims,
+            Both
         }
     }
 }

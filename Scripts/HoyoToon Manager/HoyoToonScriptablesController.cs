@@ -42,13 +42,13 @@ namespace HoyoToon.EditorTools.ManagerScene
             public Color HeightLerpMiddleColor = new Color(1.0f, 1.0f, 1.0f, 0.5f);
             public Color HeightLerpBottomColor = new Color(0.5f, 0.5f, 0.5f, 0.5f);
 
-            public bool RimLightEnable = false;
+            public bool RimLightEnable = true;
             public Color RimLightColor = new Color(1.0f, 1.0f, 1.0f, 1.0f);
-            public float RimLightWidth = 1.0f;
+            public float RimLightWidth = 0.5f;
             public float RimLightIntensity = 1.0f;
             public Vector4 RimLightOffset = new Vector4(0.0f, 0.0f, 0.0f, 0.0f);
 
-            public bool RimShadowEnable = false;
+            public bool RimShadowEnable = true;
             public float RimShadowIntensity = 1.0f;
             public Color RimShadowColor = new Color(1.0f, 1.0f, 1.0f, 0.5f);
 

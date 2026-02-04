@@ -1,14 +1,8 @@
 # Scripts
-- Added the ability to batch download models from the manager.
-- Updated the Model Download UI to support batch downloads.
-- Added the ability to setup models in batches.
-    - Multi select models in your project window, then auto setup
-    - Drag and drop models into the marked area to queue them for setup.
-    - Select a folder in the manager and then queue the folder for setup. (Supports Subfolders)
-- Updated the UI for the Models Module.
-- Updated the UI for the Lighting Module.
-    - Now less space is being wasted and will automatically scale when there are more lights in the scene.
-- New Grid System for the Model Setup Scene.
-    - Models are now placed in a grid pattern instead of all inside eachother at the center of the scene.
-- Light sources created by the Manager will now be placed in a "HoyoToon Manager > Lights" GameObject for better organization.
-- Global button to regenerate the materials of the active model in the manager.
+- Fixed an issue where downloading models would fail properly filtering which FBX to download
+- Added Honkai Star Rail final FBX selection inside the Model Module UI
+- Removed Popups asking you which FBX to setup for Honkai Star Rail models, now it automatically picks the correct one based on your selection
+- Model Downloader will now download up to 8 files in parallel instead single-threaded downloads
+- Centered Refresh games button in Models Module UI
+- Updated Modules UI
+- Grid System will now alternate model placement to better fit more models in less space

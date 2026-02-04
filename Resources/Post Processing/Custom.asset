@@ -52,7 +52,7 @@ MonoBehaviour:
   toneMapping:
     overrideState: 1
     value:
-      Lut2DTexture: {fileID: 2800000, guid: fc5f37f642521ad41929e7870524747e, type: 3}
+      Lut2DTexture: {fileID: 2800000, guid: 9b35afc34c54d0a42bcc0f658bfffaff, type: 3}
       LutSlices: 31
       LutFactor: {x: 0.00098, y: 0.03125}
 --- !u!114 &11400000
