@@ -124,7 +124,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			}
 
 			DrawInlineCalloutIfNeeded("postprocessing_profile",
-				"Click the Profile dropdown and select Genshin Impact.\n\nThis profile matches the tutorial look.");
+				"Click the Profile dropdown and select Honkai Star Rail.\n\nThis profile matches the tutorial look.");
 			using (new EditorGUILayout.HorizontalScope())
 			{
 				var names = _resourceProfileNames.ToArray();

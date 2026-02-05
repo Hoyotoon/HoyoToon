@@ -183,7 +183,7 @@ namespace HoyoToon.EditorTools.ManagerUI
                 DrawSectionHeader("Setup", "Auto setup for FBX assets.");
                 using (new EditorGUILayout.VerticalScope(GUI.skin.box))
                 {
-                    DrawTourCalloutIfNeeded("mainmodule", "addmodel");
+                    DrawTourCalloutIfNeeded("addmodel");
                     DrawAddModelRow();
                     DrawTourCalloutIfNeeded("autosetup");
                     DrawBatchInputRow();

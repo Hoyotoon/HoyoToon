@@ -27,7 +27,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		public override void OnGUI(HoyoToonManager targetManager)
 		{
-			DrawTourCalloutIfNeeded();
 			if (targetManager == null)
 			{
 				EditorGUILayout.HelpBox("Assign a HoyoToon Manager to edit scriptable settings.", MessageType.Info);
@@ -38,39 +37,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			DrawSceneLightSettingsPanel(targetManager);
 		}
 
-		private static void DrawTourCalloutIfNeeded()
-		{
-			if (!HoyoToonGuidedTourController.IsActive)
-			{
-				return;
-			}
-
-			var step = HoyoToonGuidedTourController.CurrentStep;
-			string body = null;
-			switch (step.id)
-			{
-				case "scriptables_shadowboost":
-					body = "Enable Shadow Boost, then check the scene.\n\nShadow Boost strengthens contact shadows.";
-					break;
-				case "scriptables_leveladjust":
-					body = "Enable Level Adjust, then check the scene.\n\nLevel Adjust lifts overall brightness for cutscene looks.";
-					break;
-				case "scriptables_reset":
-					body = "Click the highlighted toggle to continue.\n\nShadow Boost and Level Adjust are turned off for you so the rest of the tour uses neutral lighting.";
-					break;
-			}
-
-			if (string.IsNullOrEmpty(body))
-			{
-				return;
-			}
-
-			HoyoToonTourCallout.Draw(
-				$"Guided Tour: {step.title}",
-				body,
-				null,
-				null);
-		}
 
 		private void DrawSceneLightSettingsPanel(HoyoToonManager manager)
 		{

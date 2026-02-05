@@ -212,7 +212,7 @@ float4 base_pixel (vertex_output i, bool vface : SV_IsFrontFace) : SV_Target
         rim_lighting(lightmap.xy, light, selfshadow, i.screenpos, i.pos, view, normal, rim_color.xyz, rim_values.xyz, output);
 
     }   
-
+    fake_fog(i.ws_pos, view, output);
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     // dissolve outline
         if(_DissoveON) dissolve_outline(output, dis_area, dis_map);

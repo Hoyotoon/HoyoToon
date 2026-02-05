@@ -52,7 +52,7 @@ namespace HoyoToon
                     {
                         HoyoToonGuidedTourController.MarkTourSeen();
                         HoyoToonGuidedTourController.StartTourAtStep("firsttime");
-                        HoyoToonGuidedTourWindow.ShowWindow();
+                        HoyoToonGuidedTourWindow.EnsureWindowVisible(true);
                     }
 
                     HandleFirstTimeSetup();

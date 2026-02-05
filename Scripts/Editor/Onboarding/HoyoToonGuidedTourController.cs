@@ -10,7 +10,7 @@ using HoyoToon;
 
 namespace HoyoToon.EditorTools.Onboarding
 {
-    internal static class HoyoToonGuidedTourController
+    public static class HoyoToonGuidedTourController
     {
         private const string TourActiveKey = "HoyoToon_Tour_Active";
         private const string TourStepKey = "HoyoToon_Tour_Step";
@@ -26,13 +26,7 @@ namespace HoyoToon.EditorTools.Onboarding
         private const string PingedFbxKey = "HoyoToon_Tour_PingedFbx";
         private const string ManagerHandoffKey = "HoyoToon_Tour_ManagerHandoff";
         private const string InspectorLockKey = "HoyoToon_Tour_InspectorLock";
-        private const string ForceWindowKey = "HoyoToon_Tour_ForceWindow";
-        private const string CloseOnManagerSelectKey = "HoyoToon_Tour_CloseOnManagerSelect";
         private const string ModelApprovedKey = "HoyoToon_Tour_ModelApproved";
-        private const string LightingExplainedKey = "HoyoToon_Tour_LightingExplained";
-        private const string ScriptablesExplainedKey = "HoyoToon_Tour_ScriptablesExplained";
-        private const string PostProcessingExplainedKey = "HoyoToon_Tour_PostProcessingExplained";
-        private const string RendersExplainedKey = "HoyoToon_Tour_RendersExplained";
         private const string LightingLightTypeKey = "HoyoToon_Tour_LightingLightType";
         private const string LightingLightAddedKey = "HoyoToon_Tour_LightingLightAdded";
         private const string LightingLightRemovedKey = "HoyoToon_Tour_LightingLightRemoved";
@@ -61,6 +55,7 @@ namespace HoyoToon.EditorTools.Onboarding
 
         private static HoyoToonManager s_lastManager;
         private static GameObject s_lastModel;
+        private static readonly string[] s_windowSteps = { "firsttime", "resources", "scene", "manager" };
 
         private static readonly TourStep[] s_steps =
         {
@@ -217,7 +212,7 @@ namespace HoyoToon.EditorTools.Onboarding
             new TourStep(
                 id: "postprocessing_profile",
                 title: "Select Profile",
-                instruction: "Click the Profile dropdown and select Genshin Impact.\n\nThis profile matches the tutorial look.",
+                instruction: "The profile is set to Genshin Impact. Click the dropdown and select Honkai Star Rail.\n\nThis profile matches the tutorial look.",
                 highlightTarget: "tour.postprocessing.profile",
                 isComplete: () => SessionState.GetBool(PostProcessingProfileKey, false)),
             new TourStep(
@@ -265,7 +260,7 @@ namespace HoyoToon.EditorTools.Onboarding
             new TourStep(
                 id: "finish",
                 title: "Finish",
-                instruction: "Click the highlighted callout to finish the tour.\n\nYou are all set and your prefab is saved.",
+                instruction: "Congrats on finishing the guided tour! Click the highlighted callout to wrap up.\n\nYour prefab is saved - have fun with HoyoToon.",
                 highlightTarget: "tour.finish.callout",
                 isComplete: () => true)
         };
@@ -297,13 +292,7 @@ namespace HoyoToon.EditorTools.Onboarding
             SessionState.SetBool(SelectedModelKey, false);
             SessionState.SetBool(PingedFbxKey, false);
             SessionState.SetBool(ManagerHandoffKey, false);
-            SessionState.SetBool(ForceWindowKey, true);
-            SessionState.SetBool(CloseOnManagerSelectKey, false);
             SessionState.SetBool(ModelApprovedKey, false);
-            SessionState.SetBool(LightingExplainedKey, false);
-            SessionState.SetBool(ScriptablesExplainedKey, false);
-            SessionState.SetBool(PostProcessingExplainedKey, false);
-            SessionState.SetBool(RendersExplainedKey, false);
             SessionState.SetBool(LightingLightTypeKey, false);
             SessionState.SetBool(LightingLightAddedKey, false);
             SessionState.SetBool(LightingLightRemovedKey, false);
@@ -338,15 +327,12 @@ namespace HoyoToon.EditorTools.Onboarding
             StartTour();
             int index = GetStepIndex(stepId);
             CurrentStepIndex = Mathf.Clamp(index, 0, s_steps.Length - 1);
-            SessionState.SetBool(ForceWindowKey, CurrentStepIndex <= 2);
             NotifyStepChanged();
         }
 
         public static void StopTour()
         {
             SessionState.SetBool(TourActiveKey, false);
-            SessionState.SetBool(ForceWindowKey, false);
-            SessionState.SetBool(CloseOnManagerSelectKey, false);
             RestoreInspectorLockState();
             try
             {
@@ -356,7 +342,6 @@ namespace HoyoToon.EditorTools.Onboarding
             {
                 HoyoToonLogger.Always("Tour", ex.ToString(), LogType.Exception);
             }
-            HoyoToonGuidedTourWindow.EnsureWindowVisible(false);
         }
 
         public static void RestartTour()
@@ -523,25 +508,6 @@ namespace HoyoToon.EditorTools.Onboarding
             NotifyStepChanged();
         }
 
-        public static void CompleteLightingStep()
-        {
-            SessionState.SetBool(LightingExplainedKey, true);
-        }
-
-        public static void CompleteScriptablesStep()
-        {
-            SessionState.SetBool(ScriptablesExplainedKey, true);
-        }
-
-        public static void CompletePostProcessingStep()
-        {
-            SessionState.SetBool(PostProcessingExplainedKey, true);
-        }
-
-        public static void CompleteRendersStep()
-        {
-            SessionState.SetBool(RendersExplainedKey, true);
-        }
 
         public static void NotifyLightingLightTypePicked()
         {
@@ -782,18 +748,6 @@ namespace HoyoToon.EditorTools.Onboarding
                 s_lastManager = manager;
             }
 
-            if (IsActive && CurrentStepIndex >= GetStepIndex("manager")
-                && SessionState.GetBool(CloseOnManagerSelectKey, false)
-                && !SessionState.GetBool(ForceWindowKey, false))
-            {
-                HoyoToonGuidedTourWindow.EnsureWindowVisible(false);
-                SessionState.SetBool(CloseOnManagerSelectKey, false);
-            }
-        }
-
-        public static void RequestCloseOnManagerSelect()
-        {
-            SessionState.SetBool(CloseOnManagerSelectKey, true);
         }
 
         public static void FocusManagerInScene()
@@ -900,18 +854,26 @@ namespace HoyoToon.EditorTools.Onboarding
                 return;
             }
 
-            bool shouldShowWindow = CurrentStepIndex <= 2 || SessionState.GetBool(ForceWindowKey, false);
-            HoyoToonGuidedTourWindow.EnsureWindowVisible(shouldShowWindow);
-            if (CurrentStepIndex > 2)
+            HoyoToonGuidedTourWindow.EnsureWindowVisible(IsWindowStep(CurrentStep.id));
+            AutoAdvanceIfComplete();
+        }
+
+        private static bool IsWindowStep(string stepId)
+        {
+            if (string.IsNullOrEmpty(stepId))
             {
-                SessionState.SetBool(ForceWindowKey, false);
-            }
-            if (string.Equals(CurrentStep.id, "finish", StringComparison.OrdinalIgnoreCase))
-            {
-                return;
+                return false;
             }
 
-            AutoAdvanceIfComplete();
+            foreach (var id in s_windowSteps)
+            {
+                if (string.Equals(stepId, id, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         public static bool ShouldShowManagerHandoffInline()
@@ -925,10 +887,6 @@ namespace HoyoToon.EditorTools.Onboarding
             SessionState.SetBool(ManagerHandoffKey, true);
         }
 
-        public static bool ShouldForceWindowVisible()
-        {
-            return IsActive && SessionState.GetBool(ForceWindowKey, false);
-        }
         private static bool HasMissingResources()
         {
             var status = HoyoToonResourceManager.GetResourceStatus();
@@ -973,7 +931,7 @@ namespace HoyoToon.EditorTools.Onboarding
             return 0;
         }
 
-        internal readonly struct TourStep
+        public readonly struct TourStep
         {
             public readonly string id;
             public readonly string title;
