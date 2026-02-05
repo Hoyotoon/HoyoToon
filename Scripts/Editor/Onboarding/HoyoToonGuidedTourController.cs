@@ -164,7 +164,7 @@ namespace HoyoToon.EditorTools.Onboarding
             new TourStep(
                 id: "lighting_remove",
                 title: "Remove Tutorial Light",
-                instruction: "Click the highlighted area to remove the tutorial light.\n\nThe base scene lighting stays intact.",
+                instruction: "Click the highlighted area to remove the tutorial light.\n\nThe base scene lighting stays intact.\n\n Scroll down for the next steps.",
                 highlightTarget: "tour.lighting.remove",
                 isComplete: () => SessionState.GetBool(LightingLightRemovedKey, false)),
             new TourStep(
@@ -242,7 +242,7 @@ namespace HoyoToon.EditorTools.Onboarding
             new TourStep(
                 id: "renders_watermark",
                 title: "Watermark",
-                instruction: "Toggle Watermark on to add the logo.\n\nUse this to match in-game branding.",
+                instruction: "Toggle Watermark on to add the logo.\n\nUse this to match in-game branding.\n\n Scroll down for the next steps.",
                 highlightTarget: "tour.renders.watermark",
                 isComplete: () => SessionState.GetBool(RendersWatermarkKey, false)),
             new TourStep(
@@ -333,7 +333,8 @@ namespace HoyoToon.EditorTools.Onboarding
         public static void StopTour()
         {
             SessionState.SetBool(TourActiveKey, false);
-            RestoreInspectorLockState();
+            SessionState.SetBool(InspectorLockKey, false);
+            SetInspectorLocked(false);
             try
             {
                 OnStepChanged?.Invoke();
