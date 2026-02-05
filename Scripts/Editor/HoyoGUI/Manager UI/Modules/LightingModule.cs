@@ -62,6 +62,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
         private double _nextAutoRotateTime;
         private double _nextAutoRotateRepaintTime;
         private float _manualYawCache = DefaultDirectionalYaw;
+        private Light _tutorialLight;
 
         public LightingModule()
         {
@@ -72,7 +73,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         public override void OnGUI(HoyoToonManager targetManager)
         {
-            DrawTourCalloutIfNeeded();
             EnsureSceneLights();
 
             _showSceneLights = DrawFoldoutSection("Scene Lights", _showSceneLights, () =>
@@ -84,30 +84,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUILayout.Space(4f);
 
             _showPrimaryControls = DrawFoldoutSection("Primary Sun Controls", _showPrimaryControls, DrawPrimaryLightControls);
-        }
-
-        private static void DrawTourCalloutIfNeeded()
-        {
-            if (!HoyoToonGuidedTourController.IsActive)
-            {
-                return;
-            }
-
-            var step = HoyoToonGuidedTourController.CurrentStep;
-            if (step.id != "lighting")
-            {
-                return;
-            }
-
-            HoyoToonTourCallout.Draw(
-                $"Guided Tour: {step.title}",
-                "Use Scene Lights to pick or create the key light, then tune Primary Sun for direction, intensity, and color temperature.",
-                "Continue to Scriptables",
-                () =>
-                {
-                    HoyoToonGuidedTourController.CompleteLightingStep();
-                    HoyoToonGuidedTourController.Advance();
-                });
         }
 
         private void EnsureSceneLights()
@@ -204,19 +180,44 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     }
                 }
             }
+
+            var listRect = GUILayoutUtility.GetLastRect();
+            HoyoToonTourOverlay.DrawHighlightIfActive("tour.lighting.remove", listRect, "Remove Tutorial Light", onClick: RemoveTutorialLight);
+            DrawInlineCalloutIfNeeded("lighting_remove",
+                "Click the highlighted area to remove the tutorial light.\n\nThe base scene lighting stays intact.");
         }
 
         private void DrawCreateLightControls()
         {
+            DrawInlineCalloutIfNeeded("lighting_lighttype",
+                "Click the Light Type dropdown and choose a light.\n\nDifferent light types help preview how the model reads.");
+            DrawInlineCalloutIfNeeded("lighting_addlight",
+                "Click Add Light to create the light in the scene.\n\nThis is a preview light and can be removed after.");
+
             using (new EditorGUILayout.HorizontalScope())
             {
+                EditorGUI.BeginChangeCheck();
                 _pendingLightType = (LightType)EditorGUILayout.EnumPopup("Create", _pendingLightType);
+                if (EditorGUI.EndChangeCheck() && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "lighting_lighttype", StringComparison.OrdinalIgnoreCase))
+                {
+                    HoyoToonGuidedTourController.NotifyLightingLightTypePicked();
+                }
+                var typeRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.lighting.create.dropdown", typeRect, "Light Type");
                 using (new EditorGUI.DisabledScope(!Enum.IsDefined(typeof(LightType), _pendingLightType)))
                 {
                     if (GUILayout.Button("Add Light", GUILayout.Width(90f)))
                     {
-                        CreateLightOfType(_pendingLightType);
+                        bool isTourAdd = HoyoToonGuidedTourController.IsActive
+                            && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "lighting_addlight", StringComparison.OrdinalIgnoreCase);
+                        CreateLightOfType(_pendingLightType, isTourAdd);
+                        if (isTourAdd)
+                        {
+                            HoyoToonGuidedTourController.NotifyLightingLightAdded();
+                        }
                     }
+                    var addRect = GUILayoutUtility.GetLastRect();
+                    HoyoToonTourOverlay.DrawHighlightIfActive("tour.lighting.create.add", addRect, "Add Light");
                 }
             }
         }
@@ -253,7 +254,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             EditorGUILayout.HelpBox("Select or add a directional light to begin editing.", MessageType.Info);
             if (GUILayout.Button("Create Directional Light"))
             {
-                CreateLightOfType(LightType.Directional);
+                CreateLightOfType(LightType.Directional, false);
             }
         }
 
@@ -436,21 +437,37 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
                     _manualYawCache = currentYaw;
                 }
 
+                DrawInlineCalloutIfNeeded("lighting_rotation",
+                    "Drag Rotation to aim the key light.\n\nThis changes shadow direction and highlights.");
                 float newYaw = EditorGUILayout.Slider(Styles.RotationLabel, currentYaw, 0f, 360f);
+                var rotationRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.lighting.rotation", rotationRect, "Rotation");
                 if (!Mathf.Approximately(newYaw, currentYaw))
                 {
                     _manualYawCache = newYaw;
                     ApplyToLightTransforms(targets, "Adjust Light Rotation", t => t.localEulerAngles = new Vector3(0f, newYaw, 0f));
+                    if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "lighting_rotation", StringComparison.OrdinalIgnoreCase))
+                    {
+                        HoyoToonGuidedTourController.NotifyLightingRotationAdjusted();
+                    }
                 }
             }
 
+            DrawInlineCalloutIfNeeded("lighting_autorotate",
+                "Toggle Auto Rotate on, then toggle it off.\n\nAuto Rotate is a quick preview for moving light.");
             bool newAutoRotate = EditorGUILayout.Toggle(Styles.AutoRotateLabel, _autoRotate);
+            var autoRotateRect = GUILayoutUtility.GetLastRect();
+            HoyoToonTourOverlay.DrawHighlightIfActive("tour.lighting.autorotate", autoRotateRect, "Auto Rotate");
             if (newAutoRotate != _autoRotate)
             {
                 _autoRotate = newAutoRotate;
                 _lastAutoRotateTime = EditorApplication.timeSinceStartup;
                 _nextAutoRotateTime = _lastAutoRotateTime;
                 _nextAutoRotateRepaintTime = _lastAutoRotateTime;
+                if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "lighting_autorotate", StringComparison.OrdinalIgnoreCase))
+                {
+                    HoyoToonGuidedTourController.NotifyLightingAutoRotateToggled(_autoRotate);
+                }
             }
 
             EditorGUI.BeginDisabledGroup(!_autoRotate);
@@ -477,7 +494,44 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
         }
 
-        private void CreateLightOfType(LightType type)
+        private void RemoveTutorialLight()
+        {
+            if (!HoyoToonGuidedTourController.IsActive
+                || !string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "lighting_remove", StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            if (_tutorialLight != null)
+            {
+                Undo.DestroyObjectImmediate(_tutorialLight.gameObject);
+                _tutorialLight = null;
+                MarkLightsDirty();
+            }
+
+            HoyoToonGuidedTourController.NotifyLightingLightRemoved();
+        }
+
+        private static void DrawInlineCalloutIfNeeded(string stepId, string body)
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            if (!string.Equals(HoyoToonGuidedTourController.CurrentStep.id, stepId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {HoyoToonGuidedTourController.CurrentStep.title}",
+                body,
+                null,
+                null);
+        }
+
+        private Light CreateLightOfType(LightType type, bool isTutorial)
         {
             string lightName = $"HoyoToon {type} Light";
             var go = new GameObject(lightName, typeof(Light));
@@ -495,6 +549,10 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             light.intensity = 1f;
             light.bounceIntensity = 1f;
             light.shadows = LightShadows.Soft;
+            if (isTutorial)
+            {
+                _tutorialLight = light;
+            }
 
             Vector3 position = Vector3.zero;
             Quaternion rotation = Quaternion.identity;
@@ -537,6 +595,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             Selection.activeGameObject = go;
             EditorGUIUtility.PingObject(go);
             MarkLightsDirty();
+            return light;
         }
 
         private Transform ResolveLightsParent()

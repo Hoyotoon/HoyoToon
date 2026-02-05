@@ -33,6 +33,7 @@ namespace HoyoToon.Utilities
             // Controls
             public const float TOOLBAR_HEIGHT_FALLBACK = 20f;
             public const float BUTTONS_BLOCK_HEIGHT = 40f;
+            public const float FOOTER_EXTRA_HEIGHT = 3f;   // divider + spacing above buttons
         }
 
         // Top bar config
@@ -303,7 +304,7 @@ namespace HoyoToon.Utilities
             float topBar = TopBarLayout.BANNER_HEIGHT;
             float paddings = UiLayout.PADDING_TOP + UiLayout.PADDING_MID1 + UiLayout.PADDING_MID2 + UiLayout.PADDING_BOTTOM;
             float toolbarH = Mathf.Max(0f, GetCardToolbarHeight());
-            float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT;
+            float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT + UiLayout.FOOTER_EXTRA_HEIGHT;
             float progressH = _showProgressBar ? (16f + UiLayout.PADDING_MID2) : 0f;
 
             float usedStatic = topBar + paddings + _cachedHeaderHeight + (toolbarH > 0 ? (toolbarH + 4f) : 0f) + buttonsH + progressH;
@@ -361,7 +362,7 @@ namespace HoyoToon.Utilities
                 float topBar = TopBarLayout.BANNER_HEIGHT;
                 float paddings = UiLayout.PADDING_TOP + UiLayout.PADDING_MID1 + UiLayout.PADDING_MID2 + UiLayout.PADDING_BOTTOM;
                 float toolbarH = Mathf.Max(0f, GetCardToolbarHeight());
-                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT;
+                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT + UiLayout.FOOTER_EXTRA_HEIGHT;
                 float cardH = (toolbarH > 0 ? (toolbarH + 4f) : 0f) + _cachedCardViewHeight;
                 float progressH = _showProgressBar ? (16f + UiLayout.PADDING_MID2) : 0f;
                 float desired = topBar + paddings + _cachedHeaderHeight + cardH + buttonsH + progressH;

@@ -69,7 +69,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         public override void OnGUI(HoyoToonManager targetManager)
         {
-            DrawTourCalloutIfNeeded();
             EnsurePrefsLoaded();
             if (_camera == null)
             {
@@ -88,30 +87,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             {
                 SavePrefs();
             }
-        }
-
-        private static void DrawTourCalloutIfNeeded()
-        {
-            if (!HoyoToonGuidedTourController.IsActive)
-            {
-                return;
-            }
-
-            var step = HoyoToonGuidedTourController.CurrentStep;
-            if (step.id != "renders")
-            {
-                return;
-            }
-
-            HoyoToonTourCallout.Draw(
-                $"Guided Tour: {step.title}",
-                "Capture a preview to verify materials, lighting, and post FX. Save a quick render for reference before final tweaks.",
-                "Finish Tour",
-                () =>
-                {
-                    HoyoToonGuidedTourController.CompleteRendersStep();
-                    HoyoToonGuidedTourController.Advance();
-                });
         }
 
         private void EnsurePrefsLoaded()
@@ -196,29 +171,79 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
         private void DrawCameraSection()
         {
+            DrawInlineCalloutIfNeeded("renders_camera",
+                "Click Use Main to pick the main camera.\n\nThis matches what you see in the scene.");
             using (new EditorGUILayout.HorizontalScope())
             {
+                EditorGUI.BeginChangeCheck();
                 _camera = (Camera)EditorGUILayout.ObjectField("Select Camera", _camera, typeof(Camera), true);
+                bool cameraChanged = EditorGUI.EndChangeCheck();
+                var cameraRect = GUILayoutUtility.GetLastRect();
+                if (cameraChanged && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_camera", StringComparison.OrdinalIgnoreCase) && _camera != null)
+                {
+                    HoyoToonGuidedTourController.NotifyRendersCameraSelected();
+                }
                 if (GUILayout.Button("Use Main", GUILayout.Width(80f)))
                 {
                     _camera = Camera.main;
+                    if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_camera", StringComparison.OrdinalIgnoreCase) && _camera != null)
+                    {
+                        HoyoToonGuidedTourController.NotifyRendersCameraSelected();
+                    }
                 }
+                var useMainRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.renders.camera", useMainRect, "Use Main", onClick: () =>
+                {
+                    _camera = Camera.main;
+                    if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_camera", StringComparison.OrdinalIgnoreCase) && _camera != null)
+                    {
+                        HoyoToonGuidedTourController.NotifyRendersCameraSelected();
+                    }
+                });
             }
 
-            _transparent = EditorGUILayout.Toggle("Transparent Background", _transparent);
+            DrawInlineCalloutIfNeeded("renders_transparent",
+                "Toggle Transparent Background on for alpha. Off makes opaque renders.\n\nUse alpha for cutouts and compositing.");
+            bool newTransparent = EditorGUILayout.Toggle("Transparent Background", _transparent);
+            var transparentRect = GUILayoutUtility.GetLastRect();
+            HoyoToonTourOverlay.DrawHighlightIfActive("tour.renders.transparent", transparentRect, "Transparent");
+            if (newTransparent != _transparent)
+            {
+                _transparent = newTransparent;
+                if (_transparent && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_transparent", StringComparison.OrdinalIgnoreCase))
+                {
+                    HoyoToonGuidedTourController.NotifyRendersTransparentEnabled();
+                }
+            }
+            else if (_transparent && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_transparent", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonGuidedTourController.NotifyRendersTransparentEnabled();
+            }
 
+            DrawInlineCalloutIfNeeded("renders_sync",
+                "Toggle Sync with Scene Camera on to follow the Scene view.\n\nThis mirrors Scene view framing.");
             bool newSync = EditorGUILayout.Toggle("Sync with Scene Camera", _syncSceneCamera);
+            var syncRect = GUILayoutUtility.GetLastRect();
+            HoyoToonTourOverlay.DrawHighlightIfActive("tour.renders.sync", syncRect, "Sync");
             if (newSync != _syncSceneCamera)
             {
                 _syncSceneCamera = newSync;
                 if (_syncSceneCamera)
                 {
                     BeginSync();
+                    if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_sync", StringComparison.OrdinalIgnoreCase))
+                    {
+                        HoyoToonGuidedTourController.NotifyRendersSyncEnabled();
+                    }
                 }
                 else
                 {
                     EndSync();
                 }
+            }
+            else if (_syncSceneCamera && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_sync", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonGuidedTourController.NotifyRendersSyncEnabled();
             }
 
             if (_syncSceneCamera && _camera == null)
@@ -273,11 +298,46 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
             }
 
             _openAfter = EditorGUILayout.Toggle("Open Last File", _openAfter);
-            _watermark = EditorGUILayout.Toggle("Watermark", _watermark);
+            DrawInlineCalloutIfNeeded("renders_watermark",
+                "Toggle Watermark on to add the logo.\n\nUse this to match in-game branding.");
+            bool newWatermark = EditorGUILayout.Toggle("Watermark", _watermark);
+            var watermarkRect = GUILayoutUtility.GetLastRect();
+            HoyoToonTourOverlay.DrawHighlightIfActive("tour.renders.watermark", watermarkRect, "Watermark");
+            if (newWatermark != _watermark)
+            {
+                _watermark = newWatermark;
+                if (_watermark && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_watermark", StringComparison.OrdinalIgnoreCase))
+                {
+                    HoyoToonGuidedTourController.NotifyRendersWatermarkEnabled();
+                }
+            }
+            else if (_watermark && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "renders_watermark", StringComparison.OrdinalIgnoreCase))
+            {
+                HoyoToonGuidedTourController.NotifyRendersWatermarkEnabled();
+            }
             if (_watermark && GetWatermarkTexture() == null)
             {
                 EditorGUILayout.HelpBox("Add a watermark texture at Resources/UI/hoyotoon.png to enable it.", MessageType.Info);
             }
+        }
+
+        private static void DrawInlineCalloutIfNeeded(string stepId, string body)
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            if (!string.Equals(HoyoToonGuidedTourController.CurrentStep.id, stepId, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            HoyoToonTourCallout.Draw(
+                $"Guided Tour: {HoyoToonGuidedTourController.CurrentStep.title}",
+                body,
+                null,
+                null);
         }
 
         private void DrawActionsSection()

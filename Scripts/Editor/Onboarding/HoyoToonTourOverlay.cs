@@ -1,4 +1,5 @@
 #if UNITY_EDITOR
+using System;
 using UnityEditor;
 using UnityEditorInternal;
 using UnityEngine;
@@ -9,7 +10,6 @@ namespace HoyoToon.EditorTools.Onboarding
     {
         private static readonly Color s_FillColor = new Color(1f, 0.6f, 0.1f, 0.12f);
         private static readonly Color s_OutlineColor = new Color(1f, 0.6f, 0.1f, 0.9f);
-        private static GUIStyle s_TooltipStyle;
         private static bool s_updateHooked;
         private static double s_nextRepaintTime;
 
@@ -18,7 +18,7 @@ namespace HoyoToon.EditorTools.Onboarding
             EnsureUpdateHook();
         }
 
-        public static void DrawHighlightIfActive(string targetId, Rect rect, string label, bool blink = true)
+        public static void DrawHighlightIfActive(string targetId, Rect rect, string label, bool blink = true, Action onClick = null)
         {
             if (!HoyoToonGuidedTourController.IsTargetActive(targetId))
             {
@@ -26,7 +26,31 @@ namespace HoyoToon.EditorTools.Onboarding
             }
 
             EnsureUpdateHook();
+            HandleClick(rect, onClick);
             DrawHighlight(rect, label, blink);
+        }
+
+        private static void HandleClick(Rect rect, Action onClick)
+        {
+            if (onClick == null)
+            {
+                return;
+            }
+
+            var evt = Event.current;
+            if (evt == null || evt.type != EventType.MouseDown || evt.button != 0)
+            {
+                return;
+            }
+
+            if (!rect.Contains(evt.mousePosition))
+            {
+                return;
+            }
+
+            onClick.Invoke();
+            evt.Use();
+            GUI.changed = true;
         }
 
         private static void DrawHighlight(Rect rect, string label, bool blink)
@@ -48,26 +72,7 @@ namespace HoyoToon.EditorTools.Onboarding
             EditorGUI.DrawRect(padded, fill);
             Handles.DrawSolidRectangleWithOutline(padded, new Color(0f, 0f, 0f, 0f), outline);
 
-            if (!string.IsNullOrEmpty(label))
-            {
-                EnsureStyle();
-                var content = new GUIContent(label);
-                Vector2 size = s_TooltipStyle.CalcSize(content);
-                Rect tipRect = new Rect(padded.x, padded.y - size.y - 6f, size.x + 10f, size.y + 4f);
-                EditorGUI.DrawRect(tipRect, new Color(0f, 0f, 0f, 0.8f));
-                GUI.Label(new Rect(tipRect.x + 5f, tipRect.y + 2f, size.x, size.y), content, s_TooltipStyle);
-            }
-        }
-
-        private static void EnsureStyle()
-        {
-            if (s_TooltipStyle == null)
-            {
-                s_TooltipStyle = new GUIStyle(EditorStyles.whiteLabel)
-                {
-                    fontSize = 10
-                };
-            }
+            // Tooltip label intentionally suppressed to avoid blocking inline callouts.
         }
 
         private static void EnsureUpdateHook()

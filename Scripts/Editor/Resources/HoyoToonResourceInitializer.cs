@@ -48,6 +48,13 @@ namespace HoyoToon
                 
                 if (isFirstTime)
                 {
+                    if (!HoyoToonGuidedTourController.HasSeenTour() && !Application.isBatchMode)
+                    {
+                        HoyoToonGuidedTourController.MarkTourSeen();
+                        HoyoToonGuidedTourController.StartTourAtStep("firsttime");
+                        HoyoToonGuidedTourWindow.ShowWindow();
+                    }
+
                     HandleFirstTimeSetup();
                 }
                 else

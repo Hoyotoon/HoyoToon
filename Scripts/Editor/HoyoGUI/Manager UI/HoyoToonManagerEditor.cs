@@ -311,23 +311,14 @@ namespace HoyoToon.EditorTools.ManagerUI
             }
 
             var step = HoyoToonGuidedTourController.CurrentStep;
-            if (string.Equals(step.id, "model", StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(step.id, "lighting_select", StringComparison.OrdinalIgnoreCase))
             {
-                string body = "Nice work! Your model is now in the scene. Next we will walk through lighting and polish modules.";
+                string body = "Nice work! Your model is now in the scene. Click Lighting so we can adjust the key light.";
                 HoyoToonTourCallout.Draw(
                     $"Guided Tour: {step.title}",
                     body,
-                    "Continue to Lighting",
-                    () =>
-                    {
-                        HoyoToonGuidedTourController.CompleteModelStep();
-                        HoyoToonGuidedTourController.Advance();
-                        if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "model", StringComparison.OrdinalIgnoreCase))
-                        {
-                            HoyoToonGuidedTourController.JumpToStep("lighting");
-                        }
-                        _moduleNavbar?.SelectModuleByDisplayName("Lighting");
-                    });
+                    null,
+                    null);
                 return;
             }
 
@@ -358,11 +349,12 @@ namespace HoyoToon.EditorTools.ManagerUI
         {
             switch (stepId)
             {
+                case "modules":
                 case "mainmodule":
-                case "lighting":
-                case "scriptables":
-                case "postprocessing":
-                case "renders":
+                case "lighting_select":
+                case "scriptables_select":
+                case "postprocessing_select":
+                case "renders_select":
                     return true;
                 default:
                     return false;
@@ -378,15 +370,17 @@ namespace HoyoToon.EditorTools.ManagerUI
 
             switch (stepId)
             {
+                case "modules":
+                    return selectedModule is Modules.ModelsModule;
                 case "mainmodule":
                     return selectedModule is Modules.MainModule;
-                case "lighting":
+                case "lighting_select":
                     return selectedModule is Modules.LightingModule;
-                case "scriptables":
+                case "scriptables_select":
                     return selectedModule is Modules.ScriptablesModule;
-                case "postprocessing":
+                case "postprocessing_select":
                     return selectedModule is Modules.PostProcessingModule;
-                case "renders":
+                case "renders_select":
                     return selectedModule is Modules.RendersModule;
                 default:
                     return false;
@@ -1280,7 +1274,17 @@ namespace HoyoToon.EditorTools.ManagerUI
                 return null;
             }
 
-            return TryGetActiveModelFolder(model, out var folder) ? folder : null;
+            if (TryGetActiveModelFolder(model, out var folder))
+            {
+                return folder;
+            }
+
+            if (IsTourPrefabStep())
+            {
+                return EnsureTourPrefabFolder();
+            }
+
+            return null;
         }
 
         private static bool TryGetActiveModelFolder(GameObject activeModel, out string folder)
@@ -1312,6 +1316,36 @@ namespace HoyoToon.EditorTools.ManagerUI
             return true;
         }
 
+        private static bool IsTourPrefabStep()
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return false;
+            }
+
+            string stepId = HoyoToonGuidedTourController.CurrentStep.id;
+            return string.Equals(stepId, "footer", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(stepId, "prefab", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static string EnsureTourPrefabFolder()
+        {
+            const string root = "Assets/HoyoToon";
+            const string prefabs = "Assets/HoyoToon/Prefabs";
+
+            if (!AssetDatabase.IsValidFolder(root))
+            {
+                AssetDatabase.CreateFolder("Assets", "HoyoToon");
+            }
+
+            if (!AssetDatabase.IsValidFolder(prefabs))
+            {
+                AssetDatabase.CreateFolder(root, "Prefabs");
+            }
+
+            return prefabs;
+        }
+
         private void CreatePrefabFromActiveModel(GameObject activeModel)
         {
             if (activeModel == null)
@@ -1321,8 +1355,16 @@ namespace HoyoToon.EditorTools.ManagerUI
 
             if (!TryGetActiveModelFolder(activeModel, out var folder))
             {
-                HoyoToonDialogWindow.ShowError("Cannot Create Prefab", "Unable to locate the original asset folder for this model.");
-                return;
+                if (IsTourPrefabStep())
+                {
+                    folder = EnsureTourPrefabFolder();
+                }
+
+                if (string.IsNullOrEmpty(folder))
+                {
+                    HoyoToonDialogWindow.ShowError("Cannot Create Prefab", "Unable to locate the original asset folder for this model.");
+                    return;
+                }
             }
 
             var prefabName = $"{activeModel.name}.prefab";
@@ -1341,6 +1383,16 @@ namespace HoyoToon.EditorTools.ManagerUI
                 Selection.activeObject = prefab;
                 EditorGUIUtility.PingObject(prefab);
                 HoyoToonDialogWindow.ShowInfo("Prefab Created", $"Saved prefab to:\n{savePath}");
+                if (HoyoToonGuidedTourController.IsActive)
+                {
+                    string stepId = HoyoToonGuidedTourController.CurrentStep.id;
+                    if (string.Equals(stepId, "footer", StringComparison.OrdinalIgnoreCase))
+                    {
+                        HoyoToonGuidedTourController.CompleteFooterStep();
+                    }
+
+                    HoyoToonGuidedTourController.NotifyPrefabCreated();
+                }
             }
             catch (Exception ex)
             {

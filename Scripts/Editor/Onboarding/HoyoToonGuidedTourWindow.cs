@@ -32,58 +32,106 @@ namespace HoyoToon.EditorTools.Onboarding
             ShowWindow();
         }
 
-        [MenuItem(ResetStepMenuPrefix + "1 - Resources", priority = 3)]
+        [MenuItem(ResetStepMenuPrefix + "1 - First Time", priority = 3)]
+        public static void ResetToFirstTime() => ResetToStep("firsttime");
+
+        [MenuItem(ResetStepMenuPrefix + "2 - Resources", priority = 4)]
         public static void ResetToResources() => ResetToStep("resources");
 
-        [MenuItem(ResetStepMenuPrefix + "2 - Scene", priority = 4)]
+        [MenuItem(ResetStepMenuPrefix + "3 - Scene", priority = 5)]
         public static void ResetToScene() => ResetToStep("scene");
 
-        [MenuItem(ResetStepMenuPrefix + "3 - Manager", priority = 5)]
+        [MenuItem(ResetStepMenuPrefix + "4 - Manager", priority = 6)]
         public static void ResetToManager() => ResetToStep("manager");
 
-        [MenuItem(ResetStepMenuPrefix + "4 - Models Module", priority = 6)]
+        [MenuItem(ResetStepMenuPrefix + "5 - Models Module", priority = 7)]
         public static void ResetToModelsModule() => ResetToStep("modules");
 
-        [MenuItem(ResetStepMenuPrefix + "5 - Game", priority = 7)]
+        [MenuItem(ResetStepMenuPrefix + "6 - Game", priority = 8)]
         public static void ResetToGame() => ResetToStep("game");
 
-        [MenuItem(ResetStepMenuPrefix + "6 - Character", priority = 8)]
+        [MenuItem(ResetStepMenuPrefix + "7 - Character", priority = 9)]
         public static void ResetToCharacter() => ResetToStep("character");
 
-        [MenuItem(ResetStepMenuPrefix + "7 - Variant", priority = 9)]
+        [MenuItem(ResetStepMenuPrefix + "8 - Variant", priority = 10)]
         public static void ResetToVariant() => ResetToStep("variant");
 
-        [MenuItem(ResetStepMenuPrefix + "8 - FBX", priority = 10)]
+        [MenuItem(ResetStepMenuPrefix + "9 - FBX", priority = 11)]
         public static void ResetToFbx() => ResetToStep("fbx");
 
-        [MenuItem(ResetStepMenuPrefix + "9 - Download", priority = 11)]
+        [MenuItem(ResetStepMenuPrefix + "10 - Download", priority = 12)]
         public static void ResetToDownload() => ResetToStep("download");
 
-        [MenuItem(ResetStepMenuPrefix + "10 - Main Module", priority = 12)]
+        [MenuItem(ResetStepMenuPrefix + "11 - Main Module", priority = 13)]
         public static void ResetToMainModule() => ResetToStep("mainmodule");
 
-        [MenuItem(ResetStepMenuPrefix + "11 - Add Model", priority = 13)]
+        [MenuItem(ResetStepMenuPrefix + "12 - Add Model", priority = 14)]
         public static void ResetToAddModel() => ResetToStep("addmodel");
 
-        [MenuItem(ResetStepMenuPrefix + "12 - Auto Setup", priority = 14)]
+        [MenuItem(ResetStepMenuPrefix + "13 - Auto Setup", priority = 15)]
         public static void ResetToAutoSetup() => ResetToStep("autosetup");
 
-        [MenuItem(ResetStepMenuPrefix + "13 - Model In Scene", priority = 15)]
+        [MenuItem(ResetStepMenuPrefix + "14 - Model In Scene", priority = 16)]
         public static void ResetToModel() => ResetToStep("model");
 
-        [MenuItem(ResetStepMenuPrefix + "14 - Lighting", priority = 16)]
-        public static void ResetToLighting() => ResetToStep("lighting");
+        [MenuItem(ResetStepMenuPrefix + "15 - Lighting Select", priority = 17)]
+        public static void ResetToLightingSelect() => ResetToStep("lighting_select");
 
-        [MenuItem(ResetStepMenuPrefix + "15 - Scriptables", priority = 17)]
-        public static void ResetToScriptables() => ResetToStep("scriptables");
+        [MenuItem(ResetStepMenuPrefix + "16 - Lighting Light Type", priority = 18)]
+        public static void ResetToLightingType() => ResetToStep("lighting_lighttype");
 
-        [MenuItem(ResetStepMenuPrefix + "16 - Post Processing", priority = 18)]
-        public static void ResetToPostProcessing() => ResetToStep("postprocessing");
+        [MenuItem(ResetStepMenuPrefix + "17 - Lighting Add Light", priority = 19)]
+        public static void ResetToLightingAdd() => ResetToStep("lighting_addlight");
 
-        [MenuItem(ResetStepMenuPrefix + "17 - Renders", priority = 19)]
-        public static void ResetToRenders() => ResetToStep("renders");
+        [MenuItem(ResetStepMenuPrefix + "18 - Lighting Remove", priority = 20)]
+        public static void ResetToLightingRemove() => ResetToStep("lighting_remove");
 
-        [MenuItem(ResetStepMenuPrefix + "18 - Finish", priority = 20)]
+        [MenuItem(ResetStepMenuPrefix + "19 - Lighting Rotation", priority = 21)]
+        public static void ResetToLightingRotation() => ResetToStep("lighting_rotation");
+
+        [MenuItem(ResetStepMenuPrefix + "20 - Lighting Auto Rotate", priority = 22)]
+        public static void ResetToLightingAutoRotate() => ResetToStep("lighting_autorotate");
+
+        [MenuItem(ResetStepMenuPrefix + "21 - Scriptables Select", priority = 23)]
+        public static void ResetToScriptablesSelect() => ResetToStep("scriptables_select");
+
+        [MenuItem(ResetStepMenuPrefix + "22 - Shadow Boost", priority = 24)]
+        public static void ResetToShadowBoost() => ResetToStep("scriptables_shadowboost");
+
+        [MenuItem(ResetStepMenuPrefix + "23 - Level Adjust", priority = 25)]
+        public static void ResetToLevelAdjust() => ResetToStep("scriptables_leveladjust");
+
+        [MenuItem(ResetStepMenuPrefix + "24 - Reset Scriptables", priority = 26)]
+        public static void ResetToScriptablesReset() => ResetToStep("scriptables_reset");
+
+        [MenuItem(ResetStepMenuPrefix + "25 - Post Processing Select", priority = 27)]
+        public static void ResetToPostProcessingSelect() => ResetToStep("postprocessing_select");
+
+        [MenuItem(ResetStepMenuPrefix + "26 - Post Processing Profile", priority = 28)]
+        public static void ResetToPostProcessingProfile() => ResetToStep("postprocessing_profile");
+
+        [MenuItem(ResetStepMenuPrefix + "27 - Renders Select", priority = 29)]
+        public static void ResetToRendersSelect() => ResetToStep("renders_select");
+
+        [MenuItem(ResetStepMenuPrefix + "28 - Renders Camera", priority = 30)]
+        public static void ResetToRendersCamera() => ResetToStep("renders_camera");
+
+        [MenuItem(ResetStepMenuPrefix + "29 - Renders Transparent", priority = 31)]
+        public static void ResetToRendersTransparent() => ResetToStep("renders_transparent");
+
+        [MenuItem(ResetStepMenuPrefix + "30 - Renders Sync", priority = 32)]
+        public static void ResetToRendersSync() => ResetToStep("renders_sync");
+
+        [MenuItem(ResetStepMenuPrefix + "31 - Renders Watermark", priority = 33)]
+        public static void ResetToRendersWatermark() => ResetToStep("renders_watermark");
+
+        [MenuItem(ResetStepMenuPrefix + "32 - Footer Actions", priority = 34)]
+        public static void ResetToFooter() => ResetToStep("footer");
+
+        [MenuItem(ResetStepMenuPrefix + "33 - Prefab", priority = 35)]
+        public static void ResetToPrefab() => ResetToStep("prefab");
+
+        [MenuItem(ResetStepMenuPrefix + "34 - Finish", priority = 36)]
         public static void ResetToFinish() => ResetToStep("finish");
 
         private static void ResetToStep(string stepId)
@@ -168,9 +216,9 @@ namespace HoyoToon.EditorTools.Onboarding
             EnsureLocalStyles();
 
             float total = 0f;
-            total += _sectionHeaderStyle.CalcHeight(new GUIContent("Current Step"), contentWidth);
-            total += EditorGUIUtility.singleLineHeight * 6f;
-            total += 90f;
+            total += _sectionHeaderStyle.CalcHeight(new GUIContent("Guided Tour"), contentWidth);
+            total += EditorGUIUtility.singleLineHeight * 5f;
+            total += 60f;
             return total;
         }
 
@@ -183,9 +231,7 @@ namespace HoyoToon.EditorTools.Onboarding
         private void DrawCurrentStep()
         {
             var step = HoyoToonGuidedTourController.CurrentStep;
-            GUILayout.Label("Current Step", _sectionHeaderStyle);
-            GUILayout.Space(2f);
-            GUILayout.Label($"Step {HoyoToonGuidedTourController.CurrentStepIndex + 1} of {HoyoToonGuidedTourController.StepCount}", EditorStyles.miniLabel);
+            GUILayout.Label("Guided Tour", _sectionHeaderStyle);
             GUILayout.Label(step.title, _messageLabelStyle);
             GUILayout.Space(2f);
             GUILayout.Label(step.instruction, _messageLabelStyle);
@@ -198,27 +244,6 @@ namespace HoyoToon.EditorTools.Onboarding
             }
 
             DrawStepActions(step.id);
-
-            GUILayout.Space(8f);
-            using (new EditorGUILayout.HorizontalScope())
-            {
-                using (new EditorGUI.DisabledScope(HoyoToonGuidedTourController.CurrentStepIndex == 0))
-                {
-                    if (GUILayout.Button("Back", GUILayout.Width(90f)))
-                    {
-                        HoyoToonGuidedTourController.GoBack();
-                    }
-                }
-
-                GUILayout.FlexibleSpace();
-                using (new EditorGUI.DisabledScope(!HoyoToonGuidedTourController.CanAdvance()))
-                {
-                    if (GUILayout.Button("Next", GUILayout.Width(90f)))
-                    {
-                        HoyoToonGuidedTourController.Advance();
-                    }
-                }
-            }
         }
 
 
@@ -231,6 +256,20 @@ namespace HoyoToon.EditorTools.Onboarding
                     if (GUILayout.Button("Open Resource Status", GUILayout.Height(24f)))
                     {
                         EditorApplication.ExecuteMenuItem("HoyoToon/Resources/Check Resource Status");
+                    }
+                    break;
+                case "firsttime":
+                    GUILayout.Label("Is this your first time using HoyoToon?", EditorStyles.centeredGreyMiniLabel);
+                    using (new EditorGUILayout.HorizontalScope())
+                    {
+                        if (GUILayout.Button("Yes, guide me", GUILayout.Height(24f)))
+                        {
+                            HoyoToonGuidedTourController.ConfirmFirstTime(true);
+                        }
+                        if (GUILayout.Button("No, skip tour", GUILayout.Height(24f)))
+                        {
+                            HoyoToonGuidedTourController.ConfirmFirstTime(false);
+                        }
                     }
                     break;
                 case "scene":
@@ -295,20 +334,26 @@ namespace HoyoToon.EditorTools.Onboarding
                         HoyoToonGuidedTourController.FocusModelInScene();
                     }
                     break;
-                case "lighting":
-                    GUILayout.Label("Go to Lighting and set the key light for a clean silhouette.", EditorStyles.centeredGreyMiniLabel);
+                case "lighting_select":
+                    GUILayout.Label("Click Lighting in the Modules bar to continue.", EditorStyles.centeredGreyMiniLabel);
                     break;
-                case "scriptables":
-                    GUILayout.Label("Open Scriptables to review game lighting settings.", EditorStyles.centeredGreyMiniLabel);
+                case "scriptables_select":
+                    GUILayout.Label("Click Scriptables in the Modules bar to continue.", EditorStyles.centeredGreyMiniLabel);
                     break;
-                case "postprocessing":
-                    GUILayout.Label("Pick a post-processing profile that matches the game style.", EditorStyles.centeredGreyMiniLabel);
+                case "postprocessing_select":
+                    GUILayout.Label("Click Post Processing in the Modules bar to continue.", EditorStyles.centeredGreyMiniLabel);
                     break;
-                case "renders":
-                    GUILayout.Label("Take a quick render to verify the final look.", EditorStyles.centeredGreyMiniLabel);
+                case "renders_select":
+                    GUILayout.Label("Click Renders in the Modules bar to continue.", EditorStyles.centeredGreyMiniLabel);
+                    break;
+                case "footer":
+                    GUILayout.Label("Review the footer actions below the modules.", EditorStyles.centeredGreyMiniLabel);
+                    break;
+                case "prefab":
+                    GUILayout.Label("Use Create Prefab in the footer to save the Acheron model.", EditorStyles.centeredGreyMiniLabel);
                     break;
                 case "finish":
-                    GUILayout.Label("Tour complete. You can keep exploring the modules.", EditorStyles.centeredGreyMiniLabel);
+                    GUILayout.Label("Congrats! Your prefab is saved and you are ready to keep exploring.", EditorStyles.centeredGreyMiniLabel);
                     break;
             }
         }

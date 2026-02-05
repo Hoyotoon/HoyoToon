@@ -33,6 +33,24 @@ namespace HoyoToon.EditorTools.Onboarding
         private const string ScriptablesExplainedKey = "HoyoToon_Tour_ScriptablesExplained";
         private const string PostProcessingExplainedKey = "HoyoToon_Tour_PostProcessingExplained";
         private const string RendersExplainedKey = "HoyoToon_Tour_RendersExplained";
+        private const string LightingLightTypeKey = "HoyoToon_Tour_LightingLightType";
+        private const string LightingLightAddedKey = "HoyoToon_Tour_LightingLightAdded";
+        private const string LightingLightRemovedKey = "HoyoToon_Tour_LightingLightRemoved";
+        private const string LightingRotationKey = "HoyoToon_Tour_LightingRotation";
+        private const string LightingAutoRotateSeenKey = "HoyoToon_Tour_LightingAutoRotateSeen";
+        private const string LightingAutoRotateCycleKey = "HoyoToon_Tour_LightingAutoRotateCycle";
+        private const string ScriptablesShadowBoostKey = "HoyoToon_Tour_ScriptablesShadowBoost";
+        private const string ScriptablesLevelAdjustKey = "HoyoToon_Tour_ScriptablesLevelAdjust";
+        private const string ScriptablesResetKey = "HoyoToon_Tour_ScriptablesReset";
+        private const string PostProcessingProfileKey = "HoyoToon_Tour_PostProcessingProfile";
+        private const string RendersCameraKey = "HoyoToon_Tour_RendersCamera";
+        private const string RendersTransparentKey = "HoyoToon_Tour_RendersTransparent";
+        private const string RendersSyncKey = "HoyoToon_Tour_RendersSync";
+        private const string RendersWatermarkKey = "HoyoToon_Tour_RendersWatermark";
+        private const string FirstTimeConfirmedKey = "HoyoToon_Tour_FirstTimeConfirmed";
+        private const string FooterExplainedKey = "HoyoToon_Tour_FooterExplained";
+        private const string PrefabCreatedKey = "HoyoToon_Tour_PrefabCreated";
+        private const string TourShownKey = "HoyoToon_Tour_Shown";
 
         public const string HoyoToonScenePath = "Packages/com.meliverse.hoyotoon/HoyoToon.unity";
         public const string DesiredGameName = "Honkai Star Rail";
@@ -46,6 +64,12 @@ namespace HoyoToon.EditorTools.Onboarding
 
         private static readonly TourStep[] s_steps =
         {
+            new TourStep(
+                id: "firsttime",
+                title: "First Time With HoyoToon?",
+                instruction: "Let us know if this is your first time so we can tailor the walkthrough.",
+                highlightTarget: null,
+                isComplete: () => SessionState.GetBool(FirstTimeConfirmedKey, false)),
             new TourStep(
                 id: "resources",
                 title: "Check Resources",
@@ -103,7 +127,7 @@ namespace HoyoToon.EditorTools.Onboarding
             new TourStep(
                 id: "mainmodule",
                 title: "Open Main Module",
-                instruction: "Switch to Main so we can add the downloaded FBX.",
+                instruction: "Click the Main tab to continue.",
                 highlightTarget: "tour.modules.main",
                 isComplete: () => string.Equals(SessionState.GetString(SelectedModuleKey, string.Empty), "Main", StringComparison.OrdinalIgnoreCase)),
             new TourStep(
@@ -125,34 +149,124 @@ namespace HoyoToon.EditorTools.Onboarding
                 highlightTarget: null,
                 isComplete: () => IsModelInScene() && SessionState.GetBool(ModelApprovedKey, false)),
             new TourStep(
-                id: "lighting",
-                title: "Lighting Module",
-                instruction: "Adjust the key light direction and intensity for a clear silhouette.",
+                id: "lighting_select",
+                title: "Open Lighting Module",
+                instruction: "Click the Lighting tab to continue.\n\nLighting controls let you shape the key light and shadows on the model.",
                 highlightTarget: "tour.modules.lighting",
-                isComplete: () => IsSelectedModule("Lighting") && SessionState.GetBool(LightingExplainedKey, false)),
+                isComplete: () => IsSelectedModule("Lighting")),
             new TourStep(
-                id: "scriptables",
-                title: "Scriptables Module",
-                instruction: "Ensure Scriptables Controller exists and review game lighting settings.",
+                id: "lighting_lighttype",
+                title: "Choose Light Type",
+                instruction: "Click the Light Type dropdown and choose a light.\n\nDifferent light types help preview how the model reads.",
+                highlightTarget: "tour.lighting.create.dropdown",
+                isComplete: () => SessionState.GetBool(LightingLightTypeKey, false)),
+            new TourStep(
+                id: "lighting_addlight",
+                title: "Add Light",
+                instruction: "Click Add Light to create the light in the scene.\n\nThis is a preview light and can be removed after.",
+                highlightTarget: "tour.lighting.create.add",
+                isComplete: () => SessionState.GetBool(LightingLightAddedKey, false)),
+            new TourStep(
+                id: "lighting_remove",
+                title: "Remove Tutorial Light",
+                instruction: "Click the highlighted area to remove the tutorial light.\n\nThe base scene lighting stays intact.",
+                highlightTarget: "tour.lighting.remove",
+                isComplete: () => SessionState.GetBool(LightingLightRemovedKey, false)),
+            new TourStep(
+                id: "lighting_rotation",
+                title: "Rotate Light",
+                instruction: "Drag Rotation to aim the key light.\n\nThis changes shadow direction and highlights.",
+                highlightTarget: "tour.lighting.rotation",
+                isComplete: () => SessionState.GetBool(LightingRotationKey, false)),
+            new TourStep(
+                id: "lighting_autorotate",
+                title: "Auto Rotate",
+                instruction: "Toggle Auto Rotate on, then toggle it off.\n\nAuto Rotate is a quick preview for moving light.",
+                highlightTarget: "tour.lighting.autorotate",
+                isComplete: () => SessionState.GetBool(LightingAutoRotateCycleKey, false)),
+            new TourStep(
+                id: "scriptables_select",
+                title: "Open Scriptables",
+                instruction: "Click the Scriptables tab to continue.\n\nScriptables control per-game shader lighting flags.",
                 highlightTarget: "tour.modules.scriptables",
-                isComplete: () => IsSelectedModule("Scriptables") && SessionState.GetBool(ScriptablesExplainedKey, false)),
+                isComplete: () => IsSelectedModule("Scriptables")),
             new TourStep(
-                id: "postprocessing",
-                title: "Post Processing Module",
-                instruction: "Pick a post-processing profile that matches the game style.",
+                id: "scriptables_shadowboost",
+                title: "Enable Shadow Boost",
+                instruction: "Enable Shadow Boost and check the scene.\n\nShadow Boost strengthens contact shadows.",
+                highlightTarget: "tour.scriptables.shadowboost",
+                isComplete: () => SessionState.GetBool(ScriptablesShadowBoostKey, false)),
+            new TourStep(
+                id: "scriptables_leveladjust",
+                title: "Enable Level Adjust",
+                instruction: "Enable Level Adjust and check the scene.\n\nLevel Adjust lifts overall brightness for cutscene looks.",
+                highlightTarget: "tour.scriptables.leveladjust",
+                isComplete: () => SessionState.GetBool(ScriptablesLevelAdjustKey, false)),
+            new TourStep(
+                id: "scriptables_reset",
+                title: "Reset Lighting Flags",
+                instruction: "Click the highlighted toggle to continue.\n\nShadow Boost and Level Adjust are turned off for you so the rest of the tour uses neutral lighting.",
+                highlightTarget: "tour.scriptables.reset",
+                isComplete: () => SessionState.GetBool(ScriptablesResetKey, false)),
+            new TourStep(
+                id: "postprocessing_select",
+                title: "Open Post Processing",
+                instruction: "Click the Post Processing tab to continue.\n\nProfiles match in-game color grading and bloom.",
                 highlightTarget: "tour.modules.postprocessing",
-                isComplete: () => IsSelectedModule("Post Processing") && SessionState.GetBool(PostProcessingExplainedKey, false)),
+                isComplete: () => IsSelectedModule("Post Processing")),
             new TourStep(
-                id: "renders",
-                title: "Renders Module",
-                instruction: "Capture a quick render to verify the final look.",
+                id: "postprocessing_profile",
+                title: "Select Profile",
+                instruction: "Click the Profile dropdown and select Genshin Impact.\n\nThis profile matches the tutorial look.",
+                highlightTarget: "tour.postprocessing.profile",
+                isComplete: () => SessionState.GetBool(PostProcessingProfileKey, false)),
+            new TourStep(
+                id: "renders_select",
+                title: "Open Renders",
+                instruction: "Click the Renders tab to continue.\n\nRenders captures high-res stills from a chosen camera.",
                 highlightTarget: "tour.modules.renders",
-                isComplete: () => IsSelectedModule("Renders") && SessionState.GetBool(RendersExplainedKey, false)),
+                isComplete: () => IsSelectedModule("Renders")),
+            new TourStep(
+                id: "renders_camera",
+                title: "Select Camera",
+                instruction: "Click Use Main to pick the main camera.\n\nThis matches what you see in the scene.",
+                highlightTarget: "tour.renders.camera",
+                isComplete: () => SessionState.GetBool(RendersCameraKey, false)),
+            new TourStep(
+                id: "renders_transparent",
+                title: "Transparent Background",
+                instruction: "Toggle Transparent Background on for alpha. Off makes opaque renders.\n\nUse alpha for cutouts and compositing.",
+                highlightTarget: "tour.renders.transparent",
+                isComplete: () => SessionState.GetBool(RendersTransparentKey, false)),
+            new TourStep(
+                id: "renders_sync",
+                title: "Sync With Scene Camera",
+                instruction: "Toggle Sync with Scene Camera on to follow the Scene view.\n\nThis mirrors Scene view framing.",
+                highlightTarget: "tour.renders.sync",
+                isComplete: () => SessionState.GetBool(RendersSyncKey, false)),
+            new TourStep(
+                id: "renders_watermark",
+                title: "Watermark",
+                instruction: "Toggle Watermark on to add the logo.\n\nUse this to match in-game branding.",
+                highlightTarget: "tour.renders.watermark",
+                isComplete: () => SessionState.GetBool(RendersWatermarkKey, false)),
+            new TourStep(
+                id: "footer",
+                title: "Footer Actions",
+                instruction: "Click Create Prefab to continue.\n\nFooter actions apply to the active model.",
+                highlightTarget: "tour.footer",
+                isComplete: () => SessionState.GetBool(FooterExplainedKey, false)),
+            new TourStep(
+                id: "prefab",
+                title: "Create Prefab",
+                instruction: "Click Create Prefab to save the model.\n\nPrefabs let you reuse this setup later.",
+                highlightTarget: "tour.footer.prefab",
+                isComplete: () => SessionState.GetBool(PrefabCreatedKey, false)),
             new TourStep(
                 id: "finish",
                 title: "Finish",
-                instruction: "Tour complete. You now know the core setup, lighting, and render flow.",
-                highlightTarget: null,
+                instruction: "Click the highlighted callout to finish the tour.\n\nYou are all set and your prefab is saved.",
+                highlightTarget: "tour.finish.callout",
                 isComplete: () => true)
         };
 
@@ -190,6 +304,23 @@ namespace HoyoToon.EditorTools.Onboarding
             SessionState.SetBool(ScriptablesExplainedKey, false);
             SessionState.SetBool(PostProcessingExplainedKey, false);
             SessionState.SetBool(RendersExplainedKey, false);
+            SessionState.SetBool(LightingLightTypeKey, false);
+            SessionState.SetBool(LightingLightAddedKey, false);
+            SessionState.SetBool(LightingLightRemovedKey, false);
+            SessionState.SetBool(LightingRotationKey, false);
+            SessionState.SetBool(LightingAutoRotateSeenKey, false);
+            SessionState.SetBool(LightingAutoRotateCycleKey, false);
+            SessionState.SetBool(ScriptablesShadowBoostKey, false);
+            SessionState.SetBool(ScriptablesLevelAdjustKey, false);
+            SessionState.SetBool(ScriptablesResetKey, false);
+            SessionState.SetBool(PostProcessingProfileKey, false);
+            SessionState.SetBool(RendersCameraKey, false);
+            SessionState.SetBool(RendersTransparentKey, false);
+            SessionState.SetBool(RendersSyncKey, false);
+            SessionState.SetBool(RendersWatermarkKey, false);
+            SessionState.SetBool(FirstTimeConfirmedKey, false);
+            SessionState.SetBool(FooterExplainedKey, false);
+            SessionState.SetBool(PrefabCreatedKey, false);
             CacheInspectorLockState();
             SetInspectorLocked(true);
             CurrentStepIndex = 0;
@@ -217,7 +348,15 @@ namespace HoyoToon.EditorTools.Onboarding
             SessionState.SetBool(ForceWindowKey, false);
             SessionState.SetBool(CloseOnManagerSelectKey, false);
             RestoreInspectorLockState();
-            NotifyStepChanged();
+            try
+            {
+                OnStepChanged?.Invoke();
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.Always("Tour", ex.ToString(), LogType.Exception);
+            }
+            HoyoToonGuidedTourWindow.EnsureWindowVisible(false);
         }
 
         public static void RestartTour()
@@ -246,12 +385,15 @@ namespace HoyoToon.EditorTools.Onboarding
                 return;
             }
 
-            var tracker = ActiveEditorTracker.sharedTracker;
-            if (tracker != null)
+            EditorApplication.delayCall += () =>
             {
-                tracker.isLocked = locked;
-                tracker.ForceRebuild();
-            }
+                var tracker = ActiveEditorTracker.sharedTracker;
+                if (tracker != null)
+                {
+                    tracker.isLocked = locked;
+                    tracker.ForceRebuild();
+                }
+            };
         }
 
         private static void RestoreInspectorLockState()
@@ -378,6 +520,7 @@ namespace HoyoToon.EditorTools.Onboarding
         public static void CompleteModelStep()
         {
             SessionState.SetBool(ModelApprovedKey, true);
+            NotifyStepChanged();
         }
 
         public static void CompleteLightingStep()
@@ -398,6 +541,129 @@ namespace HoyoToon.EditorTools.Onboarding
         public static void CompleteRendersStep()
         {
             SessionState.SetBool(RendersExplainedKey, true);
+        }
+
+        public static void NotifyLightingLightTypePicked()
+        {
+            SessionState.SetBool(LightingLightTypeKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyLightingLightAdded()
+        {
+            SessionState.SetBool(LightingLightAddedKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyLightingLightRemoved()
+        {
+            SessionState.SetBool(LightingLightRemovedKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyLightingRotationAdjusted()
+        {
+            SessionState.SetBool(LightingRotationKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyLightingAutoRotateToggled(bool enabled)
+        {
+            if (enabled)
+            {
+                SessionState.SetBool(LightingAutoRotateSeenKey, true);
+                NotifyStepChanged();
+                return;
+            }
+
+            if (SessionState.GetBool(LightingAutoRotateSeenKey, false))
+            {
+                SessionState.SetBool(LightingAutoRotateCycleKey, true);
+                NotifyStepChanged();
+            }
+        }
+
+        public static void NotifyScriptablesShadowBoostEnabled()
+        {
+            SessionState.SetBool(ScriptablesShadowBoostKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyScriptablesLevelAdjustEnabled()
+        {
+            SessionState.SetBool(ScriptablesLevelAdjustKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyScriptablesReset()
+        {
+            SessionState.SetBool(ScriptablesResetKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyPostProcessingProfilePicked()
+        {
+            SessionState.SetBool(PostProcessingProfileKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyRendersCameraSelected()
+        {
+            SessionState.SetBool(RendersCameraKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyRendersTransparentEnabled()
+        {
+            SessionState.SetBool(RendersTransparentKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyRendersSyncEnabled()
+        {
+            SessionState.SetBool(RendersSyncKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyRendersWatermarkEnabled()
+        {
+            SessionState.SetBool(RendersWatermarkKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void CompleteFooterStep()
+        {
+            SessionState.SetBool(FooterExplainedKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void NotifyPrefabCreated()
+        {
+            SessionState.SetBool(PrefabCreatedKey, true);
+            NotifyStepChanged();
+        }
+
+        public static void ConfirmFirstTime(bool isFirstTime)
+        {
+            if (!isFirstTime)
+            {
+                EditorPrefs.SetBool(TourShownKey, true);
+                StopTour();
+                return;
+            }
+
+            SessionState.SetBool(FirstTimeConfirmedKey, true);
+            Advance();
+        }
+
+        public static bool HasSeenTour()
+        {
+            return EditorPrefs.GetBool(TourShownKey, false);
+        }
+
+        public static void MarkTourSeen()
+        {
+            EditorPrefs.SetBool(TourShownKey, true);
         }
 
         public static void NotifyGameSelected(string gameName)
@@ -465,6 +731,7 @@ namespace HoyoToon.EditorTools.Onboarding
             }
 
             SessionState.SetBool(AutoSetupKey, true);
+            SessionState.SetBool(ModelApprovedKey, true);
             NotifyStepChanged();
         }
 
@@ -627,6 +894,12 @@ namespace HoyoToon.EditorTools.Onboarding
                 HoyoToonLogger.Always("Tour", ex.ToString(), LogType.Exception);
             }
 
+            if (!IsActive)
+            {
+                HoyoToonGuidedTourWindow.EnsureWindowVisible(false);
+                return;
+            }
+
             bool shouldShowWindow = CurrentStepIndex <= 2 || SessionState.GetBool(ForceWindowKey, false);
             HoyoToonGuidedTourWindow.EnsureWindowVisible(shouldShowWindow);
             if (CurrentStepIndex > 2)
@@ -635,7 +908,7 @@ namespace HoyoToon.EditorTools.Onboarding
             }
             if (string.Equals(CurrentStep.id, "finish", StringComparison.OrdinalIgnoreCase))
             {
-                RestoreInspectorLockState();
+                return;
             }
 
             AutoAdvanceIfComplete();
@@ -643,7 +916,8 @@ namespace HoyoToon.EditorTools.Onboarding
 
         public static bool ShouldShowManagerHandoffInline()
         {
-            return IsActive && CurrentStepIndex == 4 && !SessionState.GetBool(ManagerHandoffKey, false);
+            return IsActive && string.Equals(CurrentStep.id, "modules", StringComparison.OrdinalIgnoreCase)
+                && !SessionState.GetBool(ManagerHandoffKey, false);
         }
 
         public static void MarkManagerHandoffShown()
@@ -684,6 +958,7 @@ namespace HoyoToon.EditorTools.Onboarding
                 s_autoAdvancing = false;
             }
         }
+
 
         private static int GetStepIndex(string id)
         {

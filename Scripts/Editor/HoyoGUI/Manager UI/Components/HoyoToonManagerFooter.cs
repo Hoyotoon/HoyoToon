@@ -2,6 +2,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using HoyoToon.EditorTools.Onboarding;
 
 namespace HoyoToon.EditorTools.ManagerUI.Components
 {
@@ -51,6 +52,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
                     EditorGUILayout.HelpBox("Future global controls will appear here.", MessageType.Info);
                 }
 
+                DrawFooterCalloutIfNeeded();
                 DrawActionRow();
             }
         }
@@ -111,10 +113,71 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
                     isValid ? $"Create a prefab next to:\n{folder}" :
                     activeModel == null ? "No model selected" : "Prefab source folder could not be located.");
 
+                DrawPrefabCalloutIfNeeded();
                 if (GUILayout.Button(content, GUILayout.Width(140f)))
                 {
                     _createPrefabAction.Invoke(activeModel);
                 }
+                var buttonRect = GUILayoutUtility.GetLastRect();
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.footer", buttonRect, "Create Prefab", onClick: () =>
+                {
+                    if (HoyoToonGuidedTourController.CurrentStep.id != "footer")
+                    {
+                        return;
+                    }
+
+                    HoyoToonGuidedTourController.CompleteFooterStep();
+                    HoyoToonGuidedTourController.Advance();
+                });
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.footer.prefab", buttonRect, "Create Prefab");
+                DrawPrefabCalloutIfNeeded();
+            }
+        }
+
+        private void DrawFooterCalloutIfNeeded()
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (step.id == "footer")
+            {
+                HoyoToonTourCallout.Draw(
+                    $"Guided Tour: {step.title}",
+                    "Click Create Prefab to continue.\n\nFooter actions apply to the active model.",
+                    null,
+                    null);
+                return;
+            }
+
+            if (step.id == "finish")
+            {
+                var rect = HoyoToonTourCallout.DrawWithRect(
+                    $"Guided Tour: {step.title}",
+                    step.instruction,
+                    null,
+                    null);
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.finish.callout", rect, "Finish", onClick: HoyoToonGuidedTourController.StopTour);
+            }
+        }
+
+        private void DrawPrefabCalloutIfNeeded()
+        {
+            if (!HoyoToonGuidedTourController.IsActive)
+            {
+                return;
+            }
+
+            var step = HoyoToonGuidedTourController.CurrentStep;
+            if (step.id == "prefab")
+            {
+                HoyoToonTourCallout.Draw(
+                    $"Guided Tour: {step.title}",
+                    "Click Create Prefab to save the Acheron model next to its assets.\n\nPrefabs let you reuse this setup later.",
+                    null,
+                    null);
             }
         }
     }

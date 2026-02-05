@@ -541,7 +541,7 @@ namespace HoyoToon.Utilities
                 float topBar = TopBarLayout.BANNER_HEIGHT;
                 float paddings = UiLayout.PADDING_TOP + UiLayout.PADDING_MID1 + UiLayout.PADDING_MID2 + UiLayout.PADDING_BOTTOM; // align with MaybeAutoResizeToContent
                 float toolbarH = (EditorStyles.toolbar != null && EditorStyles.toolbar.fixedHeight > 0) ? EditorStyles.toolbar.fixedHeight : UiLayout.TOOLBAR_HEIGHT_FALLBACK;
-                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT;
+                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT + UiLayout.FOOTER_EXTRA_HEIGHT;
                 float cardH = toolbarH + 4f + cardViewH;
                 // Include progress area here as well if enabled.
                 float progressH = _showProgressBar ? (16f + UiLayout.PADDING_MID2) : 0f;

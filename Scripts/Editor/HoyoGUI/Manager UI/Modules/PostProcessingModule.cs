@@ -16,6 +16,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		private const string ResourceFolderMarker = "/Resources/Post Processing/";
 		private static readonly string[] CustomProfileTokens = { "Custom Post Processing", "Custom Profile", "Custom" };
+		private const string TourProfileName = "Genshin Impact";
 
 		private readonly List<PostProcessProfile> _resourceProfiles = new List<PostProcessProfile>();
 		private readonly List<string> _resourceProfileNames = new List<string>();
@@ -41,7 +42,6 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 
 		public override void OnGUI(HoyoToonManager targetManager)
 		{
-			DrawTourCalloutIfNeeded();
 			_showProfileSelection = DrawFoldoutSection("Profile Selection", _showProfileSelection, () =>
 			{
 				DrawProfileSelectionBlock(targetManager);
@@ -55,34 +55,11 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			}
 		}
 
-		private static void DrawTourCalloutIfNeeded()
-		{
-			if (!HoyoToonGuidedTourController.IsActive)
-			{
-				return;
-			}
-
-			var step = HoyoToonGuidedTourController.CurrentStep;
-			if (step.id != "postprocessing")
-			{
-				return;
-			}
-
-			HoyoToonTourCallout.Draw(
-				$"Guided Tour: {step.title}",
-				"Pick a profile that matches the target game, then adjust bloom, exposure, and color grading for a final polish.",
-				"Continue to Renders",
-				() =>
-				{
-					HoyoToonGuidedTourController.CompletePostProcessingStep();
-					HoyoToonGuidedTourController.Advance();
-				});
-		}
-
 		private void DrawProfileSelectionBlock(HoyoToonManager targetManager)
 		{
 			EnsureResourceProfiles();
 			SyncSelectionFromScene(targetManager);
+			EnsureTourProfileSelection();
 			DrawResourceProfileDropdown();
 
 			if (_referenceProfile == null)
@@ -146,6 +123,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 				return;
 			}
 
+			DrawInlineCalloutIfNeeded("postprocessing_profile",
+				"Click the Profile dropdown and select Genshin Impact.\n\nThis profile matches the tutorial look.");
 			using (new EditorGUILayout.HorizontalScope())
 			{
 				var names = _resourceProfileNames.ToArray();
@@ -154,7 +133,19 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 				if (newIndex != _resourceProfileIndex)
 				{
 					SelectResourceProfileByIndex(newIndex);
+					if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase))
+					{
+						HoyoToonGuidedTourController.NotifyPostProcessingProfilePicked();
+					}
 				}
+				var profileRect = GUILayoutUtility.GetLastRect();
+				HoyoToonTourOverlay.DrawHighlightIfActive("tour.postprocessing.profile", profileRect, "Profile", onClick: () =>
+				{
+					if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase))
+					{
+						HoyoToonGuidedTourController.NotifyPostProcessingProfilePicked();
+					}
+				});
 
 				if (GUILayout.Button("Refresh", GUILayout.Width(70f)))
 				{
@@ -168,6 +159,50 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			}
 
 			EditorGUILayout.Space(6f);
+		}
+
+		private static void DrawInlineCalloutIfNeeded(string stepId, string body)
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return;
+			}
+
+			if (!string.Equals(HoyoToonGuidedTourController.CurrentStep.id, stepId, StringComparison.OrdinalIgnoreCase))
+			{
+				return;
+			}
+
+			HoyoToonTourCallout.Draw(
+				$"Guided Tour: {HoyoToonGuidedTourController.CurrentStep.title}",
+				body,
+				null,
+				null);
+		}
+
+		private void EnsureTourProfileSelection()
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return;
+			}
+
+			if (!string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase))
+			{
+				return;
+			}
+
+			if (_resourceProfiles.Count == 0)
+			{
+				return;
+			}
+
+			int desiredIndex = _resourceProfileNames.FindIndex(name =>
+				name.IndexOf(TourProfileName, StringComparison.OrdinalIgnoreCase) >= 0);
+			if (desiredIndex >= 0 && desiredIndex != _resourceProfileIndex)
+			{
+				SelectResourceProfileByIndex(desiredIndex);
+			}
 		}
 
 		private void DrawSelectionDetails()

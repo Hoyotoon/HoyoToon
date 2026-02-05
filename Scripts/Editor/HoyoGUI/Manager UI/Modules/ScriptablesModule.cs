@@ -19,6 +19,9 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 		private HoyoToonScriptablesController _sceneLightController;
 		private SerializedObject _sceneLightSerializedObject;
 		private SerializedProperty _sceneLightGameSettings;
+		private SerializedProperty _shadowBoostProp;
+		private SerializedProperty _levelAdjustProp;
+		private string _lastTourStepId;
 
 		public override string DisplayName => "Scriptables";
 
@@ -43,20 +46,30 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			}
 
 			var step = HoyoToonGuidedTourController.CurrentStep;
-			if (step.id != "scriptables")
+			string body = null;
+			switch (step.id)
+			{
+				case "scriptables_shadowboost":
+					body = "Enable Shadow Boost, then check the scene.\n\nShadow Boost strengthens contact shadows.";
+					break;
+				case "scriptables_leveladjust":
+					body = "Enable Level Adjust, then check the scene.\n\nLevel Adjust lifts overall brightness for cutscene looks.";
+					break;
+				case "scriptables_reset":
+					body = "Click the highlighted toggle to continue.\n\nShadow Boost and Level Adjust are turned off for you so the rest of the tour uses neutral lighting.";
+					break;
+			}
+
+			if (string.IsNullOrEmpty(body))
 			{
 				return;
 			}
 
 			HoyoToonTourCallout.Draw(
 				$"Guided Tour: {step.title}",
-				"Scriptables contain global game profiles and shared shader settings. Review the active profile to match the game lighting style.",
-				"Continue to Post Processing",
-				() =>
-				{
-					HoyoToonGuidedTourController.CompleteScriptablesStep();
-					HoyoToonGuidedTourController.Advance();
-				});
+				body,
+				null,
+				null);
 		}
 
 		private void DrawSceneLightSettingsPanel(HoyoToonManager manager)
@@ -277,6 +290,8 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 				return;
 			}
 
+			ForceDisableTourLightingFlags(settings);
+
 			var fieldName = NormalizeGameKeyToFieldName(gameKey);
 			var gameSettingsProperty = settings.FindPropertyRelative(fieldName);
 			if (gameSettingsProperty == null)
@@ -330,17 +345,168 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 					continue;
 				}
 
-				DrawSectionFoldout(groupName, groupName.Equals("General", StringComparison.OrdinalIgnoreCase), () =>
+				bool forceExpand = ShouldForceExpandForTour(groupProps);
+				bool defaultExpanded = groupName.Equals("General", StringComparison.OrdinalIgnoreCase) || forceExpand;
+				DrawSectionFoldout(groupName, defaultExpanded, () =>
 				{
 					using (new EditorGUI.IndentLevelScope())
 					{
 						foreach (var prop in groupProps)
 						{
-							EditorGUILayout.PropertyField(prop, true);
+							DrawScriptablesProperty(prop);
 						}
 					}
-				});
+				}, forceExpand);
 				GUILayout.Space(EditorGUIUtility.standardVerticalSpacing);
+			}
+		}
+
+		private void DrawScriptablesProperty(SerializedProperty prop)
+		{
+			if (prop == null)
+			{
+				return;
+			}
+
+			bool isShadowBoost = string.Equals(prop.name, "EnableShadowBoost", StringComparison.Ordinal);
+			bool isLevelAdjust = string.Equals(prop.name, "LevelAdjustEnable", StringComparison.Ordinal);
+			bool isTarget = isShadowBoost || isLevelAdjust;
+
+			if (isShadowBoost)
+			{
+				DrawInlineCallout("scriptables_shadowboost",
+					"Enable Shadow Boost, then check the scene.\n\nShadow Boost strengthens contact shadows.");
+				if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "scriptables_reset", StringComparison.OrdinalIgnoreCase))
+				{
+					DrawInlineCallout("scriptables_reset",
+						"Click the highlighted toggle to continue.\n\nShadow Boost and Level Adjust are turned off for you so the rest of the tour uses neutral lighting.");
+				}
+			}
+			else if (isLevelAdjust)
+			{
+				DrawInlineCallout("scriptables_leveladjust",
+					"Enable Level Adjust, then check the scene.\n\nLevel Adjust lifts overall brightness for cutscene looks.");
+			}
+
+			EditorGUI.BeginChangeCheck();
+			EditorGUILayout.PropertyField(prop, true);
+			bool changed = EditorGUI.EndChangeCheck();
+			var rect = GUILayoutUtility.GetLastRect();
+
+			if (isShadowBoost)
+			{
+				_shadowBoostProp = prop;
+				if (changed && prop.boolValue && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "scriptables_shadowboost", StringComparison.OrdinalIgnoreCase))
+				{
+					HoyoToonGuidedTourController.NotifyScriptablesShadowBoostEnabled();
+				}
+				if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "scriptables_reset", StringComparison.OrdinalIgnoreCase))
+				{
+					HoyoToonTourOverlay.DrawHighlightIfActive("tour.scriptables.reset", rect, "Reset", onClick: ResetScriptablesLighting);
+				}
+				else
+				{
+					HoyoToonTourOverlay.DrawHighlightIfActive("tour.scriptables.shadowboost", rect, "Shadow Boost");
+				}
+			}
+			else if (isLevelAdjust)
+			{
+				_levelAdjustProp = prop;
+				if (changed && prop.boolValue && string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "scriptables_leveladjust", StringComparison.OrdinalIgnoreCase))
+				{
+					HoyoToonGuidedTourController.NotifyScriptablesLevelAdjustEnabled();
+				}
+				if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "scriptables_reset", StringComparison.OrdinalIgnoreCase))
+				{
+					HoyoToonTourOverlay.DrawHighlightIfActive("tour.scriptables.reset", rect, "Reset", onClick: ResetScriptablesLighting);
+				}
+				else
+				{
+					HoyoToonTourOverlay.DrawHighlightIfActive("tour.scriptables.leveladjust", rect, "Level Adjust");
+				}
+			}
+			else if (!isTarget)
+			{
+				return;
+			}
+		}
+
+		private void ResetScriptablesLighting()
+		{
+			if (!HoyoToonGuidedTourController.IsActive
+				|| !string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "scriptables_reset", StringComparison.OrdinalIgnoreCase))
+			{
+				return;
+			}
+
+			if (_shadowBoostProp != null)
+			{
+				_shadowBoostProp.boolValue = false;
+			}
+			if (_levelAdjustProp != null)
+			{
+				_levelAdjustProp.boolValue = false;
+			}
+
+			HoyoToonGuidedTourController.NotifyScriptablesReset();
+		}
+
+		private static void DrawInlineCallout(string stepId, string body)
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return;
+			}
+
+			if (!string.Equals(HoyoToonGuidedTourController.CurrentStep.id, stepId, StringComparison.OrdinalIgnoreCase))
+			{
+				return;
+			}
+
+			HoyoToonTourCallout.Draw(
+				$"Guided Tour: {HoyoToonGuidedTourController.CurrentStep.title}",
+				body,
+				null,
+				null);
+		}
+
+		private void ForceDisableTourLightingFlags(SerializedProperty settings)
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return;
+			}
+
+			string stepId = HoyoToonGuidedTourController.CurrentStep.id;
+			if (!string.Equals(stepId, "scriptables_shadowboost", StringComparison.OrdinalIgnoreCase)
+				&& !string.Equals(stepId, "scriptables_leveladjust", StringComparison.OrdinalIgnoreCase)
+				&& !string.Equals(stepId, "scriptables_reset", StringComparison.OrdinalIgnoreCase))
+			{
+				return;
+			}
+
+			if (string.Equals(_lastTourStepId, stepId, StringComparison.OrdinalIgnoreCase))
+			{
+				return;
+			}
+			_lastTourStepId = stepId;
+
+			var iterator = settings.Copy();
+			var endProperty = iterator.GetEndProperty();
+			bool enterChildren = true;
+			while (iterator.NextVisible(enterChildren) && !SerializedProperty.EqualContents(iterator, endProperty))
+			{
+				enterChildren = false;
+				if (iterator.propertyType != SerializedPropertyType.Boolean)
+				{
+					continue;
+				}
+
+				if (string.Equals(iterator.name, "EnableShadowBoost", StringComparison.Ordinal)
+					|| string.Equals(iterator.name, "LevelAdjustEnable", StringComparison.Ordinal))
+				{
+					iterator.boolValue = false;
+				}
 			}
 		}
 
@@ -411,16 +577,62 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			return string.Equals(value, pattern, StringComparison.OrdinalIgnoreCase);
 		}
 
-		private bool DrawSectionFoldout(string title, bool defaultExpanded, Action drawer)
+		private bool DrawSectionFoldout(string title, bool defaultExpanded, Action drawer, bool forceExpanded)
 		{
 			if (!_sceneLightSectionFoldouts.TryGetValue(title, out var expanded))
 			{
 				expanded = defaultExpanded;
 			}
 
+			if (forceExpanded)
+			{
+				expanded = true;
+			}
+
 			expanded = HoyoToonManagerModule.DrawFoldoutSection(title, expanded, drawer, 8f);
+			if (forceExpanded)
+			{
+				expanded = true;
+			}
 			_sceneLightSectionFoldouts[title] = expanded;
 			return expanded;
+		}
+
+		private static bool ShouldForceExpandForTour(IEnumerable<SerializedProperty> groupProps)
+		{
+			if (!HoyoToonGuidedTourController.IsActive)
+			{
+				return false;
+			}
+
+			string stepId = HoyoToonGuidedTourController.CurrentStep.id;
+			if (string.IsNullOrEmpty(stepId) || !stepId.StartsWith("scriptables_", StringComparison.OrdinalIgnoreCase))
+			{
+				return false;
+			}
+
+			bool wantsShadowBoost = string.Equals(stepId, "scriptables_shadowboost", StringComparison.OrdinalIgnoreCase)
+				|| string.Equals(stepId, "scriptables_reset", StringComparison.OrdinalIgnoreCase);
+			bool wantsLevelAdjust = string.Equals(stepId, "scriptables_leveladjust", StringComparison.OrdinalIgnoreCase);
+
+			foreach (var prop in groupProps)
+			{
+				if (prop == null)
+				{
+					continue;
+				}
+
+				if (wantsShadowBoost && string.Equals(prop.name, "EnableShadowBoost", StringComparison.Ordinal))
+				{
+					return true;
+				}
+				if (wantsLevelAdjust && string.Equals(prop.name, "LevelAdjustEnable", StringComparison.Ordinal))
+				{
+					return true;
+				}
+			}
+
+			return false;
 		}
 
 		private static string NormalizeGameKeyToFieldName(string gameKey)

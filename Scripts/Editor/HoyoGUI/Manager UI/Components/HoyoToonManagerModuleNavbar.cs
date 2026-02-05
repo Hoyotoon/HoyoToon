@@ -131,27 +131,27 @@ namespace HoyoToon.EditorTools.ManagerUI.Components
             var buttonRect = GUILayoutUtility.GetLastRect();
             if (string.Equals(module?.DisplayName, "Models", StringComparison.OrdinalIgnoreCase))
             {
-                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.models", buttonRect, "Models");
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.models", buttonRect, "Models", onClick: () => SelectModuleByDisplayName("Models"));
             }
             else if (string.Equals(module?.DisplayName, "Main", StringComparison.OrdinalIgnoreCase))
             {
-                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.main", buttonRect, "Main");
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.main", buttonRect, "Main", onClick: () => SelectModuleByDisplayName("Main"));
             }
             else if (string.Equals(module?.DisplayName, "Lighting", StringComparison.OrdinalIgnoreCase))
             {
-                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.lighting", buttonRect, "Lighting");
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.lighting", buttonRect, "Lighting", onClick: () => SelectModuleByDisplayName("Lighting"));
             }
             else if (string.Equals(module?.DisplayName, "Scriptables", StringComparison.OrdinalIgnoreCase))
             {
-                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.scriptables", buttonRect, "Scriptables");
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.scriptables", buttonRect, "Scriptables", onClick: () => SelectModuleByDisplayName("Scriptables"));
             }
             else if (string.Equals(module?.DisplayName, "Post Processing", StringComparison.OrdinalIgnoreCase))
             {
-                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.postprocessing", buttonRect, "Post FX");
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.postprocessing", buttonRect, "Post FX", onClick: () => SelectModuleByDisplayName("Post Processing"));
             }
             else if (string.Equals(module?.DisplayName, "Renders", StringComparison.OrdinalIgnoreCase))
             {
-                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.renders", buttonRect, "Renders");
+                HoyoToonTourOverlay.DrawHighlightIfActive("tour.modules.renders", buttonRect, "Renders", onClick: () => SelectModuleByDisplayName("Renders"));
             }
         }
     }
