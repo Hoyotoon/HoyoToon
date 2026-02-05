@@ -1,7 +1,7 @@
 {
   "name": "com.meliverse.hoyotoon",
   "displayName": "HoyoToon",
-  "version": "0.4.4",
+  "version": "0.4.5",
   "description": "Shader for Unity (Built-in Rendering Pipeline) attempting to replicate the shading of miHoYo developed games.\nThis is for datamined assets, not custom-made ones nor the MMD variants.",
   "dependencies": {
     "com.unity.postprocessing": "3.4.0"

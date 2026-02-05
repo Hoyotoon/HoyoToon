@@ -17,6 +17,7 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 		private const string ResourceFolderMarker = "/Resources/Post Processing/";
 		private static readonly string[] CustomProfileTokens = { "Custom Post Processing", "Custom Profile", "Custom" };
 		private const string TourProfileName = "Genshin Impact";
+		private const string TourTargetProfileName = "Honkai Star Rail";
 
 		private readonly List<PostProcessProfile> _resourceProfiles = new List<PostProcessProfile>();
 		private readonly List<string> _resourceProfileNames = new List<string>();
@@ -129,16 +130,48 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			{
 				var names = _resourceProfileNames.ToArray();
 				var currentIndex = Mathf.Clamp(_resourceProfileIndex, 0, _resourceProfiles.Count - 1);
-				var newIndex = EditorGUILayout.Popup(currentIndex, names);
-				if (newIndex != _resourceProfileIndex)
+				Rect profileRect;
+				if (IsTourProfileStepActive())
 				{
-					SelectResourceProfileByIndex(newIndex);
-					if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase))
+					var label = currentIndex >= 0 && currentIndex < names.Length ? names[currentIndex] : "Select Profile";
+					profileRect = EditorGUILayout.GetControlRect(true, EditorGUIUtility.singleLineHeight);
+					if (EditorGUI.DropdownButton(profileRect, new GUIContent(label), FocusType.Passive))
 					{
-						HoyoToonGuidedTourController.NotifyPostProcessingProfilePicked();
+						var menu = new GenericMenu();
+						for (int i = 0; i < names.Length; i++)
+						{
+							int index = i;
+							string name = names[i];
+							bool isTarget = IsTourTargetProfileName(name);
+							if (isTarget)
+							{
+								menu.AddItem(new GUIContent(name), index == currentIndex, () =>
+								{
+									SelectResourceProfileByIndex(index);
+									HoyoToonGuidedTourController.NotifyPostProcessingProfilePicked();
+								});
+							}
+							else
+							{
+								menu.AddDisabledItem(new GUIContent(name));
+							}
+						}
+						menu.DropDown(profileRect);
 					}
 				}
-				var profileRect = GUILayoutUtility.GetLastRect();
+				else
+				{
+					var newIndex = EditorGUILayout.Popup(currentIndex, names);
+					if (newIndex != _resourceProfileIndex)
+					{
+						SelectResourceProfileByIndex(newIndex);
+						if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase))
+						{
+							HoyoToonGuidedTourController.NotifyPostProcessingProfilePicked();
+						}
+					}
+					profileRect = GUILayoutUtility.GetLastRect();
+				}
 				HoyoToonTourOverlay.DrawHighlightIfActive("tour.postprocessing.profile", profileRect, "Profile", onClick: () =>
 				{
 					if (string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase))
@@ -203,6 +236,18 @@ namespace HoyoToon.EditorTools.ManagerUI.Modules
 			{
 				SelectResourceProfileByIndex(desiredIndex);
 			}
+		}
+
+		private static bool IsTourProfileStepActive()
+		{
+			return HoyoToonGuidedTourController.IsActive
+				&& string.Equals(HoyoToonGuidedTourController.CurrentStep.id, "postprocessing_profile", StringComparison.OrdinalIgnoreCase);
+		}
+
+		private static bool IsTourTargetProfileName(string name)
+		{
+			return !string.IsNullOrEmpty(name)
+				&& name.IndexOf(TourTargetProfileName, StringComparison.OrdinalIgnoreCase) >= 0;
 		}
 
 		private void DrawSelectionDetails()
