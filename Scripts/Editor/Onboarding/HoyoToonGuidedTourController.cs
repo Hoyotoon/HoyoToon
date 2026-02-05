@@ -56,6 +56,7 @@ namespace HoyoToon.EditorTools.Onboarding
         private static HoyoToonManager s_lastManager;
         private static GameObject s_lastModel;
         private static readonly string[] s_windowSteps = { "firsttime", "resources", "scene", "manager" };
+        private static string s_lastStepId;
 
         private static readonly TourStep[] s_steps =
         {
@@ -280,6 +281,9 @@ namespace HoyoToon.EditorTools.Onboarding
 
         public static void StartTour()
         {
+            s_lastManager = null;
+            s_lastModel = null;
+            s_lastStepId = null;
             SessionState.SetBool(TourActiveKey, true);
             SessionState.SetBool(SceneApprovedKey, false);
             SessionState.SetBool(DownloadedKey, false);
@@ -335,6 +339,8 @@ namespace HoyoToon.EditorTools.Onboarding
             SessionState.SetBool(TourActiveKey, false);
             SessionState.SetBool(InspectorLockKey, false);
             SetInspectorLocked(false);
+            MarkTourSeen();
+            s_lastStepId = null;
             try
             {
                 OnStepChanged?.Invoke();
@@ -759,6 +765,7 @@ namespace HoyoToon.EditorTools.Onboarding
                 return;
             }
 
+            s_lastManager = manager;
             Selection.activeObject = manager.gameObject;
             EditorGUIUtility.PingObject(manager.gameObject);
             FrameSelection();
@@ -840,6 +847,7 @@ namespace HoyoToon.EditorTools.Onboarding
 
         private static void NotifyStepChanged()
         {
+            string previousStepId = s_lastStepId;
             try
             {
                 OnStepChanged?.Invoke();
@@ -856,6 +864,12 @@ namespace HoyoToon.EditorTools.Onboarding
             }
 
             HoyoToonGuidedTourWindow.EnsureWindowVisible(IsWindowStep(CurrentStep.id));
+            if (IsWindowStep(previousStepId) && !IsWindowStep(CurrentStep.id))
+            {
+                FocusManagerInScene();
+            }
+
+            s_lastStepId = CurrentStep.id;
             AutoAdvanceIfComplete();
         }
 
