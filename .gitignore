@@ -73,8 +73,7 @@ Resources/Honkai Star Rail
 Resources/Honkai Star Rail.meta
 Resources/Zenless Zone Zero
 Resources/Zenless Zone Zero.meta
-Scripts/Editor/ResourceCache.json
-Scripts/Editor/ResourceCache.json.meta
+Scripts/Editor/Data/
 Dev
 Dev.meta
 LICENSE.meta
@@ -97,6 +96,7 @@ Resources/Honkai Star Rail
 Resources/Honkai Star Rail.meta
 Resources/Zenless Zone Zero
 Resources/Zenless Zone Zero.meta
+Scripts/Editor/Data/
 # HOYOTOON-UPDATER-KEEP END
 #
 # Inline syntax (each line defines a single pattern):
