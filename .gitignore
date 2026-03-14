@@ -42,6 +42,8 @@ sysinfo.txt
 # Crashlytics generated file
 crashlytics-build.properties
 
+/.github/instructions
+/.github/skills
 .idea/.idea.vpm-package-maker/.idea
 Assets/PackageMakerWindowData.asset*
 .idea
@@ -71,7 +73,6 @@ Resources/Honkai Star Rail
 Resources/Honkai Star Rail.meta
 Resources/Zenless Zone Zero
 Resources/Zenless Zone Zero.meta
-/.github/instructions
 Scripts/Editor/ResourceCache.json
 Scripts/Editor/ResourceCache.json.meta
 Dev
