@@ -1,4 +1,4 @@
-# HoyoToon 0.0.1
+# HoyoToon 0.0.2
 
 **Follow the [guidelines](https://discord.com/channels/1129811149416824934/1474289094384418816), and test all the changelog entries before posting.**
 
