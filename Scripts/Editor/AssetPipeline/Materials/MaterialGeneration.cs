@@ -214,9 +214,9 @@ namespace HoyoToon.Editor.AssetPipeline.Materials
                     assetPath = fbAssetPath;
                 }
             }
-            else if (mat.shader != prepared.Shader)
+            else
             {
-                mat.shader = prepared.Shader;
+                ResetMaterialToShaderDefaults(mat, prepared.Shader, matName);
             }
 
             try
@@ -601,6 +601,28 @@ namespace HoyoToon.Editor.AssetPipeline.Materials
                     if (string.IsNullOrWhiteSpace(kv.Key)) continue;
                     mat.SetOverrideTag(kv.Key, kv.Value ?? string.Empty);
                 }
+            }
+        }
+
+        private static void ResetMaterialToShaderDefaults(Material mat, Shader shader, string materialName)
+        {
+            if (mat == null || shader == null) return;
+
+            var originalName = string.IsNullOrWhiteSpace(materialName) ? mat.name : materialName;
+            var defaultMaterial = new Material(shader)
+            {
+                name = originalName
+            };
+
+            try
+            {
+                EditorUtility.CopySerialized(defaultMaterial, mat);
+                mat.shader = shader;
+                mat.name = originalName;
+            }
+            finally
+            {
+                UnityEngine.Object.DestroyImmediate(defaultMaterial);
             }
         }
 

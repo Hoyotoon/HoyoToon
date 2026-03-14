@@ -642,6 +642,11 @@ namespace HoyoToon.Editor.Onboarding
 
             EditorApplication.delayCall += () =>
             {
+                if (!IsActive)
+                {
+                    return;
+                }
+
                 var delayedTracker = ActiveEditorTracker.sharedTracker;
                 if (delayedTracker == null)
                 {

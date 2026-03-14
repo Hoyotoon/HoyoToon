@@ -708,6 +708,10 @@ namespace HoyoToon.Editor.UI.ManagerInspector
             if (ModelSetupUtility.TryRunPreparedRequest(preparedRequest, out var instance, out var resolved))
             {
                 AddManagedModelInstance(instance);
+                if (GuidedTourController.IsActive)
+                {
+                    GuidedTourController.NotifyAutoSetupCompleted(instance);
+                }
                 resolvedAsset = resolved ?? modelAsset;
                 _modelsDirty = true;
                 return true;

@@ -14,7 +14,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
         _LipLineFixStart ("Lip Line Fix Start Distance", Range(0.04, 0.95)) = 0.25
         _LipLineFixMax ("Lip Line Fix Maximum Distance", Range(1, 2)) = 1.5
         _VertexColorSwitch ("Vertex Color Switch", Vector) = (1,1,1,1)
-        [Toggle]_UseSelfShadow ("Use Self Shadow", Float) = 0
+        [Toggle]_UseSelfShadow ("Use Self Shadow", Float) = 1
         [MHYHeaderBox(MAPS)] [MHYHeader(Main Maps)] [MHYSingleLineTextureNoScaleOffset(_Color)] _MainTex ("Albedo", 2D) = "white" { }
         [MHYSingleLineTextureKeywordDrawer(_FACEMAP_ON)] _FaceMap ("Face Map |R(specular field) A (distance field)", 2D) = "white" { }
         _FaceExpression ("Face Expression Map |R (Cheek) G (Shy) B (Shadow)", 2D) = "black" { }

@@ -280,7 +280,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector
                 return false;
             }
 
-            instance = preparedRequest.Context.CreatedInstance;
+            instance = preparedRequest.Context.CreatedInstance ?? preparedRequest.Context.ExistingInstance;
             resolvedAsset = ResolveAssetFromContext(preparedRequest.Context) ?? preparedRequest.Request.Asset;
             return true;
         }

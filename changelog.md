@@ -1,12 +1,13 @@
-# HoyoToon 0.0.2
+# HoyoToon 0.0.3
 
 **Follow the [guidelines](https://discord.com/channels/1129811149416824934/1474289094384418816), and test all the changelog entries before posting.**
 
 
-## Core
-- Fixed the following issue:
-  - `The rendering command SetGraphicsBufferData is not supported inside a renderpass (CommandBuffer )`
+## HoyoToon Manager
+- Fixed the issue where the Auto setup step could fail to recognize the created instance and thus not proceed to the next step in the guided tour.
+- Fixed an issue where the inspector lock wouldn't get removed on finishing the guided tour.
+- Made it so Regenerate Materials button will now properly reset the material to the default settings using the original jsons.
 
-## Simulator
-- Added a new feature:
-  - `Q and E` keys now allow you to actively switch between multiple characters in the scene, instead of only being able to switch the active character inside the manager.
+
+## Honkai Star Rail
+- Set Self shadow to be enabled by default in the face shader.
