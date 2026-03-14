@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Animations;
 
@@ -237,6 +238,91 @@ namespace HoyoToon.Simulator.Camera
             if (manager != null)
                 manager.PruneManagedModels();
             RefreshActiveCharacter(true);
+        }
+
+        public bool CycleActiveCharacter(int direction)
+        {
+            if (manager == null || direction == 0)
+            {
+                return false;
+            }
+
+            manager.PruneManagedModels();
+
+            IReadOnlyList<GameObject> models = manager.ManagedModels;
+            int currentIndex = ResolveCurrentModelIndex(models);
+            int nextIndex = FindNextUsableModelIndex(models, currentIndex, direction);
+
+            if (nextIndex < 0 || nextIndex == currentIndex)
+            {
+                return false;
+            }
+
+            manager.ActiveModelIndex = nextIndex;
+            RefreshActiveCharacter(true);
+            return true;
+        }
+
+        public bool SwitchToPreviousActiveCharacter()
+        {
+            return CycleActiveCharacter(-1);
+        }
+
+        public bool SwitchToNextActiveCharacter()
+        {
+            return CycleActiveCharacter(1);
+        }
+
+        private int ResolveCurrentModelIndex(IReadOnlyList<GameObject> models)
+        {
+            if (models == null || models.Count == 0)
+            {
+                return -1;
+            }
+
+            GameObject resolvedCharacter = ResolveActiveCharacter();
+            if (resolvedCharacter == null)
+            {
+                return -1;
+            }
+
+            for (int index = 0; index < models.Count; index++)
+            {
+                if (models[index] == resolvedCharacter)
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private int FindNextUsableModelIndex(IReadOnlyList<GameObject> models, int startIndex, int direction)
+        {
+            if (models == null || models.Count == 0)
+            {
+                return -1;
+            }
+
+            int count = models.Count;
+            int normalizedDirection = direction < 0 ? -1 : 1;
+            int candidateIndex = startIndex;
+
+            if (candidateIndex < 0 || candidateIndex >= count)
+            {
+                candidateIndex = normalizedDirection > 0 ? -1 : 0;
+            }
+
+            for (int step = 0; step < count; step++)
+            {
+                candidateIndex = (candidateIndex + normalizedDirection + count) % count;
+                if (IsUsableModel(models[candidateIndex]))
+                {
+                    return candidateIndex;
+                }
+            }
+
+            return -1;
         }
 
 #if UNITY_EDITOR

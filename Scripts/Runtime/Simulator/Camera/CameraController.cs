@@ -24,6 +24,8 @@ namespace HoyoToon.Simulator.Camera
             public const string ViewRight = "ViewRight";
             public const string ViewTop = "ViewTop";
             public const string ViewBottom = "ViewBottom";
+            public const string PreviousCharacter = "PreviousCharacter";
+            public const string NextCharacter = "NextCharacter";
         }
 
         [Header("Input")]
@@ -54,6 +56,7 @@ namespace HoyoToon.Simulator.Camera
         [SerializeField] private CinemachineCamera virtualCamera;
         [SerializeField] private CinemachineInputAxisController inputAxisController;
         [SerializeField] private DynamicCameraTargetController targetController;
+        [SerializeField] private CharacterContainer characterContainer;
 
         public enum RotationDirection
         {
@@ -75,6 +78,8 @@ namespace HoyoToon.Simulator.Camera
         private InputAction altZoomModifierAction;
         private InputAction autoRotateAction;
         private InputAction toggleProjectionAction;
+        private InputAction previousCharacterAction;
+        private InputAction nextCharacterAction;
         private bool isCameraControlActive;
         private bool isAutoRotating;
         private bool isOrthographic;
@@ -114,6 +119,8 @@ namespace HoyoToon.Simulator.Camera
                 inputAxisController = GetComponent<CinemachineInputAxisController>();
             if (targetController == null)
                 targetController = GetComponent<DynamicCameraTargetController>();
+            if (characterContainer == null)
+                characterContainer = FindAnyObjectByType<CharacterContainer>();
 
             positionComposer = GetComponent<CinemachinePositionComposer>();
             panTilt = GetComponent<CinemachinePanTilt>();
@@ -160,6 +167,8 @@ namespace HoyoToon.Simulator.Camera
             EnableAction(cursorPositionAction);
             EnableAction(autoRotateAction);
             EnableAction(toggleProjectionAction);
+            EnableAction(previousCharacterAction);
+            EnableAction(nextCharacterAction);
 
             for (int index = 0; index < viewActions.Count; index++)
                 EnableAction(viewActions[index]);
@@ -219,6 +228,10 @@ namespace HoyoToon.Simulator.Camera
                 autoRotateAction.performed += OnAutoRotatePerformed;
             if (toggleProjectionAction != null)
                 toggleProjectionAction.performed += OnProjectionTogglePerformed;
+            if (previousCharacterAction != null)
+                previousCharacterAction.performed += OnPreviousCharacterPerformed;
+            if (nextCharacterAction != null)
+                nextCharacterAction.performed += OnNextCharacterPerformed;
 
             for (int index = 0; index < viewActions.Count; index++)
             {
@@ -238,6 +251,10 @@ namespace HoyoToon.Simulator.Camera
                 autoRotateAction.performed -= OnAutoRotatePerformed;
             if (toggleProjectionAction != null)
                 toggleProjectionAction.performed -= OnProjectionTogglePerformed;
+            if (previousCharacterAction != null)
+                previousCharacterAction.performed -= OnPreviousCharacterPerformed;
+            if (nextCharacterAction != null)
+                nextCharacterAction.performed -= OnNextCharacterPerformed;
 
             if (viewActions == null)
                 return;
@@ -279,6 +296,16 @@ namespace HoyoToon.Simulator.Camera
 
             GetViewAngles(context.action.name, out targetPan, out targetTilt);
             isLerpingAngles = true;
+        }
+
+        private void OnPreviousCharacterPerformed(InputAction.CallbackContext context)
+        {
+            characterContainer?.SwitchToPreviousActiveCharacter();
+        }
+
+        private void OnNextCharacterPerformed(InputAction.CallbackContext context)
+        {
+            characterContainer?.SwitchToNextActiveCharacter();
         }
 
         private void HandleFallbackLookInput()
@@ -576,6 +603,8 @@ namespace HoyoToon.Simulator.Camera
             altZoomModifierAction = FindRequiredAction(actionMap, ActionNames.AltZoomModifier);
             autoRotateAction = FindRequiredAction(actionMap, ActionNames.AutoRotate);
             toggleProjectionAction = FindRequiredAction(actionMap, ActionNames.ToggleProjection);
+            previousCharacterAction = actionMap.FindAction(ActionNames.PreviousCharacter, false);
+            nextCharacterAction = actionMap.FindAction(ActionNames.NextCharacter, false);
 
             viewActions.Clear();
             AddViewAction(actionMap, ActionNames.ViewFront);

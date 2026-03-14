@@ -86,9 +86,6 @@ namespace HoyoToon.Rendering.HSR
             static readonly int k_GBufferCId = Shader.PropertyToID("_GBufferC");
             static readonly int k_DepthBufferOrCopyId = Shader.PropertyToID("_DepthBufferOrCopy");
 
-            static readonly int k_CrpPassMiscBufferId = Shader.PropertyToID("CRP_PassMisc_CRPBuildin");
-            static readonly int k_RpgEnvPerMainCameraBufferId = Shader.PropertyToID("RPGEnv_PerMainCamera");
-
             static readonly int k_CascadeShadowSplitSpheres0Id = Shader.PropertyToID("_CascadeShadowSplitSpheres0");
             static readonly int k_CascadeShadowSplitSpheres1Id = Shader.PropertyToID("_CascadeShadowSplitSpheres1");
             static readonly int k_CascadeShadowSplitSpheres2Id = Shader.PropertyToID("_CascadeShadowSplitSpheres2");
@@ -98,6 +95,8 @@ namespace HoyoToon.Rendering.HSR
             static readonly int k_MainLightShadowmapSizeId = Shader.PropertyToID("_MainLightShadowmapSize");
             static readonly int k_MainLightShadowCascadeCountId = Shader.PropertyToID("_MainLightShadowCascadeCount");
             static readonly int k_MainLightWorldToShadowId = Shader.PropertyToID("_MainLightWorldToShadow");
+            static readonly int k_MainLightWorldToShadowArrId = Shader.PropertyToID("_MainLightWorldToShadowArr");
+            static readonly int k_EsGlobalRotMatrixId = Shader.PropertyToID("_ES_GlobalRotMatrix");
 
             static readonly ShaderTagId k_LightingGBufferTag = new ShaderTagId("LightingGBuffer");
             static readonly ShaderTagId k_LightingGBufferEyeHairTag = new ShaderTagId("LightingGBufferEyeHair");
@@ -135,6 +134,8 @@ namespace HoyoToon.Rendering.HSR
                 SortingCriteria.RenderQueue |
                 SortingCriteria.CanvasOrder |
                 SortingCriteria.OptimizeStateChanges;
+            static readonly Matrix4x4[] k_MainLightWorldToShadowScratch = new Matrix4x4[5];
+            static readonly Vector4[] k_EsGlobalRotMatrixScratch = new Vector4[4];
 
             [StructLayout(LayoutKind.Sequential)]
             struct CrpPassMiscData
@@ -300,7 +301,7 @@ namespace HoyoToon.Rendering.HSR
                 return descriptor;
             }
 
-            static void PushPassMiscCBuffer(RasterCommandBuffer cmd)
+            static CrpPassMiscData BuildPassMiscData()
             {
                 float cascadeCount = Shader.GetGlobalFloat(k_MainLightShadowCascadeCountId);
                 Matrix4x4[] sourceShadowMatrices = Shader.GetGlobalMatrixArray(k_MainLightWorldToShadowId);
@@ -326,7 +327,7 @@ namespace HoyoToon.Rendering.HSR
                     cascadeCount = 1f;
                 }
 
-                CrpPassMiscData passMiscData = new CrpPassMiscData
+                return new CrpPassMiscData
                 {
                     _CascadeShadowSplitSpheres0 = Shader.GetGlobalVector(k_CascadeShadowSplitSpheres0Id),
                     _CascadeShadowSplitSpheres1 = Shader.GetGlobalVector(k_CascadeShadowSplitSpheres1Id),
@@ -343,8 +344,25 @@ namespace HoyoToon.Rendering.HSR
                     _MainLightWorldToShadowArr3 = shadow3,
                     _MainLightWorldToShadowArr4 = shadow4
                 };
+            }
 
-                ConstantBuffer.PushGlobal(cmd, passMiscData, k_CrpPassMiscBufferId);
+            static void ApplyPassMiscGlobals(in CrpPassMiscData passMiscData)
+            {
+                k_MainLightWorldToShadowScratch[0] = passMiscData._MainLightWorldToShadowArr0;
+                k_MainLightWorldToShadowScratch[1] = passMiscData._MainLightWorldToShadowArr1;
+                k_MainLightWorldToShadowScratch[2] = passMiscData._MainLightWorldToShadowArr2;
+                k_MainLightWorldToShadowScratch[3] = passMiscData._MainLightWorldToShadowArr3;
+                k_MainLightWorldToShadowScratch[4] = passMiscData._MainLightWorldToShadowArr4;
+
+                Shader.SetGlobalVector(k_CascadeShadowSplitSpheres0Id, passMiscData._CascadeShadowSplitSpheres0);
+                Shader.SetGlobalVector(k_CascadeShadowSplitSpheres1Id, passMiscData._CascadeShadowSplitSpheres1);
+                Shader.SetGlobalVector(k_CascadeShadowSplitSpheres2Id, passMiscData._CascadeShadowSplitSpheres2);
+                Shader.SetGlobalVector(k_CascadeShadowSplitSpheres3Id, passMiscData._CascadeShadowSplitSpheres3);
+                Shader.SetGlobalVector(k_CascadeShadowSplitSphereRadiiId, passMiscData._CascadeShadowSplitSphereRadii);
+                Shader.SetGlobalVector(k_MainLightShadowParamsId, passMiscData._MainLightShadowParams);
+                Shader.SetGlobalVector(k_MainLightShadowmapSizeId, passMiscData._MainLightShadowmapSize);
+                Shader.SetGlobalFloat(k_MainLightShadowCascadeCountId, passMiscData._MainLightShadowCascadeCount);
+                Shader.SetGlobalMatrixArray(k_MainLightWorldToShadowArrId, k_MainLightWorldToShadowScratch);
             }
 
             static RpgEnvPerMainCameraData BuildEnvironmentState(HSRSceneController env)
@@ -410,19 +428,80 @@ namespace HoyoToon.Rendering.HSR
                 return envData;
             }
 
-            static void PushRpgEnvPerMainCameraCBuffer(RasterCommandBuffer cmd)
+            static void ApplyRpgEnvPerMainCameraGlobals(in RpgEnvPerMainCameraData envData)
             {
-                RpgEnvPerMainCameraData envData = BuildEnvironmentState(HSRSceneController.instance);
-                ConstantBuffer.PushGlobal(cmd, envData, k_RpgEnvPerMainCameraBufferId);
+                Matrix4x4 globalRotMatrix = envData._ES_GlobalRotMatrix;
+                k_EsGlobalRotMatrixScratch[0] = globalRotMatrix.GetRow(0);
+                k_EsGlobalRotMatrixScratch[1] = globalRotMatrix.GetRow(1);
+                k_EsGlobalRotMatrixScratch[2] = globalRotMatrix.GetRow(2);
+                k_EsGlobalRotMatrixScratch[3] = globalRotMatrix.GetRow(3);
+
+                Shader.SetGlobalFloat("_GlobalOneMinusAvatarIntensity", envData._GlobalOneMinusAvatarIntensity);
+                Shader.SetGlobalVector("_XPad0", envData._XPad0);
+                Shader.SetGlobalVector("_ES_MonsterLightDir", envData._ES_MonsterLightDir);
+                Shader.SetGlobalFloat("_ES_Indoor", envData._ES_Indoor);
+                Shader.SetGlobalFloat("_ES_TransitionRate", envData._ES_TransitionRate);
+                Shader.SetGlobalFloat("_ES_SelfShadowLerpHair", envData._ES_SelfShadowLerpHair);
+                Shader.SetGlobalFloat("_ES_LEVEL_ADJUST_ON", envData._ES_LEVEL_ADJUST_ON);
+                Shader.SetGlobalFloat("_XPad1", envData._XPad1);
+                Shader.SetGlobalVectorArray(k_EsGlobalRotMatrixId, k_EsGlobalRotMatrixScratch);
+                Shader.SetGlobalFloat("_ES_CharacterToonRampMode", envData._ES_CharacterToonRampMode);
+                Shader.SetGlobalFloat("_ES_CharacterDisableLocalMainLight", envData._ES_CharacterDisableLocalMainLight);
+                Shader.SetGlobalVector("_XPad2", envData._XPad2);
+                Shader.SetGlobalVector("_ES_AddColor", envData._ES_AddColor);
+                Shader.SetGlobalVector("_ES_SPColor", envData._ES_SPColor);
+                Shader.SetGlobalFloat("_ES_SPIntensity", envData._ES_SPIntensity);
+                Shader.SetGlobalVector("_XPad3", envData._XPad3);
+                Shader.SetGlobalVector("_ES_RimShadowColor", envData._ES_RimShadowColor);
+                Shader.SetGlobalFloat("_ES_RimShadowIntensity", envData._ES_RimShadowIntensity);
+                Shader.SetGlobalFloat("_ES_CharacterShadowFactor", envData._ES_CharacterShadowFactor);
+                Shader.SetGlobalFloat("_ES_OutLineDarkenVal", envData._ES_OutLineDarkenVal);
+                Shader.SetGlobalFloat("_ES_OutLineLightedVal", envData._ES_OutLineLightedVal);
+                Shader.SetGlobalFloat("_ES_OutlineDisableDistanceScale", envData._ES_OutlineDisableDistanceScale);
+                Shader.SetGlobalFloat("_ES_OutlineFallbackScale", envData._ES_OutlineFallbackScale);
+                Shader.SetGlobalFloat("_ES_HeightLerpTop", envData._ES_HeightLerpTop);
+                Shader.SetGlobalFloat("_ES_HeightLerpBottom", envData._ES_HeightLerpBottom);
+                Shader.SetGlobalVector("_ES_HeightLerpTopColor", envData._ES_HeightLerpTopColor);
+                Shader.SetGlobalVector("_ES_HeightLerpMiddleColor", envData._ES_HeightLerpMiddleColor);
+                Shader.SetGlobalVector("_ES_HeightLerpBottomColor", envData._ES_HeightLerpBottomColor);
+                Shader.SetGlobalVector("_ES_RimLightOffset", envData._ES_RimLightOffset);
+                Shader.SetGlobalFloat("_ES_RimLightWidth", envData._ES_RimLightWidth);
+                Shader.SetGlobalFloat("_ES_RimLightIntensity", envData._ES_RimLightIntensity);
+                Shader.SetGlobalFloat("_ES_RimLightAddMode", envData._ES_RimLightAddMode);
+                Shader.SetGlobalFloat("_ES_RimLightMode", envData._ES_RimLightMode);
+                Shader.SetGlobalVector("_XPad4", envData._XPad4);
+                Shader.SetGlobalVector("_ES_RimLightColor", envData._ES_RimLightColor);
+                Shader.SetGlobalVector("_ES_LevelSkinLightColor", envData._ES_LevelSkinLightColor);
+                Shader.SetGlobalVector("_ES_LevelSkinShadowColor", envData._ES_LevelSkinShadowColor);
+                Shader.SetGlobalVector("_ES_LevelHighLightColor", envData._ES_LevelHighLightColor);
+                Shader.SetGlobalVector("_ES_LevelShadowColor", envData._ES_LevelShadowColor);
+                Shader.SetGlobalFloat("_ES_LevelShadow", envData._ES_LevelShadow);
+                Shader.SetGlobalFloat("_ES_LevelMid", envData._ES_LevelMid);
+                Shader.SetGlobalFloat("_ES_LevelHighLight", envData._ES_LevelHighLight);
+                Shader.SetGlobalFloat("_ES_LevelEyeShadowIntensity", envData._ES_LevelEyeShadowIntensity);
+                Shader.SetGlobalFloat("_ES_IndoorCharShadowAsCookie", envData._ES_IndoorCharShadowAsCookie);
+                Shader.SetGlobalFloat("_ES_FogColor", envData._ES_FogColor);
+                Shader.SetGlobalFloat("_ES_FogDensity", envData._ES_FogDensity);
+                Shader.SetGlobalFloat("_ES_FogNear", envData._ES_FogNear);
+                Shader.SetGlobalFloat("_ES_FogFar", envData._ES_FogFar);
+                Shader.SetGlobalFloat("_ES_HeightFogColor", envData._ES_HeightFogColor);
+                Shader.SetGlobalFloat("_ES_HeightFogBaseHeight", envData._ES_HeightFogBaseHeight);
+                Shader.SetGlobalFloat("_ES_HeightFogRange", envData._ES_HeightFogRange);
+                Shader.SetGlobalFloat("_ES_HeightFogDensity", envData._ES_HeightFogDensity);
+                Shader.SetGlobalFloat("_ES_HeightFogFogNear", envData._ES_HeightFogFogNear);
+                Shader.SetGlobalFloat("_ES_HeightFogFogFar", envData._ES_HeightFogFogFar);
+                Shader.SetGlobalFloat("_ES_FogCharacterNearFactor", envData._ES_FogCharacterNearFactor);
+                Shader.SetGlobalFloat("_ES_HeightFogAddAjust", envData._ES_HeightFogAddAjust);
+                Shader.SetGlobalFloat("_ES_DisableFogTransition", envData._ES_DisableFogTransition);
+                Shader.SetGlobalVector("_XPad5", envData._XPad5);
+                Shader.SetGlobalVector("_ES_EffCustomLightPosition", envData._ES_EffCustomLightPosition);
+                Shader.SetGlobalFloat("_OutlineScale", envData._OutlineScale);
             }
 
             // This static method is passed as the RenderFunc delegate to the RenderGraph render pass.
             // It is used to execute draw commands.
             static void ExecuteGBufferPass(GBufferPassData data, RasterGraphContext context)
             {
-                PushPassMiscCBuffer(context.cmd);
-                PushRpgEnvPerMainCameraCBuffer(context.cmd);
-
                 // Keep existing camera color so SV_Target0 behaves like non-MRT default output.
                 context.cmd.ClearRenderTarget(false, false, Color.clear);
                 context.cmd.DrawRendererList(data.lightingGBuffer);
@@ -433,8 +512,6 @@ namespace HoyoToon.Rendering.HSR
 
             static void ExecuteForwardPass(ForwardPassData data, RasterGraphContext context)
             {
-                PushPassMiscCBuffer(context.cmd);
-                PushRpgEnvPerMainCameraCBuffer(context.cmd);
                 context.cmd.SetGlobalTexture(k_GBufferAId, data.gBufferA);
                 context.cmd.SetGlobalTexture(k_DepthBufferOrCopyId, data.depthBufferOrCopy, RenderTextureSubElement.Depth);
 
@@ -474,6 +551,9 @@ namespace HoyoToon.Rendering.HSR
                     const string gBufferPassName = "Lighting GBuffer";
                     const string gBufferACopyPassName = "Lighting GBufferA Copy";
                     const string gBufferDepthRebuildPassName = "Lighting GBuffer Depth Rebuild";
+
+                    ApplyPassMiscGlobals(BuildPassMiscData());
+                    ApplyRpgEnvPerMainCameraGlobals(BuildEnvironmentState(HSRSceneController.instance));
 
                     GraphicsFormat gBufferAFormat = GetSupportedColorFormat(GraphicsFormat.R8G8B8A8_UNorm, cameraData.cameraTargetDescriptor.graphicsFormat);
                     GraphicsFormat gBufferBFormat = GetSupportedColorFormat(GraphicsFormat.R16G16B16A16_SFloat, GraphicsFormat.R16G16B16A16_UNorm);
@@ -552,6 +632,8 @@ namespace HoyoToon.Rendering.HSR
                 }
 
                 const string forwardPassName = "Lighting Forward Group";
+                ApplyPassMiscGlobals(BuildPassMiscData());
+                ApplyRpgEnvPerMainCameraGlobals(BuildEnvironmentState(HSRSceneController.instance));
                 RendererListHandle forwardEmission = CreateRendererList(k_ForwardEmissionPassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
                 RendererListHandle customForward = CreateRendererList(k_CustomForwardPassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
                 RendererListHandle customForward2 = CreateRendererList(k_CustomForward2PassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
