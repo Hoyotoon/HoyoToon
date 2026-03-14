@@ -74,6 +74,9 @@ Resources/Zenless Zone Zero.meta
 /.github/instructions
 Scripts/Editor/ResourceCache.json
 Scripts/Editor/ResourceCache.json.meta
+Dev
+Dev.meta
+LICENSE.meta
 
 # -------------------------------------------------------
 # HoyoToon Updater Tagged Ignore Examples
