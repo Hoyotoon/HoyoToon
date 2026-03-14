@@ -3,12 +3,13 @@ using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace HoyoToon.Updater
+namespace HoyoToon.Editor.Updater
 {
     internal static class HashUtil
     {
         public static string GitBlobSha(byte[] bytes)
         {
+            bytes = bytes ?? Array.Empty<byte>();
             var header = Encoding.UTF8.GetBytes($"blob {bytes.Length}\0");
             var combined = new byte[header.Length + bytes.Length];
             Buffer.BlockCopy(header, 0, combined, 0, header.Length);

@@ -1,26 +1,28 @@
 {
-  "name": "com.meliverse.hoyotoon",
+  "name": "com.hoyotoon.hoyotoon",
   "displayName": "HoyoToon",
   "version": "0.0.0",
-  "description": "Shader for Unity (Built-in Rendering Pipeline) attempting to replicate the shading of miHoYo developed games.\nThis is for datamined assets, not custom-made ones nor the MMD variants.",
+  "description": "Shader for Unity `(URP)` attempting to replicate the shading of miHoYo developed games.\nThis is for datamined assets, not custom-made ones nor the MMD variants.",
   "dependencies": {
-    "com.unity.postprocessing": "3.4.0"
+    "com.unity.render-pipelines.universal": "17.3.0",
+    "com.unity.cinemachine": "3.1.6",
+    "com.unity.inputsystem": "1.18.0"
   },
   "gitDependencies": {},
   "vpmDependencies": {},
   "keywords": [
     "HoyoToon",
+    "URP",
+    "SRP",
+    "Custom Rendering Pipeline",
     "HoyoVerse",
     "miHoYo",
     "Unity",
     "Shader",
-    "Built-in Rendering Pipeline",
     "Genshin Impact",
     "Honkai Impact 3rd",
     "Honkai Star Rail",
-    "Zenless Zone Zero",
-    "VRChat",
-    "VRC"
+    "Zenless Zone Zero"
   ],
   "documentationUrl": "https://docs.hoyotoon.com",
   "changelogUrl": "https://github.com/HoyoToon/HoyoToon/releases/latest/",
@@ -37,5 +39,5 @@
   },
   "hideInEditor": false,
   "unity": "2022.3",
-  "localPath": ".\\Packages\\com.meliverse.hoyotoon"
+  "localPath": ".\\Packages\\com.hoyotoon.hoyotoon"
 }

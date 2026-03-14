@@ -5,50 +5,41 @@
 
 ---
 
-## Features
+> [!CAUTION]
+> This is the beta branch of HoyoToon, which means things will not work as intended, and there will be bugs. If you are a beta tester you'll be informed of what to do in the beta channel on our Discord server. If you are not a beta tester, please wait for the stable release.
 
-- A shader designed for the Built-in Pipeline, aiming to accurately reproduce the shading style of Hoyoverse games.
-- The shader is based on the latest version of each game.
-- Supports Genshin Impact
-- Supports Honkai Impact 3rd
-- Supports Honkai Star Rail
-- Supports Zenless Zone Zero
-- Supports both Real-time and Baked Lighting
-- Provides support for stencils and self casted shadows.
-- Includes Visual Effects (VFX) Shaders like those used for Paimon, Dainlief, Asmoday, and Skirk.
-- Includes scripts for automated setup.
-- Auto updater for seamless updates of the shader and accompanying scripts.
+## Features
+- Built on a custom rendering pipeline designed to reproduce the visual style of HoYoverse games.
+- Supports:
+    - Genshin Impact
+    - Honkai Impact 3rd
+    - Honkai Star Rail
+    - Zenless Zone Zero
+- Compatible with Unity 2022.3 and newer.
+- Includes onboarding and setup tools for quick project integration.
+- Includes an auto-updater for shader and script updates.
 
 ## How to Install
 
-You can install HoyoToon through 3 methods.
+HoyoToon can be installed using either of the following methods:
 
-- **VRChat Creator Companion**
 - **Unity Package**
 - **Unity Package Manager**
 
-### VRChat Creator Companion
-
-- Open the VPM package listing [website](https://hoyotoon.github.io/vpm/)
-- Press Add to VCC
-- Open your creator companion, and go to your project you'll wish to install HoyoToon in.
-- Press on Manage Project.
-- On the bottom you'll be able to see the option to install HoyoToon, click the + button.
-- Open your unity project to a freshly installed HoyoToon
-
 ### Unity Package
 
-- Go to the github [releases page](https://github.com/Hoyotoon/HoyoToon/releases) of hoyotoon
-- Download the Unity Package
-- Drag the Unity Package inside of your open Unity and import.
-- you've successfully installed HoyoToon
+1. Go to the GitHub [releases page](https://github.com/Hoyotoon/HoyoToon/releases).
+2. Download the Unity package.
+3. Drag the package into your open Unity project and import it.
+4. HoyoToon is now installed.
 
 ### Unity Package Manager
 
-- Open your Unity project
-- Inside of Unity at the top bar, press on Window then Package Manager.
-- Add the package by clicking on the +, and adding the `https://github.com/Hoyotoon/HoyoToon.git`
-- Unity will now install HoyoToon for you
+1. Open your Unity project.
+2. In Unity, go to **Window > Package Manager**.
+3. Click **+** and add `https://github.com/Hoyotoon/HoyoToon.git`.
+4. Unity will install HoyoToon automatically.
+
 
 ## Contact
 
@@ -59,19 +50,19 @@ You can install HoyoToon through 3 methods.
 
 ## Issues
 
-- If you encounter any issues while using HoyoToon, please don't hesitate to reach out to us. You can contact us directly on Discord, or you can [create an issue](https://github.com/HoyoToon/HoyoToon/issues/new/choose) on our GitHub repository. We are always happy to help and will do our best to resolve any problems you may have.
-
-## Rules
-
-- The [HoyoToon Shader License](https://github.com/HoyoToon/HoyoToon/blob/main/LICENSE) applies.
+- If you run into problems while using HoyoToon, contact us on Discord or [create an issue](https://github.com/HoyoToon/HoyoToon/issues/new/choose) on GitHub.
 
 ## Contributing
 
-We welcome contributions to the HoyoToon project! If you notice any issues or have ideas for new features, please feel free to create a pull request. We appreciate any help we can get, and we will do our best to review and merge your contributions as soon as possible.
+Contributions are welcome. If you find an issue or want to propose an improvement, feel free to open a pull request.
+
+## Simulator Controls
+
+- Hold ALT while scrolling to zoom without shifting the current look area; release ALT to return to normal zoom transition.
 
 ## Special thanks
 
-All of this wouldn't be possible if it weren't for:
+This project would not be possible without:
 
 - [Meliodas](https://github.com/HoyoToon)
 - [Manashiku](https://github.com/Manashiku)

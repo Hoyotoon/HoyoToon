@@ -5,11 +5,11 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Utf8Json;
-using HoyoToon.API;
+using HoyoToon.Editor.API;
 using UnityEngine;
-using HoyoToon.Utilities;
+using HoyoToon.Editor.Utilities;
 
-namespace HoyoToon.Updater
+namespace HoyoToon.Editor.Updater
 {
     internal static class PackageTrackerStore
     {
@@ -27,6 +27,7 @@ namespace HoyoToon.Updater
                 if (File.Exists(BaseTrackerPath) && !File.Exists(path))
                 {
                     File.Copy(BaseTrackerPath, path, overwrite: true);
+                    File.Delete(BaseTrackerPath);
                 }
             }
             catch (Exception ex)
@@ -50,7 +51,7 @@ namespace HoyoToon.Updater
                 if (File.Exists(path))
                 {
                     var bytes = File.ReadAllBytes(path);
-                    if (HoyoToonApi.Parser.TryParse<LocalPackageTracker>(bytes, out var tracker, out var _))
+                    if (Api.Parser.TryParse<LocalPackageTracker>(bytes, out var tracker, out var _))
                         return tracker;
                 }
             }

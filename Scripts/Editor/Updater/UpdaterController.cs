@@ -6,13 +6,22 @@ using System.Linq;
 using System.Threading.Tasks;
 using UnityEditor;
 using UnityEngine;
-using HoyoToon.API;
-using HoyoToon.Utilities;
+using HoyoToon.Editor.API;
+using HoyoToon.Editor.Utilities;
 
-namespace HoyoToon.Updater
+namespace HoyoToon.Editor.Updater
 {
     internal sealed class UpdaterController
     {
+        public class AvailabilityResult
+        {
+            public PackageInfo localPackage;
+            public PackageInfo remotePackage;
+            public string branch;
+
+            public bool HasUpdate => remotePackage != null && IsNewerVersion(remotePackage.version, localPackage?.version);
+        }
+
         public class CheckResult
         {
             public PackageInfo localPackage;
@@ -28,9 +37,8 @@ namespace HoyoToon.Updater
 
         public UpdaterController(UpdaterSettings settings)
         {
-            _settings = settings ?? UpdaterSettings.FindOrCreate();
+            _settings = settings ?? UpdaterSettings.Instance;
 
-            // Resolve package root path (absolute)
             _packageRoot = Path.GetFullPath(Path.Combine(Application.dataPath, "..", _settings.packageFolderRelativeToProject));
             _toolRoot = string.IsNullOrEmpty(_settings.toolRelativeRoot)
                 ? _packageRoot
@@ -40,6 +48,11 @@ namespace HoyoToon.Updater
         public string PackageRoot => _packageRoot;
         public string ToolRoot => _toolRoot;
 
+        public UpdaterSession CreateSession()
+        {
+            return new UpdaterSession(_settings);
+        }
+
         public PackageInfo LoadLocalPackage()
         {
             try
@@ -47,7 +60,7 @@ namespace HoyoToon.Updater
                 var path = Path.Combine(_toolRoot, _settings.packageJsonRelativePath);
                 if (File.Exists(path))
                 {
-                    if (HoyoToonApi.Parser.TryParseFile<PackageInfo>(path, out var pkg, out var _))
+                    if (Api.Parser.TryParseFile<PackageInfo>(path, out var pkg, out var _))
                     {
                         return pkg;
                     }
@@ -60,8 +73,21 @@ namespace HoyoToon.Updater
             return null;
         }
 
-        public async Task<CheckResult> CheckAsync()
+        public async Task<AvailabilityResult> CheckForAvailableUpdateAsync(UpdaterSession session = null)
         {
+            var activeSession = session ?? CreateSession();
+
+            return new AvailabilityResult
+            {
+                localPackage = LoadLocalPackage(),
+                remotePackage = await activeSession.Api.GetPackageInfoAsync(_settings.packageJsonRelativePath),
+                branch = activeSession.Branch
+            };
+        }
+
+        public async Task<CheckResult> CheckAsync(UpdaterSession session = null)
+        {
+            var activeSession = session ?? CreateSession();
             var result = new CheckResult
             {
                 localPackage = LoadLocalPackage(),
@@ -69,113 +95,101 @@ namespace HoyoToon.Updater
                 batch = new UpdateBatch()
             };
 
-            // Prepare gitignore filter early for deletion-phase planning (optional; we only use it during apply, but
-            // if a file is ignored locally and missing remotely we will still list it for deletion so user sees difference.
-            // Actual protection against deletion happens in ApplyAsync.)
-
-            var branch = BranchSelector.GetCurrentBranch();
-            using (var api = new GitHubApiClient(_settings.repoOwner, _settings.repoName, branch, _settings.githubToken))
+            // Pin to a specific commit to avoid race conditions if branch moves between check and apply
+            var headSha = await activeSession.Api.GetBranchHeadShaAsync();
+            result.remotePackage = await activeSession.Api.GetPackageInfoAsync(_settings.packageJsonRelativePath);
+            if (result.remotePackage == null)
             {
-                // Pin to a specific commit to avoid race conditions if branch moves between check and apply
-                var headSha = await api.GetBranchHeadShaAsync();
-                // 1. Fetch remote package.json
-                result.remotePackage = await api.GetPackageInfoAsync(_settings.packageJsonRelativePath);
-                if (result.remotePackage == null)
-                {
-                    result.message = "Failed to fetch remote package.json.";
-                    return result;
-                }
+                result.message = "Failed to fetch remote package.json.";
+                return result;
+            }
 
-                // 2. Version compare
-                if (!IsNewerVersion(result.remotePackage.version, result.localPackage?.version))
-                {
-                    result.tracker.lastUpdateCheck = Now();
-                    PackageTrackerStore.Save(result.tracker);
-                    result.message = "You have the latest version.";
-                    return result;
-                }
-
-                // 3. Get repo tree
-                var tree = await api.GetRepoTreeAsync();
-                if (tree?.tree == null)
-                {
-                    result.message = "Failed to fetch repository tree.";
-                    return result;
-                }
-
-                // 4. Early exit if tree SHA unchanged
-                if (!string.IsNullOrEmpty(result.tracker.lastTreeSha) && result.tracker.lastTreeSha == tree.sha)
-                {
-                    result.message = "Repository unchanged - no updates.";
-                    return result;
-                }
-
-                // 5. Build update batch
-                var remoteFiles = new Dictionary<string, GitTreeItem>(StringComparer.OrdinalIgnoreCase);
-                foreach (var item in tree.tree.Where(t => t.type == "blob"))
-                {
-                    if (item.path.Equals(_settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (item.path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
-                    if (IsExcludedPath(item.path)) continue; // skip .github, .gitignore, etc.
-                    remoteFiles[item.path] = item;
-                }
-
-                foreach (var kv in remoteFiles)
-                {
-                    var rel = kv.Key;
-                    var remote = kv.Value;
-                    var localFull = Path.Combine(_toolRoot, rel);
-                    if (!File.Exists(localFull))
-                    {
-                        result.batch.fileUpdates.Add(new FileUpdate
-                        {
-                            path = rel,
-                            downloadUrl = null, // compute when applying
-                            expectedSha = remote.sha,
-                            isNew = true
-                        });
-                    }
-                    else
-                    {
-                        result.tracker.fileHashes.TryGetValue(rel, out var trackedSha);
-                        if (!string.Equals(trackedSha, remote.sha, StringComparison.Ordinal))
-                        {
-                            result.batch.fileUpdates.Add(new FileUpdate
-                            {
-                                path = rel,
-                                downloadUrl = null,
-                                expectedSha = remote.sha,
-                                isNew = false
-                            });
-                        }
-                    }
-                }
-
-                if (result.tracker.trackedFiles != null)
-                {
-                    foreach (var tracked in result.tracker.trackedFiles)
-                    {
-                        if (IsExcludedPath(tracked)) continue;
-                        if (!remoteFiles.ContainsKey(tracked))
-                        {
-                            result.batch.filesToDelete.Add(tracked);
-                        }
-                    }
-                }
-
-                result.tracker.lastTreeSha = tree.sha;
-                result.batch.sourceCommitSha = headSha;
+            if (!IsNewerVersion(result.remotePackage.version, result.localPackage?.version))
+            {
                 result.tracker.lastUpdateCheck = Now();
                 PackageTrackerStore.Save(result.tracker);
-                result.message = result.batch.totalOperations == 0 ? "No file changes detected." : $"Update ready: {result.batch.totalOperations} operations.";
+                result.message = "You have the latest version.";
+                return result;
             }
+
+            var tree = await activeSession.Api.GetRepoTreeAsync();
+            if (tree?.tree == null)
+            {
+                result.message = "Failed to fetch repository tree.";
+                return result;
+            }
+
+            if (!string.IsNullOrEmpty(result.tracker.lastTreeSha) && result.tracker.lastTreeSha == tree.sha)
+            {
+                result.message = "Repository unchanged - no updates.";
+                return result;
+            }
+
+            var remoteFiles = BuildRemoteFileMap(tree);
+            BuildFileUpdatePlan(result, remoteFiles);
+
+            result.tracker.lastTreeSha = tree.sha;
+            result.batch.sourceCommitSha = headSha;
+            result.tracker.lastUpdateCheck = Now();
+            PackageTrackerStore.Save(result.tracker);
+            result.message = result.batch.totalOperations == 0 ? "No file changes detected." : $"Update ready: {result.batch.totalOperations} operations.";
 
             return result;
         }
 
-        public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg, IProgressSink progress = null)
+        public async Task<string> GetChangelogAsync(PackageInfo remotePackage, UpdaterSession session = null)
+        {
+            if (remotePackage == null || string.IsNullOrEmpty(remotePackage.version))
+            {
+                return null;
+            }
+
+            var activeSession = session ?? CreateSession();
+
+            try
+            {
+                var release = await activeSession.Api.GetReleaseByTagAsync(remotePackage.version)
+                    ?? await activeSession.Api.GetReleaseByTagAsync("v" + remotePackage.version);
+                if (release != null && !string.IsNullOrEmpty(release.body))
+                {
+                    return $"Release Notes for {remotePackage.version}\n\n" + release.body;
+                }
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.Changelog.Release", $"Failed to fetch release notes: {ex.Message}");
+            }
+
+            try
+            {
+                var text = await activeSession.Api.GetRawTextAsync("changelog.md");
+                if (!string.IsNullOrWhiteSpace(text))
+                {
+                    var header = $"## {remotePackage.version}";
+                    int index = text.IndexOf(header, StringComparison.OrdinalIgnoreCase);
+                    if (index >= 0)
+                    {
+                        int nextIndex = text.IndexOf("## ", index + header.Length, StringComparison.OrdinalIgnoreCase);
+                        string section = nextIndex > index ? text.Substring(index, nextIndex - index) : text.Substring(index);
+                        return section.Trim();
+                    }
+
+                    return text.Trim();
+                }
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.Changelog.Fallback", $"Failed to fetch changelog.md: {ex.Message}");
+            }
+
+            return null;
+        }
+
+        public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg, IProgressSink progress = null, UpdaterSession session = null)
         {
             if (batch == null) return;
+
+            var activeSession = session ?? CreateSession();
 
             // Disable auto-refresh to avoid compile/import churn
             AssetDatabase.DisallowAutoRefresh();
@@ -186,144 +200,20 @@ namespace HoyoToon.Updater
                 {
                     gitIgnore = GitIgnoreFilter.Load(_toolRoot);
                 }
-                var branch = BranchSelector.GetCurrentBranch();
-                using (var api = new GitHubApiClient(_settings.repoOwner, _settings.repoName, branch, _settings.githubToken))
+
+                if (BranchSelector.ConsumeCleanFlag())
                 {
-                    // If branch was just switched, perform a clean install before applying the batch.
-                    if (BranchSelector.ConsumeCleanFlag())
-                    {
-                        try
-                        {
-                            var allFiles = Directory.GetFiles(_toolRoot, "*", SearchOption.AllDirectories)
-                                .Where(p => !p.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
-                                .ToList();
-                            int removed = 0;
-                            int totalRemovals = allFiles.Count;
-                            foreach (var fullPath in allFiles)
-                            {
-                                var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
-                                if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
-                                if (IsExcludedPath(rel)) continue; // don't touch excluded artifacts during clean
-                                if (gitIgnore != null && gitIgnore.IsIgnored(rel, false))
-                                {
-                                    HoyoToonLogger.UpdaterInfo($"Preserving local gitignored file '{rel}' during clean.");
-                                    // Skip deletion of ignored file
-                                    removed++;
-                                    ReportProgress(progress, "Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
-                                    continue;
-                                }
-                                var assetPathClean = HoyoToonEditorUtil.ToUnityAssetPath(fullPath);
-                                if (!string.IsNullOrEmpty(assetPathClean))
-                                {
-                                    if (!AssetDatabase.DeleteAsset(assetPathClean))
-                                    {
-                                        if (File.Exists(fullPath)) File.Delete(fullPath);
-                                        var meta = fullPath + ".meta"; if (File.Exists(meta)) File.Delete(meta);
-                                    }
-                                }
-                                else
-                                {
-                                    if (File.Exists(fullPath)) File.Delete(fullPath);
-                                    var meta = fullPath + ".meta"; if (File.Exists(meta)) File.Delete(meta);
-                                }
-                                removed++;
-                                ReportProgress(progress, "Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
-                            }
-                        }
-                        finally { if (progress == null) EditorUtility.ClearProgressBar(); }
-                        // Reset tracker before proceeding
-                        var reset = new LocalPackageTracker();
-                        PackageTrackerStore.Save(reset);
-                    }
-
-                    int completed = 0;
-                    int total = Math.Max(1, batch?.totalOperations ?? 0);
-                    if (batch != null)
-                    {
-                    foreach (var update in batch.fileUpdates)
-                    {
-                        if (IsExcludedPath(update.path))
-                        {
-                            completed++;
-                            ReportProgress(progress, "Skipping Excluded", update.path, (float)completed / total);
-                            continue;
-                        }
-                        var bytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
-                            ? await api.DownloadRawAtCommitAsync(update.path, batch.sourceCommitSha)
-                            : await api.DownloadRawAsync(update.path);
-                        var sha = HashUtil.GitBlobSha(bytes);
-                        if (!string.Equals(sha, update.expectedSha, StringComparison.Ordinal))
-                            throw new Exception($"Integrity check failed for {update.path} (expected {update.expectedSha}, got {sha}, commit {batch.sourceCommitSha ?? branch})");
-
-                        var full = Path.Combine(_toolRoot, update.path);
-                        Directory.CreateDirectory(Path.GetDirectoryName(full));
-                        await File.WriteAllBytesAsync(full, bytes);
-                        completed++;
-                        ReportProgress(progress, "Applying Updates", update.path, (float)completed / total);
-                        await Task.Delay(10);
-                    }
-
-                    foreach (var deletion in batch.filesToDelete)
-                    {
-                        if (IsExcludedPath(deletion))
-                        {
-                            completed++;
-                            ReportProgress(progress, "Skipping Excluded", deletion, (float)completed / total);
-                            continue;
-                        }
-                        if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false))
-                        {
-                            completed++;
-                            ReportProgress(progress, "Skipping (gitignored)", deletion, (float)completed / total);
-                            continue;
-                        }
-                        var fullDel = Path.Combine(_toolRoot, deletion);
-                        var assetPathDel = HoyoToonEditorUtil.ToUnityAssetPath(fullDel);
-                        if (!string.IsNullOrEmpty(assetPathDel))
-                        {
-                            if (!AssetDatabase.DeleteAsset(assetPathDel))
-                            {
-                                if (File.Exists(fullDel)) File.Delete(fullDel);
-                                var meta = fullDel + ".meta";
-                                if (File.Exists(meta)) File.Delete(meta);
-                            }
-                        }
-                        else
-                        {
-                            if (File.Exists(fullDel)) File.Delete(fullDel);
-                            var meta = fullDel + ".meta";
-                            if (File.Exists(meta)) File.Delete(meta);
-                        }
-                        completed++;
-                        ReportProgress(progress, "Applying Updates", deletion, (float)completed / total);
-                        await Task.Delay(10);
-                    }
-                    }
-
-                    // Always update package.json to the latest from the pinned commit (if available) so version reflects accurately
-                    try
-                    {
-                        var pkgPath = _settings.packageJsonRelativePath;
-                        var pkgBytes = !string.IsNullOrEmpty(batch?.sourceCommitSha)
-                            ? await api.DownloadRawAtCommitAsync(pkgPath, batch.sourceCommitSha)
-                            : await api.DownloadRawAsync(pkgPath);
-                        if (pkgBytes != null && pkgBytes.Length > 0)
-                        {
-                            var fullPkg = Path.Combine(_toolRoot, pkgPath);
-                            Directory.CreateDirectory(Path.GetDirectoryName(fullPkg));
-                            await File.WriteAllBytesAsync(fullPkg, pkgBytes);
-                            HoyoToonLogger.UpdaterInfo($"Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
-                            // Small progress nudge (doesn't count toward total as it's implicit)
-                            ReportProgress(progress, "Finalizing", "package.json", 1f);
-                        }
-                    }
-                    catch (Exception pkgEx)
-                    {
-                        HoyoToonLogger.UpdaterWarning($"package.json update skipped: {pkgEx.Message}");
-                    }
+                    await CleanForBranchSwitchAsync(gitIgnore, progress);
+                    var reset = new LocalPackageTracker();
+                    PackageTrackerStore.Save(reset);
                 }
 
-                // Rebuild tracker snapshot and set version
+                int total = Math.Max(1, batch.totalOperations);
+                int completed = 0;
+                completed = await ApplyFileUpdatesAsync(batch, activeSession.Api, activeSession.Branch, total, completed, progress);
+                completed = await ApplyFileDeletionsAsync(batch, gitIgnore, total, completed, progress);
+                await RefreshPackageJsonAsync(batch, activeSession.Api, progress);
+
                 var tracker = PackageTrackerStore.Load();
                 tracker.currentVersion = remotePkg?.version;
                 tracker.lastUpdateCheck = Now();
@@ -337,6 +227,192 @@ namespace HoyoToon.Updater
             }
         }
 
+        private Dictionary<string, GitTreeItem> BuildRemoteFileMap(GitTreeResponse tree)
+        {
+            var remoteFiles = new Dictionary<string, GitTreeItem>(StringComparer.OrdinalIgnoreCase);
+            foreach (var item in tree.tree.Where(t => t.type == "blob"))
+            {
+                if (item.path.Equals(_settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
+                if (item.path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase)) continue;
+                if (IsExcludedPath(item.path)) continue;
+                remoteFiles[item.path] = item;
+            }
+
+            return remoteFiles;
+        }
+
+        private void BuildFileUpdatePlan(CheckResult result, Dictionary<string, GitTreeItem> remoteFiles)
+        {
+            foreach (var kv in remoteFiles)
+            {
+                var rel = kv.Key;
+                var remote = kv.Value;
+                var localFull = Path.Combine(_toolRoot, rel);
+                if (!File.Exists(localFull))
+                {
+                    result.batch.fileUpdates.Add(new FileUpdate
+                    {
+                        path = rel,
+                        downloadUrl = null,
+                        expectedSha = remote.sha,
+                        isNew = true
+                    });
+                    continue;
+                }
+
+                result.tracker.fileHashes.TryGetValue(rel, out var trackedSha);
+                if (!string.Equals(trackedSha, remote.sha, StringComparison.Ordinal))
+                {
+                    result.batch.fileUpdates.Add(new FileUpdate
+                    {
+                        path = rel,
+                        downloadUrl = null,
+                        expectedSha = remote.sha,
+                        isNew = false
+                    });
+                }
+            }
+
+            if (result.tracker.trackedFiles == null) return;
+            foreach (var tracked in result.tracker.trackedFiles)
+            {
+                if (IsExcludedPath(tracked)) continue;
+                if (!remoteFiles.ContainsKey(tracked))
+                {
+                    result.batch.filesToDelete.Add(tracked);
+                }
+            }
+        }
+
+        private Task CleanForBranchSwitchAsync(GitIgnoreFilter gitIgnore, IProgressSink progress)
+        {
+            try
+            {
+                var allFiles = Directory.GetFiles(_toolRoot, "*", SearchOption.AllDirectories)
+                    .Where(p => !p.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                int removed = 0;
+                int totalRemovals = allFiles.Count;
+                foreach (var fullPath in allFiles)
+                {
+                    var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
+                    if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (IsExcludedPath(rel)) continue;
+                    if (gitIgnore != null && gitIgnore.IsIgnored(rel, false))
+                    {
+                        HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Preserving local gitignored file '{rel}' during clean.");
+                        removed++;
+                        ReportProgress(progress, "Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
+                        continue;
+                    }
+
+                    DeleteFileWithMeta(fullPath);
+                    removed++;
+                    ReportProgress(progress, "Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
+                }
+
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                return Task.FromException(ex);
+            }
+            finally
+            {
+                if (progress == null) EditorUtility.ClearProgressBar();
+            }
+        }
+
+        private async Task<int> ApplyFileUpdatesAsync(UpdateBatch batch, GitHubApiClient api, string branch, int total, int completed, IProgressSink progress)
+        {
+            foreach (var update in batch.fileUpdates)
+            {
+                if (IsExcludedPath(update.path))
+                {
+                    completed++;
+                    ReportProgress(progress, "Skipping Excluded", update.path, (float)completed / total);
+                    continue;
+                }
+
+                var bytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
+                    ? await api.DownloadRawAtCommitAsync(update.path, batch.sourceCommitSha)
+                    : await api.DownloadRawAsync(update.path);
+                var sha = HashUtil.GitBlobSha(bytes);
+                if (!string.Equals(sha, update.expectedSha, StringComparison.Ordinal))
+                    throw new Exception($"Integrity check failed for {update.path} (expected {update.expectedSha}, got {sha}, commit {batch.sourceCommitSha ?? branch})");
+
+                var full = Path.Combine(_toolRoot, update.path);
+                Directory.CreateDirectory(Path.GetDirectoryName(full));
+                await File.WriteAllBytesAsync(full, bytes);
+                completed++;
+                ReportProgress(progress, "Applying Updates", update.path, (float)completed / total);
+                await Task.Delay(10);
+            }
+
+            return completed;
+        }
+
+        private async Task<int> ApplyFileDeletionsAsync(UpdateBatch batch, GitIgnoreFilter gitIgnore, int total, int completed, IProgressSink progress)
+        {
+            foreach (var deletion in batch.filesToDelete)
+            {
+                if (IsExcludedPath(deletion))
+                {
+                    completed++;
+                    ReportProgress(progress, "Skipping Excluded", deletion, (float)completed / total);
+                    continue;
+                }
+
+                if (gitIgnore != null && gitIgnore.IsIgnored(deletion, false))
+                {
+                    completed++;
+                    ReportProgress(progress, "Skipping (gitignored)", deletion, (float)completed / total);
+                    continue;
+                }
+
+                var fullDel = Path.Combine(_toolRoot, deletion);
+                DeleteFileWithMeta(fullDel);
+                completed++;
+                ReportProgress(progress, "Applying Updates", deletion, (float)completed / total);
+                await Task.Delay(10);
+            }
+
+            return completed;
+        }
+
+        private async Task RefreshPackageJsonAsync(UpdateBatch batch, GitHubApiClient api, IProgressSink progress)
+        {
+            try
+            {
+                var pkgPath = _settings.packageJsonRelativePath;
+                var pkgBytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
+                    ? await api.DownloadRawAtCommitAsync(pkgPath, batch.sourceCommitSha)
+                    : await api.DownloadRawAsync(pkgPath);
+                if (pkgBytes != null && pkgBytes.Length > 0)
+                {
+                    var fullPkg = Path.Combine(_toolRoot, pkgPath);
+                    Directory.CreateDirectory(Path.GetDirectoryName(fullPkg));
+                    await File.WriteAllBytesAsync(fullPkg, pkgBytes);
+                    HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
+                    ReportProgress(progress, "Finalizing", "package.json", 1f);
+                }
+            }
+            catch (Exception pkgEx)
+            {
+                HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Warning, $"package.json update skipped: {pkgEx.Message}");
+            }
+        }
+
+        private static void DeleteFileWithMeta(string fullPath)
+        {
+            var assetPath = EditorUtil.ToUnityAssetPath(fullPath);
+            if (!string.IsNullOrEmpty(assetPath) && AssetDatabase.DeleteAsset(assetPath)) return;
+            if (File.Exists(fullPath)) File.Delete(fullPath);
+            var meta = fullPath + ".meta";
+            if (File.Exists(meta)) File.Delete(meta);
+        }
+
         private static string Now() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");
 
         private static void ReportProgress(IProgressSink progress, string title, string info, float value)
@@ -345,8 +421,9 @@ namespace HoyoToon.Updater
             else EditorUtility.DisplayProgressBar(title, info, value);
         }
 
-        private static bool IsNewerVersion(string newVersion, string currentVersion)
+        internal static bool IsNewerVersion(string newVersion, string currentVersion)
         {
+            if (string.IsNullOrEmpty(newVersion)) return false;
             if (string.IsNullOrEmpty(currentVersion)) return true;
             try
             {

@@ -1,12 +1,13 @@
 #if UNITY_EDITOR
 using UnityEditor;
+using HoyoToon.Editor.Utilities;
 
-namespace HoyoToon.Updater
+namespace HoyoToon.Editor.Updater
 {
     internal static class BranchSelector
     {
-        private const string PrefKey = "HoyoToon.Updater.CurrentBranch";
-        private const string PrefCleanOnSwitchKey = "HoyoToon.Updater.CleanOnSwitch";
+        private const string PrefKey = PrefsKeys.UpdaterCurrentBranch;
+        private const string PrefCleanOnSwitchKey = PrefsKeys.UpdaterCleanOnSwitch;
 
         public static string GetCurrentBranch()
         {
@@ -27,11 +28,6 @@ namespace HoyoToon.Updater
             bool need = EditorPrefs.GetBool(PrefCleanOnSwitchKey, false);
             if (need) EditorPrefs.DeleteKey(PrefCleanOnSwitchKey);
             return need;
-        }
-
-        public static bool IsCleanPending()
-        {
-            return EditorPrefs.GetBool(PrefCleanOnSwitchKey, false);
         }
     }
 }

@@ -2,38 +2,35 @@
 using System;
 using UnityEditor;
 using UnityEngine;
-using HoyoToon.Utilities;
+using HoyoToon.Editor.Utilities;
 
-namespace HoyoToon.Updater
+using HoyoToon.Editor.UI.Windows;
+
+namespace HoyoToon.Editor.Updater
 {
     internal static class UpdaterStartup
     {
         [InitializeOnLoadMethod]
         private static void Schedule()
         {
-            // Delay to let editor settle
             EditorApplication.delayCall += async () =>
             {
                 try
                 {
-                    var settings = UpdaterSettings.FindOrCreate();
+                    var settings = UpdaterSettings.Instance;
                     var controller = new UpdaterController(settings);
-                    var local = controller.LoadLocalPackage();
-                    var branch = BranchSelector.GetCurrentBranch();
-                    using (var api = new GitHubApiClient(settings.repoOwner, settings.repoName, branch, settings.githubToken))
+                    var session = controller.CreateSession();
+                    var availability = await controller.CheckForAvailableUpdateAsync(session);
+                    if (availability.HasUpdate)
                     {
-                        var remote = await api.GetPackageInfoAsync(settings.packageJsonRelativePath);
-                        if (remote != null && IsNewer(remote.version, local?.version))
-                        {
-                            HoyoToonLogger.Always("Updater", $"New version available: {remote.version}", LogType.Log);
-                            HoyoToonDialogWindow.ShowCustom(
-                                "HoyoToon Update Available",
-                                $"A newer version of HoyoToon is available on '{branch}' (remote: {remote.version}, local: {local?.version ?? "unknown"}).\n\nOpen the updater to review changes?",
-                                MessageType.Info,
-                                new[] { "Open Updater", "Later" },
-                                0, 1,
-                                result => { if (result == 0) UpdaterDialogFlow.Run(); });
-                        }
+                        HoyoToonLogger.Always("Updater", $"New version available: {availability.remotePackage.version}", LogType.Log);
+                        DialogWindow.ShowCustom(
+                            "HoyoToon Update Available",
+                            $"A newer version of HoyoToon is available on '{availability.branch}' (remote: {availability.remotePackage.version}, local: {availability.localPackage?.version ?? "unknown"}).\n\nOpen the updater to review changes?",
+                            MessageType.Info,
+                            new[] { "Open Updater", "Later" },
+                            0, 1,
+                            result => { if (result == 0) UpdaterDialogFlow.Run(); });
                     }
                 }
                 catch (Exception ex)
@@ -41,13 +38,6 @@ namespace HoyoToon.Updater
                     HoyoToonLogger.Always("Updater", $"Startup update check failed: {ex.Message}", LogType.Warning);
                 }
             };
-        }
-
-        private static bool IsNewer(string a, string b)
-        {
-            if (string.IsNullOrEmpty(a)) return false; if (string.IsNullOrEmpty(b)) return true;
-            try { return new Version(a) > new Version(b); }
-            catch { return string.Compare(a, b, StringComparison.OrdinalIgnoreCase) > 0; }
         }
     }
 }

@@ -1,5 +1,5 @@
 #if UNITY_EDITOR
-namespace HoyoToon.Updater
+namespace HoyoToon.Editor.Updater
 {
     internal interface IProgressSink
     {

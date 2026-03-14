@@ -1,0 +1,19 @@
+{
+    "name": "com.hoyotoon.hoyotoon.Runtime",
+    "rootNamespace": "HoyoToon",
+    "references": [
+        "GUID:4307f53044263cf4b835bd812fc161a4",
+        "GUID:a35efad8797223d499f8c68b1f545dbc",
+        "GUID:d60799ab2a985554ea1a39cd38695018",
+        "GUID:75469ad4d38634e559750d17036d5f7c"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

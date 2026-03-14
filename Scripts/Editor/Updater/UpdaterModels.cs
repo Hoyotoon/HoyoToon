@@ -2,7 +2,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace HoyoToon.Updater
+namespace HoyoToon.Editor.Updater
 {
     [Serializable]
     public class PackageInfo
@@ -11,7 +11,6 @@ namespace HoyoToon.Updater
         public string version;
         public string displayName;
         public string description;
-        public string unity;
     }
 
     [Serializable]

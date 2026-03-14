@@ -1,0 +1,20 @@
+{
+    "name": "com.hoyotoon.hoyotoon.Editor",
+    "rootNamespace": "HoyoToon.Editor",
+    "references": [
+        "com.vrchat.core.vpm-resolver.Editor",
+        "Unity.RenderPipelines.Core.Runtime",
+        "com.hoyotoon.hoyotoon.Runtime"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
