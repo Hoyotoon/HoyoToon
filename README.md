@@ -56,10 +56,6 @@ HoyoToon can be installed using either of the following methods:
 
 Contributions are welcome. If you find an issue or want to propose an improvement, feel free to open a pull request.
 
-## Simulator Controls
-
-- Hold ALT while scrolling to zoom without shifting the current look area; release ALT to return to normal zoom transition.
-
 ## Special thanks
 
 This project would not be possible without:
