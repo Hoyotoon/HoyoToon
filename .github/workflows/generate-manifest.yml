@@ -20,7 +20,108 @@ jobs:
 
       - name: Generate manifest
         shell: pwsh
-        run: ./.github/scripts/generate_updater_manifest.ps1 -RootPath . -OutputPath updater_manifest.json
+        run: |
+          $ErrorActionPreference = "Stop"
+
+          function Get-NormalizedRelativePath {
+            param(
+              [string]$BasePath,
+              [string]$Path
+            )
+
+            $baseFullPath = [System.IO.Path]::GetFullPath($BasePath)
+            $targetFullPath = [System.IO.Path]::GetFullPath($Path)
+            if (-not $baseFullPath.EndsWith([System.IO.Path]::DirectorySeparatorChar.ToString())) {
+              $baseFullPath += [System.IO.Path]::DirectorySeparatorChar
+            }
+
+            $baseUri = [System.Uri]::new($baseFullPath)
+            $targetUri = [System.Uri]::new($targetFullPath)
+            $relative = [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString())
+            return $relative.Replace('\\', '/')
+          }
+
+          function Test-IsExplicitlySkipped {
+            param(
+              [string]$RelativePath,
+              [string]$OutputRelativePath
+            )
+
+            if ([string]::IsNullOrWhiteSpace($RelativePath)) {
+              return $true
+            }
+
+            if ($RelativePath.EndsWith('.meta', [System.StringComparison]::OrdinalIgnoreCase)) {
+              return $true
+            }
+
+            if ($RelativePath.StartsWith('.git/', [System.StringComparison]::OrdinalIgnoreCase) -or
+              $RelativePath.StartsWith('.github/', [System.StringComparison]::OrdinalIgnoreCase) -or
+              $RelativePath.StartsWith('.vscode/', [System.StringComparison]::OrdinalIgnoreCase) -or
+              $RelativePath.StartsWith('.idea/', [System.StringComparison]::OrdinalIgnoreCase)) {
+              return $true
+            }
+
+            $fileName = [System.IO.Path]::GetFileName($RelativePath)
+            if ($fileName -like 'updater_manifest*.json') {
+              return $true
+            }
+
+            if ($RelativePath.Equals($OutputRelativePath, [System.StringComparison]::OrdinalIgnoreCase)) {
+              return $true
+            }
+
+            return $false
+          }
+
+          function Test-IsIgnoredByGit {
+            param(
+              [string]$RepoRoot,
+              [string]$RelativePath
+            )
+
+            & git -C $RepoRoot check-ignore --no-index --quiet -- $RelativePath
+            return $LASTEXITCODE -eq 0
+          }
+
+          $resolvedRoot = [System.IO.Path]::GetFullPath(".")
+          $resolvedOutput = [System.IO.Path]::GetFullPath((Join-Path $resolvedRoot "updater_manifest.json"))
+          $outputRelative = Get-NormalizedRelativePath -BasePath $resolvedRoot -Path $resolvedOutput
+
+          $package = Get-Content -LiteralPath "package.json" -Raw | ConvertFrom-Json
+          $files = Get-ChildItem -LiteralPath $resolvedRoot -File -Recurse
+
+          $entries = New-Object System.Collections.Generic.List[object]
+          foreach ($file in $files) {
+            $relativePath = Get-NormalizedRelativePath -BasePath $resolvedRoot -Path $file.FullName
+
+            if (Test-IsExplicitlySkipped -RelativePath $relativePath -OutputRelativePath $outputRelative) {
+              continue
+            }
+
+            if (Test-IsIgnoredByGit -RepoRoot $resolvedRoot -RelativePath $relativePath) {
+              continue
+            }
+
+            $hash = (Get-FileHash -Algorithm SHA1 -LiteralPath $file.FullName).Hash.ToLowerInvariant()
+            $entries.Add([pscustomobject]@{
+              Key = $relativePath
+              Value = $hash
+            })
+          }
+
+          $sortedEntries = $entries | Sort-Object Key
+          $fileMap = [ordered]@{}
+          foreach ($entry in $sortedEntries) {
+            $fileMap[$entry.Key] = $entry.Value
+          }
+
+          $manifest = [ordered]@{
+            version = $package.version
+            files = $fileMap
+          }
+
+          $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath "updater_manifest.json"
 
       - name: Commit manifest
         run: |
