@@ -1,5 +1,5 @@
 {
-  "version": "0.0.6",
+  "version": "0.0.5",
   "files": {
     ".gitignore": "acb0bab9b1263ac055a07cf01ffb546377473ae5",
     "HoyoToon.unity": "04f00749e74cf84116a8b401a940b1d1b7a99d3f",
@@ -247,6 +247,6 @@
     "Shaders/Games/Honkai Star Rail/Transparent/Include/Struct.hlsl": "e7802090952af28d8e5ae65cc217ca6d7ea1635c",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "changelog.md": "c921e54c04e7392e4fe39301d7e51b7b3c6a4421",
-    "package.json": "8f285fedacfdf62972a2173a6e756832c51cbae6"
+    "package.json": "bc34d08908f8b6bc6077cc3c2b591b832c6e9cf6"
   }
 }
