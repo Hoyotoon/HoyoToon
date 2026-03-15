@@ -19,109 +19,82 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate manifest
-        shell: pwsh
+        shell: bash
         run: |
-          $ErrorActionPreference = "Stop"
+          python3 <<'PY'
+          import hashlib
+          import json
+          import pathlib
+          import subprocess
+          import sys
 
-          function Get-NormalizedRelativePath {
-            param(
-              [string]$BasePath,
-              [string]$Path
-            )
+          root = pathlib.Path('.').resolve()
+          output_path = root / 'updater_manifest.json'
 
-            $baseFullPath = [System.IO.Path]::GetFullPath($BasePath)
-            $targetFullPath = [System.IO.Path]::GetFullPath($Path)
-            if (-not $baseFullPath.EndsWith([System.IO.Path]::DirectorySeparatorChar.ToString())) {
-              $baseFullPath += [System.IO.Path]::DirectorySeparatorChar
-            }
+          package_path = root / 'package.json'
+          if not package_path.exists():
+              raise FileNotFoundError(f'package.json not found at {package_path}')
 
-            $baseUri = [System.Uri]::new($baseFullPath)
-            $targetUri = [System.Uri]::new($targetFullPath)
-            $relative = [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString())
-            return $relative.Replace('\\', '/')
+          with package_path.open('r', encoding='utf-8') as handle:
+              package = json.load(handle)
+
+          version = package.get('version')
+          if not version:
+              raise ValueError('package.json is missing a version field')
+
+          def normalize_relative(path: pathlib.Path) -> str:
+              return path.relative_to(root).as_posix()
+
+          def is_explicitly_skipped(relative_path: str) -> bool:
+              if not relative_path:
+                  return True
+              if relative_path.endswith('.meta'):
+                  return True
+              if relative_path.startswith(('.git/', '.github/', '.vscode/', '.idea/')):
+                  return True
+              if pathlib.PurePosixPath(relative_path).name.startswith('updater_manifest') and relative_path.endswith('.json'):
+                  return True
+              if relative_path == output_path.relative_to(root).as_posix():
+                  return True
+              return False
+
+          def is_git_ignored(relative_path: str) -> bool:
+              result = subprocess.run(
+                  ['git', '-C', str(root), 'check-ignore', '--no-index', '--quiet', '--', relative_path],
+                  stdout=subprocess.DEVNULL,
+                  stderr=subprocess.DEVNULL,
+                  check=False,
+              )
+              return result.returncode == 0
+
+          files = {}
+          for file_path in root.rglob('*'):
+              if not file_path.is_file():
+                  continue
+
+              relative_path = normalize_relative(file_path)
+              if is_explicitly_skipped(relative_path):
+                  continue
+              if is_git_ignored(relative_path):
+                  continue
+
+              with file_path.open('rb') as handle:
+                  files[relative_path] = hashlib.sha1(handle.read()).hexdigest()
+
+          if not files:
+              raise RuntimeError('No files were collected for updater_manifest.json')
+
+          manifest = {
+              'version': version,
+              'files': dict(sorted(files.items())),
           }
 
-          function Test-IsExplicitlySkipped {
-            param(
-              [string]$RelativePath,
-              [string]$OutputRelativePath
-            )
+          with output_path.open('w', encoding='utf-8', newline='\n') as handle:
+              json.dump(manifest, handle, indent=2)
+              handle.write('\n')
 
-            if ([string]::IsNullOrWhiteSpace($RelativePath)) {
-              return $true
-            }
-
-            if ($RelativePath.EndsWith('.meta', [System.StringComparison]::OrdinalIgnoreCase)) {
-              return $true
-            }
-
-            if ($RelativePath.StartsWith('.git/', [System.StringComparison]::OrdinalIgnoreCase) -or
-              $RelativePath.StartsWith('.github/', [System.StringComparison]::OrdinalIgnoreCase) -or
-              $RelativePath.StartsWith('.vscode/', [System.StringComparison]::OrdinalIgnoreCase) -or
-              $RelativePath.StartsWith('.idea/', [System.StringComparison]::OrdinalIgnoreCase)) {
-              return $true
-            }
-
-            $fileName = [System.IO.Path]::GetFileName($RelativePath)
-            if ($fileName -like 'updater_manifest*.json') {
-              return $true
-            }
-
-            if ($RelativePath.Equals($OutputRelativePath, [System.StringComparison]::OrdinalIgnoreCase)) {
-              return $true
-            }
-
-            return $false
-          }
-
-          function Test-IsIgnoredByGit {
-            param(
-              [string]$RepoRoot,
-              [string]$RelativePath
-            )
-
-            & git -C $RepoRoot check-ignore --no-index --quiet -- $RelativePath
-            return $LASTEXITCODE -eq 0
-          }
-
-          $resolvedRoot = [System.IO.Path]::GetFullPath(".")
-          $resolvedOutput = [System.IO.Path]::GetFullPath((Join-Path $resolvedRoot "updater_manifest.json"))
-          $outputRelative = Get-NormalizedRelativePath -BasePath $resolvedRoot -Path $resolvedOutput
-
-          $package = Get-Content -LiteralPath "package.json" -Raw | ConvertFrom-Json
-          $files = Get-ChildItem -LiteralPath $resolvedRoot -File -Recurse
-
-          $entries = New-Object System.Collections.Generic.List[object]
-          foreach ($file in $files) {
-            $relativePath = Get-NormalizedRelativePath -BasePath $resolvedRoot -Path $file.FullName
-
-            if (Test-IsExplicitlySkipped -RelativePath $relativePath -OutputRelativePath $outputRelative) {
-              continue
-            }
-
-            if (Test-IsIgnoredByGit -RepoRoot $resolvedRoot -RelativePath $relativePath) {
-              continue
-            }
-
-            $hash = (Get-FileHash -Algorithm SHA1 -LiteralPath $file.FullName).Hash.ToLowerInvariant()
-            $entries.Add([pscustomobject]@{
-              Key = $relativePath
-              Value = $hash
-            })
-          }
-
-          $sortedEntries = $entries | Sort-Object Key
-          $fileMap = [ordered]@{}
-          foreach ($entry in $sortedEntries) {
-            $fileMap[$entry.Key] = $entry.Value
-          }
-
-          $manifest = [ordered]@{
-            version = $package.version
-            files = $fileMap
-          }
-
-          $manifest | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath "updater_manifest.json"
+          print(f'Generated updater_manifest.json with {len(files)} files for version {version}')
+          PY
 
       - name: Commit manifest
         run: |
