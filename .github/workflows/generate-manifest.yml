@@ -19,8 +19,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Generate manifest
-      shell: pwsh
-      run: ./.github/scripts/generate_updater_manifest.ps1 -RootPath . -OutputPath updater_manifest.json
+        shell: pwsh
+        run: ./.github/scripts/generate_updater_manifest.ps1 -RootPath . -OutputPath updater_manifest.json
 
       - name: Commit manifest
         run: |
