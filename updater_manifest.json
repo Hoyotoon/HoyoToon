@@ -1,5 +1,5 @@
 {
-  "version": "0.0.6",
+  "version": "0.0.7",
   "files": {
     ".gitignore": "acb0bab9b1263ac055a07cf01ffb546377473ae5",
     "HoyoToon.unity": "04f00749e74cf84116a8b401a940b1d1b7a99d3f",
@@ -125,7 +125,7 @@
     "Scripts/Editor/UI/Inspector/PopupSystem.cs": "500be52b3f0a61b527f04fe61afb47e10f2653ba",
     "Scripts/Editor/UI/Inspector/ProgressDialog.cs": "69233628e1596de8f846fe37bd585efd81ab2c24",
     "Scripts/Editor/Updater/EditorCoroutine.cs": "c965f0551568f8f0d8427c28bac57965989d0c9f",
-    "Scripts/Editor/Updater/PackageUpdater.cs": "08549159b9286ab066dbdf56d5eed022218fea2c",
+    "Scripts/Editor/Updater/PackageUpdater.cs": "d0c9caacb9a60771a603bf154103e19859e28d36",
     "Scripts/Editor/Updater/UpdateDownloader.cs": "371309d2a31776c68b36245dddfc9a5f85d30cc1",
     "Scripts/Editor/Updater/UpdaterKeepRules.cs": "fa75e19db72fd74d2aead446805566258f055787",
     "Scripts/Editor/Updater/UpdaterSerializationModels.cs": "6ce77e2835443bc4478e186c84b0cd848865b743",
@@ -247,6 +247,6 @@
     "Shaders/Games/Honkai Star Rail/Transparent/Include/Struct.hlsl": "e7802090952af28d8e5ae65cc217ca6d7ea1635c",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "changelog.md": "c921e54c04e7392e4fe39301d7e51b7b3c6a4421",
-    "package.json": "8f285fedacfdf62972a2173a6e756832c51cbae6"
+    "package.json": "a0cc143c95e3c8103b64cc36b81dc5cdaf982815"
   }
 }
