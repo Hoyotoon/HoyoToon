@@ -8,6 +8,8 @@ namespace HoyoToon.Editor.Utilities
     {
         public const string UpdaterCurrentBranch = "HoyoToon.Updater.CurrentBranch";
         public const string UpdaterCleanOnSwitch = "HoyoToon.Updater.CleanOnSwitch";
+        public const string UpdaterAutoCheckOnStartup = "HoyoToon.Updater.AutoCheckOnStartup";
+        public const string UpdaterLastAutoCheckUtc = "HoyoToon.Updater.LastAutoCheckUtc";
         public const string DebugEnabled = "HoyoToon.Debug.Enabled";
         public const string ShaderPreprocessorLastVRC = "HoyoToon.ShaderPreprocessor.LastVRC";
         public const string RenderPipelineLast = "HoyoToon.RenderPipeline.Last";
