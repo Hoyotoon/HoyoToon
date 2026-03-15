@@ -104,3 +104,4 @@ Scripts/Editor/Data/
 # # updater-keep: *.local
 # -------------------------------------------------------
 
+updater_manifest.json.meta
