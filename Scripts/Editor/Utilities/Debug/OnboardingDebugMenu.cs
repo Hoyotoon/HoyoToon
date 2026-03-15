@@ -95,46 +95,43 @@ namespace HoyoToon.Debugging
         [MenuItem(MenuResetRoot + "20 - Lighting Auto Rotate", false, 719)]
         private static void ResetToLightingAutoRotate() => GuidedTourController.StartTourAtStep(StepIds.LightingAutoRotate);
 
-        [MenuItem(MenuResetRoot + "21 - Scriptables Select", false, 720)]
+        [MenuItem(MenuResetRoot + "21 - Scene Select", false, 720)]
         private static void ResetToScriptablesSelect() => GuidedTourController.StartTourAtStep(StepIds.ScriptablesSelect);
 
-        [MenuItem(MenuResetRoot + "22 - Shadow Boost", false, 721)]
-        private static void ResetToShadowBoost() => GuidedTourController.StartTourAtStep(StepIds.ScriptablesShadowBoost);
-
-        [MenuItem(MenuResetRoot + "23 - Level Adjust", false, 722)]
+        [MenuItem(MenuResetRoot + "22 - Level Adjust", false, 721)]
         private static void ResetToLevelAdjust() => GuidedTourController.StartTourAtStep(StepIds.ScriptablesLevelAdjust);
 
-        [MenuItem(MenuResetRoot + "24 - Reset Scriptables", false, 723)]
+        [MenuItem(MenuResetRoot + "23 - Reset Scene Flags", false, 722)]
         private static void ResetToScriptablesReset() => GuidedTourController.StartTourAtStep(StepIds.ScriptablesReset);
 
-        [MenuItem(MenuResetRoot + "25 - Post Processing Select", false, 724)]
+        [MenuItem(MenuResetRoot + "24 - Post Processing Select", false, 723)]
         private static void ResetToPostProcessingSelect() => GuidedTourController.StartTourAtStep(StepIds.PostProcessingSelect);
 
-        [MenuItem(MenuResetRoot + "26 - Post Processing Profile", false, 725)]
+        [MenuItem(MenuResetRoot + "25 - Post Processing Profile", false, 724)]
         private static void ResetToPostProcessingProfile() => GuidedTourController.StartTourAtStep(StepIds.PostProcessingProfile);
 
-        [MenuItem(MenuResetRoot + "27 - Renders Select", false, 726)]
+        [MenuItem(MenuResetRoot + "26 - Renders Select", false, 725)]
         private static void ResetToRendersSelect() => GuidedTourController.StartTourAtStep(StepIds.RendersSelect);
 
-        [MenuItem(MenuResetRoot + "28 - Renders Camera", false, 727)]
+        [MenuItem(MenuResetRoot + "27 - Renders Camera", false, 726)]
         private static void ResetToRendersCamera() => GuidedTourController.StartTourAtStep(StepIds.RendersCamera);
 
-        [MenuItem(MenuResetRoot + "29 - Renders Transparent", false, 728)]
+        [MenuItem(MenuResetRoot + "28 - Renders Transparent", false, 727)]
         private static void ResetToRendersTransparent() => GuidedTourController.StartTourAtStep(StepIds.RendersTransparent);
 
-        [MenuItem(MenuResetRoot + "30 - Renders Sync", false, 729)]
+        [MenuItem(MenuResetRoot + "29 - Renders Sync", false, 728)]
         private static void ResetToRendersSync() => GuidedTourController.StartTourAtStep(StepIds.RendersSync);
 
-        [MenuItem(MenuResetRoot + "31 - Renders Watermark", false, 730)]
+        [MenuItem(MenuResetRoot + "30 - Renders Watermark", false, 729)]
         private static void ResetToRendersWatermark() => GuidedTourController.StartTourAtStep(StepIds.RendersWatermark);
 
-        [MenuItem(MenuResetRoot + "32 - Footer Actions", false, 731)]
+        [MenuItem(MenuResetRoot + "31 - Footer Actions", false, 730)]
         private static void ResetToFooter() => GuidedTourController.StartTourAtStep(StepIds.Footer);
 
-        [MenuItem(MenuResetRoot + "33 - Prefab", false, 732)]
+        [MenuItem(MenuResetRoot + "32 - Prefab", false, 731)]
         private static void ResetToPrefab() => GuidedTourController.StartTourAtStep(StepIds.Prefab);
 
-        [MenuItem(MenuResetRoot + "34 - Finish", false, 733)]
+        [MenuItem(MenuResetRoot + "33 - Finish", false, 732)]
         private static void ResetToFinish() => GuidedTourController.StartTourAtStep(StepIds.Finish);
     }
 }

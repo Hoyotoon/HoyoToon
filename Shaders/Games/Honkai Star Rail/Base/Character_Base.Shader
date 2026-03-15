@@ -85,7 +85,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         [MHYMaterialIDProperty(_Outline)] _OutlineColor6 ("Outline Color 6 (ID = 192)", Color) = (0,0,0,1)
         [MHYMaterialIDProperty(_Outline)] _OutlineColor7 ("Outline Color 7 (ID = 223)", Color) = (0,0,0,1)
         _OutlineWidth ("Outline Width", Range(0, 1)) = 0.1
-        [KeywordEnum(Normal, Tangent, UV2)] _OutlineNormalFrom ("Outline Normal From", Float) = 0
+        [KeywordEnum(Normal, Tangent, UV2)] _OutlineNormalFrom ("Outline Normal From", Float) = 1
         _OutlineColorIntensity ("Outline Color Intensity", Float) = 0
         _OutlineExtdStart ("Outline Extend Start Distance", Range(0, 128)) = 6.5
         _OutlineExtdMax ("Outline Extend Max Distance", Range(0, 128)) = 18

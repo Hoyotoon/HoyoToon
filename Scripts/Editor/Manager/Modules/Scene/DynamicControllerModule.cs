@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using UnityEditor;
 using UnityEngine;
+using HoyoToon.Editor.Onboarding;
 
 namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 {
@@ -164,7 +165,17 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                                 continue;
                             }
 
-                            EditorGUILayout.PropertyField(property, true);
+                            float propertyHeight = EditorGUI.GetPropertyHeight(property, true);
+                            Rect propertyRect = EditorGUILayout.GetControlRect(true, propertyHeight);
+                            EditorGUI.PropertyField(propertyRect, property, true);
+
+                            string tourTarget = ResolveTourTarget(property);
+                            if (!string.IsNullOrEmpty(tourTarget))
+                            {
+                                TourOverlay.DrawHighlightIfActive(tourTarget, propertyRect, property.displayName);
+                            }
+
+                            OnPropertyValueObserved(property);
                         }
                     }
                 });
@@ -207,6 +218,11 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             if (!_sectionFoldouts.TryGetValue(title, out var expanded))
             {
                 expanded = defaultExpanded;
+            }
+
+            if (ShouldForceSectionExpanded(title))
+            {
+                expanded = true;
             }
 
             expanded = DrawFoldoutSection(title, expanded, drawer, 8f);
@@ -305,6 +321,20 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         protected virtual bool IsDefaultSectionExpanded(string sectionName)
         {
             return string.Equals(sectionName, "General", StringComparison.OrdinalIgnoreCase);
+        }
+
+        protected virtual bool ShouldForceSectionExpanded(string sectionName)
+        {
+            return false;
+        }
+
+        protected virtual string ResolveTourTarget(SerializedProperty property)
+        {
+            return null;
+        }
+
+        protected virtual void OnPropertyValueObserved(SerializedProperty property)
+        {
         }
 
         protected abstract string ResolveGroupName(SerializedProperty property);

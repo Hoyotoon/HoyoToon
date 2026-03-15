@@ -369,17 +369,17 @@ float4 frag_base(vertex_out i,  bool vface : SV_IsFrontFace) : SV_TARGET
     float3 spec_param; // roughness intensity shininess
     float custom_param1;
     float custom_param2;
-    if(_UseMaterialValuesLUT)
-    {
-        float4 matlut_tmpa = _MaterialValuesPackLUT.Load(float4(id.x, 0, 0, 0));
-        float4 matlut_tmpb = _MaterialValuesPackLUT.Load(float4(id.x, 1, 0, 0));
-        spec_color = matlut_tmpa.xyz;
-        spec_param = matlut_tmpb.xyz;
-        custom_param1 = matlut_tmpa.w;
-        custom_param2 = matlut_tmpb.w;
-    }
-    else
-    {   
+    // if(_UseMaterialValuesLUT)
+    // {
+    //     float4 matlut_tmpa = _MaterialValuesPackLUT.Load(float4(id.x, 0, 0, 0));
+    //     float4 matlut_tmpb = _MaterialValuesPackLUT.Load(float4(id.x, 1, 0, 0));
+    //     spec_color = matlut_tmpa.xyz;
+    //     spec_param = matlut_tmpb.xyz;
+    //     custom_param1 = matlut_tmpa.w;
+    //     custom_param2 = matlut_tmpb.w;
+    // }
+    // else
+    // {   
         [forcecase]
         switch(array_index)
         {
@@ -434,7 +434,7 @@ float4 frag_base(vertex_out i,  bool vface : SV_IsFrontFace) : SV_TARGET
         }
         
         spec_color = (spec_color * lerp(1.0f, _ES_SPColor, _ES_SPColor.www)) * _ES_SPIntensity;
-    }
+    // }
 
     float3 specular = ndoth;
     specular = pow(max(specular, 0.00f), spec_param.x) * sdw_factor;
@@ -443,10 +443,9 @@ float4 frag_base(vertex_out i,  bool vface : SV_IsFrontFace) : SV_TARGET
     
 
     float specular_thresh = 1.0f - lightmap.z;
-    float rough_thresh = specular_thresh - spec_param.y;
-    specular_thresh = (spec_param.y + specular_thresh) - rough_thresh;
-    specular = sdw_factor * specular - rough_thresh; 
-    specular = (smoothstep(specular_thresh, 1.f, specular) * spec_color)* spec_param.z;
+
+    specular = smoothstep(specular_thresh - spec_param.y, specular_thresh + spec_param.y, specular) * spec_color * spec_param.z;
+    
 
 
  #if defined(_USE_MATCAP)

@@ -336,6 +336,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector
                 case StepIds.MainModule:
                 case StepIds.LightingSelect:
                 case StepIds.ScriptablesSelect:
+                case StepIds.PostProcessingSelect:
                 case StepIds.RendersSelect:
                     return true;
                 default:
@@ -360,6 +361,8 @@ namespace HoyoToon.Editor.UI.ManagerInspector
                     return selectedModule is Modules.LightingModule;
                 case StepIds.ScriptablesSelect:
                     return selectedModule is Modules.SceneModule;
+                case StepIds.PostProcessingSelect:
+                    return selectedModule is Modules.PostProcessingModule;
                 case StepIds.RendersSelect:
                     return selectedModule is Modules.RendersModule;
                 default:

@@ -37,6 +37,8 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         private const string ResourceFolderMarker = "/Resources/Post Processing/";
         private const float ProfileInspectorMinHeight = 220f;
         private static readonly string[] CustomProfileTokens = { "Custom Post Processing", "Custom Profile", "Custom" };
+        private const string TutorialStartProfileName = GameConstants.GenshinImpact;
+        private const string TutorialTargetProfileName = GameConstants.HonkaiStarRail;
 
         private readonly List<VolumeProfile> _resourceProfiles = new List<VolumeProfile>();
         private readonly List<string> _resourceProfileNames = new List<string>();
@@ -67,6 +69,8 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             }
 
             EnsureResourceProfiles(targetManager);
+            PrepareTourProfileIfNeeded(targetManager);
+            GuidedTourController.NotifyPostProcessingProfileSelected(GetSelectedProfileName());
             ApplyProfileToScene(targetManager);
 
             _showProfileSelection = DrawFoldoutSection("Profile Selection", _showProfileSelection, () =>
@@ -89,7 +93,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         {
             DrawInlineCalloutIfNeeded(
                 StepIds.PostProcessingProfile,
-                "Pick the volume profile that matches the game look you want to preview.");
+                "The profile is currently set to Genshin Impact. Change it to Honkai Star Rail to continue.");
 
             if (_resourceProfiles.Count == 0)
             {
@@ -108,7 +112,11 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                 if (EditorGUI.EndChangeCheck())
                 {
                     SelectResourceProfileByIndex(nextIndex);
-                    GuidedTourController.NotifyPostProcessingProfilePicked();
+                    GuidedTourController.NotifyPostProcessingProfileSelected(GetSelectedProfileName());
+                    if (string.Equals(GetSelectedProfileName(), TutorialTargetProfileName, StringComparison.OrdinalIgnoreCase))
+                    {
+                        GuidedTourController.NotifyPostProcessingProfilePicked();
+                    }
                     ApplyProfileToScene(targetManager);
                 }
 
@@ -266,6 +274,25 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             RefreshResourceProfiles(manager);
         }
 
+        private void PrepareTourProfileIfNeeded(HoyoToonManager manager)
+        {
+            if (!GuidedTourController.IsActive
+                || !string.Equals(GuidedTourController.CurrentStep.id, StepIds.PostProcessingProfile, StringComparison.OrdinalIgnoreCase)
+                || GuidedTourController.IsPostProcessingPrepared())
+            {
+                return;
+            }
+
+            int tutorialIndex = ResolveProfileIndexByName(TutorialStartProfileName);
+            if (tutorialIndex >= 0)
+            {
+                SelectResourceProfileByIndex(tutorialIndex);
+                ApplyProfileToScene(manager);
+            }
+
+            GuidedTourController.MarkPostProcessingPrepared();
+        }
+
         private void RefreshResourceProfiles(HoyoToonManager manager)
         {
             _resourceProfilesDirty = false;
@@ -352,6 +379,30 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             return -1;
         }
 
+        private int ResolveProfileIndexByName(string profileName)
+        {
+            if (string.IsNullOrEmpty(profileName))
+            {
+                return -1;
+            }
+
+            for (int i = 0; i < _resourceProfiles.Count; i++)
+            {
+                VolumeProfile profile = _resourceProfiles[i];
+                if (profile == null)
+                {
+                    continue;
+                }
+
+                if (string.Equals(profile.name, profileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    return i;
+                }
+            }
+
+            return -1;
+        }
+
         private void SelectResourceProfileByIndex(int index)
         {
             if (_resourceProfiles.Count == 0)
@@ -374,6 +425,11 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 
             _referenceProfile = profile;
             EnsureProfileEditor(null);
+        }
+
+        private string GetSelectedProfileName()
+        {
+            return _referenceProfile != null ? _referenceProfile.name ?? string.Empty : string.Empty;
         }
 
         private void ApplyProfileToScene(HoyoToonManager manager)

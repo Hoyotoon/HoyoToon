@@ -37,10 +37,10 @@ namespace HoyoToon.Editor.Onboarding
         private const string LightingRotationKey = "HoyoToon.Tour.LightingRotation";
         private const string LightingAutoRotateSeenKey = "HoyoToon.Tour.LightingAutoRotateSeen";
         private const string LightingAutoRotateCycleKey = "HoyoToon.Tour.LightingAutoRotateCycle";
-        private const string ScriptablesShadowBoostKey = "HoyoToon.Tour.ScriptablesShadowBoost";
-        private const string ScriptablesLevelAdjustKey = "HoyoToon.Tour.ScriptablesLevelAdjust";
-        private const string ScriptablesResetKey = "HoyoToon.Tour.ScriptablesReset";
+        private const string SceneLevelAdjustEnabledKey = "HoyoToon.Tour.SceneLevelAdjustEnabled";
+        private const string PostProcessingPreparedKey = "HoyoToon.Tour.PostProcessingPrepared";
         private const string PostProcessingProfileKey = "HoyoToon.Tour.PostProcessingProfile";
+        private const string SelectedPostProcessingProfileKey = "HoyoToon.Tour.SelectedPostProcessingProfile";
         private const string RendersCameraKey = "HoyoToon.Tour.RendersCamera";
         private const string RendersTransparentKey = "HoyoToon.Tour.RendersTransparent";
         private const string RendersSyncKey = "HoyoToon.Tour.RendersSync";
@@ -73,9 +73,8 @@ namespace HoyoToon.Editor.Onboarding
             LightingRotationKey,
             LightingAutoRotateSeenKey,
             LightingAutoRotateCycleKey,
-            ScriptablesShadowBoostKey,
-            ScriptablesLevelAdjustKey,
-            ScriptablesResetKey,
+            SceneLevelAdjustEnabledKey,
+            PostProcessingPreparedKey,
             PostProcessingProfileKey,
             RendersCameraKey,
             RendersTransparentKey,
@@ -115,6 +114,7 @@ namespace HoyoToon.Editor.Onboarding
             SessionState.SetString(SelectedCharacterKey, string.Empty);
             SessionState.SetString(SelectedVariantKey, string.Empty);
             SessionState.SetString(SelectedFbxChoiceKey, string.Empty);
+            SessionState.SetString(SelectedPostProcessingProfileKey, string.Empty);
             CacheInspectorLockState();
             SetInspectorLocked(true);
             CurrentStepIndex = 0;
@@ -335,24 +335,57 @@ namespace HoyoToon.Editor.Onboarding
             }
         }
 
-        public static void NotifyScriptablesShadowBoostEnabled()
-        {
-            SetBoolAndNotify(ScriptablesShadowBoostKey);
-        }
-
-        public static void NotifyScriptablesLevelAdjustEnabled()
-        {
-            SetBoolAndNotify(ScriptablesLevelAdjustKey);
-        }
-
-        public static void NotifyScriptablesReset()
-        {
-            SetBoolAndNotify(ScriptablesResetKey);
-        }
-
         public static void NotifyPostProcessingProfilePicked()
         {
             SetBoolAndNotify(PostProcessingProfileKey);
+        }
+
+        public static bool IsPostProcessingPrepared()
+        {
+            return SessionState.GetBool(PostProcessingPreparedKey, false);
+        }
+
+        public static void MarkPostProcessingPrepared()
+        {
+            if (SessionState.GetBool(PostProcessingPreparedKey, false))
+            {
+                return;
+            }
+
+            SessionState.SetBool(PostProcessingPreparedKey, true);
+        }
+
+        public static bool IsSelectedPostProcessingProfile(string profileName)
+        {
+            return IsSessionMatch(SelectedPostProcessingProfileKey, profileName);
+        }
+
+        public static void NotifyPostProcessingProfileSelected(string profileName)
+        {
+            string normalized = profileName ?? string.Empty;
+            if (string.Equals(SessionState.GetString(SelectedPostProcessingProfileKey, string.Empty), normalized, StringComparison.OrdinalIgnoreCase))
+            {
+                return;
+            }
+
+            SessionState.SetString(SelectedPostProcessingProfileKey, normalized);
+            NotifyStepChanged();
+        }
+
+        public static bool IsSceneLevelAdjustEnabled()
+        {
+            return SessionState.GetBool(SceneLevelAdjustEnabledKey, false);
+        }
+
+        public static void SyncSceneLevelAdjustState(bool enabled)
+        {
+            if (SessionState.GetBool(SceneLevelAdjustEnabledKey, false) == enabled)
+            {
+                return;
+            }
+
+            SessionState.SetBool(SceneLevelAdjustEnabledKey, enabled);
+            NotifyStepChanged();
         }
 
         public static void NotifyRendersCameraSelected()
@@ -897,7 +930,6 @@ namespace HoyoToon.Editor.Onboarding
         {
             return OnboardingStartupPolicy.GetStartupSourceOrManual();
         }
-
 
         private static int GetStepIndex(string id)
         {

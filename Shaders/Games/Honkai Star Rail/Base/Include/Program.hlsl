@@ -234,7 +234,7 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
     sdw_area = (sdw_factor.x < 0.1f) ? sdw_area : 1.0;
     float2 ramp_uv;
     ramp_uv.x = (sdw_area * sdw_combine);
- ;
+ 
     ramp_uv.y = (id * 2.0f + 1.0f) * 0.0625f;
 
     // sample both ramps: 
@@ -338,19 +338,19 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
     float3 rsdw_color;
     float2 rsdw_param;
     float3 rsdw =  1.0f;
-        if(_UseMaterialValuesLUT)
-        {
-            float4 id_uv;
-            id_uv.x = uint(int(id));
-            id_uv.y = uint(5u);
-            id_uv.z = uint(0u);
-            id_uv.w = uint(6u);
+        // if(_UseMaterialValuesLUT)
+        // {
+        //     float4 id_uv;
+        //     id_uv.x = uint(int(id));
+        //     id_uv.y = uint(5u);
+        //     id_uv.z = uint(0u);
+        //     id_uv.w = uint(6u);
 
-            rsdw_color = _MaterialValuesPackLUT.Load(float4(id, 5u, 0u, 0u)).xyz;
-            rsdw_param = _MaterialValuesPackLUT.Load(float4(id, 6u, 0u, 0u)).xy;
-        }
-        else
-        {
+        //     rsdw_color = _MaterialValuesPackLUT.Load(float4(id, 5u, 0u, 0u)).xyz;
+        //     rsdw_param = _MaterialValuesPackLUT.Load(float4(id, 6u, 0u, 0u)).xy;
+        // }
+        // else
+        // {
             [forcecase]
             switch(array_index)
             {
@@ -387,7 +387,7 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
                 rsdw_param = float2(_RimShadowWidth7, _RimShadowFeather7);
                 break;
             }
-        }
+        // }
 
         rsdw_color.xyz = rsdw_color.xyz * (_ES_RimShadowColor.www * _ES_RimShadowColor.xyz);
         rsdw_ndotv = pow(max( 1.0 - rsdw_ndotv.x, 0.001f), _RimShadowCt);
@@ -604,17 +604,17 @@ float4 frab_forward(vertex_out i, bool vface : SV_IsFrontFace) : SV_TARGET
     float3 spec_param; // roughness intensity shininess
     float custom_param1;
     float custom_param2;
-    if(_UseMaterialValuesLUT)
-    {
-        float4 matlut_tmpa = _MaterialValuesPackLUT.Load(float4(id.x, 0, 0, 0));
-        float4 matlut_tmpb = _MaterialValuesPackLUT.Load(float4(id.x, 1, 0, 0));
-        spec_color = matlut_tmpa.xyz;
-        spec_param = matlut_tmpb.xyz;
-        custom_param1 = matlut_tmpa.w;
-        custom_param2 = matlut_tmpb.w;
-    }
-    else
-    {   
+    // if(_UseMaterialValuesLUT)
+    // {
+    //     float4 matlut_tmpa = _MaterialValuesPackLUT.Load(float4(id.x, 0, 0, 0));
+    //     float4 matlut_tmpb = _MaterialValuesPackLUT.Load(float4(id.x, 1, 0, 0));
+    //     spec_color = matlut_tmpa.xyz;
+    //     spec_param = matlut_tmpb.xyz;
+    //     custom_param1 = matlut_tmpa.w;
+    //     custom_param2 = matlut_tmpb.w;
+    // }
+    // else
+    // {   
         [forcecase]
         switch(array_index)
         {
@@ -668,7 +668,7 @@ float4 frab_forward(vertex_out i, bool vface : SV_IsFrontFace) : SV_TARGET
             break;
         }
         
-    }
+    // }
     spec_color = (spec_color * lerp(1.0f, _ES_SPColor, _ES_SPColor.www)) * _ES_SPIntensity;
 
     float3 specular = ndoth;
@@ -928,14 +928,14 @@ float4 frab_forward(vertex_out i, bool vface : SV_IsFrontFace) : SV_TARGET
 
         float3 rim_color;
         float3 rim_values;
-        if(_UseMaterialValuesLUT)
-        {
+        // if(_UseMaterialValuesLUT)
+        // {
 
-            rim_color = _MaterialValuesPackLUT.Load(float4(id.x, 3, 0, 0)).xyz;
-            rim_values = _MaterialValuesPackLUT.Load(float4(id.x, 4, 0, 0)).yzx;
-        }
-        else
-        {
+        //     rim_color = _MaterialValuesPackLUT.Load(float4(id.x, 3, 0, 0)).xyz;
+        //     rim_values = _MaterialValuesPackLUT.Load(float4(id.x, 4, 0, 0)).yzx;
+        // }
+        // else
+        // {
 
             [forcecase]
             switch(array_index)
@@ -975,7 +975,7 @@ float4 frab_forward(vertex_out i, bool vface : SV_IsFrontFace) : SV_TARGET
             }
             
 
-        }
+        // }
 
         rim_color = (rim_color * lerp(1.0f, _ES_RimLightColor, _ES_RimLightColor.www)) * _ES_RimLightIntensity;
         rim_color = rim_color * 0.5f;
@@ -1243,13 +1243,13 @@ float4 frab_forward(vertex_out i, bool vface : SV_IsFrontFace) : SV_TARGET
     #endif
     float3 bloom_color = 1;
     float bloom_int = 0;
-    if(_UseMaterialValuesLUT)
-    {
-        bloom_color = _MaterialValuesPackLUT.Load(float4(id.x, 7, 0, 0)).xyz;
-        bloom_int   = _MaterialValuesPackLUT.Load(float4(id.x, 6, 0, 0)).z;
-    }
-    else
-    {
+    // if(_UseMaterialValuesLUT)
+    // {
+    //     bloom_color = _MaterialValuesPackLUT.Load(float4(id.x, 7, 0, 0)).xyz;
+    //     bloom_int   = _MaterialValuesPackLUT.Load(float4(id.x, 6, 0, 0)).z;
+    // }
+    // else
+    // {
         switch(array_index)
         {
             case 0:
@@ -1285,7 +1285,7 @@ float4 frab_forward(vertex_out i, bool vface : SV_IsFrontFace) : SV_TARGET
                 bloom_int = _mBloomIntensity0;
                 break;
         }
-    }
+    // }
     bloom_color = bloom_int * bloom_color + 1.0f;
     final_color.xyz *=  bloom_color.xyz;
 
@@ -1554,7 +1554,7 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
         break;
     }
 
-    if(_UseMaterialValuesLUT) outline_color.xyz = _MaterialValuesPackLUT.Load(float4(lightmap, 2, 0, 0));
+    // if(_UseMaterialValuesLUT) outline_color.xyz = _MaterialValuesPackLUT.Load(float4(lightmap, 2, 0, 0));
     
     float3 light;
     get_light(light);

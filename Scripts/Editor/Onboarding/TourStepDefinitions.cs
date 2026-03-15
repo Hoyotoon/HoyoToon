@@ -30,7 +30,6 @@ namespace HoyoToon.Editor.Onboarding
             public const string LightingRotation      = "lighting_rotation";
             public const string LightingAutoRotate    = "lighting_autorotate";
             public const string ScriptablesSelect     = "scriptables_select";
-            public const string ScriptablesShadowBoost = "scriptables_shadowboost";
             public const string ScriptablesLevelAdjust = "scriptables_leveladjust";
             public const string ScriptablesReset      = "scriptables_reset";
             public const string PostProcessingSelect  = "postprocessing_select";
@@ -68,10 +67,9 @@ namespace HoyoToon.Editor.Onboarding
             public static readonly string LightingRemove = "Click the highlighted area to remove the tutorial light.\n\nThe base scene lighting stays intact.\n\n Scroll down for the next steps.";
             public static readonly string LightingRotation = "Drag Rotation to aim the key light.\n\nThis changes shadow direction and highlights.";
             public static readonly string LightingAutoRotate = "Toggle Auto Rotate on, then toggle it off.\n\nAuto Rotate is a quick preview for moving light.";
-            public static readonly string ScriptablesSelect = "Click the Scriptables tab to continue.\n\nScriptables control per-game shader lighting flags.";
-            public static readonly string ScriptablesShadowBoost = "Enable Shadow Boost and check the scene.\n\nShadow Boost strengthens contact shadows.";
-            public static readonly string ScriptablesLevelAdjust = "Enable Level Adjust and check the scene.\n\nLevel Adjust lifts overall brightness for cutscene looks.";
-            public static readonly string ScriptablesReset = "Click the highlighted toggle to continue.\n\nShadow Boost and Level Adjust are turned off for you so the rest of the tour uses neutral lighting.";
+            public static readonly string ScriptablesSelect = "Click the Scene tab to continue.\n\nScene settings control per-game shader lighting flags.";
+            public static readonly string ScriptablesLevelAdjust = "Enable Level Adjust and check the scene.\n\nLevel Adjust uses the _ES_LEVEL_ADJUST_ON scene property to lift overall brightness for cutscene looks.";
+            public static readonly string ScriptablesReset = "Turn Level Adjust back off to continue.\n\nThe rest of the tour uses neutral scene lighting.";
             public static readonly string PostProcessingSelect = "Click the Post Processing tab to continue.\n\nProfiles match in-game color grading and bloom.";
             public static readonly string PostProcessingProfile = "The profile is set to Genshin Impact. Click the dropdown and select Honkai Star Rail.\n\nThis profile matches the tutorial look.";
             public static readonly string RendersSelect = "Click the Renders tab to continue.\n\nRenders captures high-res stills from a chosen camera.";
@@ -214,28 +212,34 @@ namespace HoyoToon.Editor.Onboarding
                 isComplete: () => SessionState.GetBool(LightingAutoRotateCycleKey, false)),
             new TourStep(
                 id: StepIds.ScriptablesSelect,
-                title: "Open Scriptables",
+                title: "Open Scene",
                 instruction: StepInstructionText.ScriptablesSelect,
-                highlightTarget: "tour.modules.scriptables",
-                isComplete: () => IsSelectedModule("Scriptables")),
-            new TourStep(
-                id: StepIds.ScriptablesShadowBoost,
-                title: "Enable Shadow Boost",
-                instruction: StepInstructionText.ScriptablesShadowBoost,
-                highlightTarget: "tour.scriptables.shadowboost",
-                isComplete: () => SessionState.GetBool(ScriptablesShadowBoostKey, false)),
+                highlightTarget: "tour.modules.scene",
+                isComplete: () => IsSelectedModule("Scene")),
             new TourStep(
                 id: StepIds.ScriptablesLevelAdjust,
                 title: "Enable Level Adjust",
                 instruction: StepInstructionText.ScriptablesLevelAdjust,
                 highlightTarget: "tour.scriptables.leveladjust",
-                isComplete: () => SessionState.GetBool(ScriptablesLevelAdjustKey, false)),
+                isComplete: () => IsSceneLevelAdjustEnabled()),
             new TourStep(
                 id: StepIds.ScriptablesReset,
-                title: "Reset Lighting Flags",
+                title: "Disable Level Adjust",
                 instruction: StepInstructionText.ScriptablesReset,
                 highlightTarget: "tour.scriptables.reset",
-                isComplete: () => SessionState.GetBool(ScriptablesResetKey, false)),
+                isComplete: () => !IsSceneLevelAdjustEnabled()),
+            new TourStep(
+                id: StepIds.PostProcessingSelect,
+                title: "Open Post Processing",
+                instruction: StepInstructionText.PostProcessingSelect,
+                highlightTarget: "tour.modules.postprocessing",
+                isComplete: () => IsSelectedModule("Post Processing")),
+            new TourStep(
+                id: StepIds.PostProcessingProfile,
+                title: "Choose Post Processing Profile",
+                instruction: StepInstructionText.PostProcessingProfile,
+                highlightTarget: null,
+                isComplete: () => IsSelectedPostProcessingProfile(GameConstants.HonkaiStarRail)),
             new TourStep(
                 id: StepIds.RendersSelect,
                 title: "Open Renders",

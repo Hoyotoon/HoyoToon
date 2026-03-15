@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon;
+using HoyoToon.Editor.Onboarding;
+using StepIds = HoyoToon.Editor.Onboarding.GuidedTourController.StepIds;
 
 namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 {
@@ -72,6 +74,12 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                 }
 
                 ControllerSerializedObject.Update();
+                DrawInlineCalloutIfNeeded(
+                    StepIds.ScriptablesLevelAdjust,
+                    "Enable Level Adjust to continue.\n\nToggle the _ES_LEVEL_ADJUST_ON setting in Level Lighting so you can preview the brighter cutscene look.");
+                DrawInlineCalloutIfNeeded(
+                    StepIds.ScriptablesReset,
+                    "Turn Level Adjust back off to continue.\n\nDisable the same _ES_LEVEL_ADJUST_ON toggle so the rest of the tour stays on neutral scene lighting.");
                 DrawDynamicPropertyGroups();
                 if (ControllerSerializedObject.ApplyModifiedProperties())
                 {
@@ -171,6 +179,58 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         {
             return string.Equals(sectionName, "Main Light", StringComparison.OrdinalIgnoreCase)
                 || string.Equals(sectionName, "General", StringComparison.OrdinalIgnoreCase);
+        }
+
+        protected override bool ShouldForceSectionExpanded(string sectionName)
+        {
+            if (!string.Equals(sectionName, "Level Lighting", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            string currentStepId = GuidedTourController.CurrentStep.id;
+            return string.Equals(currentStepId, GuidedTourController.StepIds.ScriptablesLevelAdjust, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(currentStepId, GuidedTourController.StepIds.ScriptablesReset, StringComparison.OrdinalIgnoreCase);
+        }
+
+        protected override string ResolveTourTarget(SerializedProperty property)
+        {
+            if (property == null)
+            {
+                return null;
+            }
+
+            if (!string.Equals(property.name, "_ES_LEVEL_ADJUST_ON", StringComparison.Ordinal))
+            {
+                return null;
+            }
+
+            string currentStepId = GuidedTourController.CurrentStep.id;
+            if (string.Equals(currentStepId, GuidedTourController.StepIds.ScriptablesLevelAdjust, StringComparison.OrdinalIgnoreCase))
+            {
+                return "tour.scriptables.leveladjust";
+            }
+
+            if (string.Equals(currentStepId, GuidedTourController.StepIds.ScriptablesReset, StringComparison.OrdinalIgnoreCase))
+            {
+                return "tour.scriptables.reset";
+            }
+
+            return null;
+        }
+
+        protected override void OnPropertyValueObserved(SerializedProperty property)
+        {
+            if (property == null)
+            {
+                return;
+            }
+
+            if (string.Equals(property.name, "_ES_LEVEL_ADJUST_ON", StringComparison.Ordinal)
+                && property.propertyType == SerializedPropertyType.Boolean)
+            {
+                GuidedTourController.SyncSceneLevelAdjustState(property.boolValue);
+            }
         }
     }
 }
