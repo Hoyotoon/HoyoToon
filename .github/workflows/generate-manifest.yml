@@ -1,6 +1,7 @@
 name: Generate Manifest
 
 on:
+    workflow_dispatch:
   push:
     branches:
       - Beta
