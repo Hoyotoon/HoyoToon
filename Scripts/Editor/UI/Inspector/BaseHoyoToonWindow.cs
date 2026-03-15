@@ -28,7 +28,7 @@ namespace HoyoToon.Editor.UI.Windows
 
             public const float TOOLBAR_HEIGHT_FALLBACK = 20f;
             public const float BUTTONS_BLOCK_HEIGHT = 40f;
-            public const float FOOTER_EXTRA_HEIGHT = 3f;
+            public const float FOOTER_EXTRA_HEIGHT = 12f;
         }
 
         [Serializable]
