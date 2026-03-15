@@ -125,8 +125,8 @@
     "Scripts/Editor/UI/Inspector/PopupSystem.cs": "500be52b3f0a61b527f04fe61afb47e10f2653ba",
     "Scripts/Editor/UI/Inspector/ProgressDialog.cs": "69233628e1596de8f846fe37bd585efd81ab2c24",
     "Scripts/Editor/Updater/EditorCoroutine.cs": "c965f0551568f8f0d8427c28bac57965989d0c9f",
-    "Scripts/Editor/Updater/PackageUpdater.cs": "d0c9caacb9a60771a603bf154103e19859e28d36",
-    "Scripts/Editor/Updater/UpdateDownloader.cs": "371309d2a31776c68b36245dddfc9a5f85d30cc1",
+    "Scripts/Editor/Updater/PackageUpdater.cs": "44cb1d131cb7e75e8e816f4969e0bd8bc6fc6855",
+    "Scripts/Editor/Updater/UpdateDownloader.cs": "695770632e94a9229d3c5dd4318d8dc6551462c7",
     "Scripts/Editor/Updater/UpdaterKeepRules.cs": "fa75e19db72fd74d2aead446805566258f055787",
     "Scripts/Editor/Updater/UpdaterSerializationModels.cs": "6ce77e2835443bc4478e186c84b0cd848865b743",
     "Scripts/Editor/Utilities/AsyncUtil.cs": "ba8c508d1d481858128f9b7004bd1dcf689c8ac2",
@@ -246,7 +246,7 @@
     "Shaders/Games/Honkai Star Rail/Transparent/Include/Program.hlsl": "00d2e58e57a1161d1bee229c8d85ac06f2d9a1ea",
     "Shaders/Games/Honkai Star Rail/Transparent/Include/Struct.hlsl": "e7802090952af28d8e5ae65cc217ca6d7ea1635c",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
-    "changelog.md": "c921e54c04e7392e4fe39301d7e51b7b3c6a4421",
-    "package.json": "bc34d08908f8b6bc6077cc3c2b591b832c6e9cf6"
+    "changelog.md": "fe9421e0afc22e1ee64de6d00b853860f28e2a81",
+    "package.json": "01b9ddb6cb3aea56500cdcb1d911edc93cdbe262"
   }
 }
