@@ -303,7 +303,7 @@ Camera:
   m_GameObject: {fileID: 489643315}
   m_Enabled: 1
   serializedVersion: 2
-  m_ClearFlags: 2
+  m_ClearFlags: 1
   m_BackGroundColor: {r: 0, g: 0, b: 0, a: 1}
   m_projectionMatrixMode: 1
   m_GateFitMode: 2
@@ -584,13 +584,13 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 822455648}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: -0.92387956, z: 0.38268343, w: 0}
+  m_LocalRotation: {x: 0.11507512, y: 0.88111955, z: -0.36497167, w: 0.27781594}
   m_LocalPosition: {x: 1.1024119, y: 19.657833, z: 120.708694}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1946400641}
-  m_LocalEulerAnglesHint: {x: 45, y: -180, z: 0}
+  m_LocalEulerAnglesHint: {x: 45, y: 145, z: 0}
 --- !u!114 &822455651
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -949,6 +949,7 @@ MonoBehaviour:
   virtualCamera: {fileID: 861634354}
   inputAxisController: {fileID: 861634356}
   targetController: {fileID: 861634359}
+  characterContainer: {fileID: 0}
 --- !u!1 &914790573
 GameObject:
   m_ObjectHideFlags: 0
@@ -1032,8 +1033,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   autoInitialize: 1
-  managedModels: []
-  activeModelIndex: -1
+  managedModels:
+  - {fileID: 0}
+  - {fileID: 0}
+  activeModelIndex: 1
 --- !u!1 &1379125669
 GameObject:
   m_ObjectHideFlags: 0

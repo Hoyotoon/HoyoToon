@@ -13,6 +13,13 @@ namespace HoyoToon.Editor.Updater
 {
     internal sealed class UpdaterController
     {
+        private sealed class StagedUpdateData
+        {
+            public string stagingRoot;
+            public string filesRoot;
+            public string packageJsonPath;
+        }
+
         public class AvailabilityResult
         {
             public PackageInfo localPackage;
@@ -119,6 +126,12 @@ namespace HoyoToon.Editor.Updater
                 return result;
             }
 
+            var packageJsonItem = tree.tree.FirstOrDefault(item =>
+                item != null &&
+                item.type == "blob" &&
+                item.path.Equals(_settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase));
+            result.batch.packageJsonSha = packageJsonItem?.sha;
+
             if (!string.IsNullOrEmpty(result.tracker.lastTreeSha) && result.tracker.lastTreeSha == tree.sha)
             {
                 result.message = "Repository unchanged - no updates.";
@@ -190,40 +203,83 @@ namespace HoyoToon.Editor.Updater
             if (batch == null) return;
 
             var activeSession = session ?? CreateSession();
+            GitIgnoreFilter gitIgnore = null;
+            StagedUpdateData stagedUpdate = null;
+            bool pendingSaved = false;
+            bool installCompleted = false;
+            bool requiresBranchClean = BranchSelector.IsCleanPending();
 
-            // Disable auto-refresh to avoid compile/import churn
-            AssetDatabase.DisallowAutoRefresh();
             try
             {
-                GitIgnoreFilter gitIgnore = null;
                 if (_settings.respectGitIgnoreForDeletions)
                 {
                     gitIgnore = GitIgnoreFilter.Load(_toolRoot);
                 }
 
-                if (BranchSelector.ConsumeCleanFlag())
-                {
-                    await CleanForBranchSwitchAsync(gitIgnore, progress);
-                    var reset = new LocalPackageTracker();
-                    PackageTrackerStore.Save(reset);
-                }
-
-                int total = Math.Max(1, batch.totalOperations);
+                int cleanOperations = requiresBranchClean ? CountCleanOperations(gitIgnore) : 0;
+                int downloadOperations = batch.fileUpdates.Count + 1;
+                int installOperations = batch.fileUpdates.Count + batch.filesToDelete.Count + 1;
+                int total = Math.Max(1, downloadOperations + installOperations + cleanOperations);
                 int completed = 0;
-                completed = await ApplyFileUpdatesAsync(batch, activeSession.Api, activeSession.Branch, total, completed, progress);
-                completed = await ApplyFileDeletionsAsync(batch, gitIgnore, total, completed, progress);
-                await RefreshPackageJsonAsync(batch, activeSession.Api, progress);
 
-                var tracker = PackageTrackerStore.Load();
-                tracker.currentVersion = remotePkg?.version;
-                tracker.lastUpdateCheck = Now();
-                await PackageTrackerStore.SnapshotAsync(tracker, _toolRoot);
+                stagedUpdate = await StageUpdateAsync(batch, activeSession.Api, activeSession.Branch, total, completed, progress);
+                completed += downloadOperations;
+                SavePendingInstall(batch, stagedUpdate, activeSession.Branch, remotePkg?.version, requiresBranchClean);
+                pendingSaved = true;
+
+                await ApplyStagedUpdateAsync(batch, remotePkg?.version, stagedUpdate, gitIgnore, requiresBranchClean, total, completed, progress);
+                installCompleted = true;
             }
             finally
             {
-                if (progress == null) EditorUtility.ClearProgressBar();
-                AssetDatabase.AllowAutoRefresh();
-                AssetDatabase.Refresh();
+                if (installCompleted)
+                {
+                    PendingInstallStore.Clear();
+                    CleanupStaging(stagedUpdate);
+                }
+                else if (!pendingSaved)
+                {
+                    CleanupStaging(stagedUpdate);
+                }
+            }
+        }
+
+        public async Task<bool> ResumePendingInstallAsync(IProgressSink progress = null)
+        {
+            var pending = PendingInstallStore.Load();
+            if (pending == null) return false;
+
+            StagedUpdateData stagedUpdate;
+            try
+            {
+                stagedUpdate = LoadStagedUpdate(pending);
+            }
+            catch
+            {
+                PendingInstallStore.Clear();
+                throw;
+            }
+
+            var gitIgnore = _settings.respectGitIgnoreForDeletions ? GitIgnoreFilter.Load(_toolRoot) : null;
+            bool installCompleted = false;
+
+            try
+            {
+                int cleanOperations = pending.requiresBranchClean ? CountCleanOperations(gitIgnore) : 0;
+                int installOperations = pending.batch.fileUpdates.Count + pending.batch.filesToDelete.Count + 1;
+                int total = Math.Max(1, cleanOperations + installOperations);
+
+                await ApplyStagedUpdateAsync(pending.batch, pending.remoteVersion, stagedUpdate, gitIgnore, pending.requiresBranchClean, total, 0, progress);
+                installCompleted = true;
+                return true;
+            }
+            finally
+            {
+                if (installCompleted)
+                {
+                    PendingInstallStore.Clear();
+                    CleanupStaging(stagedUpdate);
+                }
             }
         }
 
@@ -284,48 +340,10 @@ namespace HoyoToon.Editor.Updater
             }
         }
 
-        private Task CleanForBranchSwitchAsync(GitIgnoreFilter gitIgnore, IProgressSink progress)
+        private async Task<StagedUpdateData> StageUpdateAsync(UpdateBatch batch, GitHubApiClient api, string branch, int total, int completed, IProgressSink progress)
         {
-            try
-            {
-                var allFiles = Directory.GetFiles(_toolRoot, "*", SearchOption.AllDirectories)
-                    .Where(p => !p.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
-                    .ToList();
+            var staged = CreateStagingArea(batch, branch);
 
-                int removed = 0;
-                int totalRemovals = allFiles.Count;
-                foreach (var fullPath in allFiles)
-                {
-                    var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
-                    if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
-                    if (IsExcludedPath(rel)) continue;
-                    if (gitIgnore != null && gitIgnore.IsIgnored(rel, false))
-                    {
-                        HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Preserving local gitignored file '{rel}' during clean.");
-                        removed++;
-                        ReportProgress(progress, "Skipping (gitignored)", rel, (float)removed / Math.Max(1, totalRemovals));
-                        continue;
-                    }
-
-                    DeleteFileWithMeta(fullPath);
-                    removed++;
-                    ReportProgress(progress, "Cleaning for Branch Switch", rel, (float)removed / Math.Max(1, totalRemovals));
-                }
-
-                return Task.CompletedTask;
-            }
-            catch (Exception ex)
-            {
-                return Task.FromException(ex);
-            }
-            finally
-            {
-                if (progress == null) EditorUtility.ClearProgressBar();
-            }
-        }
-
-        private async Task<int> ApplyFileUpdatesAsync(UpdateBatch batch, GitHubApiClient api, string branch, int total, int completed, IProgressSink progress)
-        {
             foreach (var update in batch.fileUpdates)
             {
                 if (IsExcludedPath(update.path))
@@ -342,18 +360,85 @@ namespace HoyoToon.Editor.Updater
                 if (!string.Equals(sha, update.expectedSha, StringComparison.Ordinal))
                     throw new Exception($"Integrity check failed for {update.path} (expected {update.expectedSha}, got {sha}, commit {batch.sourceCommitSha ?? branch})");
 
-                var full = Path.Combine(_toolRoot, update.path);
-                Directory.CreateDirectory(Path.GetDirectoryName(full));
-                await File.WriteAllBytesAsync(full, bytes);
+                WriteStagedFile(staged.filesRoot, update.path, bytes);
                 completed++;
-                ReportProgress(progress, "Applying Updates", update.path, (float)completed / total);
-                await Task.Delay(10);
+                ReportProgress(progress, "Downloading Update", update.path, (float)completed / total);
+            }
+
+            var packageJsonBytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
+                ? await api.DownloadRawAtCommitAsync(_settings.packageJsonRelativePath, batch.sourceCommitSha)
+                : await api.DownloadRawAsync(_settings.packageJsonRelativePath);
+            if (!string.IsNullOrEmpty(batch.packageJsonSha))
+            {
+                var packageJsonSha = HashUtil.GitBlobSha(packageJsonBytes);
+                if (!string.Equals(packageJsonSha, batch.packageJsonSha, StringComparison.Ordinal))
+                    throw new Exception($"Integrity check failed for {_settings.packageJsonRelativePath} (expected {batch.packageJsonSha}, got {packageJsonSha}, commit {batch.sourceCommitSha ?? branch})");
+            }
+
+            WriteStagedFile(staged.filesRoot, _settings.packageJsonRelativePath, packageJsonBytes);
+            completed++;
+            ReportProgress(progress, "Downloading Update", _settings.packageJsonRelativePath, (float)completed / total);
+
+            return staged;
+        }
+
+        private int CleanForBranchSwitch(GitIgnoreFilter gitIgnore, int total, int completed, IProgressSink progress)
+        {
+            try
+            {
+                var allFiles = Directory.GetFiles(_toolRoot, "*", SearchOption.AllDirectories)
+                    .Where(p => !p.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                foreach (var fullPath in allFiles)
+                {
+                    var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
+                    if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
+                    if (IsExcludedPath(rel)) continue;
+                    if (gitIgnore != null && gitIgnore.IsIgnored(rel, false))
+                    {
+                        HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Preserving local gitignored file '{rel}' during clean.");
+                        completed++;
+                        ReportProgress(progress, "Skipping (gitignored)", rel, (float)completed / total);
+                        continue;
+                    }
+
+                    DeleteTrackedPath(fullPath, rel);
+                    completed++;
+                    ReportProgress(progress, "Cleaning for Branch Switch", rel, (float)completed / total);
+                }
+
+                return completed;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Branch clean failed: {ex.Message}", ex);
+            }
+        }
+
+        private int ApplyStagedFileUpdates(UpdateBatch batch, StagedUpdateData staged, int total, int completed, IProgressSink progress)
+        {
+            foreach (var update in batch.fileUpdates)
+            {
+                if (IsExcludedPath(update.path))
+                {
+                    completed++;
+                    ReportProgress(progress, "Skipping Excluded", update.path, (float)completed / total);
+                    continue;
+                }
+
+                var full = Path.Combine(_toolRoot, update.path);
+                var stagedFull = Path.Combine(staged.filesRoot, update.path);
+                Directory.CreateDirectory(Path.GetDirectoryName(full));
+                File.Copy(stagedFull, full, overwrite: true);
+                completed++;
+                ReportProgress(progress, "Installing Update", update.path, (float)completed / total);
             }
 
             return completed;
         }
 
-        private async Task<int> ApplyFileDeletionsAsync(UpdateBatch batch, GitIgnoreFilter gitIgnore, int total, int completed, IProgressSink progress)
+        private int ApplyFileDeletions(UpdateBatch batch, GitIgnoreFilter gitIgnore, int total, int completed, IProgressSink progress)
         {
             foreach (var deletion in batch.filesToDelete)
             {
@@ -372,45 +457,200 @@ namespace HoyoToon.Editor.Updater
                 }
 
                 var fullDel = Path.Combine(_toolRoot, deletion);
-                DeleteFileWithMeta(fullDel);
+                DeleteTrackedPath(fullDel, deletion);
                 completed++;
-                ReportProgress(progress, "Applying Updates", deletion, (float)completed / total);
-                await Task.Delay(10);
+                ReportProgress(progress, "Installing Update", deletion, (float)completed / total);
             }
 
             return completed;
         }
 
-        private async Task RefreshPackageJsonAsync(UpdateBatch batch, GitHubApiClient api, IProgressSink progress)
+        private void ApplyStagedPackageJson(StagedUpdateData staged, int total, int completed, IProgressSink progress)
         {
-            try
-            {
-                var pkgPath = _settings.packageJsonRelativePath;
-                var pkgBytes = !string.IsNullOrEmpty(batch.sourceCommitSha)
-                    ? await api.DownloadRawAtCommitAsync(pkgPath, batch.sourceCommitSha)
-                    : await api.DownloadRawAsync(pkgPath);
-                if (pkgBytes != null && pkgBytes.Length > 0)
-                {
-                    var fullPkg = Path.Combine(_toolRoot, pkgPath);
-                    Directory.CreateDirectory(Path.GetDirectoryName(fullPkg));
-                    await File.WriteAllBytesAsync(fullPkg, pkgBytes);
-                    HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Wrote latest {pkgPath} ({pkgBytes.Length} bytes) to {fullPkg}");
-                    ReportProgress(progress, "Finalizing", "package.json", 1f);
-                }
-            }
-            catch (Exception pkgEx)
-            {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Warning, $"package.json update skipped: {pkgEx.Message}");
-            }
+            var fullPkg = Path.Combine(_toolRoot, _settings.packageJsonRelativePath);
+            var stagedPkg = Path.Combine(staged.filesRoot, staged.packageJsonPath);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPkg));
+            File.Copy(stagedPkg, fullPkg, overwrite: true);
+            HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Wrote latest {_settings.packageJsonRelativePath} to {fullPkg}");
+            ReportProgress(progress, "Finalizing", _settings.packageJsonRelativePath, (float)(completed + 1) / total);
         }
 
-        private static void DeleteFileWithMeta(string fullPath)
+        private StagedUpdateData CreateStagingArea(UpdateBatch batch, string branch)
         {
+            var safeBranch = SanitizePathComponent(branch);
+            var safeCommit = SanitizePathComponent(batch.sourceCommitSha ?? "working");
+            var stagingRoot = Path.Combine(Application.persistentDataPath, "HoyoToon_Updater_Staging", safeBranch, safeCommit);
+            if (Directory.Exists(stagingRoot))
+            {
+                Directory.Delete(stagingRoot, recursive: true);
+            }
+
+            var filesRoot = Path.Combine(stagingRoot, "files");
+            Directory.CreateDirectory(filesRoot);
+            return new StagedUpdateData
+            {
+                stagingRoot = stagingRoot,
+                filesRoot = filesRoot,
+                packageJsonPath = _settings.packageJsonRelativePath
+            };
+        }
+
+        private static void WriteStagedFile(string stagingRoot, string relativePath, byte[] bytes)
+        {
+            var fullPath = Path.Combine(stagingRoot, relativePath);
+            Directory.CreateDirectory(Path.GetDirectoryName(fullPath));
+            File.WriteAllBytes(fullPath, bytes);
+        }
+
+        private static void DeleteTrackedPath(string fullPath, string relativePath)
+        {
+            if (relativePath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+            {
+                if (File.Exists(fullPath)) File.Delete(fullPath);
+                return;
+            }
+
             var assetPath = EditorUtil.ToUnityAssetPath(fullPath);
             if (!string.IsNullOrEmpty(assetPath) && AssetDatabase.DeleteAsset(assetPath)) return;
             if (File.Exists(fullPath)) File.Delete(fullPath);
             var meta = fullPath + ".meta";
             if (File.Exists(meta)) File.Delete(meta);
+        }
+
+        private int CountCleanOperations(GitIgnoreFilter gitIgnore)
+        {
+            return Directory.GetFiles(_toolRoot, "*", SearchOption.AllDirectories)
+                .Where(fullPath => !fullPath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                .Count(fullPath =>
+                {
+                    var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
+                    if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) return false;
+                    if (IsExcludedPath(rel)) return false;
+                    if (gitIgnore != null && gitIgnore.IsIgnored(rel, false)) return true;
+                    return true;
+                });
+        }
+
+        private void PruneEmptyDirectories()
+        {
+            if (!Directory.Exists(_toolRoot)) return;
+
+            var directories = Directory.GetDirectories(_toolRoot, "*", SearchOption.AllDirectories)
+                .OrderByDescending(path => path.Length)
+                .ToList();
+
+            foreach (var directory in directories)
+            {
+                if (Directory.EnumerateFileSystemEntries(directory).Any()) continue;
+                Directory.Delete(directory, recursive: false);
+
+                var metaPath = directory + ".meta";
+                if (File.Exists(metaPath)) File.Delete(metaPath);
+            }
+        }
+
+        private static void CleanupStaging(StagedUpdateData staged)
+        {
+            if (staged == null || string.IsNullOrEmpty(staged.stagingRoot) || !Directory.Exists(staged.stagingRoot)) return;
+
+            try
+            {
+                Directory.Delete(staged.stagingRoot, recursive: true);
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.Staging.Cleanup", $"Failed to clean staging folder: {ex.Message}");
+            }
+        }
+
+        private static string SanitizePathComponent(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return "default";
+
+            foreach (var invalid in Path.GetInvalidFileNameChars())
+            {
+                value = value.Replace(invalid, '_');
+            }
+
+            return value;
+        }
+
+        private async Task ApplyStagedUpdateAsync(UpdateBatch batch, string remoteVersion, StagedUpdateData stagedUpdate, GitIgnoreFilter gitIgnore, bool requiresBranchClean, int total, int completed, IProgressSink progress)
+        {
+            bool autoRefreshDisabled = false;
+            bool assetEditing = false;
+
+            try
+            {
+                AssetDatabase.DisallowAutoRefresh();
+                autoRefreshDisabled = true;
+                AssetDatabase.StartAssetEditing();
+                assetEditing = true;
+
+                if (requiresBranchClean)
+                {
+                    BranchSelector.ConsumeCleanFlag();
+                    completed = CleanForBranchSwitch(gitIgnore, total, completed, progress);
+                    var reset = new LocalPackageTracker();
+                    PackageTrackerStore.Save(reset);
+                }
+
+                completed = ApplyStagedFileUpdates(batch, stagedUpdate, total, completed, progress);
+                completed = ApplyFileDeletions(batch, gitIgnore, total, completed, progress);
+                ApplyStagedPackageJson(stagedUpdate, total, completed, progress);
+                PruneEmptyDirectories();
+
+                var tracker = PackageTrackerStore.Load();
+                tracker.currentVersion = remoteVersion;
+                tracker.lastUpdateCheck = Now();
+                await PackageTrackerStore.SnapshotAsync(tracker, _toolRoot);
+            }
+            finally
+            {
+                if (assetEditing)
+                {
+                    AssetDatabase.StopAssetEditing();
+                }
+
+                if (progress == null) EditorUtility.ClearProgressBar();
+
+                if (autoRefreshDisabled)
+                {
+                    AssetDatabase.AllowAutoRefresh();
+                    AssetDatabase.Refresh();
+                }
+            }
+        }
+
+        private void SavePendingInstall(UpdateBatch batch, StagedUpdateData stagedUpdate, string branch, string remoteVersion, bool requiresBranchClean)
+        {
+            PendingInstallStore.Save(new PendingInstallState
+            {
+                batch = batch,
+                branch = branch,
+                remoteVersion = remoteVersion,
+                stagingRoot = stagedUpdate.stagingRoot,
+                filesRoot = stagedUpdate.filesRoot,
+                packageJsonPath = stagedUpdate.packageJsonPath,
+                requiresBranchClean = requiresBranchClean,
+                createdAt = Now()
+            });
+        }
+
+        private static StagedUpdateData LoadStagedUpdate(PendingInstallState pending)
+        {
+            if (pending == null) throw new ArgumentNullException(nameof(pending));
+            if (string.IsNullOrWhiteSpace(pending.stagingRoot) || string.IsNullOrWhiteSpace(pending.filesRoot))
+                throw new Exception("Pending install marker is missing staging paths.");
+            if (!Directory.Exists(pending.filesRoot))
+                throw new Exception($"Pending install staging folder not found: {pending.filesRoot}");
+
+            return new StagedUpdateData
+            {
+                stagingRoot = pending.stagingRoot,
+                filesRoot = pending.filesRoot,
+                packageJsonPath = string.IsNullOrWhiteSpace(pending.packageJsonPath) ? "package.json" : pending.packageJsonPath
+            };
         }
 
         private static string Now() => DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");

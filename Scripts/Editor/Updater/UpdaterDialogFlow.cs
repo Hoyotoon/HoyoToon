@@ -126,7 +126,7 @@ namespace HoyoToon.Editor.Updater
         private static async Task ApplyUpdateAsync(DialogWindow win, UpdaterController controller, UpdaterSession session, UpdateBatch batch, PackageInfo remote)
         {
             win.SetTitle("Applying Update");
-            win.SetMessage("Downloading files, verifying integrity, and writing to disk. Please wait...");
+            win.SetMessage("Downloading the full update into staging, then applying it in one Unity import pass. Please wait...");
             win.SetShowProgressBar(true);
             win.UpdateProgress(0.01f, "Preparing...");
             win.SetButtons(Array.Empty<string>(), defaultIndex: 0, cancelIndex: -1, onResultIndex: null, keepOpenOnClick: true);
@@ -158,7 +158,7 @@ namespace HoyoToon.Editor.Updater
                 {
                     if (win == null) return;
                     win.SetTitle("Update Failed");
-                    win.SetMessage(err + "\n\nSome files may have been partially updated.");
+                    win.SetMessage(err + "\n\nDownloads are already staged locally. If Unity closes or reloads, the updater will try to resume the install on the next editor startup.");
                     win.SetButtons(new[] { "Close" }, 0, 0, _ => { }, keepOpenOnClick: false);
                 };
             }

@@ -23,6 +23,11 @@ namespace HoyoToon.Editor.Updater
             EditorPrefs.SetBool(PrefCleanOnSwitchKey, true);
         }
 
+        public static bool IsCleanPending()
+        {
+            return EditorPrefs.GetBool(PrefCleanOnSwitchKey, false);
+        }
+
         public static bool ConsumeCleanFlag()
         {
             bool need = EditorPrefs.GetBool(PrefCleanOnSwitchKey, false);

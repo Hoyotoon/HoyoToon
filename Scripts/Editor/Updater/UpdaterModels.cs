@@ -65,6 +65,7 @@ namespace HoyoToon.Editor.Updater
         public List<FileUpdate> fileUpdates = new List<FileUpdate>();
         public List<string> filesToDelete = new List<string>();
         public string sourceCommitSha; // commit used when building this batch
+        public string packageJsonSha;
         public int totalOperations => fileUpdates.Count + filesToDelete.Count;
     }
 
@@ -75,6 +76,19 @@ namespace HoyoToon.Editor.Updater
         public string downloadUrl;
         public string expectedSha;
         public bool isNew;
+    }
+
+    [Serializable]
+    public class PendingInstallState
+    {
+        public UpdateBatch batch = new UpdateBatch();
+        public string branch;
+        public string remoteVersion;
+        public string stagingRoot;
+        public string filesRoot;
+        public string packageJsonPath;
+        public bool requiresBranchClean;
+        public string createdAt;
     }
 }
 #endif

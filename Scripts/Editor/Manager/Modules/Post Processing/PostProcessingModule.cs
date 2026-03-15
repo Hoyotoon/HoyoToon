@@ -116,14 +116,6 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                 {
                     ForceRefreshResourceProfiles(targetManager);
                 }
-
-                using (new EditorGUI.DisabledScope(_referenceProfile == null))
-                {
-                    if (GUILayout.Button("Apply", EditorStyles.miniButton, GUILayout.Width(56f)))
-                    {
-                        ApplyProfileToScene(targetManager);
-                    }
-                }
             }
 
             if (IsCustomProfileSelected())

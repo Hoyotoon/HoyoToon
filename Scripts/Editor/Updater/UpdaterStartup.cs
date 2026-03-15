@@ -19,6 +19,17 @@ namespace HoyoToon.Editor.Updater
                 {
                     var settings = UpdaterSettings.Instance;
                     var controller = new UpdaterController(settings);
+
+                    if (PendingInstallStore.Exists())
+                    {
+                        HoyoToonLogger.Always("Updater", "Resuming interrupted staged update.", LogType.Warning);
+                        if (await controller.ResumePendingInstallAsync())
+                        {
+                            DialogWindow.ShowInfo("HoyoToon Updater", "Resumed and completed the interrupted HoyoToon update.");
+                            return;
+                        }
+                    }
+
                     var session = controller.CreateSession();
                     var availability = await controller.CheckForAvailableUpdateAsync(session);
                     if (availability.HasUpdate)
