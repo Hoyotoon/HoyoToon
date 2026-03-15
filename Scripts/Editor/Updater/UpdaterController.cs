@@ -132,7 +132,11 @@ namespace HoyoToon.Editor.Updater
                 item.path.Equals(_settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase));
             result.batch.packageJsonSha = packageJsonItem?.sha;
 
-            if (!string.IsNullOrEmpty(result.tracker.lastTreeSha) && result.tracker.lastTreeSha == tree.sha)
+            var localPackageJsonPath = Path.Combine(_toolRoot, _settings.packageJsonRelativePath);
+            var localPackageJsonSha = TryComputeFileGitBlobSha(localPackageJsonPath);
+            result.batch.packageJsonChanged = !string.Equals(localPackageJsonSha, result.batch.packageJsonSha, StringComparison.Ordinal);
+
+            if (!result.batch.packageJsonChanged && !string.IsNullOrEmpty(result.tracker.lastTreeSha) && result.tracker.lastTreeSha == tree.sha)
             {
                 result.message = "Repository unchanged - no updates.";
                 return result;
@@ -150,7 +154,7 @@ namespace HoyoToon.Editor.Updater
             return result;
         }
 
-        public async Task<string> GetChangelogAsync(PackageInfo remotePackage, UpdaterSession session = null)
+        public async Task<string> GetChangelogAsync(PackageInfo remotePackage, string commitSha = null, UpdaterSession session = null)
         {
             if (remotePackage == null || string.IsNullOrEmpty(remotePackage.version))
             {
@@ -175,17 +179,13 @@ namespace HoyoToon.Editor.Updater
 
             try
             {
-                var text = await activeSession.Api.GetRawTextAsync("changelog.md");
+                var text = !string.IsNullOrEmpty(commitSha)
+                    ? await activeSession.Api.GetRawTextAtCommitAsync("changelog.md", commitSha)
+                    : await activeSession.Api.GetRawTextAsync("changelog.md");
                 if (!string.IsNullOrWhiteSpace(text))
                 {
-                    var header = $"## {remotePackage.version}";
-                    int index = text.IndexOf(header, StringComparison.OrdinalIgnoreCase);
-                    if (index >= 0)
-                    {
-                        int nextIndex = text.IndexOf("## ", index + header.Length, StringComparison.OrdinalIgnoreCase);
-                        string section = nextIndex > index ? text.Substring(index, nextIndex - index) : text.Substring(index);
-                        return section.Trim();
-                    }
+                    var section = ExtractChangelogSection(text, remotePackage.version);
+                    if (!string.IsNullOrWhiteSpace(section)) return section.Trim();
 
                     return text.Trim();
                 }
@@ -196,6 +196,78 @@ namespace HoyoToon.Editor.Updater
             }
 
             return null;
+        }
+
+        private static string ExtractChangelogSection(string text, string version)
+        {
+            if (string.IsNullOrWhiteSpace(text) || string.IsNullOrWhiteSpace(version)) return null;
+
+            var lines = text.Replace("\r\n", "\n").Replace('\r', '\n').Split('\n');
+            int startLine = -1;
+
+            for (int i = 0; i < lines.Length; i++)
+            {
+                if (IsVersionHeading(lines[i], version))
+                {
+                    startLine = i;
+                    break;
+                }
+            }
+
+            if (startLine < 0) return null;
+
+            int endLine = lines.Length;
+            for (int i = startLine + 1; i < lines.Length; i++)
+            {
+                if (IsMarkdownHeading(lines[i]))
+                {
+                    endLine = i;
+                    break;
+                }
+            }
+
+            return string.Join("\n", lines, startLine, endLine - startLine).Trim();
+        }
+
+        private static bool IsVersionHeading(string line, string version)
+        {
+            if (!IsMarkdownHeading(line)) return false;
+
+            var headingText = line.TrimStart().TrimStart('#').Trim();
+            if (string.IsNullOrEmpty(headingText)) return false;
+
+            var normalizedHeading = NormalizeHeadingText(headingText);
+            var normalizedVersion = NormalizeHeadingText(version);
+            if (normalizedHeading.Equals(normalizedVersion, StringComparison.OrdinalIgnoreCase)) return true;
+            if (normalizedHeading.Contains(normalizedVersion, StringComparison.OrdinalIgnoreCase)) return true;
+            if (normalizedHeading.Contains("v" + normalizedVersion, StringComparison.OrdinalIgnoreCase)) return true;
+
+            return false;
+        }
+
+        private static bool IsMarkdownHeading(string line)
+        {
+            if (string.IsNullOrWhiteSpace(line)) return false;
+            var trimmed = line.TrimStart();
+            return trimmed.StartsWith("#", StringComparison.Ordinal);
+        }
+
+        private static string NormalizeHeadingText(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return string.Empty;
+
+            var normalized = value.Trim();
+            if (normalized.StartsWith("HoyoToon", StringComparison.OrdinalIgnoreCase))
+            {
+                normalized = normalized.Substring("HoyoToon".Length).Trim();
+            }
+
+            if (normalized.StartsWith("v", StringComparison.OrdinalIgnoreCase) && normalized.Length > 1)
+            {
+                normalized = normalized.Substring(1).Trim();
+            }
+
+            return normalized;
         }
 
         public async Task ApplyAsync(UpdateBatch batch, PackageInfo remotePkg, IProgressSink progress = null, UpdaterSession session = null)
@@ -299,12 +371,13 @@ namespace HoyoToon.Editor.Updater
 
         private void BuildFileUpdatePlan(CheckResult result, Dictionary<string, GitTreeItem> remoteFiles)
         {
+            var localFiles = BuildLocalFileMap();
+
             foreach (var kv in remoteFiles)
             {
                 var rel = kv.Key;
                 var remote = kv.Value;
-                var localFull = Path.Combine(_toolRoot, rel);
-                if (!File.Exists(localFull))
+                if (!localFiles.TryGetValue(rel, out var localSha))
                 {
                     result.batch.fileUpdates.Add(new FileUpdate
                     {
@@ -316,8 +389,7 @@ namespace HoyoToon.Editor.Updater
                     continue;
                 }
 
-                result.tracker.fileHashes.TryGetValue(rel, out var trackedSha);
-                if (!string.Equals(trackedSha, remote.sha, StringComparison.Ordinal))
+                if (!string.Equals(localSha, remote.sha, StringComparison.Ordinal))
                 {
                     result.batch.fileUpdates.Add(new FileUpdate
                     {
@@ -329,14 +401,49 @@ namespace HoyoToon.Editor.Updater
                 }
             }
 
-            if (result.tracker.trackedFiles == null) return;
-            foreach (var tracked in result.tracker.trackedFiles)
+            foreach (var local in localFiles.Keys)
             {
-                if (IsExcludedPath(tracked)) continue;
-                if (!remoteFiles.ContainsKey(tracked))
+                if (!remoteFiles.ContainsKey(local))
                 {
-                    result.batch.filesToDelete.Add(tracked);
+                    result.batch.filesToDelete.Add(local);
                 }
+            }
+        }
+
+        private Dictionary<string, string> BuildLocalFileMap()
+        {
+            var localFiles = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            if (!Directory.Exists(_toolRoot)) return localFiles;
+
+            var allFiles = Directory.GetFiles(_toolRoot, "*", SearchOption.AllDirectories)
+                .Where(path => !path.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            foreach (var fullPath in allFiles)
+            {
+                var rel = Path.GetRelativePath(_toolRoot, fullPath).Replace("\\", "/");
+                if (string.Equals(rel, _settings.packageJsonRelativePath, StringComparison.OrdinalIgnoreCase)) continue;
+                if (IsExcludedPath(rel)) continue;
+
+                var bytes = File.ReadAllBytes(fullPath);
+                localFiles[rel] = HashUtil.GitBlobSha(bytes);
+            }
+
+            return localFiles;
+        }
+
+        private static string TryComputeFileGitBlobSha(string fullPath)
+        {
+            try
+            {
+                if (!File.Exists(fullPath)) return null;
+                var bytes = File.ReadAllBytes(fullPath);
+                return HashUtil.GitBlobSha(bytes);
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.ThrottleWarning("Updater.PackageJson.Hash", $"Failed to hash file '{fullPath}': {ex.Message}");
+                return null;
             }
         }
 

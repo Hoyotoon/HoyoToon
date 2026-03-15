@@ -60,7 +60,7 @@ namespace HoyoToon.Editor.Updater
                 var local = check.localPackage;
                 var remote = check.remotePackage;
                 var batch = check.batch;
-                string changelog = await controller.GetChangelogAsync(remote, session);
+                string changelog = await controller.GetChangelogAsync(remote, batch?.sourceCommitSha, session);
 
                 var sb = new StringBuilder();
                 string branch = session.Branch;

@@ -66,7 +66,8 @@ namespace HoyoToon.Editor.Updater
         public List<string> filesToDelete = new List<string>();
         public string sourceCommitSha; // commit used when building this batch
         public string packageJsonSha;
-        public int totalOperations => fileUpdates.Count + filesToDelete.Count;
+        public bool packageJsonChanged;
+        public int totalOperations => fileUpdates.Count + filesToDelete.Count + (packageJsonChanged ? 1 : 0);
     }
 
     [Serializable]

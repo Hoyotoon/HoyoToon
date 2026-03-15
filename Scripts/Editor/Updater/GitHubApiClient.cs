@@ -119,6 +119,17 @@ namespace HoyoToon.Editor.Updater
             }
         }
 
+        public async Task<string> GetRawTextAtCommitAsync(string relativePath, string commitSha)
+        {
+            var url = $"https://raw.githubusercontent.com/{_owner}/{_repo}/{commitSha}/{relativePath}";
+            using (var resp = await SendAsync(url))
+            {
+                if (resp.StatusCode == HttpStatusCode.NotFound) return null;
+                resp.EnsureSuccessStatusCode();
+                return await resp.Content.ReadAsStringAsync();
+            }
+        }
+
         private static HttpClient CreateSharedClient()
         {
             var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };

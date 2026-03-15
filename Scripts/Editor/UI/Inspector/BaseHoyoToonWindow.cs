@@ -15,9 +15,9 @@ namespace HoyoToon.Editor.UI.Windows
             public const float WINDOW_MIN_WIDTH = 680f;
             public const float WINDOW_DEFAULT_WIDTH = 720f;
             public const float WINDOW_MIN_HEIGHT = 560f;
-            public const float WINDOW_MAX_HEIGHT = 880f;
+            public const float WINDOW_MAX_HEIGHT = 1040f;
 
-            public const float CARD_MAX_VIEW_HEIGHT = 440f;
+            public const float CARD_MAX_VIEW_HEIGHT = 600f;
             public const float CARD_MIN_VIEW_HEIGHT = 100f;
 
             // Section paddings (vertical sum must align with auto-resize math)
@@ -392,7 +392,7 @@ namespace HoyoToon.Editor.UI.Windows
                 float topBar = TopBarLayout.BANNER_HEIGHT;
                 float paddings = UiLayout.PADDING_TOP + UiLayout.PADDING_MID1 + UiLayout.PADDING_MID2 + UiLayout.PADDING_BOTTOM;
                 float toolbarH = Mathf.Max(0f, GetCardToolbarHeight());
-                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT;
+                float buttonsH = UiLayout.BUTTONS_BLOCK_HEIGHT + UiLayout.FOOTER_EXTRA_HEIGHT;
                 float cardH = (toolbarH > 0 ? (toolbarH + 4f) : 0f) + cardViewH;
                 float progressH = _showProgressBar ? (16f + UiLayout.PADDING_MID2) : 0f;
                 float desired = topBar + paddings + headerH + cardH + buttonsH + progressH;
