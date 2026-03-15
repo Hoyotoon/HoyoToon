@@ -42,6 +42,26 @@ jobs:
           if not version:
               raise ValueError('package.json is missing a version field')
 
+          utf8_bom = b'\xef\xbb\xbf'
+
+          def normalize_bytes_for_hash(data: bytes) -> bytes:
+              if not data:
+                  return b''
+
+              has_bom = data.startswith(utf8_bom)
+              payload = data[len(utf8_bom):] if has_bom else data
+              if not payload or b'\x00' in payload:
+                  return data
+
+              try:
+                  text = payload.decode('utf-8', errors='strict')
+              except UnicodeDecodeError:
+                  return data
+
+              normalized = text.replace('\r\n', '\n').replace('\r', '\n')
+              normalized_bytes = normalized.encode('utf-8')
+              return (utf8_bom + normalized_bytes) if has_bom else normalized_bytes
+
           def normalize_relative(path: pathlib.Path) -> str:
               return path.relative_to(root).as_posix()
 
@@ -79,7 +99,7 @@ jobs:
                   continue
 
               with file_path.open('rb') as handle:
-                  files[relative_path] = hashlib.sha1(handle.read()).hexdigest()
+                  files[relative_path] = hashlib.sha1(normalize_bytes_for_hash(handle.read())).hexdigest()
 
           if not files:
               raise RuntimeError('No files were collected for updater_manifest.json')

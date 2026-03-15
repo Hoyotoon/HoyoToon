@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Text;
 using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
@@ -19,6 +20,7 @@ namespace HoyoToon.Editor.Updater
     [InitializeOnLoad]
     internal static class PackageUpdater
     {
+        private static readonly UTF8Encoding StrictUtf8 = new UTF8Encoding(false, true);
         private const string Owner = "HoyoToon";
         private const string Repo = "HoyoToon";
         private const string MainBranch = "main";
@@ -831,12 +833,74 @@ namespace HoyoToon.Editor.Updater
 
         private static string GetHash(string path)
         {
+            byte[] bytes = NormalizeBytesForHash(File.ReadAllBytes(path));
             using (var sha = SHA1.Create())
-            using (var stream = File.OpenRead(path))
             {
-                byte[] hash = sha.ComputeHash(stream);
+                byte[] hash = sha.ComputeHash(bytes);
                 return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
             }
+        }
+
+        private static byte[] NormalizeBytesForHash(byte[] bytes)
+        {
+            if (bytes == null || bytes.Length == 0)
+            {
+                return Array.Empty<byte>();
+            }
+
+            bool hasUtf8Bom = HasUtf8Bom(bytes);
+            int offset = hasUtf8Bom ? 3 : 0;
+            int length = bytes.Length - offset;
+            if (length <= 0 || ContainsNullByte(bytes, offset))
+            {
+                return bytes;
+            }
+
+            string text;
+            try
+            {
+                text = StrictUtf8.GetString(bytes, offset, length);
+            }
+            catch (DecoderFallbackException)
+            {
+                return bytes;
+            }
+
+            string normalizedText = text.Replace("\r\n", "\n").Replace('\r', '\n');
+            if (string.Equals(text, normalizedText, StringComparison.Ordinal))
+            {
+                return bytes;
+            }
+
+            byte[] normalizedBytes = StrictUtf8.GetBytes(normalizedText);
+            if (!hasUtf8Bom)
+            {
+                return normalizedBytes;
+            }
+
+            byte[] preamble = StrictUtf8.GetPreamble();
+            var combined = new byte[preamble.Length + normalizedBytes.Length];
+            Buffer.BlockCopy(preamble, 0, combined, 0, preamble.Length);
+            Buffer.BlockCopy(normalizedBytes, 0, combined, preamble.Length, normalizedBytes.Length);
+            return combined;
+        }
+
+        private static bool HasUtf8Bom(byte[] bytes)
+        {
+            return bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+        }
+
+        private static bool ContainsNullByte(byte[] bytes, int offset)
+        {
+            for (int i = offset; i < bytes.Length; i++)
+            {
+                if (bytes[i] == 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static string GetRelativePath(string rootPath, string fullPath)
