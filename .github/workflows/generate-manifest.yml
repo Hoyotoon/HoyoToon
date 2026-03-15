@@ -3,7 +3,7 @@ name: Generate Manifest
 on:
   push:
     branches:
-      - beta
+      - Beta
       - main
     paths:
       - "package.json"
