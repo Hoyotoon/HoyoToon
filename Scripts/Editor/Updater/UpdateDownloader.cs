@@ -50,8 +50,9 @@ namespace HoyoToon.Editor.Updater
                 for (int j = 0; j < count; j++)
                 {
                     string file = files[i + j];
-                    string requestUrl = PackageUpdater.BuildRawFileUrl(baseUrl, file);
+                    string requestUrl = PackageUpdater.BuildCacheBustedUrl(PackageUpdater.BuildRawFileUrl(baseUrl, file));
                     var request = UnityWebRequest.Get(requestUrl);
+                    PackageUpdater.ApplyNoCacheHeaders(request);
                     request.SendWebRequest();
 
                     requests.Add(request);

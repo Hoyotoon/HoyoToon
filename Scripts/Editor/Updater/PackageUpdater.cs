@@ -55,6 +55,8 @@ namespace HoyoToon.Editor.Updater
             public string Branch;
             public string LocalVersion;
             public string RemoteVersion;
+            public string RemoteChangelog;
+            public string StatusMessage;
             public bool CleanMissingFiles;
             public Dictionary<string, string> RemoteFiles;
             public List<string> FilesToCopy;
@@ -91,6 +93,24 @@ namespace HoyoToon.Editor.Updater
 
             string escapedPath = string.Join("/", segments.Select(Uri.EscapeDataString).ToArray());
             return string.Concat(normalizedBase, "/", escapedPath);
+        }
+
+        internal static string BuildCacheBustedUrl(string url)
+        {
+            string separator = (url ?? string.Empty).Contains("?") ? "&" : "?";
+            return string.Concat(url ?? string.Empty, separator, "ts=", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
+        }
+
+        internal static void ApplyNoCacheHeaders(UnityWebRequest request)
+        {
+            if (request == null)
+            {
+                return;
+            }
+
+            request.SetRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
+            request.SetRequestHeader("Pragma", "no-cache");
+            request.SetRequestHeader("Expires", "0");
         }
 
         private static string CurrentBranch => NormalizeBranch(EditorPrefs.GetString(PrefsKeys.UpdaterCurrentBranch, MainBranch));
@@ -374,7 +394,10 @@ namespace HoyoToon.Editor.Updater
                 HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"No updates found on '{plan.Branch}'.");
                 if (showNoUpdatesDialog)
                 {
-                    DialogWindow.ShowInfo("HoyoToon Updater", $"HoyoToon is already up to date on the '{plan.Branch}' branch.");
+                    string message = string.IsNullOrEmpty(plan.StatusMessage)
+                        ? $"HoyoToon is already up to date on the '{plan.Branch}' branch."
+                        : plan.StatusMessage;
+                    DialogWindow.ShowInfo("HoyoToon Updater", message);
                 }
                 yield break;
             }
@@ -389,7 +412,8 @@ namespace HoyoToon.Editor.Updater
                 ProgressDialog.Update(0.1f, "Downloading updater manifest...");
             }
 
-            var manifestRequest = UnityWebRequest.Get(ManifestUrl);
+            var manifestRequest = UnityWebRequest.Get(BuildCacheBustedUrl(ManifestUrl));
+            ApplyNoCacheHeaders(manifestRequest);
             yield return manifestRequest.SendWebRequest();
 
             try
@@ -415,6 +439,23 @@ namespace HoyoToon.Editor.Updater
 
                 string localVersion = GetLocalPackageVersion();
                 string remoteVersion = string.IsNullOrEmpty(manifest.version) ? "unknown" : manifest.version;
+                int versionComparison = CompareVersionStrings(localVersion, remoteVersion);
+                if (versionComparison > 0)
+                {
+                    onSuccess?.Invoke(new UpdatePlan
+                    {
+                        Branch = CurrentBranch,
+                        LocalVersion = localVersion,
+                        RemoteVersion = remoteVersion,
+                        StatusMessage = $"Local HoyoToon version {localVersion} is newer than remote branch '{CurrentBranch}' version {remoteVersion}. Mana why are you trying to update our development version?",
+                        CleanMissingFiles = cleanMissingFiles,
+                        RemoteFiles = remoteFiles,
+                        FilesToCopy = new List<string>(),
+                        FilesToDelete = new List<string>()
+                    });
+                    yield break;
+                }
+
                 if (string.Equals(localVersion, remoteVersion, StringComparison.OrdinalIgnoreCase))
                 {
                     onSuccess?.Invoke(new UpdatePlan
@@ -437,12 +478,26 @@ namespace HoyoToon.Editor.Updater
 
                 var filesToCopy = BuildPatchList(remoteFiles);
                 var filesToDelete = cleanMissingFiles ? FindMissingLocalFiles(remoteFiles) : new List<string>();
+                string remoteChangelog = null;
+                if ((filesToCopy.Count + filesToDelete.Count) > 0)
+                {
+                    if (showProgress)
+                    {
+                        ProgressDialog.Update(0.55f, "Downloading remote changelog...");
+                    }
+
+                    yield return DownloadRemoteTextRoutine("changelog.md", value =>
+                    {
+                        remoteChangelog = value;
+                    });
+                }
 
                 onSuccess?.Invoke(new UpdatePlan
                 {
                     Branch = CurrentBranch,
                     LocalVersion = localVersion,
                     RemoteVersion = remoteVersion,
+                    RemoteChangelog = remoteChangelog,
                     CleanMissingFiles = cleanMissingFiles,
                     RemoteFiles = remoteFiles,
                     FilesToCopy = filesToCopy,
@@ -463,6 +518,11 @@ namespace HoyoToon.Editor.Updater
                              $"Files to update: {plan.FilesToCopy.Count}\n" +
                              $"Files to remove: {plan.FilesToDelete.Count}\n\n" +
                              "Would you like to install the update now?";
+
+            if (!string.IsNullOrWhiteSpace(plan.RemoteChangelog))
+            {
+                message += "\n\n# Remote Changelog\n\n" + plan.RemoteChangelog.Trim();
+            }
 
             string[] buttons = automatic
                 ? new[] { "Update Now", "Later", "Disable Auto Check" }
@@ -512,6 +572,8 @@ namespace HoyoToon.Editor.Updater
 
         private static IEnumerator InstallRoutine(UpdatePlan plan)
         {
+            string completionDialogTitle = null;
+            string completionDialogMessage = null;
             PrepareLock();
             ProgressDialog.Start("HoyoToon Updater", $"Updating HoyoToon from '{plan.Branch}'...");
             try
@@ -546,12 +608,14 @@ namespace HoyoToon.Editor.Updater
 
                 ProgressDialog.Update(1f, "Update complete.");
                 HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Updater applied branch '{plan.Branch}' ({plan.TotalChanges} changes).");
-                DialogWindow.ShowInfo("HoyoToon Updated", $"HoyoToon was updated from the '{plan.Branch}' branch.\n\nUpdated files: {plan.FilesToCopy.Count}\nRemoved files: {plan.FilesToDelete.Count}");
+                completionDialogTitle = "HoyoToon Updated";
+                completionDialogMessage = $"HoyoToon was updated from the '{plan.Branch}' branch.\n\nUpdated files: {plan.FilesToCopy.Count}\nRemoved files: {plan.FilesToDelete.Count}";
             }
             finally
             {
                 ProgressDialog.End();
                 ReleaseLock();
+                ShowDeferredInfoDialog(completionDialogTitle, completionDialogMessage);
             }
         }
 
@@ -579,6 +643,8 @@ namespace HoyoToon.Editor.Updater
 
         private static IEnumerator ResumePendingRoutine()
         {
+            string completionDialogTitle = null;
+            string completionDialogMessage = null;
             PrepareLock();
             ProgressDialog.Start("HoyoToon Updater", "Resuming a staged HoyoToon update...");
             try
@@ -591,12 +657,14 @@ namespace HoyoToon.Editor.Updater
                 }
 
                 ProgressDialog.Update(1f, "Update complete.");
-                DialogWindow.ShowInfo("HoyoToon Updated", "A previously staged HoyoToon update has been applied.");
+                completionDialogTitle = "HoyoToon Updated";
+                completionDialogMessage = "A previously staged HoyoToon update has been applied.";
             }
             finally
             {
                 ProgressDialog.End();
                 ReleaseLock();
+                ShowDeferredInfoDialog(completionDialogTitle, completionDialogMessage);
             }
         }
 
@@ -829,6 +897,88 @@ namespace HoyoToon.Editor.Updater
             {
                 return "unknown";
             }
+        }
+
+        private static void ShowDeferredInfoDialog(string title, string message)
+        {
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+            {
+                return;
+            }
+
+            EditorApplication.delayCall += () => DialogWindow.ShowInfo(title, message);
+        }
+
+        private static IEnumerator DownloadRemoteTextRoutine(string relativePath, Action<string> onSuccess)
+        {
+            string requestUrl = BuildCacheBustedUrl(BuildRawFileUrl(RawBaseUrl, relativePath));
+            var request = UnityWebRequest.Get(requestUrl);
+            ApplyNoCacheHeaders(request);
+            yield return request.SendWebRequest();
+
+            try
+            {
+                if (request.result != UnityWebRequest.Result.Success)
+                {
+                    yield break;
+                }
+
+                onSuccess?.Invoke(request.downloadHandler.text);
+            }
+            finally
+            {
+                request.Dispose();
+            }
+        }
+
+        private static int CompareVersionStrings(string left, string right)
+        {
+            if (string.Equals(left, right, StringComparison.OrdinalIgnoreCase))
+            {
+                return 0;
+            }
+
+            if (TryParseVersionParts(left, out List<int> leftParts) && TryParseVersionParts(right, out List<int> rightParts))
+            {
+                int maxCount = Math.Max(leftParts.Count, rightParts.Count);
+                for (int i = 0; i < maxCount; i++)
+                {
+                    int leftValue = i < leftParts.Count ? leftParts[i] : 0;
+                    int rightValue = i < rightParts.Count ? rightParts[i] : 0;
+                    if (leftValue != rightValue)
+                    {
+                        return leftValue.CompareTo(rightValue);
+                    }
+                }
+
+                return 0;
+            }
+
+            return string.Compare(left ?? string.Empty, right ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool TryParseVersionParts(string value, out List<int> parts)
+        {
+            parts = null;
+            if (string.IsNullOrWhiteSpace(value))
+            {
+                return false;
+            }
+
+            string[] segments = value.Split('.');
+            var parsed = new List<int>(segments.Length);
+            for (int i = 0; i < segments.Length; i++)
+            {
+                if (!int.TryParse(segments[i], out int number))
+                {
+                    return false;
+                }
+
+                parsed.Add(number);
+            }
+
+            parts = parsed;
+            return true;
         }
 
         private static string GetHash(string path)
