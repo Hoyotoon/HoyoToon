@@ -79,7 +79,6 @@ Dev.meta
 LICENSE.meta
 updater_manifest.json.meta
 /.github/scripts
-updater_manifest.json
 
 # -------------------------------------------------------
 # HoyoToon Updater Tagged Ignore Examples
