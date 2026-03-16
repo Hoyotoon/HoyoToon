@@ -65,6 +65,7 @@ MonoBehaviour:
   - {fileID: 6021410605681866616}
   - {fileID: -3033019243093164391}
   - {fileID: 1820468572012644662}
+  - {fileID: 4251413447995266576}
   - {fileID: 2249636644837017002}
 --- !u!114 &1820468572012644662
 MonoBehaviour:
@@ -124,7 +125,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: com.hoyotoon.hoyotoon.Rendering::HoyoToon.Rendering.PostProcessing.HSR.Uber.RPGUber
   active: 1
   UseUberControl:
-    m_OverrideState: 0
+    m_OverrideState: 1
     m_Value: 0
   EnableBloom:
     m_OverrideState: 1
@@ -147,6 +148,128 @@ MonoBehaviour:
   EnableRadialBlur:
     m_OverrideState: 1
     m_Value: 0
+--- !u!114 &4251413447995266576
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7b8b5e101b5b30144b2b8c7912b47baf, type: 3}
+  m_Name: RPGTonemapping
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.Rendering::HoyoToon.Rendering.PostProcessing.HSR.ToneMapping.RPGTonemapping
+  active: 1
+  tonemapping: 0
+  BlueCorrection:
+    m_OverrideState: 1
+    m_Value: 1
+  ExpandGamut:
+    m_OverrideState: 1
+    m_Value: 0.805
+  ForceDisableToneMapping:
+    m_OverrideState: 1
+    m_Value: 0
+  Slope:
+    m_OverrideState: 1
+    m_Value: 0.88
+  Toe:
+    m_OverrideState: 1
+    m_Value: 0.55
+  Shoulder:
+    m_OverrideState: 1
+    m_Value: 0.26
+  BlackClip:
+    m_OverrideState: 1
+    m_Value: 0
+  WhiteClip:
+    m_OverrideState: 1
+    m_Value: 0.04
+  ToneCurveToeStrength:
+    m_OverrideState: 1
+    m_Value: 0.415
+  ToneCurveToeLength:
+    m_OverrideState: 1
+    m_Value: 0.614
+  ToneCurveShoulderStrength:
+    m_OverrideState: 1
+    m_Value: 0
+  ToneCurveShoulderLength:
+    m_OverrideState: 1
+    m_Value: 1
+  ToneCurveShoulderAngle:
+    m_OverrideState: 1
+    m_Value: 0.1
+  ToneCurveGamma:
+    m_OverrideState: 1
+    m_Value: 1.2
+  ACES_A:
+    m_OverrideState: 1
+    m_Value: 28.7
+  ACES_B:
+    m_OverrideState: 1
+    m_Value: 0.107772
+  ACES_C:
+    m_OverrideState: 1
+    m_Value: 2.936045
+  ACES_D:
+    m_OverrideState: 1
+    m_Value: 0.887122
+  ACES_E:
+    m_OverrideState: 1
+    m_Value: 0.806889
+  ColorCorrectionShadowMax:
+    m_OverrideState: 1
+    m_Value: 0.09
+  ColorCorrectionHighlightMin:
+    m_OverrideState: 1
+    m_Value: 0.5
+  LevelHighLightTone:
+    m_OverrideState: 1
+    m_Value: 1
+  LevelShadowTone:
+    m_OverrideState: 1
+    m_Value: 0
+  LevelColor:
+    m_OverrideState: 1
+    m_Value: {r: 1, g: 1, b: 1, a: 1}
+  ColorSaturationGlobal:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorContrastGlobal:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorGainGlobal:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorSaturationShadow:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorContrastShadow:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorGainShadow:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorSaturationMidtone:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorContrastMidtone:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorGainMidtone:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorSaturationHighlight:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorContrastHighlight:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
+  ColorGainHighlight:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 1, z: 1, w: 1}
 --- !u!114 &6021410605681866616
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -162,16 +285,16 @@ MonoBehaviour:
   active: 0
   FilterA:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_Value: {r: 1, g: 0, b: 0, a: 1}
   FilterB:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 0.15566039, b: 0.15566039, a: 1}
+    m_Value: {r: 0, g: 1, b: 0, a: 1}
   FilterC:
     m_OverrideState: 1
-    m_Value: {r: 1, g: 1, b: 1, a: 1}
+    m_Value: {r: 0, g: 0, b: 1, a: 1}
   CombineWithRadialBlur:
     m_OverrideState: 1
     m_Value: 0
   intensity:
     m_OverrideState: 1
-    m_Value: 0.283
+    m_Value: 1

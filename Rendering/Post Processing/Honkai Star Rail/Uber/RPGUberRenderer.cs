@@ -1,4 +1,5 @@
 using HoyoToon.Rendering.PostProcessing.HSR.Bloom;
+using HoyoToon.Rendering.PostProcessing.HSR.ToneMapping;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -49,6 +50,7 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
             private bool _loggedMissingBloom;
             private bool _loggedMissingLut;
             private bool _useBloomTexture;
+            private bool _useGeneratedTonemappingLut;
 
             public RPGUberRenderPass()
             {
@@ -109,30 +111,46 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
 
                 _useBloomTexture = bloomActive;
 
-                Texture lutTexture = uberSettings != null ? uberSettings.BakedLutTexture.value : null;
-                if (lutTexture == null)
-                {
-                    lutTexture = RPGUber.GetDefaultLutTexture();
-                }
+                RPGTonemapping tonemappingSettings = VolumeManager.instance.stack.GetComponent<RPGTonemapping>();
+                _useGeneratedTonemappingLut = tonemappingSettings != null
+                    && tonemappingSettings.active
+                    && tonemappingSettings.IsActive()
+                    && tonemappingSettings.AnyPropertiesIsOverridden()
+                    && tonemappingSettings.tonemapping == RPGTonemapping.TonemappingMethod.GenerateLUTTexture
+                    && RPGTonemappingRenderer.HasGeneratedLutThisFrame;
 
-                if (lutTexture == null)
+                if (_useGeneratedTonemappingLut)
                 {
-                    if (!_loggedMissingLut)
+                    // Clear local material binding so the shader reads the generated global _Lut2DTex.
+                    _material.SetTexture(_lut2DTexId, null);
+                    _loggedMissingLut = false;
+                }
+                else
+                {
+                    Texture lutTexture = uberSettings != null ? uberSettings.BakedLutTexture.value : null;
+                    if (lutTexture == null)
                     {
-                        Debug.LogWarning($"{nameof(RPGUberRenderer)}: no LUT texture is available; skipping the Uber pass.");
-                        _loggedMissingLut = true;
+                        lutTexture = RPGUber.GetDefaultLutTexture();
                     }
 
-                    return false;
-                }
+                    if (lutTexture == null)
+                    {
+                        if (!_loggedMissingLut)
+                        {
+                            Debug.LogWarning($"{nameof(RPGUberRenderer)}: no LUT texture is available; skipping the Uber pass.");
+                            _loggedMissingLut = true;
+                        }
 
-                _loggedMissingLut = false;
+                        return false;
+                    }
+
+                    _loggedMissingLut = false;
+                    _material.SetTexture(_lut2DTexId, lutTexture);
+                }
 
                 Vector2 lutFactor = uberSettings != null ? uberSettings.LutFactor.value : new Vector2(0.00098f, 0.03125f);
                 int lutSlices = uberSettings != null ? uberSettings.LutSlices.value : 31;
                 float lutFlipY = uberSettings != null && uberSettings.FlipLutY.value ? 1f : 0f;
-                _material.SetTexture(_lut2DTexId, lutTexture);
-
                 _material.SetVector(_lut2DTexParamId, new Vector4(lutFactor.x, lutFactor.y, lutSlices, lutFlipY));
 
                 float bloomIntensity = 0f;
@@ -195,6 +213,11 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
                            passName: RenderGraphPassName,
                            returnBuilder: true))
                 {
+                    if (_useGeneratedTonemappingLut)
+                    {
+                        builder.UseGlobalTexture(_lut2DTexId);
+                    }
+
                     if (_useBloomTexture)
                     {
                         builder.UseGlobalTexture(_hsrBloomTexId);
