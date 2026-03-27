@@ -26,35 +26,23 @@ public class HSRSceneController : MonoBehaviour
     private static float s_NextSlowCharacterLightDiscoveryTime;
     private static float s_NextSlowMaterialKeywordSyncTime;
 
-    [Header("Global Intensity")]
-    public float _GlobalOneMinusAvatarIntensity = 0f;
+    // [Header("Global Intensity")]
+    [HideInInspector]public float _GlobalOneMinusAvatarIntensity = 0f;
     
     [Header("Main Light Settings")]
+    [PropertyLabel("Main Light"), Tooltip("The main directional light in the scene. If null, the controller will attempt to find a light named 'HoyoToon Scene Light'.")]
     public Light main_light;
     public Light[] CharacterLights;
-    public Vector3 _ES_MonsterLightDir = new Vector3(0, 1, 0);
-    public bool _ES_Indoor;
-    public float _ES_TransitionRate = 1.0f;
-    public bool _ES_LEVEL_ADJUST_ON = false;
+    [HideInInspector] public Vector3 _ES_MonsterLightDir = new Vector3(0, 1, 0);
+    [HideInInspector] public bool _ES_Indoor;
+    [HideInInspector] public float _ES_TransitionRate = 1.0f;
+    [PropertyLabel("Hair Shadow Height Adjust")]
     public float _ES_SelfShadowLerpHair;
 
-    [Header("Main Light Shadows")]
-    public bool _EnableMainLightShadows = true;
-    [Range(256, 8192)] public int _MainLightShadowResolution = 2048;
-    [Range(1, 4)] public int _MainLightShadowCascades = 4;
-    [Range(0.01f, 0.99f)] public float _MainLightShadowCascade2Split = 0.25f;
-    public Vector3 _MainLightShadowCascade4Split = new Vector3(0.067f, 0.2f, 0.467f);
-    [Range(0.0f, 1.0f)] public float _MainLightShadowCascadeBorder = 0.1f;
-    [Range(0.0f, 10.0f)] public float _MainLightShadowNearPlaneOffset = 0.1f;
 
-    [Header("Shadow Debug")]
-    public bool _DebugMainLightShadowFullscreen = false;
-    [Range(0, 3)] public int _DebugMainLightShadowSlice = 0;
-    
-    [Header("Global Rotation")]
-    [Header("Environment Rotation")]
-    public Vector3 _es_global_rotation_euler = Vector3.zero;
-    public Matrix4x4 _ES_GlobalRotMatrix { get; private set; }
+    // [Header("Environment Rotation")]
+    [HideInInspector] public Vector3 _es_global_rotation_euler = Vector3.zero;
+    [HideInInspector] public Matrix4x4 _ES_GlobalRotMatrix { get; private set; }
     private Vector3 _cachedGlobalRotationEuler;
     private bool _isGlobalRotMatrixDirty = true;
     private bool _hasAppliedSceneMaterialKeywords;
@@ -62,70 +50,124 @@ public class HSRSceneController : MonoBehaviour
 
 
     [Header("Character Lighting & Outlines")]
+    [Range(0f, 1f)]
+    [PropertyLabel("Ramp Day Night Blend"), Tooltip("Blends between day and night ramp textures. 0 = day, 1 = night.")]
     public float _ES_CharacterToonRampMode = 0f;
-    public bool _ES_CharacterDisableLocalMainLight = false;
+    [PropertyLabel("Disable Local Main Light"), Tooltip("If enabled, character materials will not receive lighting from local main lights (e.g. CharacterLights).")]
+    [HideInInspector] public bool _ES_CharacterDisableLocalMainLight = false;
+    [PropertyLabel("Add Color"), Tooltip("Adds a color overlay to the character materials.")]
     public Color _ES_AddColor = Color.clear;
+    [PropertyLabel("Specular Color"), Tooltip("The color of the specular highlights on character materials.")]
     public Color _ES_SPColor = Color.white;
+    [PropertyLabel("Specular Intensity"), Tooltip("The intensity of the specular highlights on character materials.")]
     public float _ES_SPIntensity = 1.0f;
-    public float _ES_OutLineDarkenVal = 0.5f;
-    public float _ES_OutLineLightedVal = 1.0f;
+    [PropertyLabel("Outline Darken Value"), Tooltip("The darken value of the character outlines.")]
+    public float _ES_OutLineDarkenVal = 0.0f;
+    [PropertyLabel("Outline Lightened Value"), Tooltip("The lighted value of the character outlines.")]
+    public float _ES_OutLineLightedVal = 0.0f;
+    [PropertyLabel("Outline Disable Distance Scale"), Tooltip("The distance scale at which outlines are disabled.")]
+
     public float _ES_OutlineDisableDistanceScale = 0f;
+    [PropertyLabel("Outline Fallback Scale"), Tooltip("The scale of the character outlines when the main light is below the horizon.")]
     public float _ES_OutlineFallbackScale = 1.0f;   
+    [PropertyLabel("Outline Scale"), Tooltip("The scale of the character outlines.")]
     public float _OutlineScale = 0.0149f;
 
-    [Header("Rim Settings")]
+    [Header("Rim Shadow")]
+    
+    [PropertyLabel("Rim Shadow Color"), Tooltip("The color of the rim shadow on character materials.")]
     public Color _ES_RimShadowColor = Color.black;
+    [PropertyLabel("Rim Shadow Intensity"), Tooltip("The intensity of the rim shadow on character materials.")]
     public float _ES_RimShadowIntensity = 1.0f;
-    public float _ES_CharacterShadowFactor = 1.0f;
+    [HideInInspector] public float _ES_CharacterShadowFactor = 1.0f;
+    [Header("Rim Light")]
+    [PropertyLabel("Rim Light Offset"), Tooltip("The offset of the rim light direction")]
     public Vector2 _ES_RimLightOffset = Vector2.zero;
+    [PropertyLabel("Rim Light Mode"), Tooltip("Use lightmap Red Channel for Mask Blend")]
     public float _ES_RimLightMode = 0.0f;
+    [PropertyLabel("Rim Light Width"), Tooltip("The width of the rim light on character materials.")]
     public float _ES_RimLightWidth = 1.0f;
+    [PropertyLabel("Rim Light Intensity"), Tooltip("The intensity of the rim light on character materials.")]
+
     public float _ES_RimLightIntensity = 1.0f;
+    [PropertyLabel("Rim Light Add Mode"), Tooltip("Adds a rim light on top of the rim shadow instead of multiplying it.")]
     public float _ES_RimLightAddMode = 0f;
+    [PropertyLabel("Rim Light Color"), Tooltip("The color of the rim light on character materials.")]
     public Color _ES_RimLightColor = Color.white;
 
-    [Header("Height Lerp Colors")]
+    [PropertyLabel("Enable Height Light"), Tooltip("Enables height-based color lerping for character materials.")]
     public bool HeightLerpEnable = false; 
+    [PropertyLabel("Height Light Top"), Tooltip("The normalized height at which the top color is fully applied in height-based color lerping.")]
     public float _ES_HeightLerpTop = 0.2f;
+    [PropertyLabel("Height Light Bottom"), Tooltip("The normalized height at which the bottom color is fully applied in height-based color lerping.")]
     public float _ES_HeightLerpBottom = 0.4f;
+    [PropertyLabel("Height Light Top Color"), Tooltip("The color applied at the top height in height-based color lerping.")]
+
     public Color _ES_HeightLerpTopColor = Color.white;
+    [PropertyLabel("Height Light Middle Color"), Tooltip("The color applied at the middle height in height-based color lerping.")]
     public Color _ES_HeightLerpMiddleColor = new Color(1.0000f, 1.0000f, 1.0000f, 0.5000f);
+    [PropertyLabel("Height Light Bottom Color"), Tooltip("The color applied at the bottom height in height-based color lerping.")]
     public Color _ES_HeightLerpBottomColor = new Color(0.3137254715f, 0.3137254715f, 0.4901961088f, 0.5000f);
 
-    [Header("Level Lighting")]
+    // [Header("Shadow Color Grading")]
+    [PropertyLabel("Enable Shadow Color Grading")]
+    public bool _ES_LEVEL_ADJUST_ON = false;
+    [PropertyLabel("Skin Area Light Color"), Tooltip("The color applied to the lit areas of character skin materials when shadow color grading is enabled. Alpha controls the strength/intensity of the color")]
     public Color _ES_LevelSkinLightColor = new Color(1.0000f, 1.0000f, 1.0000f, 0.5000f);
+    [PropertyLabel("Skin Area Shadow Color"), Tooltip("The color applied to the shadowed areas of character skin materials when shadow color grading is enabled. Alpha controls the strength/intensity of the color")]
     public Color _ES_LevelSkinShadowColor = new Color(1.0000f, 1.0000f, 1.0000f, 0.5000f);
+    [PropertyLabel("Highlight Area Color"), Tooltip("The color applied to the highlight areas of character materials when shadow color grading is enabled. Alpha controls the strength/intensity of the color")]
     public Color _ES_LevelHighLightColor = new Color(1.0000f, 1.0000f, 1.0000f, 0.5000f);
+    [PropertyLabel("Shadow Area Color"), Tooltip("The color applied to the shadowed areas of character materials when shadow color grading is enabled. Alpha controls the strength/intensity of the color")]
     public Color _ES_LevelShadowColor = new Color(1.0000f, 1.0000f, 1.0000f, 0.5000f);
+    [PropertyLabel("Grading Shadow Area"), Tooltip("The strength of the shadow color grading effect on character materials.")]
     [Range(0, 1)] public float _ES_LevelShadow = 0.0f;
+    [PropertyLabel("Grading Mid Lighting Area"), Tooltip("The strength of the highlight color grading effect on character materials.")]
     [Range(0, 1)] public float _ES_LevelMid = 0.55f;
+    [PropertyLabel("Grading Highlight Area"), Tooltip("The strength of the highlight color grading effect on character materials.")]
     [Range(0, 1)] public float _ES_LevelHighLight = 1.0f;
+    [PropertyLabel("Grading EyeShadow Area"),
+     Tooltip("The strength of the skin area color grading effect on character skin materials.")]
     [Range(0, 1)] public float _ES_LevelEyeShadowIntensity = 1.0f;
-    public bool _ES_IndoorCharShadowAsCookie = false;
+    [HideInInspector]public bool _ES_IndoorCharShadowAsCookie = false;
 
-    [Header("Fog Settings")]
+    // [Header("Fog Settings")]
+    [PropertyLabel("Fog Color"), Tooltip("The color of the fog in the scene.")]
     public float _ES_FogColor = 0.5625f;
+    [PropertyLabel("Fog Density"), Tooltip("The density of the fog in the scene.")]
     public float _ES_FogDensity = 1.0f;
+    [PropertyLabel("Fog Near"), Tooltip("The distance from the camera at which the fog starts to appear.")]
     public float _ES_FogNear = 300f;
+    [PropertyLabel("Fog Far"), Tooltip("The distance from the camera at which the fog ends.")]
     public float _ES_FogFar = 800f;
+    [Space(10)]
+    [PropertyLabel("Height Fog Color"), Tooltip("The color of the height-based fog in the scene.")]
     public float _ES_HeightFogColor = 0.8125f;
+    [PropertyLabel("Height Fog Base Height"), Tooltip("The base height of the height-based fog. The fog density will be calculated based on the difference between the world position height and this base height.")]
     public float _ES_HeightFogBaseHeight = 6f;
+    [PropertyLabel("Height Fog Range"), Tooltip("The range of the height-based fog.")]
     public float _ES_HeightFogRange = 40f;
+    [PropertyLabel("Height Fog Density"), Tooltip("The density of the height-based fog in the scene.")]
     public float _ES_HeightFogDensity = 1f;
+    [PropertyLabel("Height Fog Near"), Tooltip("The distance from the camera at which the height-based fog starts to appear.")]
     public float _ES_HeightFogFogNear = 10f;
+    [PropertyLabel("Height Fog Far"), Tooltip("The distance from the camera at which the height-based fog ends.")]
     public float _ES_HeightFogFogFar = 130f;
+    [PropertyLabel("Fog Character Near Factor"), Tooltip("The factor that determines how close the fog affects characters.")]
     public float _ES_FogCharacterNearFactor =  0.1f;
+    [PropertyLabel("Height Fog Adjustment"), Tooltip("The adjustment value for the height-based fog.")]
     public float _ES_HeightFogAddAjust = 0f;
+    [PropertyLabel("Disable Fog Transition"), Tooltip("If enabled, fog will not transition smoothly when changing settings, but will instead snap to the new settings immediately.")]
     public bool _ES_DisableFogTransition = false;
     
-    [Header("Effects")]
-    public Vector4 _ES_EffCustomLightPosition = Vector4.zero;
+    // [Header("Effects")]
+    [HideInInspector] public Vector4 _ES_EffCustomLightPosition = Vector4.zero;
 
-    [Header("Draw Extensions (Local Lights)")]
-    public Color _CharacterLocalMainLightColor1 = Color.white;
-    public Color _CharacterLocalMainLightColor2 = Color.white;
-    public Color _CharacterLocalMainLightDark = Color.black;
-    public float _DisableCharacterLocalLight = 0f;
+    // [Header("Draw Extensions (Local Lights)")]
+    [HideInInspector] public Color _CharacterLocalMainLightColor1 = Color.white;
+    [HideInInspector] public Color _CharacterLocalMainLightColor2 = Color.white;
+    [HideInInspector] public Color _CharacterLocalMainLightDark = Color.black;
+    [HideInInspector] public float _DisableCharacterLocalLight = 0f;
 
     private static HSRSceneController _instance;
     public static HSRSceneController instance {

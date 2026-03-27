@@ -167,7 +167,7 @@ MonoBehaviour:
     m_Value: 1
   ExpandGamut:
     m_OverrideState: 1
-    m_Value: 0.805
+    m_Value: 1
   ForceDisableToneMapping:
     m_OverrideState: 1
     m_Value: 0
@@ -203,10 +203,10 @@ MonoBehaviour:
     m_Value: 0.1
   ToneCurveGamma:
     m_OverrideState: 1
-    m_Value: 1.2
+    m_Value: 1
   ACES_A:
     m_OverrideState: 1
-    m_Value: 28.7
+    m_Value: 3.71
   ACES_B:
     m_OverrideState: 1
     m_Value: 0.107772

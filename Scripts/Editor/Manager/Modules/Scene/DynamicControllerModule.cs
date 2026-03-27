@@ -191,11 +191,20 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             var iterator = _controllerSerializedObject.GetIterator();
             bool enterChildren = true;
 
+            Type targetType = _controllerSerializedObject.targetObject != null
+                ? _controllerSerializedObject.targetObject.GetType()
+                : null;
+
             while (iterator.NextVisible(enterChildren))
             {
                 enterChildren = false;
 
                 if (ShouldSkipProperty(iterator))
+                {
+                    continue;
+                }
+
+                if (IsHideInInspectorField(targetType, iterator.name))
                 {
                     continue;
                 }
@@ -211,6 +220,28 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             }
 
             return grouped;
+        }
+
+        private static bool IsHideInInspectorField(Type targetType, string fieldName)
+        {
+            if (targetType == null || string.IsNullOrEmpty(fieldName))
+            {
+                return false;
+            }
+
+            Type current = targetType;
+            while (current != null && current != typeof(UnityEngine.Object))
+            {
+                var field = current.GetField(fieldName, BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic);
+                if (field != null)
+                {
+                    return field.IsDefined(typeof(HideInInspector), inherit: true);
+                }
+
+                current = current.BaseType;
+            }
+
+            return false;
         }
 
         protected bool DrawSectionFoldout(string title, bool defaultExpanded, Action drawer)

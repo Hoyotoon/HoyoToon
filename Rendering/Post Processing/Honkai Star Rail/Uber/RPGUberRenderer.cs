@@ -19,6 +19,12 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
                 return;
             }
 
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
+            {
+                return;
+            }
+
             renderer.EnqueuePass(_renderPass);
         }
 
@@ -86,7 +92,7 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
                 return _uberPassIndex;
             }
 
-            private bool TryApplyVolumeSettings()
+            private bool TryApplyVolumeSettings(Camera camera)
             {
                 if (_material == null)
                 {
@@ -97,19 +103,14 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
                 bool shouldUseUberControl = uberSettings != null
                     && uberSettings.UseUberControl.overrideState
                     && uberSettings.UseUberControl.value;
-                if (shouldUseUberControl && !uberSettings.EnableBloom.value)
-                {
-                    return false;
-                }
+                bool allowBloom = !shouldUseUberControl || uberSettings.EnableBloom.value;
 
                 RPGBloom bloomSettings = VolumeManager.instance.stack.GetComponent<RPGBloom>();
-                bool bloomActive = bloomSettings != null && bloomSettings.IsActive();
-                if (!shouldUseUberControl && !bloomActive)
-                {
-                    return false;
-                }
+                bool bloomActive = allowBloom && bloomSettings != null && bloomSettings.IsActive();
+                bool bloomTextureAvailable = bloomActive && RPGBloomRenderer.HasBloomTextureForCamera(camera);
 
-                _useBloomTexture = bloomActive;
+                _useBloomTexture = bloomTextureAvailable;
+                _material.SetTexture(_hsrBloomTexId, bloomTextureAvailable ? null : Texture2D.blackTexture);
 
                 RPGTonemapping tonemappingSettings = VolumeManager.instance.stack.GetComponent<RPGTonemapping>();
                 _useGeneratedTonemappingLut = tonemappingSettings != null
@@ -154,14 +155,14 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
                 _material.SetVector(_lut2DTexParamId, new Vector4(lutFactor.x, lutFactor.y, lutSlices, lutFlipY));
 
                 float bloomIntensity = 0f;
-                if (bloomActive)
+                if (bloomTextureAvailable)
                 {
                     _loggedMissingBloom = false;
                     bloomIntensity = bloomSettings.BloomIntensity.value;
                 }
-                else if (!_loggedMissingBloom)
+                else if (bloomActive && !_loggedMissingBloom)
                 {
-                    Debug.LogWarning($"{nameof(RPGUberRenderer)}: no active {nameof(RPGBloom)} found; Uber pass will write camera color with zero bloom contribution.");
+                    Debug.LogWarning($"{nameof(RPGUberRenderer)}: {nameof(RPGBloom)} is active but no bloom texture was produced this frame; Uber will continue with zero bloom contribution.");
                     _loggedMissingBloom = true;
                 }
 
@@ -171,7 +172,9 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
-                if (!TryApplyVolumeSettings())
+                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+
+                if (!TryApplyVolumeSettings(cameraData.camera))
                 {
                     return;
                 }

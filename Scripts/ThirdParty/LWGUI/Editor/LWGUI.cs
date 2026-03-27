@@ -56,6 +56,7 @@ namespace LWGUI
 			GUILayoutUtility.GetRect(0, 0); // Space(0)
 			GUI.enabled = enabled;
 			Helper.DrawSplitLine();
+			DrawMaterialIdFilterButtons(props);
 
 
 			//-----------------------------------------------------------------------------
@@ -146,6 +147,54 @@ namespace LWGUI
 			// LOGO
 			EditorGUILayout.Space();
 			Helper.DrawLogo();
+		}
+
+		private void DrawMaterialIdFilterButtons(MaterialProperty[] props)
+		{
+			if (metaDatas == null || props == null)
+				return;
+
+			int idCount = 0;
+			foreach (var prop in props)
+			{
+				var propStaticData = metaDatas.GetPropStaticData(prop);
+				if (propStaticData != null && propStaticData.isMaterialIdCountController)
+					idCount = Mathf.Max(idCount, propStaticData.materialIdButtonCount);
+			}
+
+			var inspectorData = metaDatas.perInspectorData;
+			if (idCount <= 0)
+			{
+				inspectorData.materialIdFilterCount = 0;
+				inspectorData.materialIdFilterSelected = -1;
+				return;
+			}
+
+			if (inspectorData.materialIdFilterCount != idCount)
+			{
+				inspectorData.materialIdFilterCount = idCount;
+				inspectorData.materialIdFilterSelected = -1;
+			}
+
+			var rect = EditorGUILayout.GetControlRect();
+			rect.xMin = 2;
+
+			int buttonCount = idCount + 1;
+			float spacing = 2f;
+			float buttonWidth = (rect.width - spacing * (buttonCount - 1)) / buttonCount;
+
+			for (int i = -1; i < idCount; i++)
+			{
+				int buttonIndex = i + 1;
+				var buttonRect = new Rect(rect.x + buttonIndex * (buttonWidth + spacing), rect.y, buttonWidth, rect.height);
+				bool isActive = inspectorData.materialIdFilterSelected == i;
+				string label = i < 0 ? "All" : "ID " + i;
+
+				if (GUI.Toggle(buttonRect, isActive, label, EditorStyles.miniButton) && !isActive)
+					inspectorData.materialIdFilterSelected = i;
+			}
+
+			EditorGUILayout.Space(2f);
 		}
 
 		private void DrawAdvancedHeader(PropertyStaticData propStaticData, MaterialProperty prop)

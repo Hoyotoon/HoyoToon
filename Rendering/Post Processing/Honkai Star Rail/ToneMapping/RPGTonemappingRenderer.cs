@@ -32,6 +32,12 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.ToneMapping
                 return;
             }
 
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
+            {
+                return;
+            }
+
             GraphicsFormat cameraFormat = renderingData.cameraData.cameraTargetDescriptor.graphicsFormat;
             _tonemappingPass.SetLutFormat(ResolveTonemappingGraphicsFormat(_tonemappingTextureFormat, cameraFormat));
 

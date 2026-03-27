@@ -62,6 +62,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
 
             float4 frag(v2f i) : SV_Target
             {
+                float alpha = _MainTex.SampleLevel(sampler_MainTex, i.uv, 0).a;
                 float2 uv_expanded = i.uv * 2 - 1;
                 float dist = dot(uv_expanded, uv_expanded);
                 float2 thirds = -float2(1.0/3.0, 2.0/3.0);
@@ -70,6 +71,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                 float4 main_b = _MainTex.SampleLevel(sampler_MainTex, offset.zw, 0) * _ChromaFilterB;
                 float4 main_c = _MainTex.SampleLevel(sampler_MainTex, i.uv, 0) * _ChromaFilterC;
                 float4 color = (main_a + main_b + main_c) / (_ChromaFilterA + _ChromaFilterB + _ChromaFilterC);
+                color.a = alpha;
                 return color;
 			}
             
@@ -131,6 +133,8 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                 float dist = dot(uv_expanded, uv_expanded);
                 float2 thirds = -float2(1.0/3.0, 2.0/3.0);
                 float4 offset = ((uv_expanded.xyxy * dist.xxxx) * _ChromaticAberration_Amount.xxxx);
+
+                float alpha = _MainTex.SampleLevel(sampler_MainTex, i.uv, 0).a;
                 
 
                 // Match the original shader: sample at most 10 taps, stopping when tap index reaches sampleCount.
@@ -150,8 +154,8 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                 }
 
                 float3 blurredColor = accumulatedColor / sampleCount;
-                return float4(blurredColor / (_ChromaFilterA + _ChromaFilterB + _ChromaFilterC), 1.0);
-                
+                float4 finalColor = float4(blurredColor / (_ChromaFilterA + _ChromaFilterB + _ChromaFilterC), alpha);
+                return finalColor;
 			}
             
 
@@ -202,6 +206,8 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                 float2 sampleUV = i.uv;
                 float3 accumulatedColor = float3(0.0, 0.0, 0.0);
 
+                float alpha = _MainTex.SampleLevel(sampler_MainTex, i.uv, 0).a;
+
                 // Match the original shader: sample at most 10 taps, stopping when tap index reaches sampleCount.
                 [unroll]
                 for (int tap = 0; tap < 10; tap++)
@@ -216,7 +222,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                 }
 
                 float3 blurredColor = accumulatedColor / sampleCount;
-                return float4(blurredColor, 1.0);
+                return float4(blurredColor, alpha);
 			}
             ENDHLSL
         }
@@ -259,6 +265,8 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
             {   
                 float4 accumulatedColor = float4(0.0, 0.0, 0.0, 0.0);
                 float count = 0;
+                float alpha = _MainTex.SampleLevel(sampler_MainTex, i.uv, 0).a;
+
                 // [unroll]
                 for(int tap = 0; tap < _DirectionalBlurParams.z; tap++)
                 {
@@ -268,7 +276,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                     count += 1;
                 }
                 accumulatedColor *= (1 /_DirectionalBlurParams.z);
-                return accumulatedColor;
+                return float4(accumulatedColor.rgb, alpha);
 			}
             ENDHLSL
         }
@@ -412,6 +420,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
             float4 frag(v2f i) : SV_Target
             {   
                 float4 result = float4(0, 0, 0, 0); 
+                float alpha = _BlitTexture.Sample(sampler_BlitTexture, i.uv).w;
 
                 for(int k = 0; k < _GaussTaps; k++) 
                 {
@@ -474,6 +483,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                     result += _BlitTexture.Sample(sampler_BlitTexture, tmp) * _GaussWeights[k];
                 }
 
+                float alpha = _BlitTexture.Sample(sampler_BlitTexture, uv).w;
                 return result * _GaussianLayerIntensity;
 			}
             ENDHLSL
@@ -524,6 +534,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
                 tmp += _BlitTexture.Sample(sampler_BlitTexture, tmp_uv);
                 tmp_uv = i.uv.xy * _BloomAtlasUVTrans[3].xy + _BloomAtlasUVTrans[3].zw;
                 tmp += _BlitTexture.Sample(sampler_BlitTexture  , tmp_uv);
+                // float alpha = _BlitTexture.Sample(sampler_BlitTexture, i.uv).w;
                 return tmp;
 			}
             ENDHLSL
@@ -573,7 +584,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
             {
                 float4 color = _MainTex.Sample(sampler_MainTex, i.uv);
                 float4 bloom = _HSRBloomTexture.Sample(sampler_HSRBloomTexture, i.uv);
-                color.xyz = bloom * _BloomIntensity + color.xyz;
+                color.xyz = bloom * float4(_BloomIntensity.xxx, 0.025) + color;
 
                 float3 lut_uvw = saturate(log2(color.zxy * 5.55f + 0.0478f) * 0.073f + 0.386f);
                 
@@ -596,6 +607,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess"
 
                 float3 lut_mixed = saturate(lerp(lut_a, lut_b, lut_blend));
                 color.xyz = lut_mixed;
+                color.w = color.w;
 
                 return color;
 			}

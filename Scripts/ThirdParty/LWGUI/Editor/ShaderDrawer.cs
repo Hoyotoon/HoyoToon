@@ -39,6 +39,10 @@ namespace LWGUI
 	{
 		// Image
 		public Texture2D image;
+		public bool smallTextureFoldoutInitialized = false;
+		public bool isMaterialIdCountController = false;
+		public int materialIdButtonCount = 0;
+		public HashSet<int> materialIdFilters = new();
 		
 		// Button
 		public List<string> buttonDisplayNames = new();
@@ -394,6 +398,88 @@ namespace LWGUI
 				PresetDrawer.ApplyPresetWithoutPropertyChanges(_presetFileName, prop);
 			}
 		}
+	}
+
+	/// <summary>
+	/// Similar to SubToggle(), but only controls shader keyword state.
+	///
+	/// group: parent group name (Main or SubGroup). Can use simple names like 'GroupA' or full paths like 'MainGroup_GroupA' (Default: none)
+	/// keyword: keyword used for toggle, "_" = ignore, none or "__" = Property Name + "_ON", always Upper (Default: none)
+	/// Target Property Type: Float
+	/// </summary>
+	public class SubKeywordDrawer : SubDrawer
+	{
+		private string _keyWord = String.Empty;
+
+		public SubKeywordDrawer() { }
+
+		public SubKeywordDrawer(string group) : this(group, String.Empty) { }
+
+		public SubKeywordDrawer(string group, string keyWord)
+		{
+			this.group = group;
+			this._keyWord = keyWord;
+		}
+
+		protected override bool IsMatchPropType(MaterialProperty property)
+		{
+			return property.GetPropertyType() is ShaderPropertyType.Float;
+		}
+
+		private static bool GetKeywordToggleValue(Object[] targets, string keyword, out bool hasMixedValue)
+		{
+			hasMixedValue = false;
+			bool hasState = false;
+			bool toggleValue = false;
+
+			foreach (var target in targets)
+			{
+				if (target is not Material material)
+					continue;
+
+				var isEnabled = material.IsKeywordEnabled(keyword);
+				if (!hasState)
+				{
+					hasState = true;
+					toggleValue = isEnabled;
+				}
+				else if (toggleValue != isEnabled)
+				{
+					hasMixedValue = true;
+					break;
+				}
+			}
+
+			return toggleValue;
+		}
+
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			var keyword = Helper.GetKeywordName(_keyWord, prop.name);
+			var value = GetKeywordToggleValue(editor.targets, keyword, out var hasMixedValue);
+
+			EditorGUI.BeginChangeCheck();
+			EditorGUI.showMixedValue = hasMixedValue;
+			var newValue = EditorGUI.Toggle(position, label, value);
+			if (Helper.EndChangeCheck(metaDatas, prop))
+			{
+				Helper.SetShaderKeywordEnabled(editor.targets, keyword, newValue);
+			}
+			EditorGUI.showMixedValue = false;
+		}
+	}
+
+	/// <summary>
+	/// Similar to SubKeyword(), but can be used outside groups.
+	///
+	/// keyword: keyword used for toggle, "_" = ignore, none or "__" = Property Name + "_ON", always Upper (Default: none)
+	/// Target Property Type: Float
+	/// </summary>
+	public class KeywordDrawer : SubKeywordDrawer
+	{
+		public KeywordDrawer() : this(String.Empty) { }
+
+		public KeywordDrawer(string keyWord) : base("_", keyWord) { }
 	}
 
 	/// <summary>
@@ -1279,26 +1365,191 @@ namespace LWGUI
 	/// 
 	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
 	/// extraPropName: extra property name (Default: none)
+	/// mode: "small" / "compact" to use the compact thumbnail style, "ramp" to use a long ramp preview style (Default: regular)
+	/// scaleOffsetOption: "on"/"off" to show or hide the Scale/Offset row in small mode,
+	/// 	or show/hide the mini thumbnail row in ramp mode (Default: on)
+	/// foldoutDefaultOption: "expanded"/"collapsed" to control the default foldout state in small mode (Default: expanded)
 	/// Target Property Type: Texture
 	/// Extra Property Type: Color, Vector
 	/// Target Property Type: Texture2D
 	/// </summary>
 	public class TexDrawer : SubDrawer
 	{
+		private const float _foldoutWidth = 12f;
+		private const float _rowSpacing = 2f;
+		private const float _scaleOffsetVerticalOffset = 20f;
+		private const float _scaleOffsetIndent = 30f;
+		private const float _rampPreviewHeight = 26f;
+
 		private string        _extraPropName = String.Empty;
 		private ChannelDrawer _channelDrawer = new ChannelDrawer();
+		private bool          _useSmallTextureLayout;
+		private bool          _useRampTextureLayout;
+		private bool          _showScaleOffset = true;
+		private bool          _showRampMiniThumbnail = true;
+		private bool          _defaultSmallTextureExpanded = true;
 
 		public TexDrawer() { }
 
-		public TexDrawer(string group) : this(group, String.Empty) { }
+		public TexDrawer(string group)
+		{
+			if (IsSmallTextureMode(group))
+			{
+				this.group = "_";
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = true;
+				this._useRampTextureLayout = false;
+				this._showScaleOffset = true;
+			}
+			else if (IsRampTextureMode(group))
+			{
+				this.group = "_";
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = false;
+				this._useRampTextureLayout = true;
+				this._showScaleOffset = false;
+				this._showRampMiniThumbnail = true;
+			}
+			else
+			{
+				this.group = group;
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = false;
+				this._useRampTextureLayout = false;
+				this._showScaleOffset = true;
+			}
+		}
 
 		public TexDrawer(string group, string extraPropName)
 		{
 			this.group = group;
-			this._extraPropName = extraPropName;
+			if (IsSmallTextureMode(extraPropName))
+			{
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = true;
+				this._useRampTextureLayout = false;
+			}
+			else if (IsRampTextureMode(extraPropName))
+			{
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = false;
+				this._useRampTextureLayout = true;
+				this._showScaleOffset = false;
+				this._showRampMiniThumbnail = true;
+			}
+			else
+			{
+				this._extraPropName = extraPropName;
+				this._useSmallTextureLayout = false;
+				this._useRampTextureLayout = false;
+			}
+			if (!this._useRampTextureLayout)
+				this._showScaleOffset = true;
 		}
 
-		protected override float GetVisibleHeight(MaterialProperty prop) { return EditorGUIUtility.singleLineHeight; }
+		public TexDrawer(string group, string extraPropName, string mode)
+		{
+			if (IsSmallTextureMode(extraPropName))
+			{
+				this.group = group;
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = true;
+				this._useRampTextureLayout = false;
+				this._showScaleOffset = ParseToggleOption(mode, true);
+				this._defaultSmallTextureExpanded = ParseFoldoutDefaultOption(mode, true);
+			}
+			else if (IsRampTextureMode(extraPropName))
+			{
+				this.group = group;
+				this._extraPropName = String.Empty;
+				this._useSmallTextureLayout = false;
+				this._useRampTextureLayout = true;
+				this._showScaleOffset = false;
+				this._showRampMiniThumbnail = ParseToggleOption(mode, true);
+				this._defaultSmallTextureExpanded = true;
+			}
+			else
+			{
+				this.group = group;
+				this._extraPropName = extraPropName;
+				this._useSmallTextureLayout = IsSmallTextureMode(mode);
+				this._useRampTextureLayout = IsRampTextureMode(mode);
+				this._showScaleOffset = true;
+				this._showRampMiniThumbnail = true;
+				this._defaultSmallTextureExpanded = true;
+			}
+		}
+
+		public TexDrawer(string group, string extraPropName, string mode, string scaleOffsetOption)
+		{
+			this.group = group;
+			this._extraPropName = extraPropName;
+			this._useSmallTextureLayout = IsSmallTextureMode(mode);
+			this._useRampTextureLayout = IsRampTextureMode(mode);
+
+			if (_useRampTextureLayout)
+			{
+				this._showScaleOffset = false;
+				this._showRampMiniThumbnail = ParseToggleOption(scaleOffsetOption, true);
+				this._defaultSmallTextureExpanded = true;
+				return;
+			}
+
+			if (_useSmallTextureLayout && IsFoldoutOption(scaleOffsetOption))
+			{
+				// Backward-compatible shorthand: [Tex(group, extraProp, small, collapsed)]
+				this._showScaleOffset = true;
+				this._showRampMiniThumbnail = true;
+				this._defaultSmallTextureExpanded = ParseFoldoutDefaultOption(scaleOffsetOption, true);
+			}
+			else
+			{
+				this._showScaleOffset = ParseToggleOption(scaleOffsetOption, true);
+				this._showRampMiniThumbnail = true;
+				this._defaultSmallTextureExpanded = true;
+			}
+		}
+
+		public TexDrawer(string group, string extraPropName, string mode, string scaleOffsetOption, string foldoutDefaultOption)
+		{
+			this.group = group;
+			this._extraPropName = extraPropName;
+			this._useSmallTextureLayout = IsSmallTextureMode(mode);
+			this._useRampTextureLayout = IsRampTextureMode(mode);
+			this._showScaleOffset = _useRampTextureLayout ? false : ParseToggleOption(scaleOffsetOption, true);
+			this._showRampMiniThumbnail = _useRampTextureLayout ? ParseToggleOption(scaleOffsetOption, true) : true;
+			this._defaultSmallTextureExpanded = ParseFoldoutDefaultOption(foldoutDefaultOption, true);
+		}
+
+		protected override float GetVisibleHeight(MaterialProperty prop)
+		{
+			if (_useRampTextureLayout)
+				return EditorGUIUtility.singleLineHeight + _rowSpacing + _rampPreviewHeight;
+
+			if (!_useSmallTextureLayout || !CanShowScaleOffset(prop))
+				return EditorGUIUtility.singleLineHeight;
+
+			return EditorGUIUtility.singleLineHeight * 2f + _rowSpacing + _scaleOffsetVerticalOffset;
+		}
+
+		public override float GetPropertyHeight(MaterialProperty prop, string label, MaterialEditor editor)
+		{
+			if (_useRampTextureLayout)
+				return EditorGUIUtility.singleLineHeight + _rowSpacing + _rampPreviewHeight;
+
+			if (!_useSmallTextureLayout || !CanShowScaleOffset(prop))
+				return EditorGUIUtility.singleLineHeight;
+
+			bool isExpanded = true;
+			var staticData = Helper.GetLWGUIMetadatas(editor)?.GetPropStaticData(prop);
+			if (staticData != null)
+				isExpanded = staticData.isExpanding;
+
+			if (!isExpanded)
+				return EditorGUIUtility.singleLineHeight;
+
+			return EditorGUIUtility.singleLineHeight + _rowSpacing + _scaleOffsetVerticalOffset + EditorGUIUtility.singleLineHeight;
+		}
 
 		protected override bool IsMatchPropType(MaterialProperty property) { return property.GetPropertyType() == ShaderPropertyType.Texture; }
 
@@ -1306,6 +1557,11 @@ namespace LWGUI
 		{
 			base.BuildStaticMetaData(inShader, inProp, inProps, inoutPropertyStaticData);
 			inoutPropertyStaticData.AddExtraProperty(_extraPropName);
+			if (_useSmallTextureLayout && _showScaleOffset)
+			{
+				inoutPropertyStaticData.isExpanding = _defaultSmallTextureExpanded;
+				inoutPropertyStaticData.smallTextureFoldoutInitialized = true;
+			}
 		}
 
 		public override void GetDefaultValueDescription(Shader inShader, MaterialProperty inProp, MaterialProperty inDefaultProp, PerShaderData inPerShaderData, PerMaterialData inoutPerMaterialData)
@@ -1326,9 +1582,108 @@ namespace LWGUI
 
 		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
 		{
-			EditorGUI.showMixedValue = prop.hasMixedValue;
-			var rect = position;
+			if (_useRampTextureLayout)
+			{
+				DrawRampTexture(position, prop, label, editor);
+				return;
+			}
 
+			if (_useSmallTextureLayout)
+			{
+				DrawSmallTexture(position, prop, label, editor);
+				return;
+			}
+
+			DrawRegularTexture(position, prop, label, editor);
+		}
+
+		private static bool IsSmallTextureMode(string mode)
+		{
+			if (string.IsNullOrEmpty(mode))
+				return false;
+
+			var normalized = mode.Replace(" ", string.Empty)
+				.Replace("_", string.Empty)
+				.Replace("-", string.Empty)
+				.ToLowerInvariant();
+
+			return normalized is "small" or "compact" or "mini" or "thumbnail" or "smalltexture";
+		}
+
+		private static bool IsRampTextureMode(string mode)
+		{
+			if (string.IsNullOrEmpty(mode))
+				return false;
+
+			var normalized = mode.Replace(" ", string.Empty)
+				.Replace("_", string.Empty)
+				.Replace("-", string.Empty)
+				.ToLowerInvariant();
+
+			return normalized is "ramp" or "ramptexture" or "gradient" or "rampmap";
+		}
+
+		private static bool ParseToggleOption(string option, bool defaultValue)
+		{
+			if (string.IsNullOrEmpty(option))
+				return defaultValue;
+
+			var normalized = option.Replace(" ", string.Empty)
+				.Replace("_", string.Empty)
+				.Replace("-", string.Empty)
+				.ToLowerInvariant();
+
+			return normalized switch
+			{
+				"1" or "true" or "on" or "yes" or "show" or "enable" or "enabled" => true,
+				"0" or "false" or "off" or "no" or "hide" or "disable" or "disabled" => false,
+				_ => defaultValue,
+			};
+		}
+
+		private static bool ParseFoldoutDefaultOption(string option, bool defaultValue)
+		{
+			if (string.IsNullOrEmpty(option))
+				return defaultValue;
+
+			var normalized = option.Replace(" ", string.Empty)
+				.Replace("_", string.Empty)
+				.Replace("-", string.Empty)
+				.ToLowerInvariant();
+
+			return normalized switch
+			{
+				"1" or "true" or "on" or "yes" or "show" or "open" or "opened" or "expand" or "expanded" => true,
+				"0" or "false" or "off" or "no" or "hide" or "close" or "closed" or "collapse" or "collapsed" => false,
+				_ => defaultValue,
+			};
+		}
+
+		private static bool IsFoldoutOption(string option)
+		{
+			if (string.IsNullOrEmpty(option))
+				return false;
+
+			var normalized = option.Replace(" ", string.Empty)
+				.Replace("_", string.Empty)
+				.Replace("-", string.Empty)
+				.ToLowerInvariant();
+
+			return normalized is "open" or "opened" or "expand" or "expanded" or "close" or "closed" or "collapse" or "collapsed";
+		}
+
+		private static bool HasScaleOffset(MaterialProperty prop)
+		{
+			return (prop.GetPropertyFlags() & ShaderPropertyFlags.NoScaleOffset) == 0;
+		}
+
+		private bool CanShowScaleOffset(MaterialProperty prop)
+		{
+			return _showScaleOffset && HasScaleOffset(prop);
+		}
+
+		private void DrawExtraProperty(Rect rect, MaterialEditor editor)
+		{
 			MaterialProperty extraProp = metaDatas.GetProperty(_extraPropName);
 			if (extraProp != null
 			 // && (
@@ -1350,11 +1705,160 @@ namespace LWGUI
 
 				EditorGUI.indentLevel = i;
 			}
+		}
 
-			editor.TexturePropertyMiniThumbnail(rect, prop, label.text, label.tooltip);
-
+		private void DrawRegularTexture(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+			DrawExtraProperty(position, editor);
+			editor.TexturePropertyMiniThumbnail(position, prop, label.text, label.tooltip);
 			EditorGUI.showMixedValue = false;
 		}
+
+		private void DrawSmallTexture(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			var firstRowRect = position;
+			firstRowRect.height = EditorGUIUtility.singleLineHeight;
+
+			var hasScaleOffset = CanShowScaleOffset(prop);
+			var staticData = metaDatas.GetPropStaticData(prop);
+			if (hasScaleOffset && staticData != null && !staticData.smallTextureFoldoutInitialized)
+			{
+				staticData.smallTextureFoldoutInitialized = true;
+				staticData.isExpanding = prop.hasMixedValue || _defaultSmallTextureExpanded;
+			}
+
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+
+			var drawRowRect = firstRowRect;
+			if (hasScaleOffset && staticData != null)
+			{
+				var foldoutRect = new Rect(firstRowRect.x + 1f, firstRowRect.y + 1f, _foldoutWidth, firstRowRect.height - 2f);
+				staticData.isExpanding = EditorGUI.Foldout(foldoutRect, staticData.isExpanding, GUIContent.none, false);
+				drawRowRect.xMin += _foldoutWidth;
+			}
+
+			DrawExtraProperty(drawRowRect, editor);
+			editor.TexturePropertyMiniThumbnail(drawRowRect, prop, label.text, label.tooltip);
+			EditorGUI.showMixedValue = false;
+
+			if (!hasScaleOffset || staticData == null || !staticData.isExpanding)
+				return;
+
+			var secondRowRect = drawRowRect;
+			secondRowRect.y = firstRowRect.yMax + _rowSpacing + _scaleOffsetVerticalOffset;
+			secondRowRect.height = EditorGUIUtility.singleLineHeight;
+			DrawSmallScaleOffset(secondRowRect, prop, editor);
+		}
+
+		private void DrawRampTexture(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			var firstRowRect = position;
+			firstRowRect.height = EditorGUIUtility.singleLineHeight;
+			var indentedRowRect = EditorGUI.IndentedRect(firstRowRect);
+
+			if (_showRampMiniThumbnail)
+			{
+				EditorGUI.showMixedValue = prop.hasMixedValue;
+				DrawExtraProperty(firstRowRect, editor);
+				editor.TexturePropertyMiniThumbnail(firstRowRect, prop, label.text, label.tooltip);
+				EditorGUI.showMixedValue = false;
+			}
+			else
+			{
+				var selectorRect = indentedRowRect;
+				selectorRect.xMin += 18f;
+
+				var objectRect = MaterialEditor.GetRightAlignedFieldRect(selectorRect);
+				objectRect.height = selectorRect.height;
+
+				var labelRect = selectorRect;
+				labelRect.xMax = objectRect.xMin - 2f;
+				EditorGUI.LabelField(labelRect, label);
+
+				EditorGUI.showMixedValue = prop.hasMixedValue;
+				EditorGUI.BeginChangeCheck();
+				var newTexture = EditorGUI.ObjectField(objectRect, prop.textureValue, typeof(Texture), false) as Texture;
+				if (EditorGUI.EndChangeCheck())
+					prop.textureValue = newTexture;
+				EditorGUI.showMixedValue = false;
+
+				DrawExtraProperty(selectorRect, editor);
+			}
+
+			var previewRect = indentedRowRect;
+			previewRect.y = firstRowRect.yMax + _rowSpacing;
+			previewRect.height = _rampPreviewHeight;
+
+			if (prop.textureValue == null)
+			{
+				EditorGUI.DrawRect(previewRect, new Color(0f, 0f, 0f, 0.15f));
+				return;
+			}
+
+			if (prop.textureValue is Texture2D tex2D)
+			{
+				var previousFilterMode = tex2D.filterMode;
+				if (previousFilterMode != FilterMode.Point)
+					tex2D.filterMode = FilterMode.Point;
+
+				EditorGUI.DrawPreviewTexture(previewRect, tex2D, null, ScaleMode.StretchToFill);
+
+				if (previousFilterMode != FilterMode.Point)
+					tex2D.filterMode = previousFilterMode;
+			}
+			else
+			{
+				EditorGUI.DrawPreviewTexture(previewRect, prop.textureValue, null, ScaleMode.StretchToFill);
+			}
+		}
+
+		private void DrawSmallScaleOffset(Rect rowRect, MaterialProperty prop, MaterialEditor editor)
+		{
+			var fieldRect = rowRect;
+			fieldRect.xMin += _scaleOffsetIndent;
+
+			editor.TextureScaleOffsetProperty(fieldRect, prop);
+		}
+	}
+
+	/// <summary>
+	/// Draw a compact Texture property with mini thumbnail and compact Scale/Offset fields.
+	/// Backward-compatible wrapper of Tex(mode: small, scaleOffsetOption: on).
+	///
+	/// extraPropName: extra property name (Default: none)
+	/// foldoutDefaultOption: "expanded"/"collapsed" to control the default foldout state (Default: expanded)
+	/// Target Property Type: Texture
+	/// Extra Property Type: Color, Vector
+	/// </summary>
+	public class SmallTextureDrawer : TexDrawer
+	{
+		public SmallTextureDrawer() : this(String.Empty, "expanded") { }
+
+		public SmallTextureDrawer(string extraPropName) : this(extraPropName, "expanded") { }
+
+		public SmallTextureDrawer(string extraPropName, string foldoutDefaultOption) : this(String.Empty, extraPropName, foldoutDefaultOption) { }
+
+		protected SmallTextureDrawer(string group, string extraPropName, string foldoutDefaultOption)
+			: base(group, extraPropName, "small", "on", foldoutDefaultOption) { }
+	}
+
+	/// <summary>
+	/// Draw a compact Texture property with mini thumbnail and compact Scale/Offset fields in a specific group.
+	///
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties
+	/// extraPropName: extra property name (Default: none)
+	/// foldoutDefaultOption: "expanded"/"collapsed" to control the default foldout state (Default: expanded)
+	/// Target Property Type: Texture
+	/// Extra Property Type: Color, Vector
+	/// </summary>
+	public class SubSmallTextureDrawer : SmallTextureDrawer
+	{
+		public SubSmallTextureDrawer(string group) : this(group, String.Empty, "expanded") { }
+
+		public SubSmallTextureDrawer(string group, string extraPropName) : this(group, extraPropName, "expanded") { }
+
+		public SubSmallTextureDrawer(string group, string extraPropName, string foldoutDefaultOption) : base(group, extraPropName, foldoutDefaultOption) { }
 	}
 
 	/// <summary>
@@ -2531,6 +3035,106 @@ namespace LWGUI
 	#endregion
 
 	#region Condition Display
+	/// <summary>
+	/// Create a top-of-inspector Material ID filter toolbar.
+	///
+	/// numberOfIDs: number of ID buttons. IDs are 0..numberOfIDs-1, plus an automatic "All" button.
+	/// Target Property Type: Any
+	/// </summary>
+	public class MaterialIDCountDecorator : SubDrawer
+	{
+		private readonly int _numberOfIds;
+
+		public MaterialIDCountDecorator(float numberOfIds)
+		{
+			_numberOfIds = Mathf.Max(0, Mathf.RoundToInt(numberOfIds));
+		}
+
+		protected override float GetVisibleHeight(MaterialProperty prop) { return 0; }
+
+		public override void BuildStaticMetaData(Shader inShader, MaterialProperty inProp, MaterialProperty[] inProps, PropertyStaticData inoutPropertyStaticData)
+		{
+			inoutPropertyStaticData.isHidden = true;
+			inoutPropertyStaticData.isMaterialIdCountController = true;
+			inoutPropertyStaticData.materialIdButtonCount = _numberOfIds;
+		}
+
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor) { }
+	}
+
+	/// <summary>
+	/// Show this property only when one of the selected Material IDs is active.
+	///
+	/// id(s): one or more material IDs (0-based). Empty MaterialID() means no extra filtering.
+	/// Target Property Type: Any
+	/// </summary>
+	public class MaterialIDDecorator : SubDrawer
+	{
+		private readonly HashSet<int> _ids = new();
+
+		public MaterialIDDecorator() { }
+
+		public MaterialIDDecorator(float id0)
+		{
+			AddId(id0);
+		}
+
+		public MaterialIDDecorator(float id0, float id1)
+		{
+			AddId(id0);
+			AddId(id1);
+		}
+
+		public MaterialIDDecorator(float id0, float id1, float id2)
+		{
+			AddId(id0);
+			AddId(id1);
+			AddId(id2);
+		}
+
+		public MaterialIDDecorator(float id0, float id1, float id2, float id3)
+		{
+			AddId(id0);
+			AddId(id1);
+			AddId(id2);
+			AddId(id3);
+		}
+
+		public MaterialIDDecorator(float id0, float id1, float id2, float id3, float id4)
+		{
+			AddId(id0);
+			AddId(id1);
+			AddId(id2);
+			AddId(id3);
+			AddId(id4);
+		}
+
+		public MaterialIDDecorator(float id0, float id1, float id2, float id3, float id4, float id5)
+		{
+			AddId(id0);
+			AddId(id1);
+			AddId(id2);
+			AddId(id3);
+			AddId(id4);
+			AddId(id5);
+		}
+
+		private void AddId(float id)
+		{
+			_ids.Add(Mathf.Max(0, Mathf.RoundToInt(id)));
+		}
+
+		protected override float GetVisibleHeight(MaterialProperty prop) { return 0; }
+
+		public override void BuildStaticMetaData(Shader inShader, MaterialProperty inProp, MaterialProperty[] inProps, PropertyStaticData inoutPropertyStaticData)
+		{
+			foreach (var id in _ids)
+				inoutPropertyStaticData.materialIdFilters.Add(id);
+		}
+
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor) { }
+	}
+
 	/// <summary>
 	/// Similar to HideInInspector(), the difference is that Hidden() can be unhidden through the Display Mode button.
 	/// </summary>

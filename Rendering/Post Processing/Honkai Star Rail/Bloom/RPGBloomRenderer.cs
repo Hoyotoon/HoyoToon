@@ -12,6 +12,31 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
 {
     public class RPGBloomRenderer : ScriptableRendererFeature
     {
+        public static int LastBloomTextureFrame { get; private set; } = -1;
+        public static int LastBloomTextureCameraId { get; private set; } = -1;
+
+        public static bool HasBloomTextureForCamera(Camera camera)
+        {
+            if (camera == null)
+            {
+                return false;
+            }
+
+            return LastBloomTextureFrame == Time.frameCount && LastBloomTextureCameraId == camera.GetInstanceID();
+        }
+
+        private static void MarkBloomTextureUnavailable(int cameraId)
+        {
+            LastBloomTextureFrame = -1;
+            LastBloomTextureCameraId = cameraId;
+        }
+
+        private static void MarkBloomTextureAvailable(int cameraId)
+        {
+            LastBloomTextureFrame = Time.frameCount;
+            LastBloomTextureCameraId = cameraId;
+        }
+
         private enum BloomStageTextureFormat
         {
             CameraTarget,
@@ -28,6 +53,12 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (_renderPass == null)
+            {
+                return;
+            }
+
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
             {
                 return;
             }
@@ -55,17 +86,23 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
             {
                 BloomStageTextureFormat.CameraTarget => cameraFormat,
                 BloomStageTextureFormat.R16G16B16A16_SFloat => GraphicsFormat.R16G16B16A16_SFloat,
-                BloomStageTextureFormat.B10G11R11_UFloatPack32 => GraphicsFormat.B10G11R11_UFloatPack32,
+                // B10G11R11 has no alpha channel; remap to alpha-capable HDR format.
+                BloomStageTextureFormat.B10G11R11_UFloatPack32 => GraphicsFormat.R16G16B16A16_SFloat,
                 BloomStageTextureFormat.R8G8B8A8_UNorm => GraphicsFormat.R8G8B8A8_UNorm,
                 _ => GraphicsFormat.R16G16B16A16_SFloat,
             };
+
+            if (!GraphicsFormatUtility.HasAlphaChannel(preferred))
+            {
+                preferred = GraphicsFormat.R16G16B16A16_SFloat;
+            }
 
             if (SystemInfo.IsFormatSupported(preferred, GraphicsFormatUsage.Render))
             {
                 return preferred;
             }
 
-            if (SystemInfo.IsFormatSupported(cameraFormat, GraphicsFormatUsage.Render))
+            if (GraphicsFormatUtility.HasAlphaChannel(cameraFormat) && SystemInfo.IsFormatSupported(cameraFormat, GraphicsFormatUsage.Render))
             {
                 return cameraFormat;
             }
@@ -75,9 +112,19 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
                 return GraphicsFormat.R16G16B16A16_SFloat;
             }
 
-            if (SystemInfo.IsFormatSupported(GraphicsFormat.B10G11R11_UFloatPack32, GraphicsFormatUsage.Render))
+            if (SystemInfo.IsFormatSupported(GraphicsFormat.R8G8B8A8_UNorm, GraphicsFormatUsage.Render))
             {
-                return GraphicsFormat.B10G11R11_UFloatPack32;
+                return GraphicsFormat.R8G8B8A8_UNorm;
+            }
+
+            if (SystemInfo.IsFormatSupported(GraphicsFormat.R8G8B8A8_SRGB, GraphicsFormatUsage.Render))
+            {
+                return GraphicsFormat.R8G8B8A8_SRGB;
+            }
+
+            if (SystemInfo.IsFormatSupported(cameraFormat, GraphicsFormatUsage.Render))
+            {
+                return cameraFormat;
             }
 
             return GraphicsFormat.R8G8B8A8_UNorm;
@@ -580,8 +627,14 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
+                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+                Camera camera = cameraData.camera;
+                int cameraId = camera != null ? camera.GetInstanceID() : -1;
+
                 if (!TryApplyVolumeSettings())
                 {
+                    MarkBloomTextureUnavailable(cameraId);
+                    Shader.SetGlobalTexture(_hsrBloomTexId, Texture2D.blackTexture);
                     return;
                 }
 
@@ -593,6 +646,8 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
 
                 if (prefilterPassIndex < 0 || downsamplePassIndex < 0 || gaussianPassIndex < 0 || atlasCombinePassIndex < 0)
                 {
+                    MarkBloomTextureUnavailable(cameraId);
+                    Shader.SetGlobalTexture(_hsrBloomTexId, Texture2D.blackTexture);
                     return;
                 }
 
@@ -605,11 +660,12 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
 
                 if (!source.IsValid())
                 {
+                    MarkBloomTextureUnavailable(cameraId);
+                    Shader.SetGlobalTexture(_hsrBloomTexId, Texture2D.blackTexture);
                     return;
                 }
 
                 TextureDesc sourceDesc = source.GetDescriptor(renderGraph);
-                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
 
                 RenderTextureDescriptor bloomStageDesc = cameraData.cameraTargetDescriptor;
                 bloomStageDesc.msaaSamples = 1;
@@ -732,6 +788,8 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
 
                     builder.SetRenderFunc(static (BloomAtlasPassData data, UnsafeGraphContext context) => ExecuteBloomAtlasPass(data, context));
                 }
+
+                MarkBloomTextureAvailable(cameraId);
             }
 
         }

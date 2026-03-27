@@ -12,6 +12,8 @@ namespace LWGUI
 	public class PerInspectorData
 	{
 		public MaterialEditor materialEditor = null;
+		public int materialIdFilterCount = 0;
+		public int materialIdFilterSelected = -1; // -1 = All
 
 		public PerInspectorData() { }
 

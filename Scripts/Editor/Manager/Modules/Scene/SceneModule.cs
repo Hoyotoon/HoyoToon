@@ -13,16 +13,17 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
     {
         private static readonly string[] SectionOrder =
         {
-            "Main Light",
+            
+            "General",
+            "Shadow",
             "Environment",
             "Character Lighting",
             "Rim Settings",
-            "Height Lerp",
-            "Level Lighting",
+            "Height Light",
+            "Shadow Grading",
             "Fog Settings",
             "Effects",
-            "Local Lights",
-            "General"
+            "Local Lights"
         };
 
         public override string DisplayName => "Scene";
@@ -76,7 +77,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                 ControllerSerializedObject.Update();
                 DrawInlineCalloutIfNeeded(
                     StepIds.ScriptablesLevelAdjust,
-                    "Enable Level Adjust to continue.\n\nToggle the _ES_LEVEL_ADJUST_ON setting in Level Lighting so you can preview the brighter cutscene look.");
+                    "Enable Level Adjust to continue.\n\nToggle the _ES_LEVEL_ADJUST_ON setting in Shadow Grading so you can preview the brighter cutscene look.");
                 DrawInlineCalloutIfNeeded(
                     StepIds.ScriptablesReset,
                     "Turn Level Adjust back off to continue.\n\nDisable the same _ES_LEVEL_ADJUST_ON toggle so the rest of the tour stays on neutral scene lighting.");
@@ -126,15 +127,19 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         {
             string name = property.name ?? string.Empty;
             string displayName = property.displayName ?? string.Empty;
-
-            if (ContainsAny(name, displayName, "LocalMainLight", "DisableCharacterLocal"))
+            if (ContainsAny(name, displayName, "Level"))
             {
-                return "Local Lights";
+                return "Shadow Grading";
             }
+            if (ContainsAny(name, displayName, "Rim"))
+            {
+                return "Rim Settings";
+            }
+            
 
             if (ContainsAny(name, displayName, "MainLight", "Shadow", "Indoor"))
             {
-                return "Main Light";
+                return "General";
             }
 
             if (ContainsAny(name, displayName, "Rotation", "GlobalRot", "Global"))
@@ -147,20 +152,14 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                 return "Character Lighting";
             }
 
-            if (ContainsAny(name, displayName, "Rim", "CharacterShadowFactor"))
-            {
-                return "Rim Settings";
-            }
+            
 
             if (ContainsAny(name, displayName, "HeightLerp"))
             {
-                return "Height Lerp";
+                return "Height Light";
             }
 
-            if (ContainsAny(name, displayName, "Level", "IndoorChar"))
-            {
-                return "Level Lighting";
-            }
+            
 
             if (ContainsAny(name, displayName, "Fog"))
             {
@@ -170,6 +169,10 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             if (ContainsAny(name, displayName, "Effect", "Eff"))
             {
                 return "Effects";
+            }
+            if (ContainsAny(name, displayName, "LocalMainLight", "DisableCharacterLocal"))
+            {
+                return "Local Lights";
             }
 
             return "General";
@@ -183,7 +186,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 
         protected override bool ShouldForceSectionExpanded(string sectionName)
         {
-            if (!string.Equals(sectionName, "Level Lighting", StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(sectionName, "Shadow Grading", StringComparison.OrdinalIgnoreCase))
             {
                 return false;
             }

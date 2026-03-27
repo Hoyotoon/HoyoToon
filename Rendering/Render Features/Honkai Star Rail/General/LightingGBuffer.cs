@@ -13,12 +13,15 @@ namespace HoyoToon.Rendering.HSR
 {
     public class LightingGBuffer : ScriptableRendererFeature
     {
+        internal static TextureHandle SharedAlphaMaskHandle;
+
         [SerializeField] LightingGBufferSettings settings;
         LightingGBufferPass m_GBufferStagePass;
         LightingGBufferPass m_ForwardStagePass;
 
         TextureHandle m_SharedGBufferA;
         TextureHandle m_SharedDepthBufferOrCopy;
+        TextureHandle m_SharedAlphaMask;
         bool m_HasSharedForwardInputs;
         bool m_HasWarnedForwardOrder;
 
@@ -51,6 +54,7 @@ namespace HoyoToon.Rendering.HSR
         public override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             m_HasSharedForwardInputs = false;
+            SharedAlphaMaskHandle = default;
 
             if (!m_HasWarnedForwardOrder && settings.forwardRenderPassEvent < settings.renderPassEvent)
             {
@@ -85,6 +89,7 @@ namespace HoyoToon.Rendering.HSR
             static readonly int k_GBufferBId = Shader.PropertyToID("_GBufferB");
             static readonly int k_GBufferCId = Shader.PropertyToID("_GBufferC");
             static readonly int k_DepthBufferOrCopyId = Shader.PropertyToID("_DepthBufferOrCopy");
+            static readonly int k_LightingAlphaMaskId = Shader.PropertyToID("_LightingAlphaMask");
 
             static readonly int k_CascadeShadowSplitSpheres0Id = Shader.PropertyToID("_CascadeShadowSplitSpheres0");
             static readonly int k_CascadeShadowSplitSpheres1Id = Shader.PropertyToID("_CascadeShadowSplitSpheres1");
@@ -100,10 +105,15 @@ namespace HoyoToon.Rendering.HSR
 
             static readonly ShaderTagId k_LightingGBufferTag = new ShaderTagId("LightingGBuffer");
             static readonly ShaderTagId k_LightingGBufferEyeHairTag = new ShaderTagId("LightingGBufferEyeHair");
+            static readonly ShaderTagId k_LightingForwardTag = new ShaderTagId("LightingForward");
             static readonly ShaderTagId k_ForwardEmissionTag = new ShaderTagId("ForwardEmission");
             static readonly ShaderTagId k_CustomForwardTag = new ShaderTagId("CustomForward");
             static readonly ShaderTagId k_CustomForward2Tag = new ShaderTagId("CustomForward2");
+            static readonly ShaderTagId k_CustomRpTransparentTag = new ShaderTagId("CustomRPTransparent");
             static readonly ShaderTagId k_RpgOutlineTag = new ShaderTagId("RPGOutline");
+            static readonly ShaderTagId k_UniversalForwardTag = new ShaderTagId("UniversalForward");
+            static readonly ShaderTagId k_UniversalForwardOnlyTag = new ShaderTagId("UniversalForwardOnly");
+            static readonly ShaderTagId k_SrpDefaultUnlitTag = new ShaderTagId("SRPDefaultUnlit");
             static readonly List<ShaderTagId> k_GBufferPassTag = new List<ShaderTagId>
         {
             k_LightingGBufferTag,
@@ -129,6 +139,20 @@ namespace HoyoToon.Rendering.HSR
         {
             k_RpgOutlineTag
         };
+            static readonly List<ShaderTagId> k_AlphaMaskPassTags = new List<ShaderTagId>
+        {
+            k_LightingGBufferTag,
+            k_LightingGBufferEyeHairTag,
+            k_LightingForwardTag,
+            k_ForwardEmissionTag,
+            k_CustomForwardTag,
+            k_CustomForward2Tag,
+            k_CustomRpTransparentTag,
+            k_RpgOutlineTag,
+            k_UniversalForwardTag,
+            k_UniversalForwardOnlyTag,
+            k_SrpDefaultUnlitTag
+        };
             static readonly SortingCriteria k_QueueDrivenSortFlags =
                 SortingCriteria.SortingLayer |
                 SortingCriteria.RenderQueue |
@@ -136,6 +160,8 @@ namespace HoyoToon.Rendering.HSR
                 SortingCriteria.OptimizeStateChanges;
             static readonly Matrix4x4[] k_MainLightWorldToShadowScratch = new Matrix4x4[5];
             static readonly Vector4[] k_EsGlobalRotMatrixScratch = new Vector4[4];
+            static Material s_AlphaMaskOverrideMaterial;
+            static readonly Color k_TransparentClearColor = new Color(0f, 0f, 0f, 0f);
 
             [StructLayout(LayoutKind.Sequential)]
             struct CrpPassMiscData
@@ -233,6 +259,7 @@ namespace HoyoToon.Rendering.HSR
             {
                 public RendererListHandle lightingGBuffer;
                 public RendererListHandle rpgOutline;
+                public bool clearColorTarget;
             }
 
             private class ForwardPassData
@@ -242,6 +269,7 @@ namespace HoyoToon.Rendering.HSR
                 public RendererListHandle customForward2;
                 public TextureHandle gBufferA;
                 public TextureHandle depthBufferOrCopy;
+                public TextureHandle alphaMask;
             }
 
             private class DepthRebuildPassData
@@ -502,8 +530,11 @@ namespace HoyoToon.Rendering.HSR
             // It is used to execute draw commands.
             static void ExecuteGBufferPass(GBufferPassData data, RasterGraphContext context)
             {
-                // Keep existing camera color so SV_Target0 behaves like non-MRT default output.
-                context.cmd.ClearRenderTarget(false, false, Color.clear);
+                // Let Unity-owned preview/reflection cameras keep their own clear color.
+                if (data.clearColorTarget)
+                {
+                    context.cmd.ClearRenderTarget(false, true, k_TransparentClearColor);
+                }
                 context.cmd.DrawRendererList(data.lightingGBuffer);
 
                 // Outline must run as the final step of Lighting GBuffer.
@@ -524,7 +555,7 @@ namespace HoyoToon.Rendering.HSR
             static void ExecuteDepthRebuildPass(DepthRebuildPassData data, RasterGraphContext context)
             {
                 // Rebuild depth exclusively from LightingGBuffer-tagged renderers.
-                context.cmd.ClearRenderTarget(true, true, Color.clear);
+                context.cmd.ClearRenderTarget(true, false, k_TransparentClearColor);
                 context.cmd.DrawRendererList(data.lightingGBufferDepthOnly);
             }
 
@@ -538,9 +569,14 @@ namespace HoyoToon.Rendering.HSR
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
 
-                RendererListHandle CreateRendererList(List<ShaderTagId> shaderTagIds, RenderQueueRange renderQueueRange, SortingCriteria sortingCriteria)
+                RendererListHandle CreateRendererList(List<ShaderTagId> shaderTagIds, RenderQueueRange renderQueueRange, SortingCriteria sortingCriteria, Material overrideMaterial = null)
                 {
                     DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagIds, renderingData, cameraData, lightData, sortingCriteria);
+                    if (overrideMaterial != null)
+                    {
+                        drawingSettings.overrideMaterial = overrideMaterial;
+                        drawingSettings.overrideMaterialPassIndex = 0;
+                    }
                     FilteringSettings filteringSettings = new FilteringSettings(renderQueueRange);
                     RendererListParams rendererListParams = new RendererListParams(renderingData.cullResults, drawingSettings, filteringSettings);
                     return renderGraph.CreateRendererList(rendererListParams);
@@ -551,6 +587,7 @@ namespace HoyoToon.Rendering.HSR
                     const string gBufferPassName = "Lighting GBuffer";
                     const string gBufferACopyPassName = "Lighting GBufferA Copy";
                     const string gBufferDepthRebuildPassName = "Lighting GBuffer Depth Rebuild";
+                    bool isPreviewOrReflectionCamera = cameraData.cameraType == CameraType.Preview || cameraData.cameraType == CameraType.Reflection;
 
                     ApplyPassMiscGlobals(BuildPassMiscData());
                     ApplyRpgEnvPerMainCameraGlobals(BuildEnvironmentState(HSRSceneController.instance));
@@ -558,10 +595,12 @@ namespace HoyoToon.Rendering.HSR
                     GraphicsFormat gBufferAFormat = GetSupportedColorFormat(GraphicsFormat.R8G8B8A8_UNorm, cameraData.cameraTargetDescriptor.graphicsFormat);
                     GraphicsFormat gBufferBFormat = GetSupportedColorFormat(GraphicsFormat.R16G16B16A16_SFloat, GraphicsFormat.R16G16B16A16_UNorm);
                     GraphicsFormat gBufferCFormat = GetSupportedColorFormat(GraphicsFormat.R8_UNorm, GraphicsFormat.R8G8B8A8_UNorm);
+                    GraphicsFormat alphaMaskFormat = GetSupportedColorFormat(GraphicsFormat.R8_UNorm, GraphicsFormat.R8G8B8A8_UNorm);
 
                     RenderTextureDescriptor gBufferADescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, gBufferAFormat);
                     RenderTextureDescriptor gBufferBDescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, gBufferBFormat);
                     RenderTextureDescriptor gBufferCDescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, gBufferCFormat);
+                    RenderTextureDescriptor alphaMaskDescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, alphaMaskFormat);
                     RenderTextureDescriptor depthRebuildDummyADescriptor = BuildSingleSampleColorDescriptor(cameraData.cameraTargetDescriptor, gBufferAFormat);
                     RenderTextureDescriptor depthRebuildDummyBDescriptor = BuildSingleSampleColorDescriptor(cameraData.cameraTargetDescriptor, gBufferBFormat);
                     RenderTextureDescriptor depthRebuildDummyCDescriptor = BuildSingleSampleColorDescriptor(cameraData.cameraTargetDescriptor, gBufferCFormat);
@@ -570,6 +609,7 @@ namespace HoyoToon.Rendering.HSR
                     TextureHandle gBufferA = UniversalRenderer.CreateRenderGraphTexture(renderGraph, gBufferADescriptor, "_GBufferA", false);
                     TextureHandle gBufferB = UniversalRenderer.CreateRenderGraphTexture(renderGraph, gBufferBDescriptor, "_GBufferB", false);
                     TextureHandle gBufferC = UniversalRenderer.CreateRenderGraphTexture(renderGraph, gBufferCDescriptor, "_GBufferC", false);
+                    TextureHandle alphaMask = UniversalRenderer.CreateRenderGraphTexture(renderGraph, alphaMaskDescriptor, "_LightingAlphaMask", false);
                     TextureHandle depthBufferOrCopy = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthCopyDescriptor, "_DepthBufferOrCopy", false);
                     TextureHandle depthRebuildDummyA = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthRebuildDummyADescriptor, "_LightingGBufferDepthDummyA", false);
                     TextureHandle depthRebuildDummyB = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthRebuildDummyBDescriptor, "_LightingGBufferDepthDummyB", false);
@@ -579,33 +619,43 @@ namespace HoyoToon.Rendering.HSR
                     RendererListHandle lightingGBufferDepthOnly = CreateRendererList(k_GBufferDepthRebuildTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
                     RendererListHandle rpgOutline = CreateRendererList(k_OutlinePassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
 
+                    bool canCopyColorToGBufferA = !resourceData.isActiveTargetBackBuffer;
+
                     m_Owner.m_SharedGBufferA = gBufferA;
                     m_Owner.m_SharedDepthBufferOrCopy = depthBufferOrCopy;
-                    m_Owner.m_HasSharedForwardInputs = true;
+                    m_Owner.m_SharedAlphaMask = alphaMask;
+                    SharedAlphaMaskHandle = alphaMask;
+                    m_Owner.m_HasSharedForwardInputs = canCopyColorToGBufferA;
 
                     // This pass writes all GBuffer MRTs.
                     using (var builder = renderGraph.AddRasterRenderPass<GBufferPassData>(gBufferPassName, out var passData))
                     {
                         passData.lightingGBuffer = lightingGBuffer;
                         passData.rpgOutline = rpgOutline;
+                        passData.clearColorTarget = !isPreviewOrReflectionCamera;
 
                         builder.UseRendererList(passData.lightingGBuffer);
                         builder.UseRendererList(passData.rpgOutline);
 
                         // Bind MRTs so SV_Target0/1/2 from shader can be written to GBuffer textures.
-                        builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                        builder.SetRenderAttachment(resourceData.activeColorTexture, 0, AccessFlags.ReadWrite);
                         builder.SetRenderAttachment(gBufferB, 1);
                         builder.SetRenderAttachment(gBufferC, 2);
+                        builder.SetRenderAttachment(alphaMask, 3);
                         builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture, AccessFlags.ReadWrite);
                         builder.SetGlobalTextureAfterPass(gBufferB, k_GBufferBId);
                         builder.SetGlobalTextureAfterPass(gBufferC, k_GBufferCId);
+                        builder.SetGlobalTextureAfterPass(alphaMask, k_LightingAlphaMaskId);
                         builder.AllowPassCulling(false);
 
                         builder.SetRenderFunc((GBufferPassData data, RasterGraphContext context) => ExecuteGBufferPass(data, context));
                     }
 
                     // Copy camera color result from SV_Target0 into _GBufferA for downstream forward sampling.
-                    renderGraph.AddBlitPass(resourceData.activeColorTexture, gBufferA, Vector2.one, Vector2.zero, passName: gBufferACopyPassName);
+                    if (canCopyColorToGBufferA)
+                    {
+                        renderGraph.AddBlitPass(resourceData.activeColorTexture, gBufferA, Vector2.one, Vector2.zero, passName: gBufferACopyPassName);
+                    }
 
                     // Keep this as its own pass so it appears as a distinct depth rebuild step after Lighting GBuffer.
                     using (var builder = renderGraph.AddRasterRenderPass<DepthRebuildPassData>(gBufferDepthRebuildPassName, out var passData))
@@ -646,6 +696,7 @@ namespace HoyoToon.Rendering.HSR
                     passData.customForward2 = customForward2;
                     passData.gBufferA = m_Owner.m_SharedGBufferA;
                     passData.depthBufferOrCopy = m_Owner.m_SharedDepthBufferOrCopy;
+                    passData.alphaMask = m_Owner.m_SharedAlphaMask;
 
                     builder.UseRendererList(passData.forwardEmission);
                     builder.UseRendererList(passData.customForward);
@@ -654,8 +705,10 @@ namespace HoyoToon.Rendering.HSR
                     // ForwardEmission samples _GBufferA and _DepthBufferOrCopy, so declare explicit read dependencies.
                     builder.UseTexture(passData.gBufferA, AccessFlags.Read);
                     builder.UseTexture(passData.depthBufferOrCopy, AccessFlags.Read);
-                    builder.SetRenderAttachment(resourceData.activeColorTexture, 0);
+                    builder.SetRenderAttachment(resourceData.activeColorTexture, 0, AccessFlags.ReadWrite);
+                    builder.SetRenderAttachment(passData.alphaMask, 1);
                     builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture, AccessFlags.ReadWrite);
+                    builder.SetGlobalTextureAfterPass(passData.alphaMask, k_LightingAlphaMaskId);
                     builder.AllowGlobalStateModification(true);
                     builder.AllowPassCulling(false);
 

@@ -1,0 +1,50 @@
+#pragma kernel CSMain
+
+struct SkinData {
+    float3 pos;
+    float pad0;
+    float3 norm;
+    float pad1;
+    float4 tangent;
+    float4 tangent1;
+    // float4 color;
+};
+
+StructuredBuffer<SkinData> _BaseVertices;
+StructuredBuffer<float4> _BoneWeights;
+StructuredBuffer<uint4> _BoneIndices;
+StructuredBuffer<float4x4> _BoneMatrices; 
+RWStructuredBuffer<SkinData> _OutputBuffer;
+
+uint _VertexCount;
+uint _GlobalVertexOffset;
+uint _GlobalMatrixOffset;
+
+[numthreads(64, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= _VertexCount) return;
+
+    uint writeIndex = id.x + _GlobalVertexOffset;
+    SkinData v = _BaseVertices[writeIndex];
+    float4 w = _BoneWeights[writeIndex];
+    uint4 idx = _BoneIndices[writeIndex] + _GlobalMatrixOffset;
+
+    float4x4 m = _BoneMatrices[idx.x] * w.x +
+                 _BoneMatrices[idx.y] * w.y +
+                 _BoneMatrices[idx.z] * w.z +
+                 _BoneMatrices[idx.w] * w.w;
+
+    v.pos = mul(m, float4(v.pos, 1.0)).xyz;
+    
+    float3x3 rotMatrix = (float3x3)m;
+    v.norm = normalize(mul(rotMatrix, v.norm));
+    v.tangent.xyz = normalize(mul(rotMatrix, v.tangent.xyz));
+    v.tangent1.xyz = normalize(mul(rotMatrix, v.tangent1.xyz));
+
+    // float3 colorNormal = v.color.rgb * 2.0 - 1.0;
+    // colorNormal = normalize(mul(rotMatrix, colorNormal));
+    // v.color.rgb = colorNormal * 0.5 + 0.5;
+
+    _OutputBuffer[writeIndex] = v;
+}

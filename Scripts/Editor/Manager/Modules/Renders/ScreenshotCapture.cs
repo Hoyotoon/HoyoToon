@@ -1,6 +1,9 @@
 ﻿#if UNITY_EDITOR
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 using HoyoToon.Editor.Utilities;
 
@@ -12,53 +15,34 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         private const float WatermarkWidthPercent = 0.22f;
         private const float WatermarkPaddingPercent = 0.02f;
 
-        private static Shader _maskShader;
         private static Texture2D _watermarkTexture;
         private static Texture2D _watermarkReadable;
         private static bool _watermarkMissingLogged;
 
         public string LastScreenshot { get; private set; }
 
-        public void Capture(Camera camera, int width, int height, string absoluteSavePath, bool transparent, bool watermark, bool openAfter)
+        public void Capture(Camera sourceCamera, int width, int height, string absoluteSavePath, bool transparent = false, bool watermark = false, bool openAfter = false)
         {
-            if (camera == null)
-            {
-                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Select a camera before taking a screenshot.");
-                return;
-            }
-
             if (string.IsNullOrEmpty(absoluteSavePath))
             {
                 HoyoToonLogger.Log("Renders", LogLevel.Warning, "Save path is invalid.");
                 return;
             }
 
-            string fileName = GenerateScreenshotName(width, height);
-            string path = Path.Combine(absoluteSavePath, fileName);
-
-            RenderTexture rt = null;
-            Texture2D screenshot = null;
-            Texture2D blackCapture = null;
-            Texture2D whiteCapture = null;
-            GameObject captureCameraObject = null;
-            Camera captureCamera = null;
-
-            captureCameraObject = UnityEngine.Object.Instantiate(camera.gameObject);
-            captureCameraObject.hideFlags = HideFlags.HideAndDontSave;
-            captureCamera = captureCameraObject.GetComponent<Camera>();
-            if (captureCamera == null)
+            if (width < 1 || height < 1)
             {
-                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Selected camera could not be cloned for screenshot capture.");
-                UnityEngine.Object.DestroyImmediate(captureCameraObject);
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Screenshot resolution must be at least 1x1.");
                 return;
             }
 
-            captureCamera.enabled = false;
-            DisableCinemachineBrain(captureCamera.gameObject);
+            if (sourceCamera == null)
+            {
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Select a camera before taking a screenshot.");
+                return;
+            }
 
-            var postLayer = ResolvePostProcessingLayer(captureCamera);
-            bool hasPostLayer = postLayer != null;
-            bool originalPostEnabled = hasPostLayer && postLayer.enabled;
+            string fileName = GenerateScreenshotName();
+            string path = Path.Combine(absoluteSavePath, fileName);
 
             try
             {
@@ -67,31 +51,42 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                     Directory.CreateDirectory(absoluteSavePath);
                 }
 
-                rt = new RenderTexture(width, height, 24, RenderTextureFormat.ARGB32);
+                LastScreenshot = path;
+                EditorFrameCoroutineRunner.Start(CaptureCameraAtEndOfFrame(sourceCamera, width, height, path, transparent, watermark, openAfter));
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
+            }
+        }
 
-                if (transparent && hasPostLayer)
-                {
-                    postLayer.enabled = false;
-                }
+        private IEnumerator CaptureCameraAtEndOfFrame(Camera sourceCamera, int width, int height, string path, bool transparent, bool watermark, bool openAfter)
+        {
+            yield return new WaitForEndOfFrame();
 
-                if (transparent)
+            if (sourceCamera == null)
+            {
+                yield break;
+            }
+
+            Texture2D finalTexture = null;
+
+            try
+            {
+                finalTexture = transparent
+                    ? RenderCameraPassWithAlpha(sourceCamera, width, height)
+                    : RenderCameraPassOpaque(sourceCamera, width, height);
+                if (finalTexture == null)
                 {
-                    blackCapture = CaptureTexture(captureCamera, rt, CameraClearFlags.Color, Color.black);
-                    whiteCapture = CaptureTexture(captureCamera, rt, CameraClearFlags.Color, Color.white);
-                    screenshot = ComposeTransparentScreenshot(blackCapture, whiteCapture);
-                }
-                else
-                {
-                    screenshot = CaptureTexture(captureCamera, rt, captureCamera.clearFlags, captureCamera.backgroundColor);
+                    yield break;
                 }
 
                 if (watermark)
                 {
-                    ApplyWatermark(screenshot);
+                    ApplyWatermark(finalTexture);
                 }
 
-                File.WriteAllBytes(path, screenshot.EncodeToPNG());
-                LastScreenshot = path;
+                File.WriteAllBytes(path, finalTexture.EncodeToPNG());
 
                 if (openAfter)
                 {
@@ -105,132 +100,164 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             finally
             {
                 RenderTexture.active = null;
-                if (hasPostLayer)
-                {
-                    postLayer.enabled = originalPostEnabled;
-                }
 
-                if (rt != null)
+                if (finalTexture != null)
                 {
-                    UnityEngine.Object.DestroyImmediate(rt);
-                }
-                if (screenshot != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(screenshot);
-                }
-                if (blackCapture != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(blackCapture);
-                }
-                if (whiteCapture != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(whiteCapture);
-                }
-                if (captureCameraObject != null)
-                {
-                    UnityEngine.Object.DestroyImmediate(captureCameraObject);
+                    UnityEngine.Object.DestroyImmediate(finalTexture);
                 }
             }
         }
 
-        private static Texture2D CaptureTexture(Camera camera, RenderTexture renderTexture, CameraClearFlags clearFlags, Color backgroundColor)
+        private static Texture2D RenderCameraPassWithAlpha(Camera captureCamera, int width, int height)
         {
-            var previousTarget = camera.targetTexture;
-            var previousActive = RenderTexture.active;
-            var previousFlags = camera.clearFlags;
-            var previousColor = camera.backgroundColor;
+            return RenderCameraToTexture(captureCamera, width, height, CameraClearFlags.SolidColor, new Color(0f, 0f, 0f, 0f), true);
+        }
+
+        private static Texture2D RenderCameraPassOpaque(Camera captureCamera, int width, int height)
+        {
+            return RenderCameraToTexture(captureCamera, width, height, captureCamera.clearFlags, captureCamera.backgroundColor, false);
+        }
+
+        private static Texture2D RenderCameraToTexture(Camera captureCamera, int width, int height, CameraClearFlags clearFlags, Color backgroundColor, bool disablePostProcessing)
+        {
+            RenderTexture renderTexture = null;
+            RenderTexture previousTarget = captureCamera.targetTexture;
+            CameraClearFlags previousClearFlags = captureCamera.clearFlags;
+            Color previousBackground = captureCamera.backgroundColor;
+            float previousAspect = captureCamera.aspect;
+            Component urpCameraData = captureCamera.GetComponent("UniversalAdditionalCameraData");
+            System.Reflection.PropertyInfo renderPostProcessingProperty = null;
+            bool previousRenderPostProcessing = false;
 
             try
             {
-                camera.targetTexture = renderTexture;
-                camera.clearFlags = clearFlags;
-                camera.backgroundColor = backgroundColor;
-                camera.Render();
+                if (disablePostProcessing && urpCameraData != null)
+                {
+                    renderPostProcessingProperty = urpCameraData.GetType().GetProperty("renderPostProcessing");
+                    if (renderPostProcessingProperty != null && renderPostProcessingProperty.PropertyType == typeof(bool) && renderPostProcessingProperty.CanRead && renderPostProcessingProperty.CanWrite)
+                    {
+                        previousRenderPostProcessing = (bool)renderPostProcessingProperty.GetValue(urpCameraData, null);
+                        renderPostProcessingProperty.SetValue(urpCameraData, false, null);
+                    }
+                }
 
-                RenderTexture.active = renderTexture;
-                var capture = new Texture2D(renderTexture.width, renderTexture.height, TextureFormat.ARGB32, false);
-                capture.ReadPixels(new Rect(0, 0, renderTexture.width, renderTexture.height), 0, 0);
-                capture.Apply(false);
-                return capture;
+                captureCamera.clearFlags = clearFlags;
+                captureCamera.backgroundColor = backgroundColor;
+                captureCamera.aspect = width / (float)height;
+
+                renderTexture = RenderTexture.GetTemporary(width, height, 24, RenderTextureFormat.ARGB32, RenderTextureReadWrite.sRGB);
+                captureCamera.targetTexture = renderTexture;
+                captureCamera.Render();
+
+                return ReadTextureRgba(renderTexture, width, height);
             }
             finally
             {
-                camera.targetTexture = previousTarget;
-                camera.clearFlags = previousFlags;
-                camera.backgroundColor = previousColor;
+                captureCamera.targetTexture = previousTarget;
+                captureCamera.clearFlags = previousClearFlags;
+                captureCamera.backgroundColor = previousBackground;
+                captureCamera.aspect = previousAspect;
+
+                if (disablePostProcessing && urpCameraData != null)
+                {
+                    if (renderPostProcessingProperty != null && renderPostProcessingProperty.CanWrite)
+                    {
+                        renderPostProcessingProperty.SetValue(urpCameraData, previousRenderPostProcessing, null);
+                    }
+                }
+
+                if (renderTexture != null)
+                {
+                    RenderTexture.ReleaseTemporary(renderTexture);
+                }
+            }
+        }
+
+        private static Texture2D ReadTextureRgba(RenderTexture renderTexture, int width, int height)
+        {
+            var previousActive = RenderTexture.active;
+            try
+            {
+                RenderTexture.active = renderTexture;
+                var texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+                texture.ReadPixels(new Rect(0, 0, width, height), 0, 0);
+                texture.Apply(false);
+                return texture;
+            }
+            finally
+            {
                 RenderTexture.active = previousActive;
             }
         }
 
-        private static Texture2D ComposeTransparentScreenshot(Texture2D blackCapture, Texture2D whiteCapture)
+        private static class EditorFrameCoroutineRunner
         {
-            if (blackCapture == null)
+            private static readonly List<IEnumerator> ActiveRoutines = new List<IEnumerator>();
+            private static bool _subscribed;
+
+            public static void Start(IEnumerator routine)
             {
-                return null;
-            }
-
-            if (whiteCapture == null)
-            {
-                var fallback = new Texture2D(blackCapture.width, blackCapture.height, TextureFormat.ARGB32, false);
-                fallback.SetPixels32(blackCapture.GetPixels32());
-                fallback.Apply(false);
-                return fallback;
-            }
-
-            var blackPixels = blackCapture.GetPixels();
-            var whitePixels = whiteCapture.GetPixels();
-            var output = new Color[blackPixels.Length];
-
-            for (int i = 0; i < output.Length; i++)
-            {
-                Color black = blackPixels[i];
-                Color white = whitePixels[i];
-                float alpha = 1f - Mathf.Max(white.r - black.r, Mathf.Max(white.g - black.g, white.b - black.b));
-                alpha = Mathf.Clamp01(alpha);
-
-                if (alpha <= 0.0001f)
+                if (routine == null)
                 {
-                    output[i] = Color.clear;
-                    continue;
+                    return;
                 }
 
-                output[i] = new Color(
-                    Mathf.Clamp01(black.r / alpha),
-                    Mathf.Clamp01(black.g / alpha),
-                    Mathf.Clamp01(black.b / alpha),
-                    alpha);
-            }
-
-            var composed = new Texture2D(blackCapture.width, blackCapture.height, TextureFormat.ARGB32, false);
-            composed.SetPixels(output);
-            composed.Apply(false);
-            return composed;
-        }
-
-        private static void DisableCinemachineBrain(GameObject cameraObject)
-        {
-            if (cameraObject == null)
-            {
-                return;
-            }
-
-            foreach (var component in cameraObject.GetComponents<Behaviour>())
-            {
-                if (component != null && component.GetType().Name == "CinemachineBrain")
+                ActiveRoutines.Add(routine);
+                if (_subscribed)
                 {
-                    component.enabled = false;
+                    EditorApplication.QueuePlayerLoopUpdate();
+                    SceneView.RepaintAll();
+                    return;
                 }
-            }
-        }
 
-        private static Behaviour ResolvePostProcessingLayer(Camera camera)
-        {
-            if (camera == null)
+                _subscribed = true;
+                EditorApplication.update += Update;
+                EditorApplication.QueuePlayerLoopUpdate();
+                SceneView.RepaintAll();
+            }
+
+            private static void Update()
             {
-                return null;
+                for (int i = ActiveRoutines.Count - 1; i >= 0; i--)
+                {
+                    try
+                    {
+                        if (!Advance(ActiveRoutines[i]))
+                        {
+                            ActiveRoutines.RemoveAt(i);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        ActiveRoutines.RemoveAt(i);
+                        HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
+                    }
+                }
+
+                if (ActiveRoutines.Count != 0)
+                {
+                    return;
+                }
+
+                EditorApplication.update -= Update;
+                _subscribed = false;
             }
 
-            return camera.GetComponent("PostProcessLayer") as Behaviour;
+            private static bool Advance(IEnumerator routine)
+            {
+                if (!routine.MoveNext())
+                {
+                    return false;
+                }
+
+                if (routine.Current is WaitForEndOfFrame)
+                {
+                    EditorApplication.QueuePlayerLoopUpdate();
+                    SceneView.RepaintAll();
+                }
+
+                return true;
+            }
         }
 
 
@@ -320,9 +347,101 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         }
 
 
-        private static string GenerateScreenshotName(int width, int height)
+        private static string GenerateScreenshotName()
         {
-            return $"screen_{width}x{height}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
+            return $"screen_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
+        }
+
+        internal static Texture2D GetWatermarkTexture()
+        {
+            if (_watermarkTexture != null)
+            {
+                return _watermarkTexture;
+            }
+
+            _watermarkTexture = Resources.Load<Texture2D>(WatermarkResourcePath);
+            if (_watermarkTexture == null && !_watermarkMissingLogged)
+            {
+                _watermarkMissingLogged = true;
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "HoyoToon watermark texture not found. Place a PNG at Resources/UI/hoyotoon.png.");
+            }
+
+            return _watermarkTexture;
+        }
+
+        private static Texture2D GetReadableWatermarkTexture()
+        {
+            var watermark = GetWatermarkTexture();
+            if (watermark == null)
+            {
+                return null;
+            }
+
+            if (watermark.isReadable)
+            {
+                return watermark;
+            }
+
+            if (_watermarkReadable != null && _watermarkReadable.width == watermark.width && _watermarkReadable.height == watermark.height)
+            {
+                return _watermarkReadable;
+            }
+
+            RenderTexture rt = null;
+            RenderTexture previous = null;
+            try
+            {
+                rt = RenderTexture.GetTemporary(watermark.width, watermark.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
+                Graphics.Blit(watermark, rt);
+                previous = RenderTexture.active;
+                RenderTexture.active = rt;
+
+                _watermarkReadable = new Texture2D(watermark.width, watermark.height, TextureFormat.ARGB32, false);
+                _watermarkReadable.ReadPixels(new Rect(0, 0, watermark.width, watermark.height), 0, 0);
+                _watermarkReadable.Apply(false);
+                return _watermarkReadable;
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
+                return null;
+            }
+            finally
+            {
+                RenderTexture.active = previous;
+                if (rt != null)
+                {
+                    RenderTexture.ReleaseTemporary(rt);
+                }
+            }
+        }
+
+        private static void ApplyWatermarkToFile(string path)
+        {
+            Texture2D screenshot = null;
+            try
+            {
+                var pngBytes = File.ReadAllBytes(path);
+                screenshot = new Texture2D(2, 2, TextureFormat.ARGB32, false);
+                if (!screenshot.LoadImage(pngBytes, false))
+                {
+                    return;
+                }
+
+                ApplyWatermark(screenshot);
+                File.WriteAllBytes(path, screenshot.EncodeToPNG());
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
+            }
+            finally
+            {
+                if (screenshot != null)
+                {
+                    UnityEngine.Object.DestroyImmediate(screenshot);
+                }
+            }
         }
 
         private static void ApplyWatermark(Texture2D screenshot)
@@ -395,83 +514,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             }
 
             screenshot.SetPixels32(dstPixels);
-            screenshot.Apply();
-        }
-
-
-        private static Shader GetMaskShader()
-        {
-            if (_maskShader != null)
-            {
-                return _maskShader;
-            }
-
-            _maskShader = Shader.Find("Hidden/HoyoToon/ScreenshotMask");
-            return _maskShader;
-        }
-
-        internal static Texture2D GetWatermarkTexture()
-        {
-            if (_watermarkTexture != null)
-            {
-                return _watermarkTexture;
-            }
-
-            _watermarkTexture = Resources.Load<Texture2D>(WatermarkResourcePath);
-            if (_watermarkTexture == null && !_watermarkMissingLogged)
-            {
-                _watermarkMissingLogged = true;
-                HoyoToonLogger.Log("Renders", LogLevel.Warning, "HoyoToon watermark texture not found. Place a PNG at Resources/UI/hoyotoon.png.");
-            }
-
-            return _watermarkTexture;
-        }
-
-        private static Texture2D GetReadableWatermarkTexture()
-        {
-            var watermark = GetWatermarkTexture();
-            if (watermark == null)
-            {
-                return null;
-            }
-
-            if (watermark.isReadable)
-            {
-                return watermark;
-            }
-
-            if (_watermarkReadable != null && _watermarkReadable.width == watermark.width && _watermarkReadable.height == watermark.height)
-            {
-                return _watermarkReadable;
-            }
-
-            RenderTexture rt = null;
-            RenderTexture previous = null;
-            try
-            {
-                rt = RenderTexture.GetTemporary(watermark.width, watermark.height, 0, RenderTextureFormat.ARGB32, RenderTextureReadWrite.Linear);
-                Graphics.Blit(watermark, rt);
-                previous = RenderTexture.active;
-                RenderTexture.active = rt;
-
-                _watermarkReadable = new Texture2D(watermark.width, watermark.height, TextureFormat.ARGB32, false);
-                _watermarkReadable.ReadPixels(new Rect(0, 0, watermark.width, watermark.height), 0, 0);
-                _watermarkReadable.Apply(false);
-                return _watermarkReadable;
-            }
-            catch (Exception ex)
-            {
-                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
-                return null;
-            }
-            finally
-            {
-                RenderTexture.active = previous;
-                if (rt != null)
-                {
-                    RenderTexture.ReleaseTemporary(rt);
-                }
-            }
+            screenshot.Apply(false);
         }
     }
 }

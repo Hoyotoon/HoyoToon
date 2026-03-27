@@ -201,17 +201,7 @@ MonoBehaviour:
   _ES_MonsterLightDir: {x: 0, y: 1, z: 0}
   _ES_Indoor: 0
   _ES_TransitionRate: 1
-  _ES_LEVEL_ADJUST_ON: 0
   _ES_SelfShadowLerpHair: 0
-  _EnableMainLightShadows: 1
-  _MainLightShadowResolution: 2048
-  _MainLightShadowCascades: 4
-  _MainLightShadowCascade2Split: 0.25
-  _MainLightShadowCascade4Split: {x: 0.067, y: 0.2, z: 0.467}
-  _MainLightShadowCascadeBorder: 0.1
-  _MainLightShadowNearPlaneOffset: 0.1
-  _DebugMainLightShadowFullscreen: 0
-  _DebugMainLightShadowSlice: 0
   _es_global_rotation_euler: {x: 0, y: 0, z: 0}
   _ES_CharacterToonRampMode: 0
   _ES_CharacterDisableLocalMainLight: 0
@@ -238,6 +228,7 @@ MonoBehaviour:
   _ES_HeightLerpTopColor: {r: 1, g: 1, b: 1, a: 1}
   _ES_HeightLerpMiddleColor: {r: 1, g: 1, b: 1, a: 0.5}
   _ES_HeightLerpBottomColor: {r: 0.31372547, g: 0.31372547, b: 0.4901961, a: 0.5}
+  _ES_LEVEL_ADJUST_ON: 0
   _ES_LevelSkinLightColor: {r: 1, g: 1, b: 1, a: 0.5}
   _ES_LevelSkinShadowColor: {r: 1, g: 1, b: 1, a: 0.5}
   _ES_LevelHighLightColor: {r: 1, g: 1, b: 1, a: 0.5}
@@ -325,11 +316,11 @@ Camera:
     y: 0
     width: 1
     height: 1
-  near clip plane: 0.1
-  far clip plane: 1024
-  field of view: 30
+  near clip plane: 0.011689085
+  far clip plane: 2337.817
+  field of view: 30.000002
   orthographic: 0
-  orthographic size: 10
+  orthographic size: 5
   m_Depth: -100
   m_CullingMask:
     serializedVersion: 2
@@ -353,8 +344,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 489643315}
   serializedVersion: 2
-  m_LocalRotation: {x: 0, y: 1, z: 0, w: -0.00000004371139}
-  m_LocalPosition: {x: 0.00000052453515, y: 1, z: 5.999983}
+  m_LocalRotation: {x: 0.00012127294, y: 0.9998684, z: 0.013499155, w: -0.0089990245}
+  m_LocalPosition: {x: 0.08125938, y: 0.70088136, z: 4.747652}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -375,7 +366,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 489643315}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 72ece51f2901e7445ab60da3685d6b5f, type: 3}
   m_Name: 

@@ -23,10 +23,10 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
         private static Texture2D s_DefaultLutTexture;
 
         [Tooltip("When enabled, this component controls which RPG post-process components are allowed to render.")]
-        public BoolParameter UseUberControl = new BoolParameter(false);
+        [HideInInspector] public BoolParameter UseUberControl = new BoolParameter(false);
 
         [Tooltip("Allow the RPGBloom renderer to execute.")]
-        public BoolParameter EnableBloom = new BoolParameter(true);
+        [HideInInspector] public BoolParameter EnableBloom = new BoolParameter(true);
 
         [Tooltip("Baked LUT texture used by the Uber post pass.")]
         public NoInterpTextureParameter BakedLutTexture = new NoInterpTextureParameter(null);
@@ -41,10 +41,10 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Uber
         public BoolParameter FlipLutY = new BoolParameter(false);
 
         [Tooltip("Allow the RPGChromaticAberration renderer to execute.")]
-        public BoolParameter EnableChromaticAberration = new BoolParameter(true);
+        [HideInInspector] public BoolParameter EnableChromaticAberration = new BoolParameter(true);
 
         [Tooltip("Allow the RPGRadialBlur renderer to execute.")]
-        public BoolParameter EnableRadialBlur = new BoolParameter(true);
+        [HideInInspector] public BoolParameter EnableRadialBlur = new BoolParameter(true);
 
         public bool IsActive() => UseUberControl.value;
 

@@ -110,6 +110,13 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.Bloom
                 return false;
             }
 
+            // VolumeManager stack always has a component instance; require at least
+            // one overridden bloom property so default-state components don't render.
+            if (!AnyPropertiesIsOverridden())
+            {
+                return false;
+            }
+
             if (BloomIntensity.value <= 0f)
             {
                 return false;

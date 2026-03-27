@@ -4,6 +4,8 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using UnityEngine;
 using HoyoToon.Simulator.Utilities;
+using System.ComponentModel;
+
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEditorInternal;
@@ -14,6 +16,20 @@ namespace HoyoToon.Runtime.Character
     [ExecuteAlways]
     public class HSRCharacterController : MonoBehaviour
     {
+        public enum EffectType
+        {
+            None = 0,
+            AuraOutline = 1, 
+            Custom = 100
+        }
+
+        [Serializable]
+        public struct EffectMaterialEntry
+        {
+            public EffectType Type;
+            public Material Material;
+        }
+
         private const float RegistrySlowDiscoveryInterval = 2.0f;
         private const float CharacterLightBaseOffset = 0.5f;
         private const float CharacterLightCameraDistanceFactor = 0.05f;
@@ -36,11 +52,23 @@ namespace HoyoToon.Runtime.Character
         private static readonly int s_CharacterSelfShadowAtlasRectId = Shader.PropertyToID("_CharacterSelfShadowAtlasRect");
         private static readonly int s_CharacterSelfShadowSliceIndexId = Shader.PropertyToID("_CharacterSelfShadowSliceIndex");
         private static readonly int s_CharacterSelfShadowValidId = Shader.PropertyToID("_CharacterSelfShadowValid");
+        private static readonly int s_HsrComputeSkinnedVerticesId = Shader.PropertyToID("_HSRComputeSkinnedVertices");
+        private static readonly int s_HsrComputeSkinningEnabledId = Shader.PropertyToID("_HSRComputeSkinningEnabled");
+        private static readonly int s_HsrComputeSkinningVertexOffsetId = Shader.PropertyToID("_HSRComputeSkinningVertexOffset");
         private const string SceneControllerTypeName = "HoyoToon.Runtime.Scene.HSRSceneController, com.hoyotoon.hoyotoon.Runtime";
         private static bool s_HasTriedResolveSceneControllerHooks;
         private static MethodInfo s_RegisterCharacterLightMethod;
         private static MethodInfo s_UnregisterCharacterLightMethod;
         private static readonly int s_CrpPerDrawExSize = Marshal.SizeOf<CrpPerDrawExData>();
+        private const int SkinningKernelThreadGroupSize = 64;
+        private const string SkinningKernelName = "CSMain";
+        private const string DefaultSkinningComputeShaderAssetPath = "Packages/com.hoyotoon.hoyotoon/Shaders/Utility/ComputeShaders/SkinningUVCoords.compute";
+
+        public enum CharacterSkinningMode
+        {
+            BuiltIn = 0,
+            Compute = 1
+        }
 
         [StructLayout(LayoutKind.Sequential)]
         private struct CrpPerDrawExData
@@ -69,6 +97,46 @@ namespace HoyoToon.Runtime.Character
             public readonly ComputeBuffer constantBuffer = new ComputeBuffer(1, s_CrpPerDrawExSize, ComputeBufferType.Constant);
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct SkinData
+        {
+            public Vector3 pos;
+            public float pad0;
+            public Vector3 norm;
+            public float pad1;
+            public Vector4 tangent;
+            public Vector4 tangent1;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        private struct UInt4
+        {
+            public uint x;
+            public uint y;
+            public uint z;
+            public uint w;
+
+            public UInt4(uint x, uint y, uint z, uint w)
+            {
+                this.x = x;
+                this.y = y;
+                this.z = z;
+                this.w = w;
+            }
+        }
+
+        private sealed class ComputeSkinSegment
+        {
+            public SkinnedMeshRenderer renderer;
+            public Mesh mesh;
+            public Transform[] bones;
+            public Matrix4x4[] bindPoses;
+            public int vertexOffset;
+            public int vertexCount;
+            public int matrixOffset;
+            public int matrixCount;
+        }
+
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
         private static void ResetRegistryOnSubsystemRegistration()
         {
@@ -94,30 +162,51 @@ namespace HoyoToon.Runtime.Character
         [Min(0.001f)] public float CharacterSelfShadowFarPlane = 1f;
         [Range(0f, 1f)] public float CharacterSelfShadowLightFollow = 0.5f;
         public bool CharacterSelfShadowInvertLightDirection = false;
-        public string CharacterSelfShadowCasterPassName = "ShadowCaster";
+        [HideInInspector] public string CharacterSelfShadowCasterPassName = "ShadowCaster";
+
+        [Header("Character Skinning")]
+        public CharacterSkinningMode SkinningMode = CharacterSkinningMode.Compute;
+        [Tooltip("Compute shader used for custom skinning. Must match SkinningUVCoords.compute layout.")]
+        public ComputeShader CustomSkinningCompute;
         
+        [PropertyLabel("Main Light Position")]
         public Vector3 _CharacterLocalMainLightPosition = Vector3.zero;
         private Vector3 last_pos;
-        public Transform HeadBone;
+        private Transform HeadBone;
+        [PropertyLabel("Light Type Strength", "Key Light", "Fill Light", 0f, 1f, "Shadow Tint (Non-Skin Regions)",  "Shadow Tint (Skin/Region 0)")]
+        public Vector4 _NewLocalLightStrength = Vector4.zero;
+        [PropertyLabel("Main Light Color")]
         public Color _CharacterLocalMainLightColor = Color.white;
+        [PropertyLabel("Local Key Light Tint / Directional Blend")]
         public Color _CharacterLocalMainLightColor1 = Color.black;
+        [PropertyLabel("Local Fill Light Tint")]
         public Color _CharacterLocalMainLightColor2 = Color.black;
+        [PropertyLabel("Shadow Tint (Non-Skin Regions)")]
         public Color _CharacterLocalMainLightDark = Color.black;
+        [PropertyLabel("Shadow Tint (Skin/Region 0)")]
         public Color _CharacterLocalMainLightDark1 = Color.black;
 
-        [Header("New Local Light Override")]
+        // [Header("Local Light Override")]
+        [PropertyLabel("Local Light Direction")]
         public Vector3 _NewLocalLightDir = new Vector3(0, 1, 0);
+        [PropertyLabel("Local Light Character Center")]
         public Vector3 _NewLocalLightCharCenter = Vector3.zero;
-        public Vector4 _NewLocalLightStrength = Vector4.zero;
+        
+        [PropertyLabel("Sync Light with Character Light")]
         [Tooltip("Whether to sync the new local light direction with the CharacterLight direction.")]
         public bool _SyncNewLocalLightDirWithCharacterLight = true;
+        [PropertyLabel("Invert Synced Direction")]
         [Tooltip("Invert the synced new local light direction when true.")]
         public bool _InvertSyncedNewLocalLightDir = false;
 
-        [Header("Overrides")]
+        // [Header("Overrides")]
+        [PropertyLabel("Disable Character Light")]
         [Range(0, 1)] public float _DisableCharacterLocalLight = 0f;
+        [PropertyLabel("Enable Custom Camera Override")]
         [Range(0, 1)] public float _EnableCustomCameraOverride = 1f;
 
+        [Header("Material Mapping")]
+        public List<EffectMaterialEntry> EffectMaterials = new List<EffectMaterialEntry>();
         public Renderer[] renderers;
         public float _StencilEyeValue;
         private bool m_RendererScopeDirty = true;
@@ -130,6 +219,18 @@ namespace HoyoToon.Runtime.Character
         private Vector4 m_CharacterSelfShadowAtlasRect = Vector4.zero;
         private float m_CharacterSelfShadowSliceIndex;
         private float m_CharacterSelfShadowValid;
+        private readonly List<ComputeSkinSegment> m_ComputeSkinSegments = new List<ComputeSkinSegment>();
+        private readonly Dictionary<Renderer, int> m_ComputeVertexOffsets = new Dictionary<Renderer, int>();
+        private ComputeBuffer m_ComputeBaseVerticesBuffer;
+        private ComputeBuffer m_ComputeBoneWeightsBuffer;
+        private ComputeBuffer m_ComputeBoneIndicesBuffer;
+        private ComputeBuffer m_ComputeBoneMatricesBuffer;
+        private ComputeBuffer m_ComputeOutputBuffer;
+        private Matrix4x4[] m_ComputeBoneMatricesUpload;
+        private int m_ComputeKernel = -1;
+        private bool m_ComputeSkinningInitialized;
+        private bool m_ComputeSkinningDirty = true;
+        private bool m_HasLoggedComputeSkinningError;
 
         private void RefreshScopedRenderers()
         {
@@ -153,6 +254,7 @@ namespace HoyoToon.Runtime.Character
             ApplyRuntimeTags();
             m_RendererScopeDirty = false;
             m_HasSyncedState = false;
+            m_ComputeSkinningDirty = true;
             s_TopologyDirty = true;
         }
 
@@ -747,8 +849,10 @@ namespace HoyoToon.Runtime.Character
 
         private void OnEnable()
         {
+            TryAssignDefaultComputeSkinningShader();
             RefreshLightReferences();
             RefreshScopedRenderers();
+            m_ComputeSkinningDirty = true;
             Register(this);
             NotifySceneControllerCharacterLightRegistration(CharacterLight, register: true);
             DetermineStencilEyeValueFromName();
@@ -765,6 +869,7 @@ namespace HoyoToon.Runtime.Character
 
         private void OnDisable()
         {
+            TeardownComputeSkinning();
             ReleaseAllRendererConstantBuffers();
             Unregister(this);
             NotifySceneControllerCharacterLightRegistration(CharacterLight, register: false);
@@ -772,6 +877,7 @@ namespace HoyoToon.Runtime.Character
 
         private void OnDestroy()
         {
+            TeardownComputeSkinning();
             ReleaseAllRendererConstantBuffers();
             Unregister(this);
             NotifySceneControllerCharacterLightRegistration(CharacterLight, register: false);
@@ -818,16 +924,36 @@ namespace HoyoToon.Runtime.Character
 
         private void OnValidate()
         {
+            TryAssignDefaultComputeSkinningShader();
+            SanitizeEffectMaterialEntries();
             RefreshLightReferences();
             m_HasSyncedState = false;
+            m_ComputeSkinningDirty = true;
             s_TopologyDirty = true;
 
             if (isActiveAndEnabled)
                 TrySyncToRendererIfDirty(force: true);
         }
 
+        private void SanitizeEffectMaterialEntries()
+        {
+            if (EffectMaterials == null || EffectMaterials.Count == 0)
+                return;
+
+            for (int i = 0; i < EffectMaterials.Count; ++i)
+            {
+                EffectMaterialEntry entry = EffectMaterials[i];
+                if (entry.Type != EffectType.None || entry.Material == null)
+                    continue;
+
+                entry.Material = null;
+                EffectMaterials[i] = entry;
+            }
+        }
+
         private void Reset()
         {
+            TryAssignDefaultComputeSkinningShader();
             RefreshLightReferences();
 
             CharacterLight = EnsureOwnedCharacterLight();
@@ -906,6 +1032,14 @@ namespace HoyoToon.Runtime.Character
                 state.propertyBlock.SetVector(s_CharacterSelfShadowAtlasRectId, m_CharacterSelfShadowAtlasRect);
                 state.propertyBlock.SetFloat(s_CharacterSelfShadowSliceIndexId, m_CharacterSelfShadowSliceIndex);
                 state.propertyBlock.SetFloat(s_CharacterSelfShadowValidId, m_CharacterSelfShadowValid);
+
+                int computeVertexOffset = 0;
+                bool hasComputeSkinning = m_ComputeSkinningInitialized && m_ComputeVertexOffsets.TryGetValue(ren, out computeVertexOffset);
+                state.propertyBlock.SetInteger(s_HsrComputeSkinningEnabledId, hasComputeSkinning ? 1 : 0);
+                state.propertyBlock.SetInteger(s_HsrComputeSkinningVertexOffsetId, hasComputeSkinning ? computeVertexOffset : 0);
+                if (hasComputeSkinning)
+                    state.propertyBlock.SetBuffer(s_HsrComputeSkinnedVerticesId, m_ComputeOutputBuffer);
+
                 ren.SetPropertyBlock(state.propertyBlock);
                 SyncStencilEyeMaterialOverride(ren);
             }
@@ -993,6 +1127,8 @@ namespace HoyoToon.Runtime.Character
                 hash = hash * 31 + _DisableCharacterLocalLight.GetHashCode();
                 hash = hash * 31 + _EnableCustomCameraOverride.GetHashCode();
                 hash = hash * 31 + _StencilEyeValue.GetHashCode();
+                hash = hash * 31 + (int)SkinningMode;
+                hash = hash * 31 + (CustomSkinningCompute != null ? CustomSkinningCompute.GetInstanceID() : 0);
                 hash = hash * 31 + m_CharacterSelfShadowAtlasRect.GetHashCode();
                 hash = hash * 31 + m_CharacterSelfShadowSliceIndex.GetHashCode();
                 hash = hash * 31 + m_CharacterSelfShadowValid.GetHashCode();
@@ -1092,7 +1228,299 @@ namespace HoyoToon.Runtime.Character
 
         private void LateUpdate()
         {
+            UpdateComputeSkinning();
             TrySyncToRendererIfDirty(force: false);
+        }
+
+        private bool IsComputeSkinningRequested()
+        {
+            TryAssignDefaultComputeSkinningShader();
+            return SkinningMode == CharacterSkinningMode.Compute && CustomSkinningCompute != null;
+        }
+
+        private void TryAssignDefaultComputeSkinningShader()
+        {
+            if (CustomSkinningCompute != null)
+                return;
+
+#if UNITY_EDITOR
+            CustomSkinningCompute = AssetDatabase.LoadAssetAtPath<ComputeShader>(DefaultSkinningComputeShaderAssetPath);
+            if (CustomSkinningCompute != null)
+            {
+                EditorUtility.SetDirty(this);
+                m_ComputeSkinningDirty = true;
+            }
+#endif
+        }
+
+        private void UpdateComputeSkinning()
+        {
+            if (!IsComputeSkinningRequested())
+            {
+                if (m_ComputeSkinningInitialized)
+                {
+                    TeardownComputeSkinning();
+                    m_HasSyncedState = false;
+                }
+
+                return;
+            }
+
+            if (!SystemInfo.supportsComputeShaders)
+            {
+                LogComputeSkinningErrorOnce("HSRCharacterController: Compute skinning requested but compute shaders are unsupported on this platform.");
+                return;
+            }
+
+            if (m_ComputeSkinningDirty || !m_ComputeSkinningInitialized)
+            {
+                RebuildComputeSkinning();
+                m_HasSyncedState = false;
+            }
+
+            if (!m_ComputeSkinningInitialized)
+                return;
+
+            if (m_ComputeBaseVerticesBuffer == null ||
+                m_ComputeBoneWeightsBuffer == null ||
+                m_ComputeBoneIndicesBuffer == null ||
+                m_ComputeBoneMatricesBuffer == null ||
+                m_ComputeOutputBuffer == null)
+            {
+                m_ComputeSkinningDirty = true;
+                RebuildComputeSkinning();
+                m_HasSyncedState = false;
+                if (!m_ComputeSkinningInitialized)
+                    return;
+            }
+
+            UploadComputeBoneMatrices();
+            DispatchComputeSkinning();
+        }
+
+        private void RebuildComputeSkinning()
+        {
+            TeardownComputeSkinning();
+            m_ComputeSkinningDirty = false;
+
+            if (renderers == null || m_RendererScopeDirty)
+                RefreshScopedRenderers();
+
+            m_ComputeSkinSegments.Clear();
+            m_ComputeVertexOffsets.Clear();
+
+            int totalVertexCount = 0;
+            int totalMatrixCount = 0;
+
+            if (renderers != null)
+            {
+                for (int i = 0; i < renderers.Length; ++i)
+                {
+                    SkinnedMeshRenderer skinnedRenderer = renderers[i] as SkinnedMeshRenderer;
+                    if (skinnedRenderer == null || skinnedRenderer.sharedMesh == null)
+                        continue;
+
+                    Mesh mesh = skinnedRenderer.sharedMesh;
+                    if (!mesh.isReadable)
+                    {
+                        LogComputeSkinningErrorOnce($"HSRCharacterController: Mesh '{mesh.name}' is not Read/Write enabled; skipping compute skinning for this renderer.");
+                        continue;
+                    }
+
+                    BoneWeight[] boneWeights = mesh.boneWeights;
+                    Vector3[] vertices = mesh.vertices;
+                    Matrix4x4[] bindPoses = mesh.bindposes;
+                    if (vertices == null || vertices.Length == 0 || boneWeights == null || boneWeights.Length != vertices.Length || bindPoses == null || bindPoses.Length == 0)
+                        continue;
+
+                    var segment = new ComputeSkinSegment
+                    {
+                        renderer = skinnedRenderer,
+                        mesh = mesh,
+                        bones = skinnedRenderer.bones,
+                        bindPoses = bindPoses,
+                        vertexOffset = totalVertexCount,
+                        vertexCount = vertices.Length,
+                        matrixOffset = totalMatrixCount,
+                        matrixCount = bindPoses.Length
+                    };
+
+                    m_ComputeSkinSegments.Add(segment);
+                    m_ComputeVertexOffsets[skinnedRenderer] = segment.vertexOffset;
+                    totalVertexCount += segment.vertexCount;
+                    totalMatrixCount += segment.matrixCount;
+                }
+            }
+
+            if (m_ComputeSkinSegments.Count == 0 || totalVertexCount == 0 || totalMatrixCount == 0)
+                return;
+
+            try
+            {
+                m_ComputeKernel = CustomSkinningCompute.FindKernel(SkinningKernelName);
+            }
+            catch (Exception)
+            {
+                LogComputeSkinningErrorOnce($"HSRCharacterController: Kernel '{SkinningKernelName}' not found on compute shader '{CustomSkinningCompute.name}'.");
+                return;
+            }
+
+            SkinData[] baseVertices = new SkinData[totalVertexCount];
+            Vector4[] weights = new Vector4[totalVertexCount];
+            UInt4[] indices = new UInt4[totalVertexCount];
+            m_ComputeBoneMatricesUpload = new Matrix4x4[totalMatrixCount];
+
+            for (int s = 0; s < m_ComputeSkinSegments.Count; ++s)
+            {
+                ComputeSkinSegment segment = m_ComputeSkinSegments[s];
+                Mesh mesh = segment.mesh;
+                BoneWeight[] boneWeights = mesh.boneWeights;
+                Vector3[] vertices = mesh.vertices;
+                Vector3[] normals = mesh.normals;
+                Vector4[] tangents = mesh.tangents;
+                List<Vector4> uv7 = new List<Vector4>(segment.vertexCount);
+                List<Vector4> uv8 = new List<Vector4>(segment.vertexCount);
+                mesh.GetUVs(6, uv7);
+                mesh.GetUVs(7, uv8);
+
+                bool hasNormals = normals != null && normals.Length == segment.vertexCount;
+                bool hasTangents = tangents != null && tangents.Length == segment.vertexCount;
+                bool hasUv7 = uv7.Count == segment.vertexCount;
+                bool hasUv8 = uv8.Count == segment.vertexCount;
+
+                for (int i = 0; i < segment.vertexCount; ++i)
+                {
+                    int globalVertexIndex = segment.vertexOffset + i;
+                    BoneWeight bw = boneWeights[i];
+
+                    baseVertices[globalVertexIndex] = new SkinData
+                    {
+                        pos = vertices[i],
+                        pad0 = 0f,
+                        norm = hasNormals ? normals[i] : Vector3.up,
+                        pad1 = 0f,
+                        tangent = hasTangents ? tangents[i] : new Vector4(1f, 0f, 0f, 1f),
+                        tangent1 = new Vector4(
+                            hasUv7 ? uv7[i].x : 0f,
+                            hasUv7 ? uv7[i].y : 0f,
+                            hasUv8 ? uv8[i].x : 0f,
+                            hasUv8 ? uv8[i].y : 1f)
+                    };
+
+                    weights[globalVertexIndex] = new Vector4(bw.weight0, bw.weight1, bw.weight2, bw.weight3);
+                    indices[globalVertexIndex] = new UInt4((uint)bw.boneIndex0, (uint)bw.boneIndex1, (uint)bw.boneIndex2, (uint)bw.boneIndex3);
+                }
+            }
+
+            m_ComputeBaseVerticesBuffer = new ComputeBuffer(totalVertexCount, Marshal.SizeOf<SkinData>());
+            m_ComputeBoneWeightsBuffer = new ComputeBuffer(totalVertexCount, Marshal.SizeOf<Vector4>());
+            m_ComputeBoneIndicesBuffer = new ComputeBuffer(totalVertexCount, Marshal.SizeOf<UInt4>());
+            m_ComputeBoneMatricesBuffer = new ComputeBuffer(totalMatrixCount, Marshal.SizeOf<Matrix4x4>());
+            m_ComputeOutputBuffer = new ComputeBuffer(totalVertexCount, Marshal.SizeOf<SkinData>());
+
+            m_ComputeBaseVerticesBuffer.SetData(baseVertices);
+            m_ComputeBoneWeightsBuffer.SetData(weights);
+            m_ComputeBoneIndicesBuffer.SetData(indices);
+
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BaseVertices", m_ComputeBaseVerticesBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BoneWeights", m_ComputeBoneWeightsBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BoneIndices", m_ComputeBoneIndicesBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BoneMatrices", m_ComputeBoneMatricesBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_OutputBuffer", m_ComputeOutputBuffer);
+
+            m_ComputeSkinningInitialized = true;
+            m_HasLoggedComputeSkinningError = false;
+        }
+
+        private void UploadComputeBoneMatrices()
+        {
+            if (!m_ComputeSkinningInitialized || m_ComputeBoneMatricesUpload == null)
+                return;
+
+            for (int s = 0; s < m_ComputeSkinSegments.Count; ++s)
+            {
+                ComputeSkinSegment segment = m_ComputeSkinSegments[s];
+                if (segment.renderer == null)
+                    continue;
+
+                Transform skinRoot = segment.renderer.rootBone != null ? segment.renderer.rootBone : segment.renderer.transform;
+                Matrix4x4 rootWorldToLocal = skinRoot.worldToLocalMatrix;
+                Matrix4x4 fallbackLocalToWorld = skinRoot.localToWorldMatrix;
+                Transform[] bones = segment.bones;
+
+                for (int i = 0; i < segment.matrixCount; ++i)
+                {
+                    Matrix4x4 boneLocalToWorld = fallbackLocalToWorld;
+                    if (bones != null && i < bones.Length && bones[i] != null)
+                        boneLocalToWorld = bones[i].localToWorldMatrix;
+
+                    int matrixIndex = segment.matrixOffset + i;
+                    m_ComputeBoneMatricesUpload[matrixIndex] = rootWorldToLocal * boneLocalToWorld * segment.bindPoses[i];
+                }
+            }
+
+            m_ComputeBoneMatricesBuffer.SetData(m_ComputeBoneMatricesUpload);
+        }
+
+        private void DispatchComputeSkinning()
+        {
+            if (!m_ComputeSkinningInitialized || CustomSkinningCompute == null)
+                return;
+
+            // Rebind every frame to survive shader reimport/reload invalidating kernel bindings.
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BaseVertices", m_ComputeBaseVerticesBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BoneWeights", m_ComputeBoneWeightsBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BoneIndices", m_ComputeBoneIndicesBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_BoneMatrices", m_ComputeBoneMatricesBuffer);
+            CustomSkinningCompute.SetBuffer(m_ComputeKernel, "_OutputBuffer", m_ComputeOutputBuffer);
+
+            for (int s = 0; s < m_ComputeSkinSegments.Count; ++s)
+            {
+                ComputeSkinSegment segment = m_ComputeSkinSegments[s];
+                if (segment.renderer == null)
+                    continue;
+
+                CustomSkinningCompute.SetInt("_VertexCount", segment.vertexCount);
+                CustomSkinningCompute.SetInt("_GlobalVertexOffset", segment.vertexOffset);
+                CustomSkinningCompute.SetInt("_GlobalMatrixOffset", segment.matrixOffset);
+
+                int threadGroupsX = Mathf.CeilToInt(segment.vertexCount / (float)SkinningKernelThreadGroupSize);
+                CustomSkinningCompute.Dispatch(m_ComputeKernel, threadGroupsX, 1, 1);
+            }
+        }
+
+        private void TeardownComputeSkinning()
+        {
+            m_ComputeSkinningInitialized = false;
+            m_ComputeSkinningDirty = false;
+            m_ComputeKernel = -1;
+            m_ComputeSkinSegments.Clear();
+            m_ComputeVertexOffsets.Clear();
+            m_ComputeBoneMatricesUpload = null;
+
+            ReleaseComputeBuffer(ref m_ComputeBaseVerticesBuffer);
+            ReleaseComputeBuffer(ref m_ComputeBoneWeightsBuffer);
+            ReleaseComputeBuffer(ref m_ComputeBoneIndicesBuffer);
+            ReleaseComputeBuffer(ref m_ComputeBoneMatricesBuffer);
+            ReleaseComputeBuffer(ref m_ComputeOutputBuffer);
+        }
+
+        private static void ReleaseComputeBuffer(ref ComputeBuffer buffer)
+        {
+            if (buffer == null)
+                return;
+
+            buffer.Release();
+            buffer = null;
+        }
+
+        private void LogComputeSkinningErrorOnce(string message)
+        {
+            if (m_HasLoggedComputeSkinningError)
+                return;
+
+            m_HasLoggedComputeSkinningError = true;
+            Debug.LogWarning(message);
         }
 
         private void SyncLight()

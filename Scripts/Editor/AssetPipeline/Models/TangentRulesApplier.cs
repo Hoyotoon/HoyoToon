@@ -574,6 +574,9 @@ namespace HoyoToon.Editor.AssetPipeline.Models
             var merged = new Dictionary<Vector3, Vector3>();
             var tangents = new Vector4[newMesh.vertexCount];
 
+            Vector4[] oldTangents = mesh.tangents;
+            
+
             for (int i = 0; i < triangles.Length; i += 3)
             {
                 var i0 = triangles[i + 0];
@@ -603,10 +606,12 @@ namespace HoyoToon.Editor.AssetPipeline.Models
             {
                 var normal = merged[vertices[i]].normalized;
                 tangents[i] = new Vector4(normal.x, normal.y, normal.z, mesh.tangents[i].w);
-
+                
             }
 
             newMesh.tangents = tangents;
+            newMesh.uv7 = oldTangents.Select(t => new Vector2(t.x, t.y)).ToArray();
+            newMesh.uv8 = oldTangents.Select(t => new Vector2(t.z, t.w)).ToArray();
             return newMesh;
         }
 

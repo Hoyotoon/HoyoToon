@@ -57,6 +57,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         public override void OnGUI(HoyoToonManager targetManager)
         {
             EnsurePrefsLoaded();
+
             if (_camera == null)
             {
                 _camera = Camera.main;
@@ -145,7 +146,6 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             return GlobalObjectId.GlobalObjectIdentifierToObjectSlow(globalId) as Camera;
         }
 
-
         private void DrawCameraSection()
         {
             DrawInlineCalloutIfNeeded(StepIds.RendersCamera,
@@ -153,25 +153,33 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUI.BeginChangeCheck();
-                _camera = (Camera)EditorGUILayout.ObjectField("Select Camera", _camera, typeof(Camera), true);
+                Camera nextCamera = (Camera)EditorGUILayout.ObjectField("Select Camera", _camera, typeof(Camera), true);
                 bool cameraChanged = EditorGUI.EndChangeCheck();
-                var cameraRect = GUILayoutUtility.GetLastRect();
-                if (cameraChanged && string.Equals(GuidedTourController.CurrentStep.id, StepIds.RendersCamera, StringComparison.OrdinalIgnoreCase) && _camera != null)
+                _camera = nextCamera;
+                if (cameraChanged)
                 {
-                    GuidedTourController.NotifyRendersCameraSelected();
-                }
-                if (GUILayout.Button("Use Main", GUILayout.Width(80f)))
-                {
-                    _camera = Camera.main;
+                    HandleCameraChanged();
                     if (string.Equals(GuidedTourController.CurrentStep.id, StepIds.RendersCamera, StringComparison.OrdinalIgnoreCase) && _camera != null)
                     {
                         GuidedTourController.NotifyRendersCameraSelected();
                     }
                 }
+
+                if (GUILayout.Button("Use Main", GUILayout.Width(80f)))
+                {
+                    _camera = Camera.main;
+                    HandleCameraChanged();
+                    if (string.Equals(GuidedTourController.CurrentStep.id, StepIds.RendersCamera, StringComparison.OrdinalIgnoreCase) && _camera != null)
+                    {
+                        GuidedTourController.NotifyRendersCameraSelected();
+                    }
+                }
+
                 var useMainRect = GUILayoutUtility.GetLastRect();
                 TourOverlay.DrawHighlightIfActive("tour.renders.camera", useMainRect, "Use Main", onClick: () =>
                 {
                     _camera = Camera.main;
+                    HandleCameraChanged();
                     if (string.Equals(GuidedTourController.CurrentStep.id, StepIds.RendersCamera, StringComparison.OrdinalIgnoreCase) && _camera != null)
                     {
                         GuidedTourController.NotifyRendersCameraSelected();
@@ -210,10 +218,6 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             {
                 EditorGUILayout.HelpBox("Select a camera to sync with the Scene view.", MessageType.Info);
             }
-            else if (_syncSceneCamera)
-            {
-                EditorGUILayout.HelpBox("Sync mirrors Scene view (Ctrl + Shift + F behavior).", MessageType.None);
-            }
         }
 
         private void DrawResolutionSection()
@@ -222,7 +226,6 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             _resWidth = EditorGUILayout.IntField("Width", Mathf.Max(1, _resWidth));
             _resHeight = EditorGUILayout.IntField("Height", Mathf.Max(1, _resHeight));
             _scale = EditorGUILayout.IntSlider("Scale", _scale, MinScale, MaxScale);
-            EditorGUILayout.HelpBox("Scale multiplies width/height without losing quality.", MessageType.None);
 
             using (new EditorGUILayout.HorizontalScope())
             {
@@ -264,10 +267,6 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             var watermarkRect = GUILayoutUtility.GetLastRect();
             TourOverlay.DrawHighlightIfActive("tour.renders.watermark", watermarkRect, "Watermark");
             SetToggleAndNotifyTour(ref _watermark, newWatermark, StepIds.RendersWatermark, GuidedTourController.NotifyRendersWatermarkEnabled);
-            if (_watermark && ScreenshotCapture.GetWatermarkTexture() == null)
-            {
-                EditorGUILayout.HelpBox("Add a watermark texture at Resources/UI/hoyotoon.png to enable it.", MessageType.Info);
-            }
         }
 
         private void DrawActionsSection()
@@ -335,6 +334,16 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             return ScreenshotCapture.GetAbsoluteSavePath(_savePath);
         }
 
+        private void HandleCameraChanged()
+        {
+            if (!_syncSceneCamera)
+            {
+                return;
+            }
+
+            EndSync();
+            BeginSync();
+        }
 
         private void HandleEditorUpdate()
         {

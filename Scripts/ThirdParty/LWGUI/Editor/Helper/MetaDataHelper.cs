@@ -188,12 +188,25 @@ namespace LWGUI
 					|| (displayModeData.showOnlyModifiedGroups && cachedModifiedProperties.ContainsKey(propStaticData.parent != null ? propStaticData.parent.name : prop.name))))
 				// ShowIf() == false
 			 || !propDynamicData.isShowing
+				// MaterialID() filter
+			 || !GetMaterialIdFilterResult(propStaticData, metaDatas.perInspectorData)
 			   )
 			{
 				result = false;
 			}
 
 			return result;
+		}
+
+		private static bool GetMaterialIdFilterResult(PropertyStaticData propStaticData, PerInspectorData perInspectorData)
+		{
+			if (propStaticData.materialIdFilters == null || propStaticData.materialIdFilters.Count == 0)
+				return true;
+
+			if (perInspectorData == null || perInspectorData.materialIdFilterSelected < 0)
+				return true;
+
+			return propStaticData.materialIdFilters.Contains(perInspectorData.materialIdFilterSelected);
 		}
 
 		public static bool GetParentPropertyVisibility(PropertyStaticData parentPropStaticData, Material material, LWGUIMetaDatas metaDatas)

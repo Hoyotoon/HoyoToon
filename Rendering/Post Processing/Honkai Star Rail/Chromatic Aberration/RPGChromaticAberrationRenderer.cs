@@ -20,6 +20,12 @@ namespace HoyoToon.Rendering.PostProcessing.HSR.ChromaticAberration
                 return;
             }
 
+            CameraType cameraType = renderingData.cameraData.cameraType;
+            if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
+            {
+                return;
+            }
+
             renderer.EnqueuePass(_renderPass);
         }
 

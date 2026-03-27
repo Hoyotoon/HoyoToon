@@ -4,12 +4,13 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon;
+using NUnit.Framework;
 
 namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 {
     internal sealed class CharacterModule : DynamicControllerModule
     {
-        private static readonly string[] SectionOrder = { "Lighting", "Overrides", "Rendering", "General" };
+        private static readonly string[] SectionOrder = { "General", "Lighting", "Shadows", "Local Lighting", "Special Effects", "Rendering"};
 
         public override string DisplayName => "Character";
 
@@ -79,18 +80,25 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         {
             string name = property.name ?? string.Empty;
             string displayName = property.displayName ?? string.Empty;
-
+            if (ContainsAny(name, displayName, "EffectMaterials"))
+            {
+                return "Special Effects";
+            }
             if (ContainsAny(name, displayName, "Stencil", "Renderer", "Render"))
             {
                 return "Rendering";
             }
+            if(ContainsAny(name, displayName, "Shadow"))
+            {
+                return "Shadows";
+            }
 
             if (ContainsAny(name, displayName, "Override", "NewLocal", "Disable", "EnableCustom"))
             {
-                return "Overrides";
+                return "Local Lighting";
             }
 
-            if (ContainsAny(name, displayName, "CharacterLight", "SceneLight", "Head", "Light", "Color"))
+            if (ContainsAny(name, displayName, "CharacterLight", "_NewLocalLightStrength","SceneLight", "Head", "Light", "Color"))
             {
                 return "Lighting";
             }
