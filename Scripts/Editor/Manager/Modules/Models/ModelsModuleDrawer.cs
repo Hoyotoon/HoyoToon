@@ -260,29 +260,63 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         internal void DrawDownloadActions(HoyoToonManager manager)
         {
             DrawTourCalloutForStep(StepIds.Download);
-            using (new EditorGUILayout.HorizontalScope())
+            bool tourActive = GuidedTourController.IsActive;
+            bool enforcedAutoSetup = tourActive ? false : _module._autoSetupAfterDownload;
+            bool newValue;
+
+            Rect toggleRect = EditorGUILayout.GetControlRect();
+            using (new EditorGUI.DisabledScope(tourActive))
             {
-                bool tourActive = GuidedTourController.IsActive;
-                bool enforcedAutoSetup = tourActive ? false : _module._autoSetupAfterDownload;
-                bool newValue;
-                using (new EditorGUI.DisabledScope(tourActive))
+                newValue = EditorGUI.ToggleLeft(toggleRect, "Auto setup after download", enforcedAutoSetup);
+            }
+
+            TourOverlay.DrawHighlightIfActive("tour.models.autosetup", toggleRect, "Auto setup");
+            if (tourActive)
+            {
+                _module._autoSetupAfterDownload = false;
+            }
+            else if (newValue != _module._autoSetupAfterDownload)
+            {
+                _module._autoSetupAfterDownload = newValue;
+                EditorPrefs.SetBool(PrefsKeys.ModelsAutoSetup, _module._autoSetupAfterDownload);
+            }
+
+            const float actionSpacing = 6f;
+            const float stackedThreshold = 340f;
+            float singleLineHeight = EditorGUIUtility.singleLineHeight;
+            Rect actionRowRect = EditorGUILayout.GetControlRect(false, singleLineHeight);
+
+            if (actionRowRect.width < stackedThreshold)
+            {
+                DrawClearSelectionButton(actionRowRect);
+                Rect stackedDownloadRect = EditorGUILayout.GetControlRect(false, singleLineHeight);
+                DrawDownloadButton(stackedDownloadRect, manager);
+                return;
+            }
+
+            float buttonWidth = Mathf.Floor((actionRowRect.width - actionSpacing) * 0.5f);
+            float clearWidth = buttonWidth;
+            float downloadWidth = actionRowRect.width - clearWidth - actionSpacing;
+            Rect clearRect = new Rect(actionRowRect.x, actionRowRect.y, clearWidth, actionRowRect.height);
+            Rect downloadRect = new Rect(clearRect.xMax + actionSpacing, actionRowRect.y, downloadWidth, actionRowRect.height);
+
+            DrawClearSelectionButton(clearRect);
+            DrawDownloadButton(downloadRect, manager);
+        }
+
+        private void DrawDownloadButton(Rect rect, HoyoToonManager manager)
+        {
+            bool ready = _module.TryGetBatchSelection(out _, out var characters, out var variants)
+                         && characters.Count > 0
+                         && variants.Count > 0;
+            using (new EditorGUI.DisabledScope(!ready || _module._isRefreshing))
+            {
+                if (GUI.Button(rect, "Download Selected Models"))
                 {
-                    newValue = EditorGUILayout.ToggleLeft("Auto setup after download", enforcedAutoSetup);
-                }
-                var toggleRect = GUILayoutUtility.GetLastRect();
-                TourOverlay.DrawHighlightIfActive("tour.models.autosetup", toggleRect, "Auto setup");
-                if (tourActive)
-                {
-                    _module._autoSetupAfterDownload = false;
-                }
-                else if (newValue != _module._autoSetupAfterDownload)
-                {
-                    _module._autoSetupAfterDownload = newValue;
-                    EditorPrefs.SetBool(PrefsKeys.ModelsAutoSetup, _module._autoSetupAfterDownload);
+                    _module.StartDownloadSelected(manager);
                 }
 
-                GUILayout.FlexibleSpace();
-                DrawDownloadButton(manager);
+                TourOverlay.DrawHighlightIfActive("tour.models.download", rect, "Download");
             }
         }
 
@@ -520,19 +554,15 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             return selectedIndex;
         }
 
-        private void DrawDownloadButton(HoyoToonManager manager)
+        private void DrawClearSelectionButton(Rect rect)
         {
-            bool ready = _module.TryGetBatchSelection(out _, out var characters, out var variants)
-                         && characters.Count > 0
-                         && variants.Count > 0;
-            using (new EditorGUI.DisabledScope(!ready || _module._isRefreshing))
+            bool canClear = _module.HasCurrentSelection() && !_module._isRefreshing && !GuidedTourController.IsActive;
+            using (new EditorGUI.DisabledScope(!canClear))
             {
-                if (GUILayout.Button("Download Selected Models", GUILayout.Width(190f)))
+                if (GUI.Button(rect, "Clear Selection"))
                 {
-                    _module.StartDownloadSelected(manager);
+                    _module.ClearCurrentSelection();
                 }
-                var downloadRect = GUILayoutUtility.GetLastRect();
-                TourOverlay.DrawHighlightIfActive("tour.models.download", downloadRect, "Download");
             }
         }
 

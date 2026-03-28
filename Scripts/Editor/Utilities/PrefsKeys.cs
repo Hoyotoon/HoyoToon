@@ -10,6 +10,12 @@ namespace HoyoToon.Editor.Utilities
         public const string UpdaterCleanOnSwitch = "HoyoToon.Updater.CleanOnSwitch";
         public const string UpdaterAutoCheckOnStartup = "HoyoToon.Updater.AutoCheckOnStartup";
         public const string UpdaterLastAutoCheckUtc = "HoyoToon.Updater.LastAutoCheckUtc";
+        public const string UpdaterStatusState = "HoyoToon.Updater.Status.State";
+        public const string UpdaterStatusBranch = "HoyoToon.Updater.Status.Branch";
+        public const string UpdaterStatusLocalVersion = "HoyoToon.Updater.Status.LocalVersion";
+        public const string UpdaterStatusRemoteVersion = "HoyoToon.Updater.Status.RemoteVersion";
+        public const string UpdaterStatusMessage = "HoyoToon.Updater.Status.Message";
+        public const string UpdaterStatusLastCheckedUtc = "HoyoToon.Updater.Status.LastCheckedUtc";
         public const string DebugEnabled = "HoyoToon.Debug.Enabled";
         public const string ShaderPreprocessorLastVRC = "HoyoToon.ShaderPreprocessor.LastVRC";
         public const string RenderPipelineLast = "HoyoToon.RenderPipeline.Last";
@@ -25,6 +31,10 @@ namespace HoyoToon.Editor.Utilities
         public const string RenderOpenAfter = RenderPrefix + "OpenAfter";
         public const string RenderWatermark = RenderPrefix + "Watermark";
         public const string RenderCameraId = RenderPrefix + "CameraId";
+        public const string RenderTurnaroundEnabled = RenderPrefix + "TurnaroundEnabled";
+        public const string RenderTurnaroundGap = RenderPrefix + "TurnaroundGap";
+        public const string RenderTurnaroundPadding = RenderPrefix + "TurnaroundPadding";
+        public const string RenderTurnaroundBackground = RenderPrefix + "TurnaroundBackground";
         public const string ModelsDownloadRoot = "HoyoToon.ModelsDownloader.DownloadRoot";
         public const string ModelsAutoSetup = "HoyoToon.ModelsDownloader.AutoSetupAfterDownload";
         public const string TourShown = "HoyoToon.Tour.Shown";

@@ -366,6 +366,44 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                    && string.Equals(_characters[_selectedCharacterIndex], characterName, StringComparison.OrdinalIgnoreCase);
         }
 
+        internal bool HasCurrentSelection()
+        {
+            if (_selectedCharacterIndex >= 0 || _selectedCharacters.Count > 0)
+            {
+                return true;
+            }
+
+            if (_selectedVariantIndex >= 0 || _selectedVariants.Count > 0)
+            {
+                return true;
+            }
+
+            foreach (var selection in _selectedVariantsByCharacter.Values)
+            {
+                if (selection != null && selection.Count > 0)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        internal void ClearCurrentSelection()
+        {
+            _selectedCharacterIndex = -1;
+            _selectedVariantIndex = -1;
+            _variantScroll = Vector2.zero;
+            _variantSectionScroll = Vector2.zero;
+            _selectedCharacters.Clear();
+            _selectedVariants.Clear();
+            _selectedVariantsByCharacter.Clear();
+            _loadingVariantsForCharacters.Clear();
+            _variantScrollByCharacter.Clear();
+            _variants = new List<VariantOption>();
+            _statusMessage = null;
+        }
+
         internal void ClearSelections()
         {
             _availableGames.Clear();

@@ -1,16 +1,18 @@
-# HoyoToon 0.0.9
+# HoyoToon 0.1.0
 
-## UI
-- Fixed an issue regarding Shader parameters inside nested groups not being searchable. 
-
-## Shader
-- Fixed an issue where multiple shaders were causing the transparency to fail because they had incorrect blending states
-- Outlines now receive lighting colors 
-- Fixed an issue where the Shadow Color Grading highlight and shadow were reversed for the areas that were deemed skin. Also fixed the hair being incorrectly attributed to skin. 
-- Fixed issue where the Hair Depth texture wasnt utilizing the showbyID
-
-## Pipeline
-- Fixed an issue where, when the graphics API is set to DX12, theres a possiblity to get an error about an uninitialized SRV.
-
-## Updater
-- Fixed issue where moved or deleted files were not properly being moved/deleted. 
+## HoyoToon Manager
+- Added a clear selection button to the models tab.
+- Display the current package version on the header of the Manager window.
+    - Clicking it will check for updates
+    - Status for the following: 
+        - Up to date
+        - Update available
+        - Checking
+        - Local ahead
+        - Error
+- Added Turnaround capture feature to the Renders tab.
+    - Capture an orthographic front, back, left, and right view of the model with a single click.
+    - Composits the captures into a single image with configurable gap, padding and background image.
+    - Will automatically force the watermark on for turnaround captures.
+    - Turnaround captures will have the light always facing the view angle, so the lighting will be consistent across all views and unaffected by the model's orientation.
+- Reorganized the Renders module UI

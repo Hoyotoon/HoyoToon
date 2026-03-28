@@ -23,21 +23,8 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 
         public void Capture(Camera sourceCamera, int width, int height, string absoluteSavePath, bool transparent = false, bool watermark = false, bool openAfter = false)
         {
-            if (string.IsNullOrEmpty(absoluteSavePath))
+            if (!ValidateCaptureRequest(sourceCamera, width, height, absoluteSavePath))
             {
-                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Save path is invalid.");
-                return;
-            }
-
-            if (width < 1 || height < 1)
-            {
-                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Screenshot resolution must be at least 1x1.");
-                return;
-            }
-
-            if (sourceCamera == null)
-            {
-                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Select a camera before taking a screenshot.");
                 return;
             }
 
@@ -60,6 +47,78 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
             }
         }
 
+        internal Texture2D CaptureTexture(Camera sourceCamera, int width, int height, bool transparent = false)
+        {
+            if (!ValidateCaptureRequest(sourceCamera, width, height, string.Empty, requireSavePath: false))
+            {
+                return null;
+            }
+
+            try
+            {
+                return CaptureTextureInternal(sourceCamera, width, height, transparent);
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
+                return null;
+            }
+        }
+
+        internal string SaveTexture(Texture2D texture, string absoluteSavePath, bool watermark = false, bool openAfter = false, string fileName = null)
+        {
+            if (texture == null)
+            {
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "No texture was provided to save.");
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(absoluteSavePath))
+            {
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Save path is invalid.");
+                return null;
+            }
+
+            if (string.IsNullOrWhiteSpace(fileName))
+            {
+                fileName = GenerateScreenshotName();
+            }
+            else if (!string.Equals(Path.GetExtension(fileName), ".png", StringComparison.OrdinalIgnoreCase))
+            {
+                fileName += ".png";
+            }
+
+            string path = Path.Combine(absoluteSavePath, fileName);
+
+            try
+            {
+                if (!Directory.Exists(absoluteSavePath))
+                {
+                    Directory.CreateDirectory(absoluteSavePath);
+                }
+
+                if (watermark)
+                {
+                    ApplyWatermark(texture);
+                }
+
+                File.WriteAllBytes(path, texture.EncodeToPNG());
+                LastScreenshot = path;
+
+                if (openAfter)
+                {
+                    Application.OpenURL(new Uri(path).AbsoluteUri);
+                }
+
+                return path;
+            }
+            catch (Exception ex)
+            {
+                HoyoToonLogger.Always("Renders", ex.ToString(), LogType.Exception);
+                return null;
+            }
+        }
+
         private IEnumerator CaptureCameraAtEndOfFrame(Camera sourceCamera, int width, int height, string path, bool transparent, bool watermark, bool openAfter)
         {
             yield return new WaitForEndOfFrame();
@@ -73,9 +132,7 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
 
             try
             {
-                finalTexture = transparent
-                    ? RenderCameraPassWithAlpha(sourceCamera, width, height)
-                    : RenderCameraPassOpaque(sourceCamera, width, height);
+                finalTexture = CaptureTextureInternal(sourceCamera, width, height, transparent);
                 if (finalTexture == null)
                 {
                     yield break;
@@ -106,6 +163,36 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
                     UnityEngine.Object.DestroyImmediate(finalTexture);
                 }
             }
+        }
+
+        private static bool ValidateCaptureRequest(Camera sourceCamera, int width, int height, string absoluteSavePath, bool requireSavePath = true)
+        {
+            if (requireSavePath && string.IsNullOrEmpty(absoluteSavePath))
+            {
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Save path is invalid.");
+                return false;
+            }
+
+            if (width < 1 || height < 1)
+            {
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Screenshot resolution must be at least 1x1.");
+                return false;
+            }
+
+            if (sourceCamera == null)
+            {
+                HoyoToonLogger.Log("Renders", LogLevel.Warning, "Select a camera before taking a screenshot.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private static Texture2D CaptureTextureInternal(Camera sourceCamera, int width, int height, bool transparent)
+        {
+            return transparent
+                ? RenderCameraPassWithAlpha(sourceCamera, width, height)
+                : RenderCameraPassOpaque(sourceCamera, width, height);
         }
 
         private static Texture2D RenderCameraPassWithAlpha(Camera captureCamera, int width, int height)
@@ -347,9 +434,9 @@ namespace HoyoToon.Editor.UI.ManagerInspector.Modules
         }
 
 
-        private static string GenerateScreenshotName()
+        internal static string GenerateScreenshotName(string prefix = "screen")
         {
-            return $"screen_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
+            return $"{prefix}_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.png";
         }
 
         internal static Texture2D GetWatermarkTexture()

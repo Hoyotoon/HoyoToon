@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using UnityEditor;
+using UnityEditorInternal;
 using UnityEngine;
 using UnityEngine.Networking;
 using Utf8Json;
@@ -20,6 +21,16 @@ namespace HoyoToon.Editor.Updater
     [InitializeOnLoad]
     internal static class PackageUpdater
     {
+        internal enum UpdateAvailabilityState
+        {
+            Unknown = 0,
+            Checking = 1,
+            UpToDate = 2,
+            UpdateAvailable = 3,
+            LocalAhead = 4,
+            Error = 5
+        }
+
         private static readonly UTF8Encoding StrictUtf8 = new UTF8Encoding(false, true);
         private const string Owner = "HoyoToon";
         private const string Repo = "HoyoToon";
@@ -42,16 +53,29 @@ namespace HoyoToon.Editor.Updater
 
         private static bool s_EditorReadyHandled;
         private static double s_NextAutoCheckHeartbeat;
+        private static UpdateStatusSnapshot s_cachedStatus;
 
         static PackageUpdater()
         {
             EnsureDefaults();
+            s_cachedStatus = LoadPersistedStatus();
             EditorApplication.delayCall += OnEditorReady;
             EditorApplication.update += OnEditorUpdate;
         }
 
+        internal sealed class UpdateStatusSnapshot
+        {
+            public UpdateAvailabilityState State;
+            public string Branch;
+            public string LocalVersion;
+            public string RemoteVersion;
+            public string StatusMessage;
+            public DateTime LastCheckedUtc;
+        }
+
         private sealed class UpdatePlan
         {
+            public UpdateAvailabilityState AvailabilityState;
             public string Branch;
             public string LocalVersion;
             public string RemoteVersion;
@@ -276,6 +300,18 @@ namespace HoyoToon.Editor.Updater
             StartCheck(showNoUpdatesDialog: false, automatic: true, cleanMissingFiles: false);
         }
 
+        internal static void HandleManagerHeaderBadgeClick()
+        {
+            UpdateStatusSnapshot status = GetStatusSnapshot();
+            if (status != null && status.State == UpdateAvailabilityState.Checking)
+            {
+                return;
+            }
+
+            bool showUpdaterDialog = status != null && status.State == UpdateAvailabilityState.UpdateAvailable;
+            StartCheck(showNoUpdatesDialog: false, automatic: !showUpdaterDialog, cleanMissingFiles: false);
+        }
+
         private static bool ShouldRunAutomaticCheckNow()
         {
             string value = EditorPrefs.GetString(PrefsKeys.UpdaterLastAutoCheckUtc, string.Empty);
@@ -341,8 +377,16 @@ namespace HoyoToon.Editor.Updater
                 return;
             }
 
+            SetStatus(
+                UpdateAvailabilityState.Checking,
+                PackageVersionUtility.GetLocalPackageVersion(forceRefresh: true),
+                null,
+                $"Checking '{CurrentBranch}' for updates...",
+                persist: false);
+
             if (!EditorCoroutine.Start(CheckRoutine(showNoUpdatesDialog, automatic, cleanMissingFiles)))
             {
+                RestorePersistedStatus();
                 if (!automatic)
                 {
                     DialogWindow.ShowWarning("Updater Busy", "The updater is already running.");
@@ -376,6 +420,12 @@ namespace HoyoToon.Editor.Updater
 
             if (!string.IsNullOrEmpty(error))
             {
+                SetStatus(
+                    UpdateAvailabilityState.Error,
+                    PackageVersionUtility.GetLocalPackageVersion(forceRefresh: true),
+                    null,
+                    error,
+                    persist: true);
                 HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Error, error);
                 if (!automatic)
                 {
@@ -386,8 +436,11 @@ namespace HoyoToon.Editor.Updater
 
             if (plan == null)
             {
+                RestorePersistedStatus();
                 yield break;
             }
+
+            SetStatus(plan.AvailabilityState, plan.LocalVersion, plan.RemoteVersion, plan.StatusMessage, persist: true);
 
             if (plan.TotalChanges == 0)
             {
@@ -444,6 +497,7 @@ namespace HoyoToon.Editor.Updater
                 {
                     onSuccess?.Invoke(new UpdatePlan
                     {
+                        AvailabilityState = UpdateAvailabilityState.LocalAhead,
                         Branch = CurrentBranch,
                         LocalVersion = localVersion,
                         RemoteVersion = remoteVersion,
@@ -460,6 +514,7 @@ namespace HoyoToon.Editor.Updater
                 {
                     onSuccess?.Invoke(new UpdatePlan
                     {
+                        AvailabilityState = UpdateAvailabilityState.UpToDate,
                         Branch = CurrentBranch,
                         LocalVersion = localVersion,
                         RemoteVersion = remoteVersion,
@@ -494,6 +549,7 @@ namespace HoyoToon.Editor.Updater
 
                 onSuccess?.Invoke(new UpdatePlan
                 {
+                    AvailabilityState = DetermineAvailabilityState(localVersion, remoteVersion),
                     Branch = CurrentBranch,
                     LocalVersion = localVersion,
                     RemoteVersion = remoteVersion,
@@ -608,6 +664,12 @@ namespace HoyoToon.Editor.Updater
 
                 ProgressDialog.Update(1f, "Update complete.");
                 HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Info, $"Updater applied branch '{plan.Branch}' ({plan.TotalChanges} changes).");
+                SetStatus(
+                    UpdateAvailabilityState.UpToDate,
+                    string.IsNullOrWhiteSpace(plan.RemoteVersion) ? plan.LocalVersion : plan.RemoteVersion,
+                    string.IsNullOrWhiteSpace(plan.RemoteVersion) ? plan.LocalVersion : plan.RemoteVersion,
+                    $"HoyoToon is up to date on the '{plan.Branch}' branch.",
+                    persist: true);
                 completionDialogTitle = "HoyoToon Updated";
                 completionDialogMessage = $"HoyoToon was updated from the '{plan.Branch}' branch.\n\nUpdated files: {plan.FilesToCopy.Count}\nRemoved files: {plan.FilesToDelete.Count}";
             }
@@ -884,25 +946,7 @@ namespace HoyoToon.Editor.Updater
 
         private static string GetLocalPackageVersion()
         {
-            string packageJsonPath = Path.Combine(PackageRoot, "package.json");
-            if (!File.Exists(packageJsonPath))
-            {
-                return "unknown";
-            }
-
-            try
-            {
-                if (!Api.Parser.TryParseFile(packageJsonPath, out PackageMetadata package, out _))
-                {
-                    return "unknown";
-                }
-
-                return string.IsNullOrEmpty(package?.version) ? "unknown" : package.version;
-            }
-            catch
-            {
-                return "unknown";
-            }
+            return PackageVersionUtility.GetLocalPackageVersion(forceRefresh: true);
         }
 
         private static void ShowDeferredInfoDialog(string title, string message)
@@ -961,6 +1005,144 @@ namespace HoyoToon.Editor.Updater
             }
 
             return string.Compare(left ?? string.Empty, right ?? string.Empty, StringComparison.OrdinalIgnoreCase);
+        }
+
+        internal static UpdateStatusSnapshot GetStatusSnapshot()
+        {
+            if (s_cachedStatus == null)
+            {
+                s_cachedStatus = LoadPersistedStatus();
+            }
+
+            if (s_cachedStatus == null)
+            {
+                return CreateStatusSnapshot(
+                    UpdateAvailabilityState.Unknown,
+                    PackageVersionUtility.GetLocalPackageVersion(),
+                    null,
+                    $"No update check has been recorded for '{CurrentBranch}' yet.",
+                    DateTime.MinValue,
+                    CurrentBranch);
+            }
+
+            if (s_cachedStatus.State == UpdateAvailabilityState.Checking)
+            {
+                return s_cachedStatus;
+            }
+
+            if (!string.Equals(s_cachedStatus.Branch, CurrentBranch, StringComparison.OrdinalIgnoreCase))
+            {
+                return CreateStatusSnapshot(
+                    UpdateAvailabilityState.Unknown,
+                    PackageVersionUtility.GetLocalPackageVersion(),
+                    null,
+                    $"No update check has been recorded for '{CurrentBranch}' yet.",
+                    DateTime.MinValue,
+                    CurrentBranch);
+            }
+
+            return s_cachedStatus;
+        }
+
+        private static UpdateAvailabilityState DetermineAvailabilityState(string localVersion, string remoteVersion)
+        {
+            if (string.Equals(localVersion, "unknown", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(remoteVersion, "unknown", StringComparison.OrdinalIgnoreCase))
+            {
+                return UpdateAvailabilityState.Unknown;
+            }
+
+            int comparison = CompareVersionStrings(localVersion, remoteVersion);
+            if (comparison < 0)
+            {
+                return UpdateAvailabilityState.UpdateAvailable;
+            }
+
+            if (comparison > 0)
+            {
+                return UpdateAvailabilityState.LocalAhead;
+            }
+
+            return UpdateAvailabilityState.UpToDate;
+        }
+
+        private static void SetStatus(UpdateAvailabilityState state, string localVersion, string remoteVersion, string statusMessage, bool persist)
+        {
+            DateTime lastCheckedUtc = state == UpdateAvailabilityState.Checking
+                ? (s_cachedStatus?.LastCheckedUtc ?? DateTime.MinValue)
+                : DateTime.UtcNow;
+
+            s_cachedStatus = CreateStatusSnapshot(state, localVersion, remoteVersion, statusMessage, lastCheckedUtc, CurrentBranch);
+
+            if (persist)
+            {
+                PersistStatus(s_cachedStatus);
+            }
+
+            EditorApplication.delayCall += InternalEditorUtility.RepaintAllViews;
+        }
+
+        private static UpdateStatusSnapshot CreateStatusSnapshot(
+            UpdateAvailabilityState state,
+            string localVersion,
+            string remoteVersion,
+            string statusMessage,
+            DateTime lastCheckedUtc,
+            string branch)
+        {
+            return new UpdateStatusSnapshot
+            {
+                State = state,
+                Branch = string.IsNullOrWhiteSpace(branch) ? CurrentBranch : branch,
+                LocalVersion = string.IsNullOrWhiteSpace(localVersion) ? "unknown" : localVersion,
+                RemoteVersion = string.IsNullOrWhiteSpace(remoteVersion) ? "unknown" : remoteVersion,
+                StatusMessage = statusMessage ?? string.Empty,
+                LastCheckedUtc = lastCheckedUtc
+            };
+        }
+
+        private static void PersistStatus(UpdateStatusSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return;
+            }
+
+            EditorPrefs.SetInt(PrefsKeys.UpdaterStatusState, (int)snapshot.State);
+            EditorPrefs.SetString(PrefsKeys.UpdaterStatusBranch, snapshot.Branch ?? string.Empty);
+            EditorPrefs.SetString(PrefsKeys.UpdaterStatusLocalVersion, snapshot.LocalVersion ?? string.Empty);
+            EditorPrefs.SetString(PrefsKeys.UpdaterStatusRemoteVersion, snapshot.RemoteVersion ?? string.Empty);
+            EditorPrefs.SetString(PrefsKeys.UpdaterStatusMessage, snapshot.StatusMessage ?? string.Empty);
+            EditorPrefs.SetString(PrefsKeys.UpdaterStatusLastCheckedUtc, snapshot.LastCheckedUtc == DateTime.MinValue ? string.Empty : snapshot.LastCheckedUtc.ToString("O"));
+        }
+
+        private static UpdateStatusSnapshot LoadPersistedStatus()
+        {
+            if (!EditorPrefs.HasKey(PrefsKeys.UpdaterStatusState))
+            {
+                return null;
+            }
+
+            DateTime lastCheckedUtc = DateTime.MinValue;
+            string storedTimestamp = EditorPrefs.GetString(PrefsKeys.UpdaterStatusLastCheckedUtc, string.Empty);
+            if (!string.IsNullOrWhiteSpace(storedTimestamp))
+            {
+                DateTime.TryParse(storedTimestamp, null, System.Globalization.DateTimeStyles.RoundtripKind, out lastCheckedUtc);
+            }
+
+            return CreateStatusSnapshot(
+                (UpdateAvailabilityState)EditorPrefs.GetInt(PrefsKeys.UpdaterStatusState, (int)UpdateAvailabilityState.Unknown),
+                EditorPrefs.GetString(PrefsKeys.UpdaterStatusLocalVersion, PackageVersionUtility.GetLocalPackageVersion()),
+                EditorPrefs.GetString(PrefsKeys.UpdaterStatusRemoteVersion, "unknown"),
+                EditorPrefs.GetString(PrefsKeys.UpdaterStatusMessage, string.Empty),
+                lastCheckedUtc,
+                EditorPrefs.GetString(PrefsKeys.UpdaterStatusBranch, CurrentBranch));
+        }
+
+        private static void RestorePersistedStatus()
+        {
+            s_cachedStatus = LoadPersistedStatus();
+            EditorApplication.delayCall += InternalEditorUtility.RepaintAllViews;
         }
 
         private static bool TryParseVersionParts(string value, out List<int> parts)
