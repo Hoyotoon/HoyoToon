@@ -203,7 +203,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             Name "LightingGBufferEyeHair"
             Tags { "LightMode"="LightingGBufferEyeHair" }
             Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend SrcAlpha OneMinusSrcAlpha, Zero One
             // Cull [_CullMode]
             Stencil
             {
@@ -312,29 +312,29 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
         } 
 
 
-        // Pass 
-        // {
-        //     Name "ShadowCaster"
-        //     Tags { "LightMode"="SHADOWCASTER" }
+        Pass 
+        {
+            Name "ShadowCaster"
+            Tags { "LightMode"="SHADOWCASTER" }
             
-        //     // Important for performance and depth precision
-        //     ZWrite On 
-        //     ZTest LEqual
-        //     ColorMask 0
-        //     Cull Off
+            // Important for performance and depth precision
+            ZWrite On 
+            ZTest LEqual
+            ColorMask 0
+            Cull Off
 
-        //     HLSLPROGRAM
-        //     #include "Include/Struct.hlsl"
-        //     #include "Include/Declarations.hlsl"
-        //     #include "Include/Common.hlsl"
-        //     #include "Include/Program.hlsl"
-        //     // #pragma shader_feature_local _DIRECTIONALDISSOLVE
+            HLSLPROGRAM
+            #include "Include/Struct.hlsl"
+            #include "Include/Declarations.hlsl"
+            #include "Include/Common.hlsl"
+            #include "Include/Program.hlsl"
+            // #pragma shader_feature_local _DIRECTIONALDISSOLVE
             
-        //     #pragma vertex vert_shadow
-        //     #pragma fragment frag_shadow
-        //     ENDHLSL
-        // }
-        UsePass "Standard/ShadowCaster"
+            #pragma vertex vert_shadow
+            #pragma fragment frag_shadow
+            ENDHLSL
+        }
+        // UsePass "Standard/ShadowCaster"
     }
      CustomEditor "LWGUI.LWGUI" 
      

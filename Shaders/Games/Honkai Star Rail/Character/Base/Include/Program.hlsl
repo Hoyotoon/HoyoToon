@@ -1563,7 +1563,8 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
     // if(_UseMaterialValuesLUT) outline_color.xyz = _MaterialValuesPackLUT.Load(float4(lightmap, 2, 0, 0));
     
     float3 light;
-    get_light(light);
+    float3 color;
+    get_light(light, color);
     
     float ndotl = dot(i.normal, light);
     ndotl = smoothstep(0, 0.15f, ndotl); // u_xlat16_22
@@ -1576,6 +1577,7 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
     outline_color.xyz = (1.0f - (_GlobalOneMinusAvatarIntensityEnable * _GlobalOneMinusAvatarIntensity)) * outline_color.xyz;
     float3 view = i.ws_pos.xyz - _WorldSpaceCameraPos;
     view.x = length(view);
+    outline_color.xyz = outline_color.xyz * color;
     
     o.forward.xyz = outline_color;
     o.alphaMask = float4(1,1,1,1);

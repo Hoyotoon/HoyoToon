@@ -16,10 +16,14 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
     /// <inheritdoc/>
     public override void Create()
     {
-        m_ScriptablePass = new CustomRPTransparentBufferPass(settings);
+        if (settings == null)
+            settings = new CustomRPTransparentBufferSettings();
 
-        // Configure this pass to run after LightingGBuffer forward by default.
-        m_ScriptablePass.renderPassEvent = settings.renderPassEvent;
+        m_ScriptablePass = new CustomRPTransparentBufferPass(settings)
+        {
+            // Configure this pass to run after LightingGBuffer forward by default.
+            renderPassEvent = settings.renderPassEvent
+        };
 
         // You can request URP color texture and depth buffer as inputs by uncommenting the line below,
         // URP will ensure copies of these resources are available for sampling before executing the render pass.

@@ -1,23 +1,16 @@
-# HoyoToon 0.0.8
+# HoyoToon 0.0.9
 
 ## UI
-- Brought back some of mihoyos custom features as well as a couple new ones for improving the UI for the shaders. 
+- Fixed an issue regarding Shader parameters inside nested groups not being searchable. 
 
-## Shaders 
-- Added the proper Normal Mapping support for new beta characters.
-- Created the Shader GUI for all shaders that are currently available (minus post processing). This really needs to be tested and scrutinized
-- Created a ComputeShader that one can toggle the usage of in the character tab of the manager. 
+## Shader
+- Fixed an issue where multiple shaders were causing the transparency to fail because they had incorrect blending states
+- Outlines now receive lighting colors 
+- Fixed an issue where the Shadow Color Grading highlight and shadow were reversed for the areas that were deemed skin. Also fixed the hair being incorrectly attributed to skin. 
+- Fixed issue where the Hair Depth texture wasnt utilizing the showbyID
 
-## HoyoToon Manager
-- Refactored Character and Scene tabs in the manager GUI and got rid of some things that werent necessary. 
-- In the Character tab, you can now apply special effect mappings. This will allow you to use the AuraOutline shader that is used on characters like Fat Fuck and Sparxie.
+## Pipeline
+- Fixed an issue where, when the graphics API is set to DX12, theres a possiblity to get an error about an uninitialized SRV.
 
-## ScreenShotter
-- Refactored it so it uses the camera clear color as the transparency.
-
-## Post Processing
-- Change alpha outputs on almost all passes to make the transparency in the screenshots work.
-
-
-## Onboarding
-- Screenshotter functions have been restored so onboarding should work as normal again.
+## Updater
+- Fixed issue where moved or deleted files were not properly being moved/deleted. 

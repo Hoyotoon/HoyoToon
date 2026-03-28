@@ -100,7 +100,7 @@ float3 apply_level_adjust(float3 ramp, float id)
 {
     float rounded_id = round(id);
     bool ramp_check = 2.9f < (dot(ramp.xyz, float3(1.0, 1.0, 1.0)));
-    bool isSkin = (rounded_id == 0) ? 0.0 : 1.0;
+    bool isSkin = 1.0f;
 
     float3 skin_light = _ES_LevelSkinLightColor.www * _ES_LevelSkinLightColor.xyz;
     float3 high_light = _ES_LevelHighLightColor.www * _ES_LevelHighLightColor.xyz;

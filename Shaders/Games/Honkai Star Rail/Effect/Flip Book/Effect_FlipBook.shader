@@ -46,7 +46,7 @@ Shader "HoyoToon/Honkai Star Rail/Effect/Flip Book"
         Pass
         {
             Tags { "LIGHTMODE" = "CustomRPTransparent" }
-            Blend [_SrcBlend] [_DstBlend]
+            Blend [_SrcBlend] [_DstBlend], One OneMinusSrcAlpha
             ZWrite [_ZWrite]
             Cull [_Cull]
             HLSLPROGRAM

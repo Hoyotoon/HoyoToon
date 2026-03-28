@@ -477,7 +477,7 @@ namespace HoyoToon.Editor.Updater
                 }
 
                 var filesToCopy = BuildPatchList(remoteFiles);
-                var filesToDelete = cleanMissingFiles ? FindMissingLocalFiles(remoteFiles) : new List<string>();
+                var filesToDelete = FindMissingLocalFiles(remoteFiles);
                 string remoteChangelog = null;
                 if ((filesToCopy.Count + filesToDelete.Count) > 0)
                 {
@@ -772,6 +772,12 @@ namespace HoyoToon.Editor.Updater
                     if (File.Exists(destination))
                     {
                         File.Delete(destination);
+                    }
+
+                    string metaPath = destination + ".meta";
+                    if (File.Exists(metaPath))
+                    {
+                        File.Delete(metaPath);
                     }
                 }
             }

@@ -52,6 +52,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Effect/Aura Outline"
         {
             Name "Aura Outline"
             Tags { "LightMode"="CustomRPTransparent" }
+            Blend One Zero, One OneMinusSrcAlpha
             Cull Front
             HLSLPROGRAM
             #pragma vertex vert
@@ -391,7 +392,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Effect/Aura Outline"
                 // Output final color
                 aura_out output;
                 output.color.xyz = fresnel_range.x * color;
-                output.color.w = fresnel_range.y * edge_softness * _AuraColor1.w;
+                output.color.w = 1.0f;
                 output.alphaMask = output.color.w;
                 return output;
             }

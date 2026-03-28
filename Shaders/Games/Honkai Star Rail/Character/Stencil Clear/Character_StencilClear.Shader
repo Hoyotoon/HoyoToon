@@ -56,9 +56,9 @@ Shader "HoyoToon/Honkai Star Rail/Character/Stencil Clear"
     {
         Tags { "QUEUE" = "Geometry+12" "RenderType" = "Opaque" }
         // Blend 0 DstColor Zero, DstColor Zero
-        // ColorMask RGB 0
-        // ColorMask 0 1
-        // ColorMask 0 2
+        ColorMask RGB 0
+        ColorMask 0 1
+        ColorMask 0 2
         HLSLINCLUDE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
         ENDHLSL
@@ -69,6 +69,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Stencil Clear"
             Tags { "LightMode"="LightingGBufferEyeHair" }
             Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Cull [_CullMode]
+            Blend One Zero, One OneMinusSrcAlpha
             Stencil
             {
                 Ref [_StencilRef]

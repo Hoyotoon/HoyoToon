@@ -2,6 +2,8 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 using HoyoToon.Editor.Utilities;
@@ -509,6 +511,8 @@ namespace HoyoToon.Editor.AssetPipeline.Textures
                 }
             }
 
+            ApplySwizzle(importer, rule, so, ref changed, propChanges);
+
             if (so != null && changed)
             {
                 so.ApplyModifiedPropertiesWithoutUndo();
@@ -516,6 +520,148 @@ namespace HoyoToon.Editor.AssetPipeline.Textures
 
             changedProps = propChanges;
             return changed;
+        }
+
+        private static void ApplySwizzle(TextureImporter importer, TextureImportRule rule, SerializedObject so, ref bool changed, List<string> propChanges)
+        {
+            if (rule == null)
+                return;
+
+            var swizzleEnumType = typeof(TextureImporter).Assembly.GetType("UnityEditor.TextureImporterSwizzle");
+            if (swizzleEnumType == null)
+                return;
+
+            ApplySwizzleChannel(importer, "swizzleR", "m_SwizzleR", rule.SwizzleR, swizzleEnumType, so, ref changed, propChanges, "SwizzleR");
+            ApplySwizzleChannel(importer, "swizzleG", "m_SwizzleG", rule.SwizzleG, swizzleEnumType, so, ref changed, propChanges, "SwizzleG");
+            ApplySwizzleChannel(importer, "swizzleB", "m_SwizzleB", rule.SwizzleB, swizzleEnumType, so, ref changed, propChanges, "SwizzleB");
+            ApplySwizzleChannel(importer, "swizzleA", "m_SwizzleA", rule.SwizzleA, swizzleEnumType, so, ref changed, propChanges, "SwizzleA");
+        }
+
+        private static void ApplySwizzleChannel(
+            TextureImporter importer,
+            string runtimePropertyName,
+            string serializedPropertyName,
+            string desiredValue,
+            Type swizzleEnumType,
+            SerializedObject so,
+            ref bool changed,
+            List<string> propChanges,
+            string label)
+        {
+            if (string.IsNullOrWhiteSpace(desiredValue))
+                return;
+
+            var propertyInfo = typeof(TextureImporter).GetProperty(runtimePropertyName, BindingFlags.Instance | BindingFlags.Public);
+            if (propertyInfo == null || !propertyInfo.CanRead || !propertyInfo.CanWrite)
+                return;
+
+            if (!TryParseSwizzleValue(swizzleEnumType, desiredValue, out var parsedValue))
+            {
+                HoyoToonLogger.Log(HoyoToonLogger.Categories.Texture, LogLevel.Warning, $"Texture rules: Unknown {label} '{desiredValue}'.");
+                return;
+            }
+
+            var currentValue = propertyInfo.GetValue(importer, null);
+            if (Equals(currentValue, parsedValue))
+                return;
+
+            changed = true;
+            propChanges.Add($"{label}: {currentValue} -> {parsedValue}");
+
+            if (so != null)
+            {
+                var serializedProperty = so.FindProperty(serializedPropertyName);
+                if (serializedProperty != null)
+                {
+                    serializedProperty.intValue = Convert.ToInt32(parsedValue);
+                    return;
+                }
+            }
+
+            propertyInfo.SetValue(importer, parsedValue, null);
+        }
+
+        private static bool TryParseSwizzleValue(Type swizzleEnumType, string rawValue, out object parsedValue)
+        {
+            parsedValue = null;
+            if (swizzleEnumType == null || string.IsNullOrWhiteSpace(rawValue))
+                return false;
+
+            if (TryParseEnumDirect(swizzleEnumType, rawValue, out parsedValue))
+                return true;
+
+            var key = NormalizeSwizzleKey(rawValue);
+            if (string.IsNullOrEmpty(key))
+                return false;
+
+            var semantic = GetSwizzleSemanticKey(key);
+            if (string.IsNullOrEmpty(semantic))
+                return false;
+
+            foreach (var enumName in Enum.GetNames(swizzleEnumType))
+            {
+                var enumSemantic = GetSwizzleSemanticKey(NormalizeSwizzleKey(enumName));
+                if (!string.Equals(enumSemantic, semantic, StringComparison.Ordinal))
+                    continue;
+
+                if (TryParseEnumDirect(swizzleEnumType, enumName, out parsedValue))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool TryParseEnumDirect(Type enumType, string value, out object parsed)
+        {
+            parsed = null;
+            try
+            {
+                parsed = Enum.Parse(enumType, value, true);
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static string NormalizeSwizzleKey(string value)
+        {
+            if (string.IsNullOrWhiteSpace(value))
+                return string.Empty;
+
+            var sb = new StringBuilder(value.Length);
+            foreach (var c in value)
+            {
+                if (char.IsLetterOrDigit(c))
+                    sb.Append(char.ToLowerInvariant(c));
+            }
+
+            return sb.ToString();
+        }
+
+        private static string GetSwizzleSemanticKey(string normalized)
+        {
+            if (string.IsNullOrEmpty(normalized))
+                return null;
+
+            // Direct channels
+            if (normalized == "r" || normalized == "red") return "r";
+            if (normalized == "g" || normalized == "green") return "g";
+            if (normalized == "b" || normalized == "blue") return "b";
+            if (normalized == "a" || normalized == "alpha") return "a";
+
+            // Constants
+            if (normalized == "1" || normalized == "one") return "one";
+            if (normalized == "0" || normalized == "zero") return "zero";
+
+            // Inverse channels (UI aliases like 1-R and enum-style names like OneMinusR)
+            if (normalized == "1r" || normalized == "oneminusr" || normalized == "oneminusred") return "inv_r";
+            if (normalized == "1g" || normalized == "oneminusg" || normalized == "oneminusgreen") return "inv_g";
+            if (normalized == "1b" || normalized == "oneminusb" || normalized == "oneminusblue") return "inv_b";
+            if (normalized == "1a" || normalized == "oneminusa" || normalized == "oneminusalpha") return "inv_a";
+
+            return null;
         }
 
         private static bool IsAssetSelected(string assetPath)

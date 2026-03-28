@@ -54,8 +54,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/EyeShadow"
     SubShader
     {
         Tags { "QUEUE" = "Geometry+15" "RenderType" = "Opaque" }
-        Blend 0 DstColor Zero, DstColor Zero
-        ColorMask RGB 0
+        Blend 0 DstColor Zero, One Zero
+        ColorMask RGBA 0
         ColorMask 0 1
         ColorMask 0 2
         HLSLINCLUDE

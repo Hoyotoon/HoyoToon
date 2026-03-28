@@ -854,7 +854,8 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
     outline_color.w = 1.0f;
     
     float3 light;
-    get_light(light);
+    float3 color;
+    get_light(light, color);
     
     float ndotl = dot(i.normal, light);
     ndotl = smoothstep(0, 0.15f, ndotl); // u_xlat16_22
@@ -866,6 +867,8 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
     outline_color.xyz = (1.0f - (_GlobalOneMinusAvatarIntensityEnable * _GlobalOneMinusAvatarIntensity)) * outline_color.xyz;
     float3 view = i.ws_pos.xyz - _WorldSpaceCameraPos;
     view.x = length(view);
+
+    outline_color.xyz = outline_color.xyz * color;
     
     o.forward.xyz = outline_color;
     o.alphaMask = float4(1,1,1,1);
@@ -878,7 +881,8 @@ vertex_out vert_shadow(vertex_in v, uint vertexID : SV_VertexID)
     vertex_out o = (vertex_out)0.0;
     float3 pos_ws = mul(unity_ObjectToWorld, v.vertex).xyz;
     float4 worldPos = float4(pos_ws, 1.0);
-    o.vertex = mul(unity_MatrixVP, worldPos);
+    
+    o.vertex =showpart(v.color.y) ?  mul(unity_MatrixVP, worldPos) : float4(-99.0, -99.0, -99.0, 1.0);
 
     #if UNITY_REVERSED_Z
         o.vertex.z = min(o.vertex.z, o.vertex.w * UNITY_NEAR_CLIP_VALUE);

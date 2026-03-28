@@ -466,27 +466,43 @@ namespace LWGUI
 				// search by property
 				if (searchModeTemp == SearchMode.Property)
 				{
-					// when a SubProp is displayed, the MainProp is also displayed
+					// Ensure every matched property makes its full parent chain visible.
 					foreach (var propStaticDataKWPair in propStaticDatas)
 					{
 						var propStaticData = propStaticDataKWPair.Value;
-						if (propStaticData.isMain
-						 && propStaticData.children.Any((childPropStaticData => propStaticDatas[childPropStaticData.name].isSearchMatched)))
-							propStaticDataKWPair.Value.isSearchMatched = true;
+						if (!propStaticData.isSearchMatched)
+							continue;
+
+						var currentParent = propStaticData.parent;
+						while (currentParent != null)
+						{
+							currentParent.isSearchMatched = true;
+							currentParent = currentParent.parent;
+						}
 					}
 				}
 				// search by group
 				else if (searchModeTemp == SearchMode.Group)
 				{
-					// when search by group, all SubProps should display with MainProp
+					// When searching by group, show the full hierarchy under matched groups (Main/SubGroup).
 					foreach (var propStaticDataKWPair in propStaticDatas)
 					{
 						var propStaticData = propStaticDataKWPair.Value;
-						if (propStaticData.isMain)
-							foreach (var childPropStaticData in propStaticData.children)
-								propStaticDatas[childPropStaticData.name].isSearchMatched = propStaticData.isSearchMatched;
+						if (!propStaticData.isSearchMatched || (!propStaticData.isMain && !propStaticData.isSubGroup))
+							continue;
+
+						MarkDescendantsSearchMatched(propStaticData);
 					}
 				}
+			}
+		}
+
+		private static void MarkDescendantsSearchMatched(PropertyStaticData parent)
+		{
+			foreach (var child in parent.children)
+			{
+				child.isSearchMatched = true;
+				MarkDescendantsSearchMatched(child);
 			}
 		}
 

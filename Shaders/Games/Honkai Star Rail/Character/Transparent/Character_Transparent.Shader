@@ -402,7 +402,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Transparent"
             Tags { "LightMode"="CustomForward" }
             Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Cull [_CullMode]
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend SrcAlpha OneMinusSrcAlpha, One OneMinusSrcAlpha
             Stencil
             {
                 Ref 16

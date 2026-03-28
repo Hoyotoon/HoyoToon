@@ -55,6 +55,7 @@ namespace HoyoToon.Runtime.Character
         private static readonly int s_HsrComputeSkinnedVerticesId = Shader.PropertyToID("_HSRComputeSkinnedVertices");
         private static readonly int s_HsrComputeSkinningEnabledId = Shader.PropertyToID("_HSRComputeSkinningEnabled");
         private static readonly int s_HsrComputeSkinningVertexOffsetId = Shader.PropertyToID("_HSRComputeSkinningVertexOffset");
+        private static ComputeBuffer s_GlobalFallbackSkinnedVerticesBuffer;
         private const string SceneControllerTypeName = "HoyoToon.Runtime.Scene.HSRSceneController, com.hoyotoon.hoyotoon.Runtime";
         private static bool s_HasTriedResolveSceneControllerHooks;
         private static MethodInfo s_RegisterCharacterLightMethod;
@@ -144,8 +145,37 @@ namespace HoyoToon.Runtime.Character
             s_TrackedRenderers.Clear();
             s_CurrentTrackedRenderers.Clear();
             s_StaleRenderers.Clear();
+            ReleaseGlobalFallbackSkinnedVerticesBuffer();
+            EnsureGlobalFallbackSkinnedVerticesBufferBound();
             s_NextSlowRegistryDiscoveryTime = 0f;
             s_TopologyDirty = true;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterAssembliesLoaded)]
+        private static void EnsureGlobalComputeSkinningFallbackOnStartup()
+        {
+            EnsureGlobalFallbackSkinnedVerticesBufferBound();
+        }
+
+        private static ComputeBuffer EnsureGlobalFallbackSkinnedVerticesBufferBound()
+        {
+            if (s_GlobalFallbackSkinnedVerticesBuffer == null)
+            {
+                s_GlobalFallbackSkinnedVerticesBuffer = new ComputeBuffer(1, Marshal.SizeOf<SkinData>());
+                s_GlobalFallbackSkinnedVerticesBuffer.SetData(new SkinData[1]);
+            }
+
+            Shader.SetGlobalBuffer(s_HsrComputeSkinnedVerticesId, s_GlobalFallbackSkinnedVerticesBuffer);
+            return s_GlobalFallbackSkinnedVerticesBuffer;
+        }
+
+        private static void ReleaseGlobalFallbackSkinnedVerticesBuffer()
+        {
+            if (s_GlobalFallbackSkinnedVerticesBuffer == null)
+                return;
+
+            s_GlobalFallbackSkinnedVerticesBuffer.Release();
+            s_GlobalFallbackSkinnedVerticesBuffer = null;
         }
 
         [Header("Character Light")]
@@ -850,6 +880,7 @@ namespace HoyoToon.Runtime.Character
         private void OnEnable()
         {
             TryAssignDefaultComputeSkinningShader();
+            EnsureGlobalFallbackSkinnedVerticesBufferBound();
             RefreshLightReferences();
             RefreshScopedRenderers();
             m_ComputeSkinningDirty = true;
@@ -925,6 +956,7 @@ namespace HoyoToon.Runtime.Character
         private void OnValidate()
         {
             TryAssignDefaultComputeSkinningShader();
+            EnsureGlobalFallbackSkinnedVerticesBufferBound();
             SanitizeEffectMaterialEntries();
             RefreshLightReferences();
             m_HasSyncedState = false;
@@ -996,6 +1028,10 @@ namespace HoyoToon.Runtime.Character
             if (renderers == null)
                 return;
 
+            ComputeBuffer skinnedVerticesBuffer = GetSkinnedVerticesBufferForBinding();
+            if (skinnedVerticesBuffer == null)
+                return;
+
             CrpPerDrawExData perDrawExData = new CrpPerDrawExData
             {
                 _CharacterLocalMainLightPosition = (Vector4)_CharacterLocalMainLightPosition,
@@ -1037,11 +1073,26 @@ namespace HoyoToon.Runtime.Character
                 bool hasComputeSkinning = m_ComputeSkinningInitialized && m_ComputeVertexOffsets.TryGetValue(ren, out computeVertexOffset);
                 state.propertyBlock.SetInteger(s_HsrComputeSkinningEnabledId, hasComputeSkinning ? 1 : 0);
                 state.propertyBlock.SetInteger(s_HsrComputeSkinningVertexOffsetId, hasComputeSkinning ? computeVertexOffset : 0);
-                if (hasComputeSkinning)
-                    state.propertyBlock.SetBuffer(s_HsrComputeSkinnedVerticesId, m_ComputeOutputBuffer);
+                state.propertyBlock.SetBuffer(s_HsrComputeSkinnedVerticesId, skinnedVerticesBuffer);
 
                 ren.SetPropertyBlock(state.propertyBlock);
                 SyncStencilEyeMaterialOverride(ren);
+            }
+        }
+
+        private ComputeBuffer GetSkinnedVerticesBufferForBinding()
+        {
+            if (m_ComputeOutputBuffer != null)
+                return m_ComputeOutputBuffer;
+
+            try
+            {
+                return EnsureGlobalFallbackSkinnedVerticesBufferBound();
+            }
+            catch (Exception ex)
+            {
+                LogComputeSkinningErrorOnce($"HSRCharacterController: Failed to ensure fallback skinned-vertices buffer for shader binding. {ex.Message}");
+                return null;
             }
         }
 

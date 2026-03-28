@@ -221,6 +221,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
             Tags { "LightMode"="LightingGBufferEyeHair" }
             Offset [_PolygonOffsetFactor], [_PolygonOffsetUnits]
             Cull Off
+            Blend SrcAlpha OneMinusSrcAlpha, Zero One
             Stencil
             {
                 Ref [_StencilEye]

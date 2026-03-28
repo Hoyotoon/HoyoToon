@@ -28,6 +28,16 @@ namespace HoyoToon.Editor.API
         public string WrapMode { get; set; }
         public int? MaxTextureSize { get; set; }
         public string FilterMode { get; set; }
+
+        // Optional per-channel swizzle overrides (e.g. R, G, B, A, One, Zero).
+        [DataMember(Name = "SwizzleR")]
+        public string SwizzleR { get; set; }
+        [DataMember(Name = "SwizzleG")]
+        public string SwizzleG { get; set; }
+        [DataMember(Name = "SwizzleB")]
+        public string SwizzleB { get; set; }
+        [DataMember(Name = "SwizzleA")]
+        public string SwizzleA { get; set; }
     }
 
     [Serializable]

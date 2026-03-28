@@ -317,13 +317,14 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
     final_shadow_color.xyz = lerp(final_shadow_color, 1.0f, shadow_blend.x);
 
     // Level-based skin shading with light and shadow color adjustments
-    float3 light_color = _ES_LevelSkinLightColor.www * _ES_LevelSkinLightColor.xyz;
+    float3 light_color = _ES_LevelSkinShadowColor.www * _ES_LevelSkinShadowColor.xyz;
     float3 light_color_doubled = light_color + light_color;
-    float3 shadow_color = _ES_LevelSkinShadowColor.www * _ES_LevelSkinShadowColor.xyz;
+    float3 shadow_color = _ES_LevelSkinLightColor.www * _ES_LevelSkinLightColor.xyz;
     float3 shadow_color_doubled = shadow_color + shadow_color;
-    float3 mid_color = lerp(shadow_color * 2.0f, light_color * 2.0f, region_mask.xxx);
-    mid_color = mid_color - 1.0f;
-    mid_color = _ES_LevelEyeShadowIntensity * mid_color + 1.0f;
+    float3 mid_color = lerp(shadow_color * 2.0f, shadow_color * 2.0f, (region_mask.xxx));
+    // mid_color = mid_color - 1.0f;
+    // mid_color = (_ES_LevelEyeShadowIntensity) * mid_color + 1.0f;
+    mid_color = lerp(mid_color, shadow_color, (_ES_LevelEyeShadowIntensity * (region_mask.x)));
     
     // Determine if shadow_color is above threshold
     above_threshold = light_intensity >= shadow_blend.x;
@@ -803,7 +804,8 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
 
     
     float3 light;
-    get_light(light);
+    float3 color;
+    get_light(light, color);
     
     float ndotl = dot(i.normal, light);
     ndotl = smoothstep(0, 0.15f, ndotl); // blend_high
@@ -816,6 +818,8 @@ buffer_out frag_edge(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
     outline_color.xyz = (1.0f - (_GlobalOneMinusAvatarIntensityEnable * _GlobalOneMinusAvatarIntensity)) * outline_color.xyz;
     float3 view = i.ws_pos.xyz - _WorldSpaceCameraPos;
     view.x = length(view);
+
+    outline_color.xyz = outline_color.xyz * color;
     
     o.forward.xyz = outline_color;
     o.alphaMask = float4(1,1,1,1);
