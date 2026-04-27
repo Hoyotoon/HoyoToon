@@ -1,4 +1,4 @@
-# HoyoToon 0.1.6
+# HoyoToon 0.1.7
 
 ## HoyoConverter
 

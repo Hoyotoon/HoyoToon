@@ -10,6 +10,7 @@ namespace HoyoToon.Editor.Updater
     internal static class PackageUpdaterPlanBuilder
     {
         private static readonly UTF8Encoding StrictUtf8 = new UTF8Encoding(false, true);
+        private static readonly byte[] Utf8Bom = { 0xEF, 0xBB, 0xBF };
 
         internal static UpdatePlan BuildPlan(string branch, UpdaterManifest manifest, bool cleanMissingFiles)
         {
@@ -186,16 +187,18 @@ namespace HoyoToon.Editor.Updater
                 return normalizedBytes;
             }
 
-            byte[] preamble = StrictUtf8.GetPreamble();
-            var combined = new byte[preamble.Length + normalizedBytes.Length];
-            Buffer.BlockCopy(preamble, 0, combined, 0, preamble.Length);
-            Buffer.BlockCopy(normalizedBytes, 0, combined, preamble.Length, normalizedBytes.Length);
+            var combined = new byte[Utf8Bom.Length + normalizedBytes.Length];
+            Buffer.BlockCopy(Utf8Bom, 0, combined, 0, Utf8Bom.Length);
+            Buffer.BlockCopy(normalizedBytes, 0, combined, Utf8Bom.Length, normalizedBytes.Length);
             return combined;
         }
 
         private static bool HasUtf8Bom(byte[] bytes)
         {
-            return bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+            return bytes.Length >= Utf8Bom.Length
+                && bytes[0] == Utf8Bom[0]
+                && bytes[1] == Utf8Bom[1]
+                && bytes[2] == Utf8Bom[2];
         }
 
         private static bool ContainsNullByte(byte[] bytes, int offset)
