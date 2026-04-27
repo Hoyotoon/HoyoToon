@@ -1,7 +1,7 @@
 {
-  "version": "0.1.2",
+  "version": "0.1.3",
   "files": {
-    ".gitignore": "acb0bab9b1263ac055a07cf01ffb546377473ae5",
+    ".gitignore": "931535465fb79b7b3d9109e3d816ab07bdb21e7a",
     "HoyoToon.unity": "dafddfb75e6a63f74b7f9a7cc2eb7f530fdaf4b7",
     "LICENSE": "31a3d460bb3c7d98845187c716a30db81c44b615",
     "Plugins/Editor/System.Threading.Tasks.Extensions.dll": "c74b937a718f4dc9960bd8e105ff522f43edc59d",
@@ -166,14 +166,14 @@
     "Scripts/Editor/UI/Manager/USS/HoyoToonLayout.uss": "632ae6bd3d6c469afb6830e0527ecb09ae2f18ce",
     "Scripts/Editor/UI/Manager/USS/HoyoToonTheme.uss": "eeeb8a50f04d8a6c99398f6e373ad253867eebd4",
     "Scripts/Editor/UI/Manager/UXML/HoyoToonWindow.uxml": "aa127f3b909c9c71b3d541ee28fa1ba8c66deced",
-    "Scripts/Editor/Updater/EditorCoroutine.cs": "aa82bbc9a0a29f40cc1bc5c5fa0efbf7cd74f491",
+    "Scripts/Editor/Updater/EditorCoroutine.cs": "877b06c04d2fcfd4bc3feb609d761b5ba05a26cc",
     "Scripts/Editor/Updater/PackageUpdaterEntryPoints.cs": "68a03ce9bb7aa44cc77ea2a59d7b1d0d2d83ea36",
-    "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs": "462982cf5dd37fefc28ea39bd99b3f1d0d269660",
+    "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs": "794b197ea2f73ad89b3b4252f59b851110de5799",
     "Scripts/Editor/Updater/PackageUpdaterModels.cs": "2ad906b35091d5daeb9abdb811495ebf1602d085",
     "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "9281d4404e14e3182622e422637ef9e0e20a27a0",
-    "Scripts/Editor/Updater/PackageUpdaterService.cs": "2eb1a39654de29307c196b011fd3157c14e84966",
+    "Scripts/Editor/Updater/PackageUpdaterService.cs": "0dad2e4365170790efc68b57ecf41362bc844064",
     "Scripts/Editor/Updater/PackageUpdaterStorage.cs": "14d9e2143f425c28ee8ce5cd2924399cd26ac101",
-    "Scripts/Editor/Updater/UpdateDownloader.cs": "05381a1d98e305910613c131c5140dde463619f7",
+    "Scripts/Editor/Updater/UpdateDownloader.cs": "14b60a32be2f3fafb1282383b5accba6c1c1efbf",
     "Scripts/Editor/Updater/UpdaterKeepRules.cs": "d9ce9dea8047bf62b8caf29e35c7e1e7b423f9a5",
     "Scripts/Editor/Utilities/API/HoyoToonApiFetchUtility.cs": "230c3829e8a4f5cad77dc1431e956ac0ecbdf091",
     "Scripts/Editor/Utilities/API/HoyoToonApiSyncUtility.cs": "1a23addbe3f825a126228871a056bc34988d591d",
@@ -371,6 +371,6 @@
     "Shaders/Utility/ComputeShaders/SkinningUVCoords.compute": "9f2c7a6aab41c9b3ccadd4c14f2b026737384cff",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "changelog.md": "fc3a5452c6a862686f32b70e7ea8817de6b62673",
-    "package.json": "17a891c80b3414f4a57fb912a0c6298c989a98e9"
+    "package.json": "1bc3cb7749cd0a5000cfda2a2a53e44b420d24c2"
   }
 }
