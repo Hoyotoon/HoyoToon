@@ -92,6 +92,9 @@ MonoBehaviour:
     reflectionHeight: 2048
     reflectionPlaneY: 0
     reflectionTextureName: _ReflectionColor
+    reflectionReceiverShaderNames:
+    - HoyoToon/Honkai Star Rail/UI/Manikin/Floor
+    - HoyoToon/Honkai Star Rail/UI/Manikin/Floor_SoftEdged
     layerNames:
     - Honkai Star Rail
     - Honkai Impact 3rd

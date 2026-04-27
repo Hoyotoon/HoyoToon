@@ -71,6 +71,8 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
 
         public override void Create()
         {
+            _renderPass?.Dispose();
+            _renderPass = null;
             _renderPass = new RPGBloomRenderPass();
         }
 

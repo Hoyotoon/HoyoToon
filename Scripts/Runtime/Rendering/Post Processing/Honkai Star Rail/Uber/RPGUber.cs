@@ -12,6 +12,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Uber
         private const int NeutralLutDimension = 32;
 
         private static Texture2D s_DefaultLutTexture;
+        private static bool s_DefaultLutTextureIsGenerated;
 
         [Tooltip("When enabled, this component controls which RPG post-process components are allowed to render.")]
         [HideInInspector] public BoolParameter UseUberControl = new BoolParameter(false);
@@ -51,14 +52,33 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Uber
             if (s_DefaultLutTexture == null)
             {
                 s_DefaultLutTexture = Resources.Load<Texture2D>(DefaultLutResourcesPath);
+                s_DefaultLutTextureIsGenerated = false;
             }
 
             if (s_DefaultLutTexture == null)
             {
                 s_DefaultLutTexture = CreateNeutralLutTexture();
+                s_DefaultLutTextureIsGenerated = true;
             }
 
             return s_DefaultLutTexture;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetDefaultLutTexture()
+        {
+            ReleaseGeneratedDefaultLutTexture();
+        }
+
+        private static void ReleaseGeneratedDefaultLutTexture()
+        {
+            if (s_DefaultLutTexture != null && s_DefaultLutTextureIsGenerated)
+            {
+                CoreUtils.Destroy(s_DefaultLutTexture);
+            }
+
+            s_DefaultLutTexture = null;
+            s_DefaultLutTextureIsGenerated = false;
         }
 
         private static Texture2D CreateNeutralLutTexture()

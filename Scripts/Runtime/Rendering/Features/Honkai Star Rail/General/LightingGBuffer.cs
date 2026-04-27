@@ -59,6 +59,9 @@ namespace HoyoToon.Runtime.Rendering.HSR
             m_HasSharedForwardInputs = false;
             SharedAlphaMaskHandle = default;
 
+            if (!ShouldRenderForCamera(renderingData.cameraData.cameraType, renderingData.cameraData.isPreviewCamera))
+                return;
+
             if (!m_HasWarnedForwardOrder && settings.forwardRenderPassEvent < settings.renderPassEvent)
             {
                 Debug.LogWarning("LightingGBuffer: forwardRenderPassEvent is earlier than renderPassEvent. Forward stage may execute before GBuffer outputs are produced.");
@@ -67,6 +70,14 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
             renderer.EnqueuePass(m_GBufferStagePass);
             renderer.EnqueuePass(m_ForwardStagePass);
+        }
+
+        static bool ShouldRenderForCamera(CameraType cameraType, bool isPreviewCamera)
+        {
+            if (isPreviewCamera)
+                return false;
+
+            return cameraType == CameraType.Game || cameraType == CameraType.SceneView;
         }
 
         // Use this class to pass around settings from the feature to the pass
@@ -286,6 +297,9 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 UniversalRenderingData renderingData = frameData.Get<UniversalRenderingData>();
                 UniversalLightData lightData = frameData.Get<UniversalLightData>();
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
+
+                if (!ShouldRenderForCamera(cameraData.cameraType, cameraData.isPreviewCamera))
+                    return;
 
                 RendererListHandle CreateRendererList(List<ShaderTagId> shaderTagIds, RenderQueueRange renderQueueRange, SortingCriteria sortingCriteria, Material overrideMaterial = null)
                 {

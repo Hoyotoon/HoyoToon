@@ -251,7 +251,7 @@ namespace HoyoToon.Editor.Setup
             }
 
             float clampedProgress = Math.Max(0f, Math.Min(1f, progress));
-            HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Auto Setup", message, clampedProgress);
+            UnityEditor.EditorUtility.DisplayProgressBar("HoyoToon Auto Setup", message, clampedProgress);
         }
 
         private static void ClearProgress()
@@ -261,7 +261,7 @@ namespace HoyoToon.Editor.Setup
                 return;
             }
 
-            HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+            UnityEditor.EditorUtility.ClearProgressBar();
         }
 
         private static float CalculateFeatureProgress(int completedFeatures, int totalFeatures)

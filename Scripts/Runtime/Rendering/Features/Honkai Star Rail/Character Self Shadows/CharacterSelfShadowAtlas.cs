@@ -386,6 +386,37 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 return k_PassMissing;
             }
 
+            static bool HasSelfShadowCaster(Renderer[] renderers, string preferredPassName)
+            {
+                if (renderers == null)
+                    return false;
+
+                for (int r = 0; r < renderers.Length; ++r)
+                {
+                    Renderer renderer = renderers[r];
+                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                        continue;
+
+                    if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
+                        continue;
+
+                    try
+                    {
+                        for (int m = 0; m < materialCount; ++m)
+                        {
+                            if (FindSelfShadowPassIndex(k_MaterialScratch[m], preferredPassName) >= 0)
+                                return true;
+                        }
+                    }
+                    finally
+                    {
+                        k_MaterialScratch.Clear();
+                    }
+                }
+
+                return false;
+            }
+
             static bool IsOwnedLight(HSRCharacterController controller, Light light)
             {
                 if (controller == null || light == null || light.transform == null)
@@ -608,6 +639,10 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     if (scopedRenderers == null || scopedRenderers.Length == 0)
                         continue;
 
+                    string casterPassName = controller.CharacterSelfShadowCasterPassName;
+                    if (!HasSelfShadowCaster(scopedRenderers, casterPassName))
+                        continue;
+
                     if (!controller.TryGetCharacterSelfShadowBounds(out Bounds bounds))
                         continue;
 
@@ -636,7 +671,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     {
                         controller = controller,
                         renderers = scopedRenderers,
-                        casterPassName = controller.CharacterSelfShadowCasterPassName,
+                        casterPassName = casterPassName,
                         viewMatrix = viewMatrix,
                         projectionMatrix = projectionMatrix,
                         lightDirection = lightDirection,

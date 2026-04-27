@@ -41,7 +41,10 @@ namespace HoyoToon.Runtime.Utilities
         private static readonly string[] s_HeadTargetNames = { "CameraRootHead" };
         private static readonly string[] s_RootBoneNames = { "Root_M" };
         private static readonly string[] s_HeadBoneNames = { "Head_M", "Head" };
+        private const int TargetBaselinePruneInterval = 64;
         private static readonly Dictionary<int, CachedTargetBaseline> s_TargetBaselines = new Dictionary<int, CachedTargetBaseline>();
+        private static readonly List<int> s_StaleTargetBaselineIds = new List<int>(16);
+        private static int s_TargetBaselineLookupsUntilPrune = TargetBaselinePruneInterval;
 
         public const float DefaultTargetYOffset = 0.05f;
 
@@ -188,6 +191,8 @@ namespace HoyoToon.Runtime.Utilities
         public static void ClearCachedBaselines()
         {
             s_TargetBaselines.Clear();
+            s_StaleTargetBaselineIds.Clear();
+            s_TargetBaselineLookupsUntilPrune = TargetBaselinePruneInterval;
         }
 
         public static Vector3 ResolveDesiredPosition(
@@ -266,6 +271,8 @@ namespace HoyoToon.Runtime.Utilities
                 return default;
             }
 
+            PruneInvalidBaselines(force: false);
+
             int targetId = target.GetInstanceID();
             if (!s_TargetBaselines.TryGetValue(targetId, out CachedTargetBaseline cachedBaseline)
                 || cachedBaseline.Target != target)
@@ -276,6 +283,36 @@ namespace HoyoToon.Runtime.Utilities
             }
 
             return cachedBaseline.Baseline;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetCachedBaselines()
+        {
+            ClearCachedBaselines();
+        }
+
+        private static void PruneInvalidBaselines(bool force)
+        {
+            if (!force)
+            {
+                --s_TargetBaselineLookupsUntilPrune;
+                if (s_TargetBaselineLookupsUntilPrune > 0)
+                    return;
+            }
+
+            s_TargetBaselineLookupsUntilPrune = TargetBaselinePruneInterval;
+            s_StaleTargetBaselineIds.Clear();
+
+            foreach (var baseline in s_TargetBaselines)
+            {
+                if (baseline.Value.Target == null)
+                    s_StaleTargetBaselineIds.Add(baseline.Key);
+            }
+
+            for (int i = 0; i < s_StaleTargetBaselineIds.Count; ++i)
+                s_TargetBaselines.Remove(s_StaleTargetBaselineIds[i]);
+
+            s_StaleTargetBaselineIds.Clear();
         }
 
         private static bool RemoveParentConstraint(Transform target)

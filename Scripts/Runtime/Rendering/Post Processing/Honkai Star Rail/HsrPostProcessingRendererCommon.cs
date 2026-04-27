@@ -25,6 +25,8 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR
 
         public sealed override void Create()
         {
+            _renderPass?.Dispose();
+            _renderPass = null;
             _renderPass = CreateRenderPass();
         }
 

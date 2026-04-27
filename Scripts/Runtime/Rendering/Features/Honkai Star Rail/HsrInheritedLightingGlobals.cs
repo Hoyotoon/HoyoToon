@@ -20,6 +20,9 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
         static readonly Matrix4x4[] k_MainLightWorldToShadowScratch = new Matrix4x4[5];
         static readonly Vector4[] k_EsGlobalRotMatrixScratch = new Vector4[4];
+        static int s_LastAppliedFrame = -1;
+        static int s_LastAppliedEnvironmentId;
+        static bool s_LastAppliedClearEnvironmentWhenMissing;
 
         struct ShadowState
         {
@@ -98,6 +101,20 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
         internal static void Apply(HSRSceneController env, bool clearEnvironmentWhenMissing)
         {
+            int frame = Time.frameCount;
+            int environmentId = env != null ? env.GetInstanceID() : 0;
+            bool clearEnvironmentKey = env == null && clearEnvironmentWhenMissing;
+            if (s_LastAppliedFrame == frame
+                && s_LastAppliedEnvironmentId == environmentId
+                && s_LastAppliedClearEnvironmentWhenMissing == clearEnvironmentKey)
+            {
+                return;
+            }
+
+            s_LastAppliedFrame = frame;
+            s_LastAppliedEnvironmentId = environmentId;
+            s_LastAppliedClearEnvironmentWhenMissing = clearEnvironmentKey;
+
             ApplyShadowState(CaptureShadowState());
 
             if (env == null)
@@ -311,6 +328,14 @@ namespace HoyoToon.Runtime.Rendering.HSR
         static float ToShaderBool(bool value)
         {
             return value ? 1f : 0f;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetFrameCache()
+        {
+            s_LastAppliedFrame = -1;
+            s_LastAppliedEnvironmentId = 0;
+            s_LastAppliedClearEnvironmentWhenMissing = false;
         }
     }
 }

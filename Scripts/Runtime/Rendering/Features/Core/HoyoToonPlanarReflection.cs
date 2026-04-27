@@ -11,6 +11,11 @@ namespace HoyoToon.Runtime.Rendering.Core
     public class HoyoToonPlanarReflection : ScriptableRendererFeature
     {
         private const string DefaultReflectionTextureName = "_ReflectionColor";
+        private static readonly string[] DefaultReflectionReceiverShaderNames =
+        {
+            "HoyoToon/Honkai Star Rail/UI/Manikin/Floor",
+            "HoyoToon/Honkai Star Rail/UI/Manikin/Floor_SoftEdged"
+        };
 
         [Serializable]
         public class HoyoToonPlanarReflectionSettings
@@ -20,6 +25,7 @@ namespace HoyoToon.Runtime.Rendering.Core
             [Min(1)] public int reflectionHeight = 1024;
             public float reflectionPlaneY = 0f;
             public string reflectionTextureName = DefaultReflectionTextureName;
+            public string[] reflectionReceiverShaderNames = (string[])DefaultReflectionReceiverShaderNames.Clone();
             public string[] layerNames =
             {
                 "Default",
@@ -39,6 +45,8 @@ namespace HoyoToon.Runtime.Rendering.Core
             if (settings == null)
                 settings = new HoyoToonPlanarReflectionSettings();
 
+            m_ScriptablePass?.Cleanup();
+            m_ScriptablePass = null;
             m_ScriptablePass = new HoyoToonPlanarReflectionPass(settings)
             {
                 renderPassEvent = settings.renderPassEvent
@@ -68,6 +76,8 @@ namespace HoyoToon.Runtime.Rendering.Core
             private static readonly List<Renderer> k_FilteredRenderers = new List<Renderer>(256);
             private static readonly List<Material> k_SharedMaterials = new List<Material>(16);
             private static readonly Dictionary<int, Mesh> k_BakedMeshCache = new Dictionary<int, Mesh>(128);
+            private static readonly HashSet<int> k_CurrentBakedMeshKeys = new HashSet<int>();
+            private static readonly List<int> k_StaleBakedMeshKeys = new List<int>(32);
             private static readonly string[] k_RenderPassNames =
             {
                 "CustomForward",
@@ -82,6 +92,8 @@ namespace HoyoToon.Runtime.Rendering.Core
             private readonly HoyoToonPlanarReflectionSettings settings;
             private int m_LastCollectedFrame = -1;
             private int m_LastLayerMask;
+            private int m_LastReceiverShaderNamesHash;
+            private bool m_CachedHasReflectionReceiver;
             private Renderer[] m_CachedRenderers = Array.Empty<Renderer>();
 
             private class PassData
@@ -100,6 +112,15 @@ namespace HoyoToon.Runtime.Rendering.Core
                 return settings == null || string.IsNullOrWhiteSpace(settings.reflectionTextureName)
                     ? DefaultReflectionTextureName
                     : settings.reflectionTextureName;
+            }
+
+            private static string[] ResolveReflectionReceiverShaderNames(HoyoToonPlanarReflectionSettings settings)
+            {
+                return settings == null
+                    || settings.reflectionReceiverShaderNames == null
+                    || settings.reflectionReceiverShaderNames.Length == 0
+                        ? DefaultReflectionReceiverShaderNames
+                        : settings.reflectionReceiverShaderNames;
             }
 
             private static int BuildLayerMask(string[] layerNames)
@@ -123,18 +144,47 @@ namespace HoyoToon.Runtime.Rendering.Core
                 return mask;
             }
 
-            private Renderer[] CollectRenderers(int layerMask)
+            private static int ComputeStringArrayHash(string[] values)
             {
-                if (m_LastCollectedFrame == Time.frameCount && m_LastLayerMask == layerMask)
+                unchecked
+                {
+                    int hash = 17;
+                    if (values == null)
+                        return hash;
+
+                    for (int i = 0; i < values.Length; ++i)
+                    {
+                        string value = values[i];
+                        hash = hash * 31 + (value != null ? StringComparer.Ordinal.GetHashCode(value) : 0);
+                    }
+
+                    return hash;
+                }
+            }
+
+            private Renderer[] CollectRenderers(int layerMask, string[] receiverShaderNames, out bool hasReflectionReceiver)
+            {
+                int receiverShaderNamesHash = ComputeStringArrayHash(receiverShaderNames);
+                if (m_LastCollectedFrame == Time.frameCount
+                    && m_LastLayerMask == layerMask
+                    && m_LastReceiverShaderNamesHash == receiverShaderNamesHash)
+                {
+                    hasReflectionReceiver = m_CachedHasReflectionReceiver;
                     return m_CachedRenderers;
+                }
 
                 m_LastCollectedFrame = Time.frameCount;
                 m_LastLayerMask = layerMask;
+                m_LastReceiverShaderNamesHash = receiverShaderNamesHash;
+                m_CachedHasReflectionReceiver = false;
                 k_FilteredRenderers.Clear();
+                k_CurrentBakedMeshKeys.Clear();
 
                 if (layerMask == 0)
                 {
                     m_CachedRenderers = Array.Empty<Renderer>();
+                    hasReflectionReceiver = false;
+                    PruneBakedMeshCache();
                     return m_CachedRenderers;
                 }
 
@@ -160,11 +210,127 @@ namespace HoyoToon.Runtime.Rendering.Core
                     if ((layerMask & (1 << go.layer)) == 0)
                         continue;
 
+                    if (RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
+                    {
+                        m_CachedHasReflectionReceiver = true;
+                        break;
+                    }
+                }
+
+                if (!m_CachedHasReflectionReceiver)
+                {
+                    m_CachedRenderers = Array.Empty<Renderer>();
+                    hasReflectionReceiver = false;
+                    PruneBakedMeshCache();
+                    return m_CachedRenderers;
+                }
+
+                for (int i = 0; i < k_Renderers.Count; ++i)
+                {
+                    Renderer renderer = k_Renderers[i];
+                    if (renderer == null || !renderer.enabled)
+                        continue;
+
+                    GameObject go = renderer.gameObject;
+                    if (go == null || !go.activeInHierarchy)
+                        continue;
+
+                    if ((layerMask & (1 << go.layer)) == 0)
+                        continue;
+
+                    if (RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
+                        continue;
+
+                    if (!HasRenderableReflectionPass(renderer))
+                        continue;
+
                     k_FilteredRenderers.Add(renderer);
+                    if (renderer is SkinnedMeshRenderer)
+                        k_CurrentBakedMeshKeys.Add(renderer.GetInstanceID());
                 }
 
                 m_CachedRenderers = k_FilteredRenderers.ToArray();
+                hasReflectionReceiver = m_CachedHasReflectionReceiver;
+                PruneBakedMeshCache();
                 return m_CachedRenderers;
+            }
+
+            private static bool RendererUsesReflectionReceiverShader(Renderer renderer, string[] receiverShaderNames)
+            {
+                if (renderer == null || receiverShaderNames == null || receiverShaderNames.Length == 0)
+                    return false;
+
+                renderer.GetSharedMaterials(k_SharedMaterials);
+                try
+                {
+                    for (int i = 0; i < k_SharedMaterials.Count; ++i)
+                    {
+                        Material material = k_SharedMaterials[i];
+                        Shader shader = material != null ? material.shader : null;
+                        string shaderName = shader != null ? shader.name : null;
+                        if (string.IsNullOrEmpty(shaderName))
+                            continue;
+
+                        for (int shaderIndex = 0; shaderIndex < receiverShaderNames.Length; ++shaderIndex)
+                        {
+                            string receiverShaderName = receiverShaderNames[shaderIndex];
+                            if (!string.IsNullOrWhiteSpace(receiverShaderName)
+                                && string.Equals(shaderName, receiverShaderName, StringComparison.Ordinal))
+                            {
+                                return true;
+                            }
+                        }
+                    }
+
+                    return false;
+                }
+                finally
+                {
+                    k_SharedMaterials.Clear();
+                }
+            }
+
+            private static bool HasRenderableReflectionPass(Renderer renderer)
+            {
+                if (renderer == null)
+                    return false;
+
+                renderer.GetSharedMaterials(k_SharedMaterials);
+                try
+                {
+                    for (int i = 0; i < k_SharedMaterials.Count; ++i)
+                    {
+                        if (GetMaterialPassIndex(k_SharedMaterials[i]) >= 0)
+                            return true;
+                    }
+
+                    return false;
+                }
+                finally
+                {
+                    k_SharedMaterials.Clear();
+                }
+            }
+
+            private static void PruneBakedMeshCache()
+            {
+                k_StaleBakedMeshKeys.Clear();
+                foreach (var pair in k_BakedMeshCache)
+                {
+                    if (!k_CurrentBakedMeshKeys.Contains(pair.Key))
+                        k_StaleBakedMeshKeys.Add(pair.Key);
+                }
+
+                for (int i = 0; i < k_StaleBakedMeshKeys.Count; ++i)
+                {
+                    int key = k_StaleBakedMeshKeys[i];
+                    if (k_BakedMeshCache.TryGetValue(key, out Mesh mesh) && mesh != null)
+                        CoreUtils.Destroy(mesh);
+
+                    k_BakedMeshCache.Remove(key);
+                }
+
+                k_StaleBakedMeshKeys.Clear();
             }
 
             private static Matrix4x4 BuildReflectionMatrix(float planeY)
@@ -270,11 +436,14 @@ namespace HoyoToon.Runtime.Rendering.Core
             {
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
                 int layerMask = BuildLayerMask(settings.layerNames);
-                Renderer[] targetRenderers = CollectRenderers(layerMask);
+                Renderer[] targetRenderers = CollectRenderers(
+                    layerMask,
+                    ResolveReflectionReceiverShaderNames(settings),
+                    out bool hasReflectionReceiver);
                 string textureName = ResolveReflectionTextureName(settings);
                 int reflectionTextureId = Shader.PropertyToID(textureName);
 
-                if (targetRenderers.Length == 0)
+                if (!hasReflectionReceiver || targetRenderers.Length == 0)
                 {
                     Shader.SetGlobalTexture(reflectionTextureId, Texture2D.blackTexture);
                     return;
@@ -339,6 +508,7 @@ namespace HoyoToon.Runtime.Rendering.Core
         protected override void Dispose(bool disposing)
         {
             m_ScriptablePass?.Cleanup();
+            m_ScriptablePass = null;
         }
     }
 }

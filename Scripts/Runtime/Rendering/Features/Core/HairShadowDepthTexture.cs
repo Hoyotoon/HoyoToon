@@ -23,6 +23,8 @@ namespace HoyoToon.Runtime.Rendering.Core
             if (settings == null)
                 settings = new HairShadowDepthTextureSettings();
 
+            m_ScriptablePass?.Dispose();
+            m_ScriptablePass = null;
             m_ScriptablePass = new HairShadowDepthTexturePass(settings);
 
             // Configures where the render pass should be injected.
@@ -37,6 +39,12 @@ namespace HoyoToon.Runtime.Rendering.Core
             // Use this option for passes that do not support rendering directly to the backbuffer.
             // Only uncomment it if necessary, it will have a performance impact, especially on mobiles and other TBDR GPUs where it will break render passes.
             //m_ScriptablePass.requiresIntermediateTexture = true;
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            m_ScriptablePass?.Dispose();
+            m_ScriptablePass = null;
         }
 
         // Here you can inject one or multiple render passes in the renderer.
@@ -63,8 +71,11 @@ namespace HoyoToon.Runtime.Rendering.Core
             [Min(1)] public int shadowMapHeight = 1024;
         }
 
-        class HairShadowDepthTexturePass : ScriptableRenderPass
+        class HairShadowDepthTexturePass : ScriptableRenderPass, IDisposable
         {
+            const int k_DepthPassCachePruneInterval = 64;
+            const int k_DepthPassCacheMaxEntries = 256;
+
             static readonly int k_CharacterHairShadowMapId = Shader.PropertyToID("_CharacterHairShadowMap");
             static readonly string[] k_DepthPassNames =
             {
@@ -78,8 +89,10 @@ namespace HoyoToon.Runtime.Rendering.Core
             static readonly List<Renderer> k_HairRenderersScratch = new List<Renderer>(64);
             static readonly List<HSRCharacterController> k_ControllerScratch = new List<HSRCharacterController>(16);
             static readonly List<Material> k_MaterialScratch = new List<Material>(8);
+            static readonly List<Material> k_DepthPassCacheRemovalScratch = new List<Material>(16);
             static readonly Dictionary<Material, int> k_DepthPassIndexByMaterial = new Dictionary<Material, int>();
             static readonly Plane[] k_FrustumPlanes = new Plane[6];
+            static int s_DepthPassCacheLookupsUntilPrune = k_DepthPassCachePruneInterval;
 
             readonly HairShadowDepthTextureSettings settings;
             readonly List<Renderer> m_CachedTaggedHairRenderers = new List<Renderer>(64);
@@ -90,6 +103,15 @@ namespace HoyoToon.Runtime.Rendering.Core
             public HairShadowDepthTexturePass(HairShadowDepthTextureSettings settings)
             {
                 this.settings = settings;
+            }
+
+            public void Dispose()
+            {
+                m_CachedTaggedHairRenderers.Clear();
+                m_HairRendererSnapshot = Array.Empty<Renderer>();
+                m_CachedRendererTopologyVersion = -1;
+                m_CachedHairTag = string.Empty;
+                ClearDepthPassIndexCache();
             }
 
             // This class stores the data needed by the RenderGraph pass.
@@ -120,8 +142,13 @@ namespace HoyoToon.Runtime.Rendering.Core
                 if (material == null)
                     return -1;
 
+                PruneDepthPassIndexCache(force: false);
+
                 if (k_DepthPassIndexByMaterial.TryGetValue(material, out int cachedPassIndex))
                     return cachedPassIndex;
+
+                if (k_DepthPassIndexByMaterial.Count >= k_DepthPassCacheMaxEntries)
+                    PruneDepthPassIndexCache(force: true);
 
                 for (int i = 0; i < k_DepthPassNames.Length; ++i)
                 {
@@ -135,6 +162,37 @@ namespace HoyoToon.Runtime.Rendering.Core
 
                 k_DepthPassIndexByMaterial[material] = 0;
                 return 0;
+            }
+
+            static void PruneDepthPassIndexCache(bool force)
+            {
+                if (!force)
+                {
+                    --s_DepthPassCacheLookupsUntilPrune;
+                    if (s_DepthPassCacheLookupsUntilPrune > 0)
+                        return;
+                }
+
+                s_DepthPassCacheLookupsUntilPrune = k_DepthPassCachePruneInterval;
+                k_DepthPassCacheRemovalScratch.Clear();
+
+                foreach (Material material in k_DepthPassIndexByMaterial.Keys)
+                {
+                    if (material == null)
+                        k_DepthPassCacheRemovalScratch.Add(material);
+                }
+
+                for (int i = 0; i < k_DepthPassCacheRemovalScratch.Count; ++i)
+                    k_DepthPassIndexByMaterial.Remove(k_DepthPassCacheRemovalScratch[i]);
+
+                k_DepthPassCacheRemovalScratch.Clear();
+            }
+
+            static void ClearDepthPassIndexCache()
+            {
+                k_DepthPassIndexByMaterial.Clear();
+                k_DepthPassCacheRemovalScratch.Clear();
+                s_DepthPassCacheLookupsUntilPrune = k_DepthPassCachePruneInterval;
             }
 
             int CollectHairRenderers(Camera camera)

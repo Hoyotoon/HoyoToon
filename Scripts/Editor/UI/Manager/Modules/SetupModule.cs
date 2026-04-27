@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using HoyoToon.Editor.Onboarding;
+using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Scene.Placement;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -13,6 +14,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 {
     internal sealed class SetupModule : ManagerModuleBase
     {
+        private static readonly Dictionary<int, WeaponRendererCacheEntry> s_WeaponRendererCache = new Dictionary<int, WeaponRendererCacheEntry>();
+
         public override string Id => "setup";
         public override string DisplayName => "Setup";
         public override int Order => 0;
@@ -448,6 +451,13 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             rowTwo.Add(CreatePlacementToggle("Auto Discover", controller.AutoDiscoverManagedModels, value => controller.AutoDiscoverManagedModels = value, controller, window));
             section.Add(rowTwo);
 
+            VisualElement rowThree = new VisualElement();
+            rowThree.AddToClassList("ht-row");
+            rowThree.AddToClassList("ht-gap-8");
+            rowThree.AddToClassList("ht-placement-option-row");
+            rowThree.Add(CreateWeaponToggle(controller, window));
+            section.Add(rowThree);
+
             return section;
         }
 
@@ -499,6 +509,279 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 ApplyPlacementChange(controller, "HoyoToon Change Placement Option", () => setter(evt.newValue), window);
             });
             return toggle;
+        }
+
+        private static Toggle CreateWeaponToggle(CharacterPlacementController controller, HoyoToonManagerWindow window)
+        {
+            GameObject activeModel = controller != null ? controller.ActiveModel : null;
+            WeaponVisibilityState weaponState = GetWeaponVisibilityState(activeModel);
+
+            Toggle toggle = new Toggle("Weapon")
+            {
+                value = weaponState.IsVisible
+            };
+            toggle.AddToClassList("ht-toggle");
+            toggle.tooltip = weaponState.HasWeapon
+                ? "Show or hide the active character weapon mesh."
+                : "No weapon mesh was found for the active character.";
+            toggle.SetEnabled(weaponState.HasWeapon);
+            toggle.RegisterValueChangedCallback(evt =>
+            {
+                GameObject currentModel = controller != null ? controller.ActiveModel : null;
+                SetWeaponVisible(currentModel, evt.newValue);
+                window?.RefreshManagerContext();
+            });
+            return toggle;
+        }
+
+        private static WeaponVisibilityState GetWeaponVisibilityState(GameObject activeModel)
+        {
+            WeaponRendererCacheEntry cacheEntry = GetWeaponRendererCacheEntry(activeModel);
+            if (cacheEntry == null || cacheEntry.Renderers == null || cacheEntry.Renderers.Length == 0)
+            {
+                return new WeaponVisibilityState(false, false);
+            }
+
+            bool isVisible = false;
+            for (int index = 0; index < cacheEntry.Renderers.Length; index++)
+            {
+                Renderer renderer = cacheEntry.Renderers[index];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                GameObject target = index < cacheEntry.VisibilityTargets.Length
+                    ? cacheEntry.VisibilityTargets[index]
+                    : renderer.gameObject;
+                if (renderer.enabled && IsVisibleTargetActive(target, renderer.gameObject))
+                {
+                    isVisible = true;
+                    break;
+                }
+            }
+
+            return new WeaponVisibilityState(true, isVisible);
+        }
+
+        private static void SetWeaponVisible(GameObject activeModel, bool visible)
+        {
+            WeaponRendererCacheEntry cacheEntry = GetWeaponRendererCacheEntry(activeModel);
+            if (cacheEntry == null || cacheEntry.Renderers == null || cacheEntry.Renderers.Length == 0)
+            {
+                return;
+            }
+
+            List<UnityEngine.Object> undoTargets = new List<UnityEngine.Object>();
+            for (int index = 0; index < cacheEntry.Renderers.Length; index++)
+            {
+                Renderer renderer = cacheEntry.Renderers[index];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                GameObject target = index < cacheEntry.VisibilityTargets.Length
+                    ? cacheEntry.VisibilityTargets[index]
+                    : renderer.gameObject;
+                if (target != null && target.activeSelf != visible && !undoTargets.Contains(target))
+                {
+                    undoTargets.Add(target);
+                }
+
+                if (renderer.enabled != visible && !undoTargets.Contains(renderer))
+                {
+                    undoTargets.Add(renderer);
+                }
+            }
+
+            if (undoTargets.Count > 0)
+            {
+                Undo.RecordObjects(undoTargets.ToArray(), "HoyoToon Toggle Weapon");
+            }
+
+            for (int index = 0; index < cacheEntry.Renderers.Length; index++)
+            {
+                Renderer renderer = cacheEntry.Renderers[index];
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                GameObject target = index < cacheEntry.VisibilityTargets.Length
+                    ? cacheEntry.VisibilityTargets[index]
+                    : renderer.gameObject;
+                if (target != null && target.activeSelf != visible)
+                {
+                    target.SetActive(visible);
+                    EditorUtility.SetDirty(target);
+                }
+
+                if (renderer.enabled != visible)
+                {
+                    renderer.enabled = visible;
+                    EditorUtility.SetDirty(renderer);
+                }
+            }
+        }
+
+        private static WeaponRendererCacheEntry GetWeaponRendererCacheEntry(GameObject activeModel)
+        {
+            if (activeModel == null)
+            {
+                return null;
+            }
+
+            int modelId = activeModel.GetInstanceID();
+            HSRCharacterController characterController = activeModel.GetComponent<HSRCharacterController>();
+            Renderer[] scopedRenderers = characterController != null
+                ? characterController.GetScopedRenderers()
+                : activeModel.GetComponentsInChildren<Renderer>(true);
+            int rendererScopeVersion = characterController != null
+                ? characterController.RendererScopeVersion
+                : -1;
+
+            if (s_WeaponRendererCache.TryGetValue(modelId, out WeaponRendererCacheEntry cachedEntry)
+                && cachedEntry != null
+                && cachedEntry.RendererScopeVersion == rendererScopeVersion
+                && cachedEntry.SourceRenderers == scopedRenderers)
+            {
+                return cachedEntry;
+            }
+
+            WeaponRendererCacheEntry nextEntry = BuildWeaponRendererCacheEntry(
+                activeModel.transform,
+                scopedRenderers,
+                rendererScopeVersion);
+            s_WeaponRendererCache[modelId] = nextEntry;
+            return nextEntry;
+        }
+
+        private static WeaponRendererCacheEntry BuildWeaponRendererCacheEntry(
+            Transform activeModelRoot,
+            Renderer[] scopedRenderers,
+            int rendererScopeVersion)
+        {
+            List<Renderer> weaponRenderers = new List<Renderer>();
+            List<GameObject> visibilityTargets = new List<GameObject>();
+
+            for (int index = 0; index < (scopedRenderers != null ? scopedRenderers.Length : 0); index++)
+            {
+                Renderer renderer = scopedRenderers[index];
+                if (!IsWeaponRenderer(renderer, activeModelRoot))
+                {
+                    continue;
+                }
+
+                weaponRenderers.Add(renderer);
+                visibilityTargets.Add(ResolveWeaponVisibilityTarget(renderer, activeModelRoot));
+            }
+
+            return new WeaponRendererCacheEntry
+            {
+                RendererScopeVersion = rendererScopeVersion,
+                SourceRenderers = scopedRenderers,
+                Renderers = weaponRenderers.ToArray(),
+                VisibilityTargets = visibilityTargets.ToArray()
+            };
+        }
+
+        private static bool IsWeaponRenderer(Renderer renderer, Transform activeModelRoot)
+        {
+            if (renderer == null)
+            {
+                return false;
+            }
+
+            if (ContainsWeaponToken(renderer.name)
+                || ContainsWeaponToken(renderer.gameObject != null ? renderer.gameObject.name : string.Empty)
+                || ContainsWeaponAncestor(renderer.transform, activeModelRoot))
+            {
+                return true;
+            }
+
+            Mesh rendererMesh = GetRendererMesh(renderer);
+            if (rendererMesh != null && ContainsWeaponToken(rendererMesh.name))
+            {
+                return true;
+            }
+
+            Material[] materials = renderer.sharedMaterials;
+            for (int index = 0; index < (materials != null ? materials.Length : 0); index++)
+            {
+                Material material = materials[index];
+                if (material != null && ContainsWeaponToken(material.name))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static Mesh GetRendererMesh(Renderer renderer)
+        {
+            SkinnedMeshRenderer skinnedMeshRenderer = renderer as SkinnedMeshRenderer;
+            if (skinnedMeshRenderer != null)
+            {
+                return skinnedMeshRenderer.sharedMesh;
+            }
+
+            MeshFilter meshFilter = renderer != null ? renderer.GetComponent<MeshFilter>() : null;
+            return meshFilter != null ? meshFilter.sharedMesh : null;
+        }
+
+        private static bool ContainsWeaponAncestor(Transform transform, Transform activeModelRoot)
+        {
+            Transform current = transform;
+            while (current != null && current != activeModelRoot)
+            {
+                if (ContainsWeaponToken(current.name))
+                {
+                    return true;
+                }
+
+                current = current.parent;
+            }
+
+            return false;
+        }
+
+        private static GameObject ResolveWeaponVisibilityTarget(Renderer renderer, Transform activeModelRoot)
+        {
+            if (renderer == null)
+            {
+                return null;
+            }
+
+            Transform current = renderer.transform;
+            while (current != null && current != activeModelRoot)
+            {
+                if (ContainsWeaponToken(current.name))
+                {
+                    return current.gameObject;
+                }
+
+                current = current.parent;
+            }
+
+            return renderer.gameObject;
+        }
+
+        private static bool ContainsWeaponToken(string value)
+        {
+            return !string.IsNullOrWhiteSpace(value)
+                && value.IndexOf("weapon", StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
+        private static bool IsVisibleTargetActive(GameObject target, GameObject rendererObject)
+        {
+            if (target != null && !target.activeSelf)
+            {
+                return false;
+            }
+
+            return rendererObject == null || rendererObject.activeSelf;
         }
 
         private static Button CreatePlacementRemoveButton(CharacterPlacementController controller, HoyoToonManagerWindow window)
@@ -584,6 +867,26 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         private static string GetDisplayValue(string value)
         {
             return string.IsNullOrWhiteSpace(value) ? "Unknown" : value;
+        }
+
+        private sealed class WeaponRendererCacheEntry
+        {
+            public int RendererScopeVersion;
+            public Renderer[] SourceRenderers;
+            public Renderer[] Renderers;
+            public GameObject[] VisibilityTargets;
+        }
+
+        private readonly struct WeaponVisibilityState
+        {
+            public readonly bool HasWeapon;
+            public readonly bool IsVisible;
+
+            public WeaponVisibilityState(bool hasWeapon, bool isVisible)
+            {
+                HasWeapon = hasWeapon;
+                IsVisible = isVisible;
+            }
         }
     }
 }

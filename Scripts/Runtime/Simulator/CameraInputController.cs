@@ -51,7 +51,9 @@ namespace HoyoToon.Runtime.Simulator.Camera
         private float targetZoomRadius;
         private float zoomRadiusVelocity;
         private Transform cachedMiddleRigDefaultLookAtTarget;
+        private Transform cachedMiddleRigCloseLookAtTarget;
         private bool hasCachedMiddleRigDefaultLookAtTarget;
+        private bool hasCachedMiddleRigCloseLookAtTarget;
         private Transform middleRigLookAtBlendTarget;
         private float middleRigLookAtBlendWeight;
         private float middleRigLookAtBlendWeightVelocity;
@@ -238,16 +240,16 @@ namespace HoyoToon.Runtime.Simulator.Camera
                 return cachedMiddleRigDefaultLookAtTarget;
             }
 
-            Transform sceneDefaultLookAtTarget = ResolveDefaultSceneLookAtTarget();
-            if (sceneDefaultLookAtTarget != null)
-            {
-                cachedMiddleRigDefaultLookAtTarget = sceneDefaultLookAtTarget;
-                hasCachedMiddleRigDefaultLookAtTarget = true;
-                return cachedMiddleRigDefaultLookAtTarget;
-            }
-
             if (!hasCachedMiddleRigDefaultLookAtTarget || forceRefresh)
             {
+                Transform sceneDefaultLookAtTarget = ResolveDefaultSceneLookAtTarget();
+                if (sceneDefaultLookAtTarget != null)
+                {
+                    cachedMiddleRigDefaultLookAtTarget = sceneDefaultLookAtTarget;
+                    hasCachedMiddleRigDefaultLookAtTarget = true;
+                    return cachedMiddleRigDefaultLookAtTarget;
+                }
+
                 Transform currentLookAt = zoomRig != null && zoomRig.m_LookAt != null
                     ? zoomRig.m_LookAt
                     : (freeLook != null ? freeLook.LookAt : null);
@@ -255,6 +257,11 @@ namespace HoyoToon.Runtime.Simulator.Camera
                 {
                     cachedMiddleRigDefaultLookAtTarget = currentLookAt;
                     hasCachedMiddleRigDefaultLookAtTarget = true;
+                }
+                else
+                {
+                    cachedMiddleRigDefaultLookAtTarget = null;
+                    hasCachedMiddleRigDefaultLookAtTarget = false;
                 }
             }
 
@@ -266,14 +273,22 @@ namespace HoyoToon.Runtime.Simulator.Camera
             return freeLook != null ? freeLook.LookAt : null;
         }
 
-        private Transform ResolveMiddleRigCloseLookAtTarget()
+        private Transform ResolveMiddleRigCloseLookAtTarget(bool forceRefresh)
         {
             if (middleRigCloseLookAtTarget != null)
             {
+                cachedMiddleRigCloseLookAtTarget = middleRigCloseLookAtTarget;
+                hasCachedMiddleRigCloseLookAtTarget = true;
                 return middleRigCloseLookAtTarget;
             }
 
-            return ResolveCloseSceneLookAtTarget();
+            if (!hasCachedMiddleRigCloseLookAtTarget || forceRefresh)
+            {
+                cachedMiddleRigCloseLookAtTarget = ResolveCloseSceneLookAtTarget();
+                hasCachedMiddleRigCloseLookAtTarget = cachedMiddleRigCloseLookAtTarget != null;
+            }
+
+            return cachedMiddleRigCloseLookAtTarget;
         }
 
         private void EnsureMiddleRigLookAtBlendTarget()
@@ -314,7 +329,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
             }
 
             Transform defaultLookAtTarget = ResolveMiddleRigDefaultLookAtTarget(zoomRig, forceRefresh);
-            Transform closeLookAtTarget = ResolveMiddleRigCloseLookAtTarget();
+            Transform closeLookAtTarget = ResolveMiddleRigCloseLookAtTarget(forceRefresh);
 
             if (defaultLookAtTarget == null || closeLookAtTarget == null || defaultLookAtTarget == closeLookAtTarget)
             {
