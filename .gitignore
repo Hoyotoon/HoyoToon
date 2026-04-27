@@ -105,3 +105,9 @@ Scripts/Editor/Data/
 # # updater-keep: LocalOnly/
 # # updater-keep: *.local
 # -------------------------------------------------------
+Temp/CodexChecks.meta
+Temp/CodexChecks/dotnet-home.meta
+Temp/CodexChecks/dotnet-home/.dotnet/.workloadAdvertisingManifestSentinel10.0.100
+Temp/CodexChecks/dotnet-home/.dotnet/10.0.103.aspNetCertificateSentinel
+Temp/CodexChecks/dotnet-home/.dotnet/10.0.103.dotnetFirstUseSentinel
+Temp/CodexChecks/dotnet-home/.dotnet/10.0.103.toolpath.sentinel

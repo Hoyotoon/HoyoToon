@@ -47,6 +47,7 @@ namespace HoyoToon.Editor.Updater
             {
                 HoyoToonLogger.Error(HoyoToonLogCategory.General, $"Updater coroutine failed: {exception.Message}", exception);
                 Stop();
+                PackageUpdaterService.HandleUnhandledCoroutineException(exception);
             }
         }
 
@@ -125,9 +126,30 @@ namespace HoyoToon.Editor.Updater
 
         private static void Stop()
         {
+            Stack<IEnumerator> routinesToDispose = routineStack;
             routineStack = null;
             currentYield = null;
             EditorApplication.update -= Update;
+
+            if (routinesToDispose == null)
+            {
+                return;
+            }
+
+            while (routinesToDispose.Count > 0)
+            {
+                if (routinesToDispose.Pop() is IDisposable disposableRoutine)
+                {
+                    try
+                    {
+                        disposableRoutine.Dispose();
+                    }
+                    catch (Exception exception)
+                    {
+                        HoyoToonLogger.Warning(HoyoToonLogCategory.General, $"Failed to dispose updater coroutine: {exception.Message}");
+                    }
+                }
+            }
         }
     }
 }

@@ -45,6 +45,11 @@ namespace HoyoToon.Editor.Updater
                 return false;
             }
 
+            if (TryRecoverInterruptedLock(existingLock))
+            {
+                return false;
+            }
+
             if (IsLockExpired(existingLock))
             {
                 PackageUpdaterStorage.ClearLockState();
@@ -108,6 +113,25 @@ namespace HoyoToon.Editor.Updater
             {
                 HoyoToonLogger.Warning(HoyoToonLogCategory.General, "Unable to resume the staged HoyoToon update because another updater operation is already running.");
             }
+        }
+
+        internal static void HandleUnhandledCoroutineException(Exception exception)
+        {
+            HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+            PackageUpdaterStorage.ClearLockState();
+
+            bool hasPendingApply = PackageUpdaterStorage.HasPendingState();
+            if (!hasPendingApply)
+            {
+                PackageUpdaterStorage.ClearPendingArtifacts();
+            }
+
+            SetStatus(
+                UpdateAvailabilityState.Error,
+                PackageUpdaterStorage.GetLocalPackageVersion(),
+                null,
+                $"Updater failed unexpectedly: {exception?.Message ?? "Unknown error"}",
+                hasPendingApply: hasPendingApply);
         }
 
         private static IEnumerator CheckRoutine(bool showUpToDateDialog, bool automatic, bool cleanMissingFiles)
@@ -216,7 +240,14 @@ namespace HoyoToon.Editor.Updater
             UpdaterManifest manifest;
             try
             {
-                manifest = JsonSerializer.Deserialize<UpdaterManifest>(manifestRequest.downloadHandler.text, HoyoToonApi.JsonResolver);
+                string manifestPayload = manifestRequest.downloadHandler?.text;
+                if (string.IsNullOrWhiteSpace(manifestPayload))
+                {
+                    onError?.Invoke("Updater manifest response was empty.");
+                    yield break;
+                }
+
+                manifest = JsonSerializer.Deserialize<UpdaterManifest>(manifestPayload, HoyoToonApi.JsonResolver);
             }
             catch (Exception exception)
             {
@@ -260,7 +291,7 @@ namespace HoyoToon.Editor.Updater
                 yield return changelogRequest.SendWebRequest();
                 if (changelogRequest.result == UnityWebRequest.Result.Success)
                 {
-                    plan.RemoteChangelog = changelogRequest.downloadHandler.text;
+                    plan.RemoteChangelog = changelogRequest.downloadHandler?.text ?? string.Empty;
                 }
             }
 
@@ -719,6 +750,32 @@ namespace HoyoToon.Editor.Updater
 
             DateTime createdUtc = new DateTime(lockState.createdUtcTicks, DateTimeKind.Utc);
             return DateTime.UtcNow - createdUtc > LockTimeout;
+        }
+
+        private static bool TryRecoverInterruptedLock(UpdaterLockState lockState)
+        {
+            if (lockState == null || EditorCoroutine.IsRunning || PackageUpdaterStorage.HasPendingState())
+            {
+                return false;
+            }
+
+            PackageUpdaterStorage.ClearLockState();
+            UpdaterStatusSnapshot snapshot = cachedStatusSnapshot ?? PackageUpdaterStorage.ReadStatusSnapshot();
+            UpdateAvailabilityState state = snapshot != null
+                ? (UpdateAvailabilityState)snapshot.state
+                : UpdateAvailabilityState.Unknown;
+
+            if (state == UpdateAvailabilityState.Checking || state == UpdateAvailabilityState.Applying)
+            {
+                SetStatus(
+                    UpdateAvailabilityState.Error,
+                    PackageUpdaterStorage.GetLocalPackageVersion(),
+                    snapshot?.remoteVersion,
+                    "The previous HoyoToon updater operation was interrupted before it could finish. Retry the update.",
+                    hasPendingApply: false);
+            }
+
+            return true;
         }
 
         private static void SetStatus(

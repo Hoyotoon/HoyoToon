@@ -32,6 +32,10 @@ namespace HoyoToon.Editor.Updater
         {
             string payload = await HoyoToonApiFetchUtility.GetStringAsync(BuildCacheBustedUrl(BuildManifestUrl(branch)), cancellationToken)
                 .ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(payload))
+            {
+                throw new InvalidOperationException("Updater manifest response was empty.");
+            }
 
             UpdaterManifest manifest = JsonSerializer.Deserialize<UpdaterManifest>(payload, HoyoToonApi.JsonResolver);
             if (manifest == null)
@@ -49,7 +53,13 @@ namespace HoyoToon.Editor.Updater
             ApplyNoCacheHeaders(request);
             using HttpResponseMessage response = await Client.SendAsync(request, cancellationToken).ConfigureAwait(false);
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            byte[] bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+            if (bytes == null)
+            {
+                throw new InvalidOperationException($"Downloaded '{relativePath}' but the response body was empty.");
+            }
+
+            return bytes;
         }
 
         internal static string BuildCacheBustedUrl(string url)

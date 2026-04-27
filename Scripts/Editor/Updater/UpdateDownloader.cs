@@ -114,7 +114,15 @@ namespace HoyoToon.Editor.Updater
                             Directory.CreateDirectory(directory);
                         }
 
-                        File.WriteAllBytes(destination, request.downloadHandler.data);
+                        byte[] downloadedBytes = request.downloadHandler?.data;
+                        if (downloadedBytes == null)
+                        {
+                            result.Success = false;
+                            result.ErrorMessage = $"Downloaded '{file}' but the response body was empty.";
+                            yield break;
+                        }
+
+                        File.WriteAllBytes(destination, downloadedBytes);
                         completed++;
                         onProgress?.Invoke(Mathf.Clamp01((float)completed / files.Count), $"Downloaded {completed}/{files.Count} files");
                         request.Dispose();
