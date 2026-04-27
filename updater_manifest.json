@@ -1,5 +1,5 @@
 {
-  "version": "0.1.4",
+  "version": "0.1.5",
   "files": {
     ".gitignore": "931535465fb79b7b3d9109e3d816ab07bdb21e7a",
     "HoyoToon.unity": "dafddfb75e6a63f74b7f9a7cc2eb7f530fdaf4b7",
@@ -168,11 +168,11 @@
     "Scripts/Editor/UI/Manager/UXML/HoyoToonWindow.uxml": "aa127f3b909c9c71b3d541ee28fa1ba8c66deced",
     "Scripts/Editor/Updater/EditorCoroutine.cs": "877b06c04d2fcfd4bc3feb609d761b5ba05a26cc",
     "Scripts/Editor/Updater/PackageUpdaterEntryPoints.cs": "68a03ce9bb7aa44cc77ea2a59d7b1d0d2d83ea36",
-    "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs": "794b197ea2f73ad89b3b4252f59b851110de5799",
-    "Scripts/Editor/Updater/PackageUpdaterModels.cs": "2ad906b35091d5daeb9abdb811495ebf1602d085",
+    "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs": "61527af89f81c9a3c067049c3ad602c5ea739361",
+    "Scripts/Editor/Updater/PackageUpdaterModels.cs": "af523abf8d1ad5fe099f1049d6b07cf6513104f9",
     "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "9281d4404e14e3182622e422637ef9e0e20a27a0",
-    "Scripts/Editor/Updater/PackageUpdaterService.cs": "eb9f7ca4326ff41628ed287a031300fc8eedf7b6",
-    "Scripts/Editor/Updater/PackageUpdaterStorage.cs": "14d9e2143f425c28ee8ce5cd2924399cd26ac101",
+    "Scripts/Editor/Updater/PackageUpdaterService.cs": "ae1ec48745cf227f06dd0aea6470f9a871f78dab",
+    "Scripts/Editor/Updater/PackageUpdaterStorage.cs": "2a2e97cf662592ca5ea882da1ac14bb307179096",
     "Scripts/Editor/Updater/UpdateDownloader.cs": "14b60a32be2f3fafb1282383b5accba6c1c1efbf",
     "Scripts/Editor/Updater/UpdaterKeepRules.cs": "d9ce9dea8047bf62b8caf29e35c7e1e7b423f9a5",
     "Scripts/Editor/Utilities/API/HoyoToonApiFetchUtility.cs": "230c3829e8a4f5cad77dc1431e956ac0ecbdf091",
@@ -371,6 +371,6 @@
     "Shaders/Utility/ComputeShaders/SkinningUVCoords.compute": "9f2c7a6aab41c9b3ccadd4c14f2b026737384cff",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "changelog.md": "f891aa7f4e71489c32d23bfc5a3d9b54bd73c389",
-    "package.json": "8d6badf09a376632d32bcfc95094b3c6e64ed60e"
+    "package.json": "196ad386fffde20ede7dad17455f6f550750a873"
   }
 }
