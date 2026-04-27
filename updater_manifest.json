@@ -1,5 +1,5 @@
 {
-  "version": "0.1.7",
+  "version": "0.1.8",
   "files": {
     ".gitignore": "f20b645dd9483ca4ba6c6c536743102d1a89fad7",
     "HoyoToon.unity": "dafddfb75e6a63f74b7f9a7cc2eb7f530fdaf4b7",
@@ -396,15 +396,15 @@
     "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs.meta": "3341907b780071c2a16686293383d3207fd24feb",
     "Scripts/Editor/Updater/PackageUpdaterModels.cs": "f55248b031410ffade531ea67a0ae7a7cb023975",
     "Scripts/Editor/Updater/PackageUpdaterModels.cs.meta": "4b02715d7cf7e39d8e66ff5dc80467160854fbfc",
-    "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "cc9db2680974366a41f3e1da7cffc95109a3c4ff",
+    "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "060532e4c3a9615759d94b37899d01c97aa52a2b",
     "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs.meta": "3d89f795d53c0a0e8db30e437736a18551e75a34",
-    "Scripts/Editor/Updater/PackageUpdaterService.cs": "8dcd66c61779b283d6655ade56c745ad375d4425",
+    "Scripts/Editor/Updater/PackageUpdaterService.cs": "030ff0ea61ed563403fe4f70e4cf0ece4649a1a7",
     "Scripts/Editor/Updater/PackageUpdaterService.cs.meta": "b773b55a1437ea5fb540893488786b9cf23a6a38",
     "Scripts/Editor/Updater/PackageUpdaterStorage.cs": "e6dd1dfac74d14614496e01e99111bc52f7b3b88",
     "Scripts/Editor/Updater/PackageUpdaterStorage.cs.meta": "4c460a913e8b560f4194c7c90aa0b91f83c3e771",
     "Scripts/Editor/Updater/UpdateDownloader.cs": "7e58d15fb1a1d52a5b92218ca1e64bfb086d3aa8",
     "Scripts/Editor/Updater/UpdateDownloader.cs.meta": "4bd8b5ac144383b4d49513d493de035f9ee51019",
-    "Scripts/Editor/Updater/UpdaterKeepRules.cs": "d9ce9dea8047bf62b8caf29e35c7e1e7b423f9a5",
+    "Scripts/Editor/Updater/UpdaterKeepRules.cs": "55792f5e5f34329cd9e3ae7e02f5a61ea0852754",
     "Scripts/Editor/Updater/UpdaterKeepRules.cs.meta": "83b01a0e819f57f59393420e35df1395122a0107",
     "Scripts/Editor/Utilities.meta": "6c3fd005eef4aaf2140344edf91b87be421aa08e",
     "Scripts/Editor/Utilities/API.meta": "311ee6764d57aa56619f01e68263a916f2a0c23c",
@@ -894,9 +894,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "b8b985104c27509516c7a0a8cd9ca9875ba759d6",
+    "changelog.md": "cb9fadfcf5e0ed6547a98f958dfd6d4ff9ff93b0",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "14aa2f195e83346ff1995e9f51d2b6ea1fdb59c8",
+    "package.json": "3063b804f087b0bcb5c3801c5bbd764490100fe3",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
