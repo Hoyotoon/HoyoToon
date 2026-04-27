@@ -1,5 +1,5 @@
 {
-  "version": "0.1.3",
+  "version": "0.1.4",
   "files": {
     ".gitignore": "931535465fb79b7b3d9109e3d816ab07bdb21e7a",
     "HoyoToon.unity": "dafddfb75e6a63f74b7f9a7cc2eb7f530fdaf4b7",
@@ -171,7 +171,7 @@
     "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs": "794b197ea2f73ad89b3b4252f59b851110de5799",
     "Scripts/Editor/Updater/PackageUpdaterModels.cs": "2ad906b35091d5daeb9abdb811495ebf1602d085",
     "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "9281d4404e14e3182622e422637ef9e0e20a27a0",
-    "Scripts/Editor/Updater/PackageUpdaterService.cs": "0dad2e4365170790efc68b57ecf41362bc844064",
+    "Scripts/Editor/Updater/PackageUpdaterService.cs": "eb9f7ca4326ff41628ed287a031300fc8eedf7b6",
     "Scripts/Editor/Updater/PackageUpdaterStorage.cs": "14d9e2143f425c28ee8ce5cd2924399cd26ac101",
     "Scripts/Editor/Updater/UpdateDownloader.cs": "14b60a32be2f3fafb1282383b5accba6c1c1efbf",
     "Scripts/Editor/Updater/UpdaterKeepRules.cs": "d9ce9dea8047bf62b8caf29e35c7e1e7b423f9a5",
@@ -370,7 +370,7 @@
     "Shaders/Games/Honkai Star Rail/UI/Manikin/Manikin_StarCloud.shader": "2696e9ff3e5bdf12fc77aa3ec3a4add0bcf50e17",
     "Shaders/Utility/ComputeShaders/SkinningUVCoords.compute": "9f2c7a6aab41c9b3ccadd4c14f2b026737384cff",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
-    "changelog.md": "fc3a5452c6a862686f32b70e7ea8817de6b62673",
-    "package.json": "1bc3cb7749cd0a5000cfda2a2a53e44b420d24c2"
+    "changelog.md": "f891aa7f4e71489c32d23bfc5a3d9b54bd73c389",
+    "package.json": "8d6badf09a376632d32bcfc95094b3c6e64ed60e"
   }
 }
