@@ -1,7 +1,7 @@
 {
-  "version": "0.1.6",
+  "version": "0.1.7",
   "files": {
-    ".gitignore": "931535465fb79b7b3d9109e3d816ab07bdb21e7a",
+    ".gitignore": "f20b645dd9483ca4ba6c6c536743102d1a89fad7",
     "HoyoToon.unity": "dafddfb75e6a63f74b7f9a7cc2eb7f530fdaf4b7",
     "HoyoToon.unity.meta": "2352059316a63978e26ada59d50c3f1708cfaedb",
     "LICENSE": "31a3d460bb3c7d98845187c716a30db81c44b615",
@@ -396,7 +396,7 @@
     "Scripts/Editor/Updater/PackageUpdaterManifestClient.cs.meta": "3341907b780071c2a16686293383d3207fd24feb",
     "Scripts/Editor/Updater/PackageUpdaterModels.cs": "f55248b031410ffade531ea67a0ae7a7cb023975",
     "Scripts/Editor/Updater/PackageUpdaterModels.cs.meta": "4b02715d7cf7e39d8e66ff5dc80467160854fbfc",
-    "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "258cf6641ad0857a1eb61f7a832089f232e2b714",
+    "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs": "cc9db2680974366a41f3e1da7cffc95109a3c4ff",
     "Scripts/Editor/Updater/PackageUpdaterPlanBuilder.cs.meta": "3d89f795d53c0a0e8db30e437736a18551e75a34",
     "Scripts/Editor/Updater/PackageUpdaterService.cs": "8dcd66c61779b283d6655ade56c745ad375d4425",
     "Scripts/Editor/Updater/PackageUpdaterService.cs.meta": "b773b55a1437ea5fb540893488786b9cf23a6a38",
@@ -894,10 +894,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "Temp.meta": "6c43f64d549a947e945634755010b9c0cbb5571c",
-    "changelog.md": "2f58867759d3384899b2c9cdbb18058974eb9f81",
+    "changelog.md": "b8b985104c27509516c7a0a8cd9ca9875ba759d6",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "f5e5a5f22b121ab96ceb05af84612bd7c284d6d3",
+    "package.json": "14aa2f195e83346ff1995e9f51d2b6ea1fdb59c8",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
