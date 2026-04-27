@@ -22,6 +22,7 @@ namespace HoyoToon.Editor.Updater
             List<string> files,
             string baseUrl,
             string tempRoot,
+            IReadOnlyDictionary<string, string> expectedHashes,
             DownloadResult result,
             Action<float, string> onProgress = null)
         {
@@ -60,11 +61,9 @@ namespace HoyoToon.Editor.Updater
                             yield break;
                         }
 
-                        string requestUrl = PackageUpdaterManifestClient.BuildCacheBustedUrl(BuildRawFileUrl(baseUrl, normalizedFile));
+                        string requestUrl = PackageUpdaterManifestClient.BuildRawFileUrlFromBase(baseUrl, normalizedFile);
                         var request = UnityWebRequest.Get(requestUrl);
-                        request.SetRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
-                        request.SetRequestHeader("Pragma", "no-cache");
-                        request.SetRequestHeader("Expires", "0");
+                        PackageUpdaterManifestClient.ApplyRawContentHeaders(request);
                         request.SendWebRequest();
 
                         requests.Add(request);
@@ -97,7 +96,7 @@ namespace HoyoToon.Editor.Updater
                         if (request.result != UnityWebRequest.Result.Success)
                         {
                             result.Success = false;
-                            result.ErrorMessage = $"Failed to download '{file}': {request.error}";
+                            result.ErrorMessage = PackageUpdaterManifestClient.BuildRequestFailureMessage(request, $"Downloading '{file}'");
                             yield break;
                         }
 
@@ -122,6 +121,13 @@ namespace HoyoToon.Editor.Updater
                             yield break;
                         }
 
+                        if (!IsDownloadedHashValid(file, downloadedBytes, expectedHashes, out string hashError))
+                        {
+                            result.Success = false;
+                            result.ErrorMessage = hashError;
+                            yield break;
+                        }
+
                         File.WriteAllBytes(destination, downloadedBytes);
                         completed++;
                         onProgress?.Invoke(Mathf.Clamp01((float)completed / files.Count), $"Downloaded {completed}/{files.Count} files");
@@ -143,19 +149,26 @@ namespace HoyoToon.Editor.Updater
             }
         }
 
-        private static string BuildRawFileUrl(string baseUrl, string relativePath)
+        private static bool IsDownloadedHashValid(
+            string relativePath,
+            byte[] downloadedBytes,
+            IReadOnlyDictionary<string, string> expectedHashes,
+            out string error)
         {
-            string normalizedBase = (baseUrl ?? string.Empty).TrimEnd('/');
-            string[] segments = PackageUpdaterStorage.NormalizeRelativePath(relativePath)
-                .Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-
-            if (segments.Length == 0)
+            error = null;
+            if (expectedHashes == null || !expectedHashes.TryGetValue(relativePath, out string expectedHash) || string.IsNullOrWhiteSpace(expectedHash))
             {
-                return normalizedBase;
+                return true;
             }
 
-            string escapedPath = string.Join("/", Array.ConvertAll(segments, Uri.EscapeDataString));
-            return string.Concat(normalizedBase, "/", escapedPath);
+            string actualHash = PackageUpdaterPlanBuilder.ComputeManifestCompatibleSha1(downloadedBytes);
+            if (string.Equals(actualHash, expectedHash, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            error = $"Downloaded '{relativePath}' did not match the updater manifest hash. Expected {expectedHash}, got {actualHash}.";
+            return false;
         }
     }
 }

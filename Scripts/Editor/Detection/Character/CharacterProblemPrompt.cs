@@ -13,8 +13,6 @@ namespace HoyoToon.Editor.Detection.Character
 {
     public static class CharacterProblemPrompt
     {
-        private const int MaxDisplayedProblems = 5;
-
         public static bool ConfirmAssetContext(string assetPath, string actionName, UnityEngine.Object context = null)
         {
             return ConfirmAssetContexts(new[] { assetPath }, actionName, context);
@@ -29,8 +27,6 @@ namespace HoyoToon.Editor.Detection.Character
             }
 
             string resolvedActionName = string.IsNullOrWhiteSpace(actionName) ? "this action" : actionName.Trim();
-            string message = BuildPromptMessage(matches, resolvedActionName);
-
             HoyoToonLogger.Warning(
                 HoyoToonLogCategory.Detection,
                 $"Known character problem detected before '{resolvedActionName}'. Waiting for user confirmation.",
@@ -45,11 +41,22 @@ namespace HoyoToon.Editor.Detection.Character
                 return true;
             }
 
-            return HoyoToonDialog.DisplayDialog(
-                matches.Count == 1 ? "Known Character Problem" : "Known Character Problems",
-                message,
-                "Continue",
-                "Cancel");
+            for (int i = 0; i < matches.Count; i++)
+            {
+                ProblemPromptMatch match = matches[i];
+                string message = BuildPromptMessage(match, resolvedActionName, matches.Count > 1 ? i + 1 : 0, matches.Count);
+                bool shouldContinue = HoyoToonDialog.DisplayDialog(
+                    "Known Character Problem",
+                    message,
+                    "Continue",
+                    "Cancel");
+                if (!shouldContinue)
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
 
         private static IEnumerable<ProblemPromptMatch> CollectProblemMatches(IEnumerable<string> assetPaths)
@@ -108,51 +115,32 @@ namespace HoyoToon.Editor.Detection.Character
                 entry);
         }
 
-        private static string BuildPromptMessage(IReadOnlyList<ProblemPromptMatch> matches, string actionName)
+        private static string BuildPromptMessage(ProblemPromptMatch match, string actionName, int index, int totalCount)
         {
             var builder = new StringBuilder();
-            if (matches.Count == 1)
+            if (index > 0 && totalCount > 1)
             {
-                ProblemPromptMatch match = matches[0];
-                builder.Append("HoyoToon detected a known problem for this character before ");
-                builder.Append(actionName);
+                builder.Append("Known problem ");
+                builder.Append(index);
+                builder.Append("/");
+                builder.Append(totalCount);
                 builder.AppendLine(".");
                 builder.AppendLine();
-                AppendMatch(builder, match, includeIndex: false, index: 0);
-                builder.AppendLine();
-                builder.Append("Do you want to continue?");
-                return builder.ToString();
             }
 
-            builder.Append("HoyoToon detected known problems for ");
-            builder.Append(matches.Count);
-            builder.Append(" selected character");
-            builder.Append(matches.Count == 1 ? string.Empty : "s");
-            builder.Append(" before ");
+            builder.Append("HoyoToon detected a known problem for this character before ");
             builder.Append(actionName);
             builder.AppendLine(".");
             builder.AppendLine();
-
-            int displayCount = Math.Min(matches.Count, MaxDisplayedProblems);
-            for (int i = 0; i < displayCount; i++)
-            {
-                AppendMatch(builder, matches[i], includeIndex: true, index: i + 1);
-                builder.AppendLine();
-            }
-
-            int remainingCount = matches.Count - displayCount;
-            if (remainingCount > 0)
-            {
-                builder.Append("And ");
-                builder.Append(remainingCount);
-                builder.Append(" more known problem");
-                builder.Append(remainingCount == 1 ? string.Empty : "s");
-                builder.AppendLine(".");
-                builder.AppendLine();
-            }
-
+            AppendMatch(builder, match);
+            builder.AppendLine();
             builder.Append("Do you want to continue?");
             return builder.ToString();
+        }
+
+        private static void AppendMatch(StringBuilder builder, ProblemPromptMatch match)
+        {
+            AppendMatch(builder, match, includeIndex: false, index: 0);
         }
 
         private static void AppendMatch(StringBuilder builder, ProblemPromptMatch match, bool includeIndex, int index)

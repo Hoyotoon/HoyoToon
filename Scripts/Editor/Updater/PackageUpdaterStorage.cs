@@ -276,7 +276,12 @@ namespace HoyoToon.Editor.Updater
             }
 
             state.branch = string.IsNullOrWhiteSpace(state.branch) ? CurrentBranch : NormalizeBranch(state.branch);
-            state.remoteContentReference = state.remoteContentReference ?? string.Empty;
+            state.remoteCommitSha = NormalizeStoredReference(state.remoteCommitSha);
+            state.remoteContentReference = NormalizeStoredReference(state.remoteContentReference);
+            if (string.IsNullOrWhiteSpace(state.remoteCommitSha))
+            {
+                state.remoteCommitSha = state.remoteContentReference;
+            }
             state.localVersion = state.localVersion ?? string.Empty;
             state.remoteVersion = state.remoteVersion ?? string.Empty;
             state.filesToCopy = state.filesToCopy ?? new System.Collections.Generic.List<string>();
@@ -332,6 +337,13 @@ namespace HoyoToon.Editor.Updater
 
             string json = JsonUtility.ToJson(value, true);
             File.WriteAllText(filePath, json);
+        }
+
+        private static string NormalizeStoredReference(string reference)
+        {
+            return string.IsNullOrWhiteSpace(reference)
+                ? string.Empty
+                : reference.Trim();
         }
 
         private static string PrefsKey(string key)

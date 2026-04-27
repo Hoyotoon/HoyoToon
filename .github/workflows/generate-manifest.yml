@@ -1,13 +1,12 @@
 name: Generate Manifest
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - Beta
       - main
     paths:
-      - package.json
+      - "package.json"
 
 jobs:
   build:
@@ -27,7 +26,6 @@ jobs:
           import json
           import pathlib
           import subprocess
-          import sys
 
           root = pathlib.Path('.').resolve()
           output_path = root / 'updater_manifest.json'
@@ -68,8 +66,6 @@ jobs:
 
           def is_explicitly_skipped(relative_path: str) -> bool:
               if not relative_path:
-                  return True
-              if relative_path.endswith('.meta'):
                   return True
               if relative_path.startswith(('.git/', '.github/', '.vscode/', '.idea/')):
                   return True

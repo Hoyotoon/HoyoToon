@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: GameProblemLists
   m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameProblemListsSO
   gameKey: Honkai Star Rail
-  regex: ^[^_]+
+  regex: ^(?:Eff_)?(?:Avatar_)?([^_]+)
   entries:
   - name: Cerydra
     message: There's a problem with Cerydra. Mihoyo made her too unique to 2 units

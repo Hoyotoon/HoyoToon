@@ -1,84 +1,73 @@
 #if UNITY_EDITOR
 using System;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 using HoyoToon.Editor.API;
-using HoyoToon.Editor.Utilities.API;
+using UnityEngine.Networking;
 using Utf8Json;
 
 namespace HoyoToon.Editor.Updater
 {
     internal static class PackageUpdaterManifestClient
     {
-        private const string RepositoryOwner = "HoyoToon";
+        private const string RepositoryOwner = "Hoyotoon";
         private const string RepositoryName = "HoyoToon";
+        private const string ApiBaseUrl = "https://api.github.com";
+        private const string RawBaseUrl = "https://raw.githubusercontent.com";
+        private const string GitHubApiVersion = "2026-03-10";
         internal const string UserAgent = "HoyoToon-Unity-Updater";
 
-        private static readonly HttpClient Client = CreateClient();
-
-        internal static string BuildManifestUrl(string branch)
+        internal static string BuildBranchReferenceApiUrl(string branch)
         {
             string normalizedBranch = NormalizeBranch(branch);
-            return BuildRawUrl(normalizedBranch, "updater_manifest.json");
-        }
-
-        internal static string BuildRawBaseUrl(string branch)
-        {
-            string normalizedBranch = NormalizeBranch(branch);
-            return $"https://raw.githubusercontent.com/{RepositoryOwner}/{RepositoryName}/{normalizedBranch}";
-        }
-
-        internal static string BuildBranchCommitApiUrl(string branch)
-        {
-            string normalizedBranch = NormalizeBranch(branch);
-            return $"https://api.github.com/repos/{RepositoryOwner}/{RepositoryName}/commits/{Uri.EscapeDataString(normalizedBranch)}";
+            return $"{ApiBaseUrl}/repos/{RepositoryOwner}/{RepositoryName}/git/ref/heads/{Uri.EscapeDataString(normalizedBranch)}";
         }
 
         internal static string BuildManifestUrlForReference(string reference)
         {
-            return BuildRawUrlForReference(reference, "updater_manifest.json");
+            return BuildRawFileUrl(reference, "updater_manifest.json");
         }
 
         internal static string BuildRawBaseUrlForReference(string reference)
         {
             string normalizedReference = NormalizeContentReference(reference);
-            return $"https://raw.githubusercontent.com/{RepositoryOwner}/{RepositoryName}/{EscapeReference(normalizedReference)}";
+            return $"{RawBaseUrl}/{RepositoryOwner}/{RepositoryName}/{EscapeReference(normalizedReference)}";
         }
 
-        internal static string ExtractCommitSha(string payload)
+        internal static string BuildRawFileUrl(string reference, string relativePath)
+        {
+            return BuildRawFileUrlFromBase(BuildRawBaseUrlForReference(reference), relativePath);
+        }
+
+        internal static string BuildRawFileUrlFromBase(string baseUrl, string relativePath)
+        {
+            string normalizedBase = (baseUrl ?? string.Empty).TrimEnd('/');
+            if (!PackageUpdaterStorage.TryNormalizeRelativePath(relativePath, out string normalizedPath, out string error))
+            {
+                throw new InvalidOperationException($"Unsafe updater remote path '{relativePath}': {error}");
+            }
+
+            string[] segments = normalizedPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
+            string escapedPath = string.Join("/", Array.ConvertAll(segments, Uri.EscapeDataString));
+            return string.Concat(normalizedBase, "/", escapedPath);
+        }
+
+        internal static string ExtractBranchHeadSha(string payload)
         {
             if (string.IsNullOrWhiteSpace(payload))
             {
-                throw new InvalidOperationException("GitHub branch response was empty.");
+                throw new InvalidOperationException("GitHub reference response was empty.");
             }
 
-            GitHubCommitReferenceResponse response = JsonSerializer.Deserialize<GitHubCommitReferenceResponse>(payload, HoyoToonApi.JsonResolver);
-            if (string.IsNullOrWhiteSpace(response?.sha))
+            GitHubReferenceResponse response = JsonSerializer.Deserialize<GitHubReferenceResponse>(payload, HoyoToonApi.JsonResolver);
+            if (string.IsNullOrWhiteSpace(response?.@object?.sha))
             {
-                throw new InvalidOperationException("GitHub branch response did not include a commit SHA.");
+                throw new InvalidOperationException("GitHub reference response did not include a commit SHA.");
             }
 
-            return response.sha.Trim();
+            return response.@object.sha.Trim();
         }
 
-        internal static async Task<string> ResolveBranchContentReferenceAsync(string branch, CancellationToken cancellationToken)
+        internal static UpdaterManifest DeserializeManifest(string payload)
         {
-            string requestUrl = BuildCacheBustedUrl(BuildBranchCommitApiUrl(branch));
-            using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-            ApplyNoCacheHeaders(request);
-            ApplyGitHubApiHeaders(request);
-            using HttpResponseMessage response = await Client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            string payload = await response.Content.ReadAsStringAsync().ConfigureAwait(false);
-            return ExtractCommitSha(payload);
-        }
-
-        internal static async Task<UpdaterManifest> FetchManifestAsync(string branch, CancellationToken cancellationToken)
-        {
-            string contentReference = await ResolveBranchContentReferenceAsync(branch, cancellationToken).ConfigureAwait(false);
-            string payload = await HoyoToonApiFetchUtility.GetStringAsync(BuildCacheBustedUrl(BuildManifestUrlForReference(contentReference)), cancellationToken)
-                .ConfigureAwait(false);
             if (string.IsNullOrWhiteSpace(payload))
             {
                 throw new InvalidOperationException("Updater manifest response was empty.");
@@ -93,51 +82,52 @@ namespace HoyoToon.Editor.Updater
             return manifest;
         }
 
-        internal static async Task<byte[]> DownloadFileBytesAsync(string branch, string relativePath, CancellationToken cancellationToken)
+        internal static void ApplyGitHubApiHeaders(UnityWebRequest request)
         {
-            string contentReference = await ResolveBranchContentReferenceAsync(branch, cancellationToken).ConfigureAwait(false);
-            string requestUrl = BuildCacheBustedUrl(BuildRawUrlForReference(contentReference, relativePath));
-            using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
-            ApplyNoCacheHeaders(request);
-            using HttpResponseMessage response = await Client.SendAsync(request, cancellationToken).ConfigureAwait(false);
-            response.EnsureSuccessStatusCode();
-            byte[] bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
-            if (bytes == null)
+            if (request == null)
             {
-                throw new InvalidOperationException($"Downloaded '{relativePath}' but the response body was empty.");
+                return;
             }
 
-            return bytes;
+            request.redirectLimit = 5;
+            request.SetRequestHeader("Accept", "application/vnd.github+json");
+            request.SetRequestHeader("User-Agent", UserAgent);
+            request.SetRequestHeader("X-GitHub-Api-Version", GitHubApiVersion);
         }
 
-        internal static string BuildCacheBustedUrl(string url)
+        internal static void ApplyRawContentHeaders(UnityWebRequest request)
         {
-            string separator = (url ?? string.Empty).Contains("?", StringComparison.Ordinal) ? "&" : "?";
-            return string.Concat(url ?? string.Empty, separator, "ts=", DateTimeOffset.UtcNow.ToUnixTimeMilliseconds().ToString());
-        }
-
-        private static string BuildRawUrl(string branch, string relativePath)
-        {
-            string normalizedBase = BuildRawBaseUrl(branch).TrimEnd('/');
-            return BuildRawUrlFromBase(normalizedBase, relativePath);
-        }
-
-        private static string BuildRawUrlForReference(string reference, string relativePath)
-        {
-            string normalizedBase = BuildRawBaseUrlForReference(reference).TrimEnd('/');
-            return BuildRawUrlFromBase(normalizedBase, relativePath);
-        }
-
-        private static string BuildRawUrlFromBase(string normalizedBase, string relativePath)
-        {
-            if (!PackageUpdaterStorage.TryNormalizeRelativePath(relativePath, out string normalizedPath, out string error))
+            if (request == null)
             {
-                throw new InvalidOperationException($"Unsafe updater remote path '{relativePath}': {error}");
+                return;
             }
 
-            string[] segments = normalizedPath.Split(new[] { '/' }, StringSplitOptions.RemoveEmptyEntries);
-            string escapedPath = string.Join("/", Array.ConvertAll(segments, Uri.EscapeDataString));
-            return string.Concat(normalizedBase, "/", escapedPath);
+            request.redirectLimit = 5;
+            request.SetRequestHeader("User-Agent", UserAgent);
+        }
+
+        internal static string BuildRequestFailureMessage(UnityWebRequest request, string operation)
+        {
+            string operationLabel = string.IsNullOrWhiteSpace(operation) ? "GitHub request" : operation;
+            if (request == null)
+            {
+                return $"{operationLabel} failed.";
+            }
+
+            string detail = TryReadGitHubErrorMessage(request);
+            if (string.IsNullOrWhiteSpace(detail))
+            {
+                detail = string.IsNullOrWhiteSpace(request.error) ? "Unknown error." : request.error;
+            }
+
+            string rateLimitDetail = BuildRateLimitDetail(request);
+            string statusDetail = request.responseCode > 0
+                ? $"HTTP {request.responseCode}: "
+                : string.Empty;
+
+            return string.IsNullOrWhiteSpace(rateLimitDetail)
+                ? $"{operationLabel} failed: {statusDetail}{detail}"
+                : $"{operationLabel} failed: {statusDetail}{detail} {rateLimitDetail}";
         }
 
         private static string NormalizeBranch(string branch)
@@ -162,28 +152,47 @@ namespace HoyoToon.Editor.Updater
                 : string.Join("/", Array.ConvertAll(segments, Uri.EscapeDataString));
         }
 
-        private static void ApplyNoCacheHeaders(HttpRequestMessage request)
+        private static string TryReadGitHubErrorMessage(UnityWebRequest request)
         {
-            request.Headers.TryAddWithoutValidation("Cache-Control", "no-cache, no-store, max-age=0");
-            request.Headers.TryAddWithoutValidation("Pragma", "no-cache");
-            request.Headers.TryAddWithoutValidation("Expires", "0");
-        }
-
-        private static void ApplyGitHubApiHeaders(HttpRequestMessage request)
-        {
-            request.Headers.TryAddWithoutValidation("Accept", "application/vnd.github+json");
-            request.Headers.TryAddWithoutValidation("X-GitHub-Api-Version", "2022-11-28");
-        }
-
-        private static HttpClient CreateClient()
-        {
-            var client = new HttpClient
+            string payload = request.downloadHandler?.text;
+            if (string.IsNullOrWhiteSpace(payload))
             {
-                Timeout = TimeSpan.FromSeconds(30),
-            };
+                return string.Empty;
+            }
 
-            client.DefaultRequestHeaders.TryAddWithoutValidation("User-Agent", UserAgent);
-            return client;
+            try
+            {
+                GitHubApiErrorResponse error = JsonSerializer.Deserialize<GitHubApiErrorResponse>(payload, HoyoToonApi.JsonResolver);
+                return error?.message ?? string.Empty;
+            }
+            catch
+            {
+                return string.Empty;
+            }
+        }
+
+        private static string BuildRateLimitDetail(UnityWebRequest request)
+        {
+            if (request.responseCode != 403 && request.responseCode != 429)
+            {
+                return string.Empty;
+            }
+
+            string retryAfter = request.GetResponseHeader("Retry-After");
+            if (!string.IsNullOrWhiteSpace(retryAfter))
+            {
+                return $"Retry after {retryAfter} second(s).";
+            }
+
+            string remaining = request.GetResponseHeader("X-RateLimit-Remaining");
+            string reset = request.GetResponseHeader("X-RateLimit-Reset");
+            if (string.Equals(remaining, "0", StringComparison.Ordinal) && long.TryParse(reset, out long resetEpochSeconds))
+            {
+                DateTimeOffset resetTime = DateTimeOffset.FromUnixTimeSeconds(resetEpochSeconds).ToLocalTime();
+                return $"GitHub rate limit resets at {resetTime:yyyy-MM-dd HH:mm:ss zzz}.";
+            }
+
+            return string.Empty;
         }
     }
 }

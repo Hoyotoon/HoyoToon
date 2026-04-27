@@ -23,6 +23,11 @@ namespace HoyoToon.Editor.Updater
             string localVersion = PackageUpdaterStorage.GetLocalPackageVersion();
             string remoteVersion = string.IsNullOrWhiteSpace(manifest?.version) ? "unknown" : manifest.version.Trim();
             int versionComparison = CompareVersionStrings(localVersion, remoteVersion);
+            bool manifestIncludesMetaFiles = ManifestIncludesMetaFiles(remoteFiles);
+            List<string> filesToCopy = BuildCopyList(remoteFiles);
+            List<string> filesToDelete = cleanMissingFiles
+                ? FindMissingLocalFiles(remoteFiles, manifestIncludesMetaFiles)
+                : new List<string>();
 
             if (versionComparison > 0)
             {
@@ -32,13 +37,15 @@ namespace HoyoToon.Editor.Updater
                     Branch = normalizedBranch,
                     LocalVersion = localVersion,
                     RemoteVersion = remoteVersion,
-                    StatusMessage = $"Local HoyoToon version {localVersion} is newer than remote branch '{normalizedBranch}' version {remoteVersion}.",
+                    StatusMessage = BuildLocalAheadStatusMessage(normalizedBranch, localVersion, remoteVersion, filesToCopy.Count, filesToDelete.Count),
                     CleanMissingFiles = cleanMissingFiles,
                     RemoteFiles = remoteFiles,
+                    FilesToCopy = filesToCopy,
+                    FilesToDelete = filesToDelete,
                 };
             }
 
-            if (versionComparison == 0)
+            if (filesToCopy.Count == 0 && filesToDelete.Count == 0)
             {
                 return new UpdatePlan
                 {
@@ -52,18 +59,13 @@ namespace HoyoToon.Editor.Updater
                 };
             }
 
-            List<string> filesToCopy = BuildCopyList(remoteFiles);
-            List<string> filesToDelete = cleanMissingFiles
-                ? FindMissingLocalFiles(remoteFiles)
-                : new List<string>();
-
             return new UpdatePlan
             {
                 AvailabilityState = UpdateAvailabilityState.UpdateAvailable,
                 Branch = normalizedBranch,
                 LocalVersion = localVersion,
                 RemoteVersion = remoteVersion,
-                StatusMessage = BuildStatusMessage(normalizedBranch, localVersion, remoteVersion, filesToCopy.Count, filesToDelete.Count),
+                StatusMessage = BuildStatusMessage(normalizedBranch, localVersion, remoteVersion, versionComparison, filesToCopy.Count, filesToDelete.Count),
                 CleanMissingFiles = cleanMissingFiles,
                 RemoteFiles = remoteFiles,
                 FilesToCopy = filesToCopy,
@@ -79,11 +81,6 @@ namespace HoyoToon.Editor.Updater
                 if (!PackageUpdaterStorage.TryNormalizeRelativePath(remoteFile.Key, out string relativePath, out string error))
                 {
                     throw new InvalidOperationException($"Updater manifest contains an unsafe path '{remoteFile.Key}': {error}");
-                }
-
-                if (relativePath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
-                {
-                    continue;
                 }
 
                 if (!PackageUpdaterStorage.TryResolvePackageFilePath(relativePath, out string localPath, out error))
@@ -107,7 +104,7 @@ namespace HoyoToon.Editor.Updater
             return filesToCopy;
         }
 
-        private static List<string> FindMissingLocalFiles(Dictionary<string, string> remoteFiles)
+        private static List<string> FindMissingLocalFiles(Dictionary<string, string> remoteFiles, bool manifestIncludesMetaFiles)
         {
             var extras = new List<string>();
             if (!Directory.Exists(PackageUpdaterStorage.PackageRootPath))
@@ -120,7 +117,7 @@ namespace HoyoToon.Editor.Updater
 
             foreach (string localFilePath in Directory.GetFiles(PackageUpdaterStorage.PackageRootPath, "*", SearchOption.AllDirectories))
             {
-                if (localFilePath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                if (!manifestIncludesMetaFiles && localFilePath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
                 {
                     continue;
                 }
@@ -146,7 +143,12 @@ namespace HoyoToon.Editor.Updater
 
         internal static string ComputeManifestCompatibleSha1(string filePath)
         {
-            byte[] bytes = NormalizeBytesForHash(File.ReadAllBytes(filePath));
+            return ComputeManifestCompatibleSha1(File.ReadAllBytes(filePath));
+        }
+
+        internal static string ComputeManifestCompatibleSha1(byte[] bytes)
+        {
+            bytes = NormalizeBytesForHash(bytes);
             using SHA1 sha1 = SHA1.Create();
             byte[] hash = sha1.ComputeHash(bytes);
             return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
@@ -258,12 +260,46 @@ namespace HoyoToon.Editor.Updater
             return parts.Count > 0;
         }
 
-        private static string BuildStatusMessage(string branch, string localVersion, string remoteVersion, int fileCopyCount, int fileDeleteCount)
+        private static bool ManifestIncludesMetaFiles(Dictionary<string, string> remoteFiles)
+        {
+            if (remoteFiles == null)
+            {
+                return false;
+            }
+
+            foreach (string relativePath in remoteFiles.Keys)
+            {
+                if (!string.IsNullOrWhiteSpace(relativePath) && relativePath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static string BuildLocalAheadStatusMessage(string branch, string localVersion, string remoteVersion, int fileCopyCount, int fileDeleteCount)
+        {
+            int totalChanges = fileCopyCount + fileDeleteCount;
+            if (totalChanges <= 0)
+            {
+                return $"Local HoyoToon version {localVersion} is newer than remote branch '{branch}' version {remoteVersion}.";
+            }
+
+            return $"Local HoyoToon version {localVersion} is newer than remote branch '{branch}' version {remoteVersion}. The remote file set also differs by {fileCopyCount} update(s) and {fileDeleteCount} removal(s), so the updater will not apply it automatically.";
+        }
+
+        private static string BuildStatusMessage(string branch, string localVersion, string remoteVersion, int versionComparison, int fileCopyCount, int fileDeleteCount)
         {
             int totalChanges = fileCopyCount + fileDeleteCount;
             if (totalChanges <= 0)
             {
                 return $"HoyoToon is up to date on '{branch}' (local {localVersion}, remote {remoteVersion}).";
+            }
+
+            if (versionComparison == 0)
+            {
+                return $"HoyoToon file repair available on '{branch}': local and remote are both {localVersion}, but {fileCopyCount} file(s) will be synced and {fileDeleteCount} file(s) will be removed.";
             }
 
             return $"Update available on '{branch}': local {localVersion}, remote {remoteVersion}, {fileCopyCount} file(s) will be updated and {fileDeleteCount} file(s) will be removed.";

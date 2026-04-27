@@ -76,15 +76,31 @@ namespace HoyoToon.Editor.Updater
     }
 
     [Serializable]
-    public sealed class GitHubCommitReferenceResponse
+    public sealed class GitHubReferenceResponse
     {
+        public GitHubReferenceObject @object;
+    }
+
+    [Serializable]
+    public sealed class GitHubReferenceObject
+    {
+        public string type;
         public string sha;
+        public string url;
+    }
+
+    [Serializable]
+    public sealed class GitHubApiErrorResponse
+    {
+        public string message;
+        public string documentation_url;
     }
 
     [Serializable]
     public sealed class PendingInstallState
     {
         public string branch = string.Empty;
+        public string remoteCommitSha = string.Empty;
         public string remoteContentReference = string.Empty;
         public string localVersion = string.Empty;
         public string remoteVersion = string.Empty;
@@ -116,7 +132,7 @@ namespace HoyoToon.Editor.Updater
     {
         public UpdateAvailabilityState AvailabilityState = UpdateAvailabilityState.Unknown;
         public string Branch = string.Empty;
-        public string RemoteContentReference = string.Empty;
+        public string RemoteCommitSha = string.Empty;
         public string LocalVersion = string.Empty;
         public string RemoteVersion = string.Empty;
         public string RemoteChangelog = string.Empty;

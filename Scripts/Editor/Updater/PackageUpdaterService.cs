@@ -4,13 +4,11 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
-using HoyoToon.Editor.API;
 using HoyoToon.Editor.Utilities.Debugging;
 using HoyoToon.Editor.Utilities.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.Networking;
-using Utf8Json;
 
 namespace HoyoToon.Editor.Updater
 {
@@ -148,7 +146,7 @@ namespace HoyoToon.Editor.Updater
                     progressShown = true;
                 }
 
-                yield return BuildPlanRoutine(cleanMissingFiles, automatic, value => plan = value, value => errorMessage = value);
+                yield return BuildPlanRoutine(PackageUpdaterStorage.CurrentBranch, cleanMissingFiles, automatic, value => plan = value, value => errorMessage = value);
 
                 if (!string.IsNullOrWhiteSpace(errorMessage))
                 {
@@ -215,7 +213,7 @@ namespace HoyoToon.Editor.Updater
                     progressShown = true;
                 }
 
-                yield return BuildPlanRoutine(plan.CleanMissingFiles, automatic, value => installPlan = value, value => errorMessage = value);
+                yield return BuildPlanRoutine(plan.Branch, plan.CleanMissingFiles, automatic, value => installPlan = value, value => errorMessage = value);
 
                 if (!string.IsNullOrWhiteSpace(errorMessage))
                 {
@@ -275,27 +273,27 @@ namespace HoyoToon.Editor.Updater
             }
         }
 
-        private static IEnumerator BuildPlanRoutine(bool cleanMissingFiles, bool automatic, Action<UpdatePlan> onSuccess, Action<string> onError)
+        private static IEnumerator BuildPlanRoutine(string branch, bool cleanMissingFiles, bool automatic, Action<UpdatePlan> onSuccess, Action<string> onError)
         {
-            string branch = PackageUpdaterStorage.CurrentBranch;
-            string contentReference = null;
-            string contentReferenceError = null;
+            string normalizedBranch = PackageUpdaterStorage.NormalizeBranch(branch);
+            string remoteCommitSha = null;
+            string remoteCommitShaError = null;
 
             if (!automatic)
             {
                 HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Resolving latest branch commit...", 0.08f);
             }
 
-            yield return ResolveBranchContentReferenceRoutine(branch, automatic, value => contentReference = value, value => contentReferenceError = value);
-            if (!string.IsNullOrWhiteSpace(contentReferenceError))
+            yield return ResolveBranchHeadShaRoutine(normalizedBranch, automatic, value => remoteCommitSha = value, value => remoteCommitShaError = value);
+            if (!string.IsNullOrWhiteSpace(remoteCommitShaError))
             {
-                onError?.Invoke(contentReferenceError);
+                onError?.Invoke(remoteCommitShaError);
                 yield break;
             }
 
-            string manifestUrl = PackageUpdaterManifestClient.BuildCacheBustedUrl(PackageUpdaterManifestClient.BuildManifestUrlForReference(contentReference));
+            string manifestUrl = PackageUpdaterManifestClient.BuildManifestUrlForReference(remoteCommitSha);
             using UnityWebRequest manifestRequest = UnityWebRequest.Get(manifestUrl);
-            ApplyNoCacheHeaders(manifestRequest);
+            PackageUpdaterManifestClient.ApplyRawContentHeaders(manifestRequest);
 
             if (!automatic)
             {
@@ -305,7 +303,7 @@ namespace HoyoToon.Editor.Updater
             yield return manifestRequest.SendWebRequest();
             if (manifestRequest.result != UnityWebRequest.Result.Success)
             {
-                onError?.Invoke($"Failed to download updater manifest from '{PackageUpdaterStorage.CurrentBranch}': {manifestRequest.error}");
+                onError?.Invoke(PackageUpdaterManifestClient.BuildRequestFailureMessage(manifestRequest, $"Downloading updater manifest from '{normalizedBranch}'"));
                 yield break;
             }
 
@@ -319,7 +317,7 @@ namespace HoyoToon.Editor.Updater
                     yield break;
                 }
 
-                manifest = JsonSerializer.Deserialize<UpdaterManifest>(manifestPayload, HoyoToonApi.JsonResolver);
+                manifest = PackageUpdaterManifestClient.DeserializeManifest(manifestPayload);
             }
             catch (Exception exception)
             {
@@ -341,8 +339,8 @@ namespace HoyoToon.Editor.Updater
             UpdatePlan plan;
             try
             {
-                plan = PackageUpdaterPlanBuilder.BuildPlan(branch, manifest, cleanMissingFiles);
-                plan.RemoteContentReference = contentReference;
+                plan = PackageUpdaterPlanBuilder.BuildPlan(normalizedBranch, manifest, cleanMissingFiles);
+                plan.RemoteCommitSha = remoteCommitSha;
             }
             catch (Exception exception)
             {
@@ -357,10 +355,9 @@ namespace HoyoToon.Editor.Updater
                     HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Downloading remote changelog...", 0.55f);
                 }
 
-                string changelogUrl = PackageUpdaterManifestClient.BuildCacheBustedUrl(
-                    PackageUpdaterManifestClient.BuildRawBaseUrlForReference(contentReference).TrimEnd('/') + "/changelog.md");
+                string changelogUrl = PackageUpdaterManifestClient.BuildRawFileUrl(remoteCommitSha, "changelog.md");
                 using UnityWebRequest changelogRequest = UnityWebRequest.Get(changelogUrl);
-                ApplyNoCacheHeaders(changelogRequest);
+                PackageUpdaterManifestClient.ApplyRawContentHeaders(changelogRequest);
                 yield return changelogRequest.SendWebRequest();
                 if (changelogRequest.result == UnityWebRequest.Result.Success)
                 {
@@ -371,29 +368,28 @@ namespace HoyoToon.Editor.Updater
             onSuccess?.Invoke(plan);
         }
 
-        private static IEnumerator ResolveBranchContentReferenceRoutine(string branch, bool automatic, Action<string> onSuccess, Action<string> onError)
+        private static IEnumerator ResolveBranchHeadShaRoutine(string branch, bool automatic, Action<string> onSuccess, Action<string> onError)
         {
             string normalizedBranch = PackageUpdaterStorage.NormalizeBranch(branch);
-            string requestUrl = PackageUpdaterManifestClient.BuildCacheBustedUrl(PackageUpdaterManifestClient.BuildBranchCommitApiUrl(normalizedBranch));
+            string requestUrl = PackageUpdaterManifestClient.BuildBranchReferenceApiUrl(normalizedBranch);
             using UnityWebRequest request = UnityWebRequest.Get(requestUrl);
-            ApplyNoCacheHeaders(request);
-            ApplyGitHubApiHeaders(request);
+            PackageUpdaterManifestClient.ApplyGitHubApiHeaders(request);
 
             yield return request.SendWebRequest();
             if (request.result != UnityWebRequest.Result.Success)
             {
-                onError?.Invoke($"Failed to resolve latest commit for '{normalizedBranch}': {request.error}");
+                onError?.Invoke(PackageUpdaterManifestClient.BuildRequestFailureMessage(request, $"Resolving latest commit for '{normalizedBranch}'"));
                 yield break;
             }
 
             try
             {
-                string contentReference = PackageUpdaterManifestClient.ExtractCommitSha(request.downloadHandler?.text);
+                string commitSha = PackageUpdaterManifestClient.ExtractBranchHeadSha(request.downloadHandler?.text);
                 HoyoToonLogger.Info(
                     HoyoToonLogCategory.General,
-                    $"Resolved updater branch '{normalizedBranch}' to commit '{contentReference}'.",
+                    $"Resolved updater branch '{normalizedBranch}' to commit '{commitSha}'.",
                     isBackgroundOperation: automatic);
-                onSuccess?.Invoke(contentReference);
+                onSuccess?.Invoke(commitSha);
             }
             catch (Exception exception)
             {
@@ -464,8 +460,9 @@ namespace HoyoToon.Editor.Updater
                     var downloadResult = new UpdateDownloader.DownloadResult();
                     yield return UpdateDownloader.DownloadFiles(
                         plan.FilesToCopy,
-                        PackageUpdaterManifestClient.BuildRawBaseUrlForReference(GetPlanContentReference(plan)),
+                        PackageUpdaterManifestClient.BuildRawBaseUrlForReference(GetPlanCommitSha(plan)),
                         PackageUpdaterStorage.StagedFilesPath,
+                        plan.RemoteFiles,
                         downloadResult,
                         (progress, message) => HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", message, Mathf.Clamp01(progress * 0.75f)));
 
@@ -530,7 +527,7 @@ namespace HoyoToon.Editor.Updater
             string latestPlanError = null;
 
             HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Checking latest updater manifest before applying staged files...", 0.05f);
-            yield return BuildPlanRoutine(pendingState.cleanMissingFiles, automatic: false, value => latestPlan = value, value => latestPlanError = value);
+            yield return BuildPlanRoutine(pendingState.branch, pendingState.cleanMissingFiles, automatic: false, value => latestPlan = value, value => latestPlanError = value);
 
             if (!string.IsNullOrWhiteSpace(latestPlanError))
             {
@@ -675,7 +672,7 @@ namespace HoyoToon.Editor.Updater
                         throw new IOException($"Unsafe updater delete path '{relativePath}': {pathError}");
                     }
 
-                    ManagedFileTransactionUtility.DeleteFileAndMeta(destinationPath);
+                    DeletePackageFileForUpdater(relativePath, destinationPath);
                 }
             }
             catch (Exception exception)
@@ -845,12 +842,24 @@ namespace HoyoToon.Editor.Updater
                 : string.Empty;
         }
 
+        private static void DeletePackageFileForUpdater(string relativePath, string destinationPath)
+        {
+            if (!string.IsNullOrWhiteSpace(relativePath) && relativePath.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+            {
+                ManagedFileTransactionUtility.DeleteFileIfExists(destinationPath);
+                return;
+            }
+
+            ManagedFileTransactionUtility.DeleteFileAndMeta(destinationPath);
+        }
+
         private static void WritePendingState(UpdatePlan plan)
         {
             PackageUpdaterStorage.WritePendingState(new PendingInstallState
             {
                 branch = plan.Branch,
-                remoteContentReference = plan.RemoteContentReference,
+                remoteCommitSha = plan.RemoteCommitSha,
+                remoteContentReference = plan.RemoteCommitSha,
                 localVersion = plan.LocalVersion,
                 remoteVersion = plan.RemoteVersion,
                 cleanMissingFiles = plan.CleanMissingFiles,
@@ -936,23 +945,23 @@ namespace HoyoToon.Editor.Updater
             return true;
         }
 
-        private static string GetPlanContentReference(UpdatePlan plan)
+        private static string GetPlanCommitSha(UpdatePlan plan)
         {
             if (plan == null)
             {
                 return PackageUpdaterStorage.CurrentBranch;
             }
 
-            return string.IsNullOrWhiteSpace(plan.RemoteContentReference)
+            return string.IsNullOrWhiteSpace(plan.RemoteCommitSha)
                 ? plan.Branch
-                : plan.RemoteContentReference;
+                : plan.RemoteCommitSha;
         }
 
-        private static string NormalizeContentReference(string reference)
+        private static string NormalizeCommitSha(string commitSha)
         {
-            return string.IsNullOrWhiteSpace(reference)
+            return string.IsNullOrWhiteSpace(commitSha)
                 ? string.Empty
-                : reference.Trim();
+                : commitSha.Trim();
         }
 
         private static bool ArePlansEquivalent(UpdatePlan left, UpdatePlan right)
@@ -963,7 +972,7 @@ namespace HoyoToon.Editor.Updater
             }
 
             return string.Equals(left.Branch ?? string.Empty, right.Branch ?? string.Empty, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(NormalizeContentReference(left.RemoteContentReference), NormalizeContentReference(right.RemoteContentReference), StringComparison.OrdinalIgnoreCase)
+                && string.Equals(NormalizeCommitSha(left.RemoteCommitSha), NormalizeCommitSha(right.RemoteCommitSha), StringComparison.OrdinalIgnoreCase)
                 && string.Equals(left.RemoteVersion ?? string.Empty, right.RemoteVersion ?? string.Empty, StringComparison.OrdinalIgnoreCase)
                 && left.CleanMissingFiles == right.CleanMissingFiles
                 && ArePathListsEquivalent(left.FilesToCopy, right.FilesToCopy)
@@ -979,7 +988,7 @@ namespace HoyoToon.Editor.Updater
 
             string pendingBranch = PackageUpdaterStorage.NormalizeBranch(pendingState.branch);
             return string.Equals(pendingBranch, latestPlan.Branch ?? string.Empty, StringComparison.OrdinalIgnoreCase)
-                && string.Equals(NormalizeContentReference(pendingState.remoteContentReference), NormalizeContentReference(latestPlan.RemoteContentReference), StringComparison.OrdinalIgnoreCase)
+                && string.Equals(NormalizeCommitSha(pendingState.remoteCommitSha), NormalizeCommitSha(latestPlan.RemoteCommitSha), StringComparison.OrdinalIgnoreCase)
                 && string.Equals(pendingState.remoteVersion ?? string.Empty, latestPlan.RemoteVersion ?? string.Empty, StringComparison.OrdinalIgnoreCase)
                 && pendingState.cleanMissingFiles == latestPlan.CleanMissingFiles
                 && ArePathListsEquivalent(pendingState.filesToCopy, latestPlan.FilesToCopy)
@@ -1081,19 +1090,6 @@ namespace HoyoToon.Editor.Updater
                 };
         }
 
-        private static void ApplyNoCacheHeaders(UnityWebRequest request)
-        {
-            request.SetRequestHeader("Cache-Control", "no-cache, no-store, max-age=0");
-            request.SetRequestHeader("Pragma", "no-cache");
-            request.SetRequestHeader("Expires", "0");
-        }
-
-        private static void ApplyGitHubApiHeaders(UnityWebRequest request)
-        {
-            request.SetRequestHeader("Accept", "application/vnd.github+json");
-            request.SetRequestHeader("User-Agent", PackageUpdaterManifestClient.UserAgent);
-            request.SetRequestHeader("X-GitHub-Api-Version", "2022-11-28");
-        }
     }
 }
 #endif

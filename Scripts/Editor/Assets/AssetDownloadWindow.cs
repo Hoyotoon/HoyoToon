@@ -833,6 +833,7 @@ namespace HoyoToon.Editor.Assets
             bool failed = false;
             bool batchImportScopeOpened = false;
             var importedAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var autoSetupAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             List<string> selectedCharacterNames = new List<string>();
 
             try
@@ -872,6 +873,14 @@ namespace HoyoToon.Editor.Assets
                 {
                     statusMessage = $"Download cancelled while processing {cancelledJob.Job.CharacterName} ({cancelledJob.Job.Variant?.Name}).";
                     return;
+                }
+
+                foreach (AssetDownloadPreparedJob preparedJob in preparedJobs)
+                {
+                    if (preparedJob != null && !string.IsNullOrWhiteSpace(preparedJob.AssetTargetPath))
+                    {
+                        autoSetupAssetPaths.Add(preparedJob.AssetTargetPath);
+                    }
                 }
 
                 int totalDownloadCount = preparedJobs.Sum(job => job?.FilesToDownload.Count ?? 0);
@@ -934,13 +943,30 @@ namespace HoyoToon.Editor.Assets
                     {
                         await BeginDownloadImportPhaseAsync(importedAssetPaths.Count > 0).ConfigureAwait(false);
                         await CompleteDownloadBatchAsync(importedAssetPaths, normalizedRoot).ConfigureAwait(false);
+                    }
+                    catch (Exception exception)
+                    {
+                        HoyoToonLogger.Error(HoyoToonLogCategory.Models, "Failed to finalize downloaded assets.", exception);
+                        shouldShowSummary = false;
+                        failed = true;
+                        statusMessage = $"Download failed: {exception.Message}";
+                    }
+                }
 
-                        if (ShouldRunAutoSetupForGame(downloadedGame))
+                if (!failed && ShouldRunAutoSetupForGame(downloadedGame))
+                {
+                    IReadOnlyCollection<string> setupAssetPaths = autoSetupAssetPaths.Count > 0
+                        ? autoSetupAssetPaths
+                        : importedAssetPaths;
+
+                    if (setupAssetPaths.Count > 0)
+                    {
+                        try
                         {
                             statusMessage = "Running Auto Setup on downloaded models...";
                             await InvokeOnMainThreadAsync(Repaint);
 
-                            AutoSetupResult autoSetupResult = await RunAutoSetupForDownloadedAssetsAsync(importedAssetPaths).ConfigureAwait(false);
+                            AutoSetupResult autoSetupResult = await RunAutoSetupForDownloadedAssetsAsync(setupAssetPaths).ConfigureAwait(false);
                             if (autoSetupResult != null)
                             {
                                 string autoSetupSummary = autoSetupResult.Succeeded
@@ -951,13 +977,13 @@ namespace HoyoToon.Editor.Assets
                                     : summary + " " + autoSetupSummary;
                             }
                         }
-                    }
-                    catch (Exception exception)
-                    {
-                        HoyoToonLogger.Error(HoyoToonLogCategory.Models, "Failed to finalize downloaded assets.", exception);
-                        shouldShowSummary = false;
-                        failed = true;
-                        statusMessage = $"Download failed: {exception.Message}";
+                        catch (Exception exception)
+                        {
+                            HoyoToonLogger.Error(HoyoToonLogCategory.Models, "Auto setup after download failed.", exception);
+                            shouldShowSummary = false;
+                            failed = true;
+                            statusMessage = $"Auto Setup failed: {exception.Message}";
+                        }
                     }
                 }
 
@@ -2467,15 +2493,29 @@ namespace HoyoToon.Editor.Assets
 
                 UnityEngine.Object[] previousSelection = Selection.objects?.ToArray() ?? Array.Empty<UnityEngine.Object>();
                 UnityEngine.Object previousActiveObject = Selection.activeObject;
+                AutoSetupResult aggregateResult = null;
 
                 try
                 {
-                    Selection.objects = selectionTargets.ToArray();
-                    return AutoSetup.RunSelection(new AutoSetupOptions
+                    foreach (UnityEngine.Object selectionTarget in selectionTargets)
                     {
-                        ShowDialogs = false,
-                        PromptForRenderPipelineSelection = false,
-                    });
+                        if (selectionTarget == null)
+                        {
+                            continue;
+                        }
+
+                        Selection.objects = new[] { selectionTarget };
+                        Selection.activeObject = selectionTarget;
+
+                        AutoSetupResult result = AutoSetup.RunSelection(new AutoSetupOptions
+                        {
+                            ShowDialogs = true,
+                            PromptForRenderPipelineSelection = false,
+                        });
+                        aggregateResult = MergeAutoSetupResult(aggregateResult, result);
+                    }
+
+                    return aggregateResult;
                 }
                 finally
                 {
@@ -2483,6 +2523,42 @@ namespace HoyoToon.Editor.Assets
                     Selection.activeObject = previousActiveObject;
                 }
             }).ConfigureAwait(false);
+        }
+
+        private static AutoSetupResult MergeAutoSetupResult(AutoSetupResult aggregateResult, AutoSetupResult result)
+        {
+            if (result == null)
+            {
+                return aggregateResult;
+            }
+
+            if (aggregateResult == null)
+            {
+                aggregateResult = new AutoSetupResult(result.ProfileKey, result.ProfileDisplayName);
+            }
+
+            foreach (string featureId in result.ExecutedFeatures)
+            {
+                aggregateResult.RecordFeature(featureId);
+            }
+
+            foreach (string warning in result.Warnings)
+            {
+                aggregateResult.RecordWarning(warning);
+            }
+
+            foreach (string error in result.Errors)
+            {
+                aggregateResult.RecordError(error);
+            }
+
+            aggregateResult.MaterialsCreated += result.MaterialsCreated;
+            aggregateResult.MaterialsUpdated += result.MaterialsUpdated;
+            aggregateResult.ModelsConverted += result.ModelsConverted;
+            aggregateResult.ModelImportSettingsApplied += result.ModelImportSettingsApplied;
+            aggregateResult.TangentApplications += result.TangentApplications;
+            aggregateResult.PrerequisiteFailures += result.PrerequisiteFailures;
+            return aggregateResult;
         }
 
         private static List<UnityEngine.Object> ResolveAutoSetupSelectionTargets(IEnumerable<string> importedAssetPaths)
