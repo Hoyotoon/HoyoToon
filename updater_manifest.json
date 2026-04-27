@@ -370,10 +370,6 @@
     "Shaders/Games/Honkai Star Rail/UI/Manikin/Manikin_StarCloud.shader": "2696e9ff3e5bdf12fc77aa3ec3a4add0bcf50e17",
     "Shaders/Utility/ComputeShaders/SkinningUVCoords.compute": "9f2c7a6aab41c9b3ccadd4c14f2b026737384cff",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
-    "Temp/CodexChecks/dotnet-home/.dotnet/.workloadAdvertisingManifestSentinel10.0.100": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-    "Temp/CodexChecks/dotnet-home/.dotnet/10.0.103.aspNetCertificateSentinel": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-    "Temp/CodexChecks/dotnet-home/.dotnet/10.0.103.dotnetFirstUseSentinel": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
-    "Temp/CodexChecks/dotnet-home/.dotnet/10.0.103.toolpath.sentinel": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
     "changelog.md": "fc3a5452c6a862686f32b70e7ea8817de6b62673",
     "package.json": "17a891c80b3414f4a57fb912a0c6298c989a98e9"
   }
