@@ -331,6 +331,20 @@ namespace HoyoToon.Editor.Updater
                 yield break;
             }
 
+            UpdaterKeepRules keepRules = null;
+            if (cleanMissingFiles && IsRemoteVersionNewer(manifest))
+            {
+                if (!automatic)
+                {
+                    HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Loading updater keep rules...", 0.2f);
+                }
+
+                keepRules = UpdaterKeepRules.Load(PackageUpdaterStorage.PackageRootPath);
+                UpdaterKeepRules targetKeepRules = null;
+                yield return FetchTargetKeepRulesRoutine(remoteCommitSha, automatic, value => targetKeepRules = value);
+                keepRules.Merge(targetKeepRules);
+            }
+
             if (!automatic)
             {
                 HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Comparing local package files...", 0.35f);
@@ -339,7 +353,7 @@ namespace HoyoToon.Editor.Updater
             UpdatePlan plan;
             try
             {
-                plan = PackageUpdaterPlanBuilder.BuildPlan(normalizedBranch, manifest, cleanMissingFiles);
+                plan = PackageUpdaterPlanBuilder.BuildPlan(normalizedBranch, manifest, cleanMissingFiles, keepRules);
                 plan.RemoteCommitSha = remoteCommitSha;
             }
             catch (Exception exception)
@@ -366,6 +380,30 @@ namespace HoyoToon.Editor.Updater
             }
 
             onSuccess?.Invoke(plan);
+        }
+
+        private static IEnumerator FetchTargetKeepRulesRoutine(string remoteCommitSha, bool automatic, Action<UpdaterKeepRules> onSuccess)
+        {
+            string gitIgnoreUrl = PackageUpdaterManifestClient.BuildRawFileUrl(remoteCommitSha, ".gitignore");
+            using UnityWebRequest request = UnityWebRequest.Get(gitIgnoreUrl);
+            PackageUpdaterManifestClient.ApplyRawContentHeaders(request);
+
+            yield return request.SendWebRequest();
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                if (request.responseCode != 404)
+                {
+                    HoyoToonLogger.Warning(
+                        HoyoToonLogCategory.General,
+                        PackageUpdaterManifestClient.BuildRequestFailureMessage(request, "Downloading target updater keep rules"),
+                        isBackgroundOperation: automatic);
+                }
+
+                onSuccess?.Invoke(null);
+                yield break;
+            }
+
+            onSuccess?.Invoke(UpdaterKeepRules.FromGitIgnoreText(request.downloadHandler?.text));
         }
 
         private static IEnumerator ResolveBranchHeadShaRoutine(string branch, bool automatic, Action<string> onSuccess, Action<string> onError)
@@ -616,6 +654,7 @@ namespace HoyoToon.Editor.Updater
             }
 
             UpdaterKeepRules keepRules = UpdaterKeepRules.Load(PackageUpdaterStorage.PackageRootPath);
+            MergeStagedKeepRules(keepRules);
             if (!ValidatePendingStatePaths(pendingState, keepRules, out error))
             {
                 return false;
@@ -704,6 +743,25 @@ namespace HoyoToon.Editor.Updater
 
             PackageUpdaterStorage.ClearPendingArtifacts();
             return true;
+        }
+
+        private static void MergeStagedKeepRules(UpdaterKeepRules keepRules)
+        {
+            if (keepRules == null
+                || !PackageUpdaterStorage.TryResolveStagedFilePath(".gitignore", out string stagedGitIgnorePath, out _)
+                || !File.Exists(stagedGitIgnorePath))
+            {
+                return;
+            }
+
+            try
+            {
+                keepRules.Merge(UpdaterKeepRules.FromGitIgnoreText(File.ReadAllText(stagedGitIgnorePath)));
+            }
+            catch (Exception exception)
+            {
+                HoyoToonLogger.Warning(HoyoToonLogCategory.General, $"Failed to read staged updater keep rules: {exception.Message}");
+            }
         }
 
         private static bool ValidatePendingStatePaths(PendingInstallState pendingState, UpdaterKeepRules keepRules, out string error)
@@ -795,7 +853,8 @@ namespace HoyoToon.Editor.Updater
 
             foreach (string relativePath in pendingState.filesToDelete ?? new List<string>())
             {
-                if (string.IsNullOrWhiteSpace(relativePath) || keepRules.IsKept(relativePath))
+                if (string.IsNullOrWhiteSpace(relativePath)
+                    || keepRules.IsKept(relativePath))
                 {
                     continue;
                 }
@@ -962,6 +1021,13 @@ namespace HoyoToon.Editor.Updater
             return string.IsNullOrWhiteSpace(commitSha)
                 ? string.Empty
                 : commitSha.Trim();
+        }
+
+        private static bool IsRemoteVersionNewer(UpdaterManifest manifest)
+        {
+            string localVersion = PackageUpdaterStorage.GetLocalPackageVersion();
+            string remoteVersion = string.IsNullOrWhiteSpace(manifest?.version) ? "unknown" : manifest.version.Trim();
+            return PackageUpdaterPlanBuilder.CompareVersionStrings(localVersion, remoteVersion) < 0;
         }
 
         private static bool ArePlansEquivalent(UpdatePlan left, UpdatePlan right)

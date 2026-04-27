@@ -28,47 +28,7 @@ namespace HoyoToon.Editor.Updater
 
             try
             {
-                string[] lines = File.ReadAllLines(gitIgnorePath);
-                bool inTaggedBlock = false;
-                bool foundTaggedSyntax = false;
-
-                foreach (string rawLine in lines)
-                {
-                    string trimmed = rawLine.Trim();
-                    string upper = trimmed.ToUpperInvariant();
-
-                    if (upper == "# HOYOTOON-UPDATER-KEEP START")
-                    {
-                        inTaggedBlock = true;
-                        foundTaggedSyntax = true;
-                        continue;
-                    }
-
-                    if (upper == "# HOYOTOON-UPDATER-KEEP END")
-                    {
-                        inTaggedBlock = false;
-                        continue;
-                    }
-
-                    if (trimmed.StartsWith("# updater-keep:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        keepRules.TryAddRule(trimmed.Substring(trimmed.IndexOf(':') + 1).Trim());
-                        foundTaggedSyntax = true;
-                        continue;
-                    }
-
-                    if (!inTaggedBlock || string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#", StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    keepRules.TryAddRule(trimmed);
-                }
-
-                if (!foundTaggedSyntax)
-                {
-                    keepRules.rules.Clear();
-                }
+                keepRules.AddRulesFromText(File.ReadAllText(gitIgnorePath));
             }
             catch (Exception exception)
             {
@@ -77,6 +37,32 @@ namespace HoyoToon.Editor.Updater
             }
 
             return keepRules;
+        }
+
+        public static UpdaterKeepRules FromGitIgnoreText(string gitIgnoreText)
+        {
+            var keepRules = new UpdaterKeepRules();
+            try
+            {
+                keepRules.AddRulesFromText(gitIgnoreText);
+            }
+            catch (Exception exception)
+            {
+                HoyoToonLogger.Warning(HoyoToonLogCategory.General, $"Failed to parse updater keep rules from .gitignore: {exception.Message}");
+                keepRules.rules.Clear();
+            }
+
+            return keepRules;
+        }
+
+        public void Merge(UpdaterKeepRules other)
+        {
+            if (other == null || other.rules.Count == 0)
+            {
+                return;
+            }
+
+            rules.AddRange(other.rules);
         }
 
         public bool IsKept(string relativePath)
@@ -99,6 +85,57 @@ namespace HoyoToon.Editor.Updater
             }
 
             return kept;
+        }
+
+        private void AddRulesFromText(string gitIgnoreText)
+        {
+            if (string.IsNullOrEmpty(gitIgnoreText))
+            {
+                return;
+            }
+
+            string normalizedText = gitIgnoreText.Replace("\r\n", "\n").Replace('\r', '\n');
+            string[] lines = normalizedText.Split('\n');
+            bool inTaggedBlock = false;
+            bool foundTaggedSyntax = false;
+
+            foreach (string rawLine in lines)
+            {
+                string trimmed = rawLine.Trim();
+                string upper = trimmed.ToUpperInvariant();
+
+                if (upper == "# HOYOTOON-UPDATER-KEEP START")
+                {
+                    inTaggedBlock = true;
+                    foundTaggedSyntax = true;
+                    continue;
+                }
+
+                if (upper == "# HOYOTOON-UPDATER-KEEP END")
+                {
+                    inTaggedBlock = false;
+                    continue;
+                }
+
+                if (trimmed.StartsWith("# updater-keep:", StringComparison.OrdinalIgnoreCase))
+                {
+                    TryAddRule(trimmed.Substring(trimmed.IndexOf(':') + 1).Trim());
+                    foundTaggedSyntax = true;
+                    continue;
+                }
+
+                if (!inTaggedBlock || string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#", StringComparison.Ordinal))
+                {
+                    continue;
+                }
+
+                TryAddRule(trimmed);
+            }
+
+            if (!foundTaggedSyntax)
+            {
+                rules.Clear();
+            }
         }
 
         private void TryAddRule(string pattern)
