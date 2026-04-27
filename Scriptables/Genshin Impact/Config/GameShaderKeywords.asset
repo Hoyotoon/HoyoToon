@@ -1,0 +1,94 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a2b419a6e7d4e94a0f5ed7bd4e5b92c, type: 3}
+  m_Name: GameShaderKeywords
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameShaderKeywordsSO
+  entries:
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/FaceDecal
+    keywords:
+    - _EnableCharacterFaceDecal
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/FacialUVExpression
+    keywords:
+    - _FacialUVExpressionEnable
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/Glass
+    keywords:
+    - _GlassThickness
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/Leather
+    keywords:
+    - _UseCharacterLeather
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/Monster_Asmoday_Cloak
+    keywords:
+    - _FlowScale
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/NbrBase
+    keywords:
+    - _UseCharacterNbrBase
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/NbrSpecular
+    keywords:
+    - _UseCharacterNbrSpecular
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/SkirkStar
+    keywords:
+    - _BrightLineMaskContrast
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/SkirkTrans
+    keywords:
+    - _OutlineMaskTex
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/StockingsNew
+    keywords:
+    - _UseCharacterStockings
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/Transparent
+    keywords:
+    - _EnableFresnel
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/TransparentVeil
+    keywords:
+    - _EyeTransAlpha
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/Uber/Base
+    keywords: []
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Character/WeaponDissolve
+    keywords:
+    - _WeaponDissolveValue
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Effect/Paimon_StarCloak
+    keywords:
+    - _ConstellationBrightness
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Legacy/Character/Base
+    keywords:
+    - _ClipAlphaTex
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/Legacy/Character/PaimonStarCloak
+    keywords:
+    - _ConstellationBrightness
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/UGC/CharacterSkin
+    keywords:
+    - _UseCharacterStockings1
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin Impact/UnityBuiltin/Legacy Shaders/Diffuse
+    keywords:
+    - _enableVertexColor
+  - gameKey: Genshin Impact
+    shaderPath: HoyoToon/Genshin ImpactCG/Cg_Asmoday_HandEffect
+    keywords:
+    - _Tex02_Speed_U

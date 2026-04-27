@@ -1,59 +1,83 @@
 #if UNITY_EDITOR
-using System;
+using HoyoToon.Editor.Utilities.Editor;
 using UnityEditor;
 using UnityEngine;
 
-using HoyoToon.Editor.UI.Windows;
-
-namespace HoyoToon.Editor.Utilities
+namespace HoyoToon.Editor.Utilities.Debugging
 {
-    public static class HoyoToonDebug
+    internal static class HoyoToonDebug
     {
-        private const string DebugEnabledKey = PrefsKeys.DebugEnabled;
-        private const string MenuPath = "HoyoToon/Settings/Debug Mode";
+        private const string ToggleLoggingMenuPath = "HoyoToon/Debug/Toggle Editor Debug Logging";
 
-        public static event Action<bool> OnChanged;
-
-        static HoyoToonDebug()
+        internal static bool Enabled
         {
-            Enabled = EditorPrefs.GetBool(DebugEnabledKey, false);
+            get => ReadEnabled();
+            set => WriteEnabled(value);
         }
 
-        public static bool Enabled { get; private set; }
-
-        public static void SetEnabled(bool enabled)
+        internal static bool ShouldLog(HoyoToonLogLevel level)
         {
-            if (Enabled == enabled) return;
-            Enabled = enabled;
-            EditorPrefs.SetBool(DebugEnabledKey, Enabled);
-            try { OnChanged?.Invoke(Enabled); }
-            catch (Exception ex) { LogCore.LogAlways($"HoyoToonDebug OnChanged exception: {ex}", LogType.Exception); }
+            return LogCore.ShouldLog(Enabled, level);
         }
 
-        [MenuItem(MenuPath, false, 98)]
-        private static void ToggleMenu()
+        [MenuItem(ToggleLoggingMenuPath)]
+        private static void ToggleLogging()
         {
-            bool newState = !Enabled;
-            SetEnabled(newState);
-
-            if (!Application.isBatchMode)
-            {
-                DialogWindow.ShowInfo("Debug Status", $"Debug mode has been {(newState ? "enabled" : "disabled")}.");
-                LogCore.LogAlways($"Debug mode {(newState ? "enabled" : "disabled")}.", LogType.Log);
-            }
+            Enabled = !Enabled;
+            Debug.Log(LogCore.FormatMessage(
+                HoyoToonLogCategory.General,
+                $"Editor debug logging {(Enabled ? "enabled" : "disabled")}.",
+                false));
         }
 
-        [MenuItem(MenuPath, true)]
-        private static bool ToggleMenuValidate()
+        [MenuItem(ToggleLoggingMenuPath, true)]
+        private static bool ValidateToggleLogging()
         {
-            Menu.SetChecked(MenuPath, Enabled);
+            Menu.SetChecked(ToggleLoggingMenuPath, Enabled);
             return true;
         }
 
-        [InitializeOnLoadMethod]
-        private static void Initialize()
+        private static bool ReadEnabled()
         {
-            Menu.SetChecked(MenuPath, Enabled);
+            string scopedDebugKey = ScopedKey(LogCore.DebugEnabledEditorPrefsKey);
+            if (EditorPrefs.HasKey(scopedDebugKey))
+            {
+                return EditorPrefs.GetBool(scopedDebugKey, false);
+            }
+
+            string scopedLegacyKey = ScopedKey(LogCore.LegacyDebugModeEditorPrefsKey);
+            if (EditorPrefs.HasKey(scopedLegacyKey))
+            {
+                return EditorPrefs.GetInt(scopedLegacyKey, 0) > 0;
+            }
+
+            return false;
+        }
+
+        private static void WriteEnabled(bool value)
+        {
+            EditorPrefs.SetBool(ScopedKey(LogCore.DebugEnabledEditorPrefsKey), value);
+
+            string scopedLegacyKey = ScopedKey(LogCore.LegacyDebugModeEditorPrefsKey);
+            if (EditorPrefs.HasKey(scopedLegacyKey))
+            {
+                EditorPrefs.DeleteKey(scopedLegacyKey);
+            }
+
+            if (EditorPrefs.HasKey(LogCore.DebugEnabledEditorPrefsKey))
+            {
+                EditorPrefs.DeleteKey(LogCore.DebugEnabledEditorPrefsKey);
+            }
+
+            if (EditorPrefs.HasKey(LogCore.LegacyDebugModeEditorPrefsKey))
+            {
+                EditorPrefs.DeleteKey(LogCore.LegacyDebugModeEditorPrefsKey);
+            }
+        }
+
+        private static string ScopedKey(string key)
+        {
+            return HoyoToonEditorPrefs.ProjectKey(key);
         }
     }
 }

@@ -166,14 +166,14 @@ namespace LWGUI
 			if (idCount <= 0)
 			{
 				inspectorData.materialIdFilterCount = 0;
-				inspectorData.materialIdFilterSelected = -1;
+				inspectorData.materialIdFilterSelectedIds.Clear();
 				return;
 			}
 
 			if (inspectorData.materialIdFilterCount != idCount)
 			{
 				inspectorData.materialIdFilterCount = idCount;
-				inspectorData.materialIdFilterSelected = -1;
+				inspectorData.materialIdFilterSelectedIds.RemoveWhere(id => id < 0 || id >= idCount);
 			}
 
 			var rect = EditorGUILayout.GetControlRect();
@@ -187,11 +187,27 @@ namespace LWGUI
 			{
 				int buttonIndex = i + 1;
 				var buttonRect = new Rect(rect.x + buttonIndex * (buttonWidth + spacing), rect.y, buttonWidth, rect.height);
-				bool isActive = inspectorData.materialIdFilterSelected == i;
+				bool isActive = i < 0
+					? inspectorData.materialIdFilterSelectedIds.Count == 0
+					: inspectorData.materialIdFilterSelectedIds.Contains(i);
 				string label = i < 0 ? "All" : "ID " + i;
 
-				if (GUI.Toggle(buttonRect, isActive, label, EditorStyles.miniButton) && !isActive)
-					inspectorData.materialIdFilterSelected = i;
+				var newState = GUI.Toggle(buttonRect, isActive, label, EditorStyles.miniButton);
+				if (newState == isActive)
+					continue;
+
+				if (i < 0)
+				{
+					if (newState)
+						inspectorData.materialIdFilterSelectedIds.Clear();
+				}
+				else
+				{
+					if (newState)
+						inspectorData.materialIdFilterSelectedIds.Add(i);
+					else
+						inspectorData.materialIdFilterSelectedIds.Remove(i);
+				}
 			}
 
 			EditorGUILayout.Space(2f);

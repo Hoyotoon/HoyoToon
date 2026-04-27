@@ -1,18 +1,9 @@
-# HoyoToon 0.1.0
+# HoyoToon 0.1.2
 
-## HoyoToon Manager
-- Added a clear selection button to the models tab.
-- Display the current package version on the header of the Manager window.
-    - Clicking it will check for updates
-    - Status for the following: 
-        - Up to date
-        - Update available
-        - Checking
-        - Local ahead
-        - Error
-- Added Turnaround capture feature to the Renders tab.
-    - Capture an orthographic front, back, left, and right view of the model with a single click.
-    - Composits the captures into a single image with configurable gap, padding and background image.
-    - Will automatically force the watermark on for turnaround captures.
-    - Turnaround captures will have the light always facing the view angle, so the lighting will be consistent across all views and unaffected by the model's orientation.
-- Reorganized the Renders module UI
+## HoyoConverter
+
+- HoyoConverter will attempt to fix models where the variant number is missing from the embedded materials fixing issues such as Huohuo_Mat_Face not having it 00 causing it to not be slotted in by the auto setup.
+
+## Manager
+- Fixed an issue where you can duplicate the same model using auto setup.
+- Made it so manual copies of the same model will have a number appended to the Active model name to allow them to actually be uniquely selectable in the manager. This is only for manual copies, auto setup will still attempt to reuse the same model if it detects it.

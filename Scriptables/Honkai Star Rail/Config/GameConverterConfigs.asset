@@ -1,0 +1,89 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0ddcd9a28aa14999bb6c2f32620da38a, type: 3}
+  m_Name: GameConverterConfigs
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameConverterConfigsSO
+  entries:
+  - gameKey: Honkai Star Rail
+    converterType: Hoyo2Unity
+    key: 
+    features:
+      defaultValue: all
+      defaultList: []
+      options:
+      - bindpose
+      - remove-empties
+      - units-meters
+      - remove-meshes
+      - remove-bones
+      - rename-bones
+      - move-armature-ground
+      - face-bake
+      - all
+    disable:
+      defaultValue: 
+      defaultList: []
+      options:
+      - bindpose
+      - remove-empties
+      - units-meters
+      - remove-meshes
+      - remove-bones
+      - rename-bones
+      - move-armature-ground
+      - face-bake
+      - all
+    removeMeshes:
+      list: 
+      mapping: 
+    removeBones:
+      list: 
+      mapping: 
+    renameBones:
+      list: 
+      mapping: 
+  - gameKey: Honkai Star Rail
+    converterType: Hoyo2VRC
+    key: 
+    features:
+      defaultValue: 
+      defaultList: []
+      options:
+      - bindpose
+      - remove-empties
+      - units-meters
+      - remove-meshes
+      - remove-bones
+      - rename-bones
+      - move-armature-ground
+      - all
+    disable:
+      defaultValue: 
+      defaultList: []
+      options:
+      - bindpose
+      - remove-empties
+      - units-meters
+      - remove-meshes
+      - remove-bones
+      - rename-bones
+      - move-armature-ground
+      - all
+    removeMeshes:
+      list: 
+      mapping: 
+    removeBones:
+      list: 
+      mapping: 
+    renameBones:
+      list: 
+      mapping: 

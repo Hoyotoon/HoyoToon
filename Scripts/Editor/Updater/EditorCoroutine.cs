@@ -2,19 +2,18 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using HoyoToon.Editor.Utilities.Debugging;
 using UnityEditor;
 using UnityEngine;
-
-using HoyoToon.Editor.Utilities;
 
 namespace HoyoToon.Editor.Updater
 {
     internal static class EditorCoroutine
     {
-        private static Stack<IEnumerator> s_RoutineStack;
-        private static object s_CurrentYield;
+        private static Stack<IEnumerator> routineStack;
+        private static object currentYield;
 
-        internal static bool IsRunning => s_RoutineStack != null && s_RoutineStack.Count > 0;
+        internal static bool IsRunning => routineStack != null && routineStack.Count > 0;
 
         internal static bool Start(IEnumerator routine)
         {
@@ -23,9 +22,9 @@ namespace HoyoToon.Editor.Updater
                 return false;
             }
 
-            s_RoutineStack = new Stack<IEnumerator>();
-            s_RoutineStack.Push(routine);
-            s_CurrentYield = null;
+            routineStack = new Stack<IEnumerator>();
+            routineStack.Push(routine);
+            currentYield = null;
 
             EditorApplication.update -= Update;
             EditorApplication.update += Update;
@@ -44,23 +43,23 @@ namespace HoyoToon.Editor.Updater
             {
                 Advance();
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Error, $"Editor coroutine failed: {ex.Message}");
+                HoyoToonLogger.Error(HoyoToonLogCategory.General, $"Updater coroutine failed: {exception.Message}", exception);
                 Stop();
             }
         }
 
         private static void Advance()
         {
-            if (s_CurrentYield != null)
+            if (currentYield != null)
             {
-                if (!IsYieldComplete(s_CurrentYield))
+                if (!IsYieldComplete(currentYield))
                 {
                     return;
                 }
 
-                s_CurrentYield = null;
+                currentYield = null;
             }
 
             int safetyCounter = 0;
@@ -68,21 +67,21 @@ namespace HoyoToon.Editor.Updater
             {
                 if (++safetyCounter > 1024)
                 {
-                    HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Warning, "Editor coroutine hit safety limit while advancing nested yields.");
+                    HoyoToonLogger.Warning(HoyoToonLogCategory.General, "Updater coroutine hit its nested-yield safety limit.");
                     return;
                 }
 
-                IEnumerator routine = s_RoutineStack.Peek();
+                IEnumerator routine = routineStack.Peek();
                 if (!routine.MoveNext())
                 {
-                    s_RoutineStack.Pop();
+                    routineStack.Pop();
                     continue;
                 }
 
                 object yielded = routine.Current;
                 if (yielded is IEnumerator nestedRoutine)
                 {
-                    s_RoutineStack.Push(nestedRoutine);
+                    routineStack.Push(nestedRoutine);
                     continue;
                 }
 
@@ -93,11 +92,11 @@ namespace HoyoToon.Editor.Updater
 
                 if (yielded is AsyncOperation || yielded is CustomYieldInstruction)
                 {
-                    s_CurrentYield = yielded;
+                    currentYield = yielded;
                     return;
                 }
 
-                s_CurrentYield = yielded;
+                currentYield = yielded;
                 return;
             }
 
@@ -126,8 +125,8 @@ namespace HoyoToon.Editor.Updater
 
         private static void Stop()
         {
-            s_RoutineStack = null;
-            s_CurrentYield = null;
+            routineStack = null;
+            currentYield = null;
             EditorApplication.update -= Update;
         }
     }

@@ -1,0 +1,55 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="HoyoToonWindowRoot" class="ht-root ht-width-standard">
+        <ui:VisualElement name="HeaderContainer" class="ht-header">
+            <ui:VisualElement name="BannerCard" class="ht-card ht-banner-card">
+                <ui:Image name="BannerBackground" class="ht-banner-background" />
+                <ui:VisualElement name="BannerContentRow" class="ht-row ht-gap-12 ht-banner-row">
+                    <ui:VisualElement name="LogoContainer" class="ht-logo-container">
+                        <ui:Image name="LogoImage" class="ht-logo-image" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+                <ui:Button name="VersionBadge" text="Version unavailable | Check updates" class="ht-version-badge ht-version-badge--unknown" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="NavbarContainer" class="ht-navbar">
+            <ui:VisualElement name="NavbarRail" class="ht-navbar-rail">
+                <ui:VisualElement name="NavbarStrip" class="ht-navbar-strip">
+                    <ui:ScrollView name="TabScrollView" class="ht-tab-scroll">
+                        <ui:VisualElement name="TabRow" class="ht-row ht-gap-4 ht-tab-row" />
+                    </ui:ScrollView>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="ContextContainer" class="ht-context">
+            <ui:VisualElement name="ContextCard" class="ht-card ht-context-card">
+                <ui:VisualElement name="ContextHeader" class="ht-context-header">
+                    <ui:Label name="ContextTitle" text="Active Model" class="ht-footer-title" />
+                    <ui:Label name="ContextSubtitle" text="Persistent active model controls." class="ht-footer-subtitle" />
+                </ui:VisualElement>
+                <ui:VisualElement name="GlobalContextHost" class="ht-footer-action-rail ht-context-content-rail" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="BodyContainer" class="ht-body">
+            <ui:VisualElement name="BodySurface" class="ht-body-surface">
+                <ui:ScrollView name="BodyScrollView" class="ht-body-scroll">
+                    <ui:VisualElement name="ModuleContentRoot" class="ht-column ht-gap-8 ht-module-content-root" />
+                </ui:ScrollView>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="FooterContainer" class="ht-footer">
+            <ui:VisualElement name="FooterCard" class="ht-card ht-footer-card">
+                <ui:VisualElement name="FooterActionRail" class="ht-footer-action-rail">
+                    <ui:VisualElement name="FooterButtonRow" class="ht-row ht-gap-8 ht-footer-row">
+                        <ui:Button name="CreatePrefabButton" text="Create Prefab" class="ht-footer-button ht-btn-primary" />
+                        <ui:Button name="RegenerateMaterialsButton" text="Regenerate Materials" class="ht-footer-button ht-btn-secondary" />
+                        <ui:Button name="RegenerateTangentsButton" text="Regenerate Tangents" class="ht-footer-button ht-btn-secondary" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

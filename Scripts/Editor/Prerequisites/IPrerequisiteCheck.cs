@@ -1,31 +1,15 @@
 #if UNITY_EDITOR
-using UnityEditor;
-using UnityEngine;
-
 namespace HoyoToon.Editor.Prerequisites
 {
-    public enum PrerequisiteSeverity { Info, Warning, Error }
-
-    public readonly struct PrerequisiteResult
+    internal interface IPrerequisiteCheck
     {
-        public readonly bool Passed;
-        public readonly PrerequisiteSeverity Severity;
-        public readonly string Message;
+        string Id { get; }
 
-        public PrerequisiteResult(bool passed, PrerequisiteSeverity severity, string message)
-        {
-            Passed = passed; Severity = severity; Message = message;
-        }
+        string DisplayName { get; }
 
-        public static PrerequisiteResult Ok(string msg = "") => new PrerequisiteResult(true, PrerequisiteSeverity.Info, msg);
-        public static PrerequisiteResult Fail(PrerequisiteSeverity severity, string msg) => new PrerequisiteResult(false, severity, msg);
-    }
+        PrerequisiteEvaluation Evaluate();
 
-    public interface IPrerequisiteCheck
-    {
-        string Name { get; }
-        PrerequisiteResult Evaluate();
-        bool TryFix();
+        PrerequisiteFixResult TryApplySafeFix();
     }
 }
 #endif

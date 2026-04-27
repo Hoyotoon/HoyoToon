@@ -1,10 +1,7 @@
 using UnityEngine;
 
-namespace HoyoToon
+namespace HoyoToon.Runtime.Core
 {
-    /// <summary>
-    /// Overrides the inspector label shown for a serialized field and can optionally rename vector component labels.
-    /// </summary>
     public sealed class PropertyLabelAttribute : PropertyAttribute
     {
         public PropertyLabelAttribute(string displayName)

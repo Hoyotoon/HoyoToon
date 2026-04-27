@@ -1,0 +1,91 @@
+.ht-root {
+    --bg-main: #0E0F14;
+    --bg-surface: rgba(255, 255, 255, 0.030);
+    --bg-elevated: rgba(255, 255, 255, 0.050);
+    --bg-card: rgba(255, 255, 255, 0.040);
+    --border: rgba(255, 255, 255, 0.100);
+    --accent-primary: #7C4DFF;
+    --accent-hover: #9366FF;
+    --accent-active: #5B34CC;
+    --success: #4CAF6D;
+    --warning: #FFB020;
+    --danger: #FF5C5C;
+    --text-primary: #E6E8EE;
+    --text-secondary: rgba(230, 232, 238, 0.700);
+    --text-disabled: rgba(230, 232, 238, 0.400);
+    background-color: var(--bg-main);
+    color: var(--text-primary);
+    flex-grow: 1;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+    padding-left: 12px;
+    padding-right: 12px;
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.ht-title-lg {
+    color: var(--text-primary);
+    font-size: 24px;
+    -unity-font-style: bold;
+}
+
+.ht-title-md {
+    color: var(--text-primary);
+    font-size: 18px;
+    -unity-font-style: bold;
+}
+
+.ht-section-title {
+    color: var(--text-primary);
+    font-size: 14px;
+    -unity-font-style: bold;
+}
+
+.ht-body-text {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.ht-caption {
+    color: var(--text-secondary);
+    font-size: 11px;
+    white-space: normal;
+}
+
+.ht-row {
+    flex-direction: row;
+    align-items: center;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.ht-column {
+    flex-direction: column;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.ht-gap-4 {
+}
+
+.ht-gap-8 {
+}
+
+.ht-gap-12 {
+}
+
+.ht-gap-16 {
+}
+
+.ht-grow {
+    flex-grow: 1;
+    min-width: 0;
+}
+
+.ht-shrink-0 {
+    flex-shrink: 0;
+}

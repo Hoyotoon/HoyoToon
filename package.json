@@ -1,11 +1,11 @@
 {
   "name": "com.hoyotoon.hoyotoon",
   "displayName": "HoyoToon",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Shader for Unity `(URP)` attempting to replicate the shading of miHoYo developed games.\nThis is for datamined assets, not custom-made ones nor the MMD variants.",
   "dependencies": {
     "com.unity.render-pipelines.universal": "17.3.0",
-    "com.unity.cinemachine": "3.1.6",
+    "com.unity.cinemachine": "2.6.3",
     "com.unity.inputsystem": "1.18.0"
   },
   "gitDependencies": {},

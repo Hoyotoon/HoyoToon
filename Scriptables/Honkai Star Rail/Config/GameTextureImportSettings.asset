@@ -1,0 +1,380 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 334ee1cc1b5e40cbad5ed6c2d5b7f104, type: 3}
+  m_Name: GameTextureImportSettings
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameTextureImportSettingsSO
+  gameKey: Honkai Star Rail
+  defaults:
+    compression: 
+    filterMode: 
+    maxTextureSize:
+      hasValue: 0
+      value: 0
+    mipmapEnabled:
+      hasValue: 1
+      value: 0
+    npotScale: 
+    srgbTexture:
+      hasValue: 0
+      value: 0
+    streamingMipmaps:
+      hasValue: 0
+      value: 0
+    textureCompression: Uncompressed
+    textureType: 
+    wrapMode: 
+  nameEquals:
+    entries:
+    - key: LUT_HSR
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: 
+        wrapMode: 
+  nameContains:
+    entries:
+    - key: Cool_Ramp
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: 
+        wrapMode: 
+    - key: Dissolve
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: ExpressionMap
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: FaceMap
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: LUT
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: Stockings
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: Warm_Ramp
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: 
+        wrapMode: 
+    - key: Weapon_Ramp
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: 
+        wrapMode: 
+    - key: _Color
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: _Mask
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: diffuse
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: lightmap
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: materialidvalueslut
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: None
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: normalmap
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+  nameEndsWith:
+    entries:
+    - key: Stockings
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: T_Caustic
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 

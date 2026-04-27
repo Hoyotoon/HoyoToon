@@ -1,62 +1,60 @@
 #if UNITY_EDITOR
-using System;
-using UnityEditor;
 using UnityEngine;
-using HoyoToon.Editor.Utilities;
 
-namespace HoyoToon.Editor.Prerequisites
+namespace HoyoToon.Editor.Prerequisites.Shadows
 {
-    public sealed class ShadowProjectionCloseFitCheck : IPrerequisiteCheck
+    internal sealed class ShadowProjectionCloseFitCheck : IPrerequisiteCheck
     {
-        public string Name => "Shadow Projection Close Fit (Windows Editor)";
+        private const string CheckId = "shadow-projection-close-fit";
+        private const string DisplayNameValue = "Shadow Projection";
 
-        public PrerequisiteResult Evaluate()
+        public string Id => CheckId;
+
+        public string DisplayName => DisplayNameValue;
+
+        public PrerequisiteEvaluation Evaluate()
         {
             if (Application.platform != RuntimePlatform.WindowsEditor)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Non-Windows editor; skipping Shadow Projection prerequisite.");
-                return PrerequisiteResult.Ok("Skipped for non-Windows editor platform.");
-            }
-
-            if (VRCSDKInstalledCheck.HasEnvConfig)
-            {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, $"{VRCSDKInstalledCheck.FriendlySdkName} EnvConfig detected; leaving Shadow Projection to SDK-managed settings.");
-                return PrerequisiteResult.Ok($"Managed by {VRCSDKInstalledCheck.FriendlySdkName} (EnvConfig). Skipping enforcement.");
+                return PrerequisiteEvaluation.Pass(
+                    Id,
+                    DisplayName,
+                    "Shadow Projection enforcement is skipped outside the Windows editor.");
             }
 
             if (QualitySettings.shadowProjection == ShadowProjection.CloseFit)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Shadow Projection already Close Fit.");
-                return PrerequisiteResult.Ok("Shadow Projection is Close Fit.");
+                return PrerequisiteEvaluation.Pass(
+                    Id,
+                    DisplayName,
+                    "Editor shadow projection is already set to Close Fit.");
             }
 
-            return PrerequisiteResult.Fail(PrerequisiteSeverity.Warning,
-                "Shadow Projection is Stable Fit. For better casted shadows in the Unity Editor on Windows, Close Fit is recommended.");
+            return PrerequisiteEvaluation.Warning(
+                Id,
+                DisplayName,
+                "Editor shadow projection is set to Stable Fit. Close Fit is recommended for better cast shadow behavior while authoring.",
+                canAutoFix: true,
+                actionHint: "Change Project Settings > Quality > Shadow Projection to Close Fit or use the safe-fix command.");
         }
 
-        public bool TryFix()
+        public PrerequisiteFixResult TryApplySafeFix()
         {
             if (Application.platform != RuntimePlatform.WindowsEditor)
-                return true;
-
-            if (VRCSDKInstalledCheck.HasEnvConfig)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Skipping Shadow Projection auto-fix because VRChat EnvConfig manages quality settings.");
-                return false; // cannot fix because external manager will override
+                return PrerequisiteFixResult.None("Shadow Projection is only adjusted in the Windows editor.");
             }
+
             try
             {
                 QualitySettings.shadowProjection = ShadowProjection.CloseFit;
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Set Shadow Projection to Close Fit.");
-                return true;
+                return PrerequisiteFixResult.AppliedFix("Changed Project Settings > Quality > Shadow Projection to Close Fit.");
             }
-            catch (Exception ex)
+            catch (System.Exception exception)
             {
-                HoyoToonLogger.Always("Manager", $"Failed to set Shadow Projection to Close Fit: {ex}", LogType.Exception);
-                return false;
+                return PrerequisiteFixResult.Failed($"Failed to update Shadow Projection: {exception.Message}");
             }
         }
-
     }
 }
 #endif

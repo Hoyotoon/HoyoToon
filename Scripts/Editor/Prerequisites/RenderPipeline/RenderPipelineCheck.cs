@@ -1,59 +1,110 @@
 #if UNITY_EDITOR
-using HoyoToon.Editor.Utilities;
-
-namespace HoyoToon.Editor.Prerequisites
+namespace HoyoToon.Editor.Prerequisites.RenderPipeline
 {
-    public sealed class RenderPipelineCheck : IPrerequisiteCheck
+    internal sealed class RenderPipelineCheck : IPrerequisiteCheck
     {
-        public string Name => "Render Pipeline";
+        private const string CheckId = "render-pipeline";
+        private const string DisplayNameValue = "Render Pipeline";
 
-        public static HoyoToonPipeline ActivePipeline => PipelineDetector.ActivePipeline;
+        public string Id => CheckId;
 
-        public static bool IsCustomRP => PipelineDetector.IsCustomRP;
+        public string DisplayName => DisplayNameValue;
 
-        public static bool IsBuiltIn => PipelineDetector.IsBuiltIn;
-
-        public static HoyoToonPipeline DetectedPipeline => PipelineDetector.DetectedPipeline;
-
-        public static string ActiveAssetName => PipelineDetector.ActiveAssetName;
-
-        public static string FriendlyPipelineName => PipelineDetector.FriendlyPipelineName;
-
-        public static string DetectionReason => PipelineDetector.DetectionReason;
-
-        public static void InvalidateCache() => PipelineDetector.InvalidateCache();
-
-        public static void PromptForStartupSelectionIfNeeded()
+        public PrerequisiteEvaluation Evaluate()
         {
-            PipelineStartupPrompt.PromptForStartupSelectionIfNeeded();
-        }
+            RenderPipelineSelection selection = RenderPipelineSwitcher.GetSelection();
+            RenderPipelineDetectionResult detection = RenderPipelineDetector.Detect();
 
-        public static void PromptForStartupSelectionForced()
-        {
-            PipelineStartupPrompt.PromptForStartupSelectionForced();
-        }
-
-        public static bool SetGraphicsPipeline(HoyoToonPipeline pipeline) => PipelineSwitcher.SetGraphicsPipeline(pipeline);
-
-        public static bool SetGraphicsPipeline() => PipelineSwitcher.SetGraphicsPipeline();
-
-        public PrerequisiteResult Evaluate()
-        {
-            PipelineDetector.InvalidateCache();
-            var msg = $"{PipelineDetector.FriendlyPipelineName}. {PipelineDetector.DetectionReason}";
-            HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, msg);
-
-            if (PipelineDetector.ActivePipeline == HoyoToonPipeline.HoyoToonURP)
+            if (RenderPipelineSwitcher.IsRequiredAsset(detection.AssetPath))
             {
-                return PrerequisiteResult.Ok(msg);
+                return PrerequisiteEvaluation.Pass(
+                    CheckId,
+                    DisplayNameValue,
+                    $"Detected the HoyoToon URP asset '{detection.AssetName}' via {detection.Source}.{FormatAssetPathSuffix(detection.AssetPath)}");
             }
 
-            return PrerequisiteResult.Fail(
-                PrerequisiteSeverity.Warning,
-                $"HoyoToon requires the packaged URP asset to be assigned in Graphics and Quality settings. {PipelineDetector.DetectionReason}");
+            switch (selection)
+            {
+                case RenderPipelineSelection.Universal:
+                    return EvaluateMissingUrpConfiguration(detection);
+
+                case RenderPipelineSelection.BuiltIn:
+                    return PrerequisiteEvaluation.Error(
+                        Id,
+                        DisplayName,
+                        $"Built-in Render Pipeline is selected, but HoyoToon only supports the packaged URP setup. Current state: {BuildCurrentStateMessage(detection)}",
+                        actionHint: BuildUrpActionHint());
+
+                case RenderPipelineSelection.Unspecified:
+                default:
+                    return PrerequisiteEvaluation.Warning(
+                        Id,
+                        DisplayName,
+                        BuildSelectionRequiredMessage(detection),
+                        isBlocking: true,
+                        actionHint: BuildUrpActionHint());
+            }
         }
 
-        public bool TryFix() => PipelineSwitcher.SetGraphicsPipeline();
+        public PrerequisiteFixResult TryApplySafeFix()
+        {
+            return PrerequisiteFixResult.None("Render Pipeline setup stays manual because HoyoToon requires explicit confirmation before assigning the packaged URP asset.");
+        }
+
+        private static PrerequisiteEvaluation EvaluateMissingUrpConfiguration(RenderPipelineDetectionResult detection)
+        {
+            if (detection.Kind == RenderPipelineKind.BuiltIn)
+            {
+                return PrerequisiteEvaluation.Error(
+                    CheckId,
+                    DisplayNameValue,
+                    $"HoyoToon requires the packaged URP setup, but the project is still using the Built-in Render Pipeline. {detection.Source} is null.",
+                    actionHint: BuildUrpActionHint());
+            }
+
+            return PrerequisiteEvaluation.Error(
+                CheckId,
+                DisplayNameValue,
+                $"URP is selected, but the packaged HoyoToon URP asset is not assigned. Current state: {BuildCurrentStateMessage(detection)}",
+                actionHint: BuildUrpActionHint());
+        }
+
+        private static string BuildSelectionRequiredMessage(RenderPipelineDetectionResult detection)
+        {
+            return $"HoyoToon requires the packaged URP asset, but no valid HoyoToon render pipeline setup has been selected yet. Current state: {BuildCurrentStateMessage(detection)}";
+        }
+
+        private static string BuildUrpActionHint()
+        {
+            return $"Set up HoyoToon URP in the startup prompt or assign '{RenderPipelineSwitcher.RequiredAssetPath}'.";
+        }
+
+        private static string BuildCurrentStateMessage(RenderPipelineDetectionResult detection)
+        {
+            string friendlyKind = detection.Kind switch
+            {
+                RenderPipelineKind.BuiltIn => "Built-in Render Pipeline",
+                RenderPipelineKind.Universal => "a Universal Render Pipeline asset",
+                RenderPipelineKind.HighDefinition => "an HDRP asset",
+                RenderPipelineKind.CustomScriptable => "a non-URP Scriptable Render Pipeline asset",
+                RenderPipelineKind.Unknown => "an unrecognized render pipeline asset",
+                _ => "an unsupported render pipeline state",
+            };
+
+            if (detection.Kind == RenderPipelineKind.BuiltIn)
+            {
+                return $"Detected {friendlyKind} because {detection.Source} is null.";
+            }
+
+            return $"Detected {friendlyKind} via {detection.Source}: type='{detection.AssetTypeName}', name='{detection.AssetName}'.{FormatAssetPathSuffix(detection.AssetPath)}";
+        }
+
+        private static string FormatAssetPathSuffix(string assetPath)
+        {
+            return string.IsNullOrWhiteSpace(assetPath)
+                ? string.Empty
+                : $" Asset path: '{assetPath}'.";
+        }
     }
 }
 #endif

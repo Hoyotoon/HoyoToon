@@ -1,0 +1,67 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1d5b0a6c93b4cf0b04e9e6a62d4e1a7, type: 3}
+  m_Name: GameModelImportSettings
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameModelImportSettingsSO
+  gameKey: Honkai Impact 3rd
+  defaults:
+    animationCompression: 
+    animationType: 
+    avatarSetup: 
+    bakeAxisConversion:
+      hasValue: 0
+      value: 0
+    importAnimation:
+      hasValue: 0
+      value: 0
+    importBlendShapes:
+      hasValue: 0
+      value: 0
+    importCameras:
+      hasValue: 0
+      value: 0
+    importLights:
+      hasValue: 0
+      value: 0
+    importVisibility:
+      hasValue: 0
+      value: 0
+    isReadable:
+      hasValue: 1
+      value: 1
+    legacyBlendshapeNormals:
+      hasValue: 1
+      value: 1
+    materialImportMode: 
+    materialLocation: 
+    materialName: BasedOnMaterialName
+    materialSearch: Everywhere
+    materialSearchAndRemap:
+      hasValue: 1
+      value: 1
+    normals: 
+    optimizeMeshPolygons:
+      hasValue: 0
+      value: 0
+    optimizeMeshVertices:
+      hasValue: 0
+      value: 0
+    resampleCurves:
+      hasValue: 0
+      value: 0
+    scaleFactor:
+      hasValue: 1
+      value: 1
+    tangents: 
+    useFileScale:
+      hasValue: 0
+      value: 0

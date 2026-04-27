@@ -1,107 +1,74 @@
 #if UNITY_EDITOR
-using UnityEditor;
-using UnityEngine;
-using HoyoToon.Editor.Utilities;
-
-namespace HoyoToon.Editor.Prerequisites
+namespace HoyoToon.Editor.Prerequisites.InputSystem
 {
-    public sealed class InputSystemBackendCheck : IPrerequisiteCheck
+    internal sealed class InputSystemBackendCheck : IPrerequisiteCheck
     {
-        // activeInputHandler values: 0 = Old, 1 = New, 2 = Both
-        private const int InputHandlerBoth = 2;
+        private const string CheckId = "input-system-backend";
+        private const string DisplayNameValue = "Input System Backend";
 
-        public string Name => "Input System backend must be enabled";
+        public string Id => CheckId;
 
-        public PrerequisiteResult Evaluate()
+        public string DisplayName => DisplayNameValue;
+
+        public PrerequisiteEvaluation Evaluate()
         {
 #if ENABLE_INPUT_SYSTEM
-            return PrerequisiteResult.Ok("New Input System backend is active.");
+            return PrerequisiteEvaluation.Pass(
+                Id,
+                DisplayName,
+                "The Unity Input System backend is active.");
 #else
-            var activeInputHandler = GetActiveInputHandlerValue();
-            if (activeInputHandler.HasValue && (activeInputHandler.Value == 1 || activeInputHandler.Value == InputHandlerBoth))
+            InputSystemBackendMode configuredMode = InputSystemBackendUtility.GetConfiguredBackendMode();
+            switch (configuredMode)
             {
-                return PrerequisiteResult.Fail(PrerequisiteSeverity.Warning,
-                    "Active Input Handling is set correctly but Unity needs a restart for it to take effect.");
-            }
+                case InputSystemBackendMode.NewInputSystem:
+                case InputSystemBackendMode.Both:
+                    return PrerequisiteEvaluation.Warning(
+                        Id,
+                        DisplayName,
+                        "Active Input Handling is already configured to enable the Input System, but Unity has not restarted yet.",
+                        isBlocking: true,
+                        requiresRestart: true,
+                        actionHint: "Restart the Unity editor to finish activating the Input System backend.");
 
-            return PrerequisiteResult.Fail(PrerequisiteSeverity.Error,
-                "Active Input Handling is set to 'Input Manager (Old)'. " +
-                "HoyoToon requires the New Input System. A restart is needed after changing this setting.");
+                case InputSystemBackendMode.OldInputManager:
+                    return PrerequisiteEvaluation.Error(
+                        Id,
+                        DisplayName,
+                        "Active Input Handling is set to the old Input Manager only, but HoyoToon requires the Unity Input System.",
+                        canAutoFix: true,
+                        requiresRestart: true,
+                        actionHint: "Set Active Input Handling to Both or Input System Package (New) in Player Settings, then restart the editor.");
+
+                default:
+                    return PrerequisiteEvaluation.Error(
+                        Id,
+                        DisplayName,
+                        "The current Active Input Handling setting could not be resolved while the Input System define is inactive.",
+                        actionHint: "Inspect Player Settings > Active Input Handling, enable the Input System backend, and restart the editor.");
+            }
 #endif
         }
 
-        public bool TryFix()
+        public PrerequisiteFixResult TryApplySafeFix()
         {
-#if ENABLE_INPUT_SYSTEM
-            return true;
-#else
-            var activeInputHandler = GetActiveInputHandlerValue();
-            if (!activeInputHandler.HasValue)
+            InputSystemBackendMode configuredMode = InputSystemBackendUtility.GetConfiguredBackendMode();
+            if (configuredMode == InputSystemBackendMode.Both || configuredMode == InputSystemBackendMode.NewInputSystem)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Warning, "Could not locate activeInputHandler in PlayerSettings.");
-                return false;
+                return PrerequisiteFixResult.None("Active Input Handling already enables the Input System. Restart Unity to finish activation.");
             }
 
-            if (activeInputHandler.Value != 1 && activeInputHandler.Value != InputHandlerBoth)
+            if (configuredMode != InputSystemBackendMode.OldInputManager)
             {
-                if (!TrySetActiveInputHandler(InputHandlerBoth))
-                {
-                    HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Warning, "Could not set activeInputHandler in PlayerSettings.");
-                    return false;
-                }
-
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Set Active Input Handling to 'Both'.");
+                return PrerequisiteFixResult.Failed("Active Input Handling could not be resolved, so the Input System setting was left unchanged.");
             }
 
-            // Setting was applied but a restart is required for the define to appear.
-            if (EditorUtility.DisplayDialog(
-                    "Restart Required",
-                    "Unity must restart for the Input System backend to become active.",
-                    "Restart Now",
-                    "Later"))
+            if (!InputSystemBackendUtility.TrySetConfiguredBackendMode(InputSystemBackendMode.Both))
             {
-                EditorApplication.OpenProject(System.IO.Directory.GetCurrentDirectory());
+                return PrerequisiteFixResult.Failed("Failed to change Active Input Handling to Both.");
             }
 
-            return false; // Still needs restart, the define won't exist until then.
-#endif
-        }
-
-        private static int? GetActiveInputHandlerValue()
-        {
-            var playerSettings = Unsupported.GetSerializedAssetInterfaceSingleton("PlayerSettings");
-            if (playerSettings == null)
-            {
-                return null;
-            }
-
-            using (var so = new SerializedObject(playerSettings))
-            {
-                var prop = so.FindProperty("activeInputHandler");
-                return prop != null ? (int?)prop.intValue : null;
-            }
-        }
-
-        private static bool TrySetActiveInputHandler(int value)
-        {
-            var playerSettings = Unsupported.GetSerializedAssetInterfaceSingleton("PlayerSettings");
-            if (playerSettings == null)
-            {
-                return false;
-            }
-
-            using (var so = new SerializedObject(playerSettings))
-            {
-                var prop = so.FindProperty("activeInputHandler");
-                if (prop == null)
-                {
-                    return false;
-                }
-
-                prop.intValue = value;
-                so.ApplyModifiedPropertiesWithoutUndo();
-                return true;
-            }
+            return PrerequisiteFixResult.AppliedFix("Changed Active Input Handling to Both. Restart Unity to finish enabling the Input System backend.");
         }
     }
 }

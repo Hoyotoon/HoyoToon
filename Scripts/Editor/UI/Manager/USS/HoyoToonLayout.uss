@@ -1,0 +1,418 @@
+.ht-header,
+.ht-navbar,
+.ht-context,
+.ht-footer {
+    flex-shrink: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ht-body {
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ht-header {
+    margin-bottom: 8px;
+}
+
+.ht-navbar {
+    margin-bottom: 8px;
+}
+
+.ht-context {
+    margin-bottom: 8px;
+}
+
+.ht-body {
+    margin-bottom: 8px;
+}
+
+.ht-banner-card {
+    position: relative;
+    height: 96px;
+    overflow: hidden;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 0;
+    padding-bottom: 0;
+    background-color: rgba(24, 16, 46, 0.960);
+    justify-content: center;
+}
+
+.ht-banner-background {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    opacity: 0.90;
+    min-width: 0;
+    min-height: 0;
+}
+
+.ht-banner-row {
+    position: relative;
+    height: 100%;
+    flex-grow: 1;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.ht-logo-container {
+    width: 420px;
+    max-width: 100%;
+    height: 80px;
+    align-items: center;
+    justify-content: center;
+    background-color: transparent;
+    border-left-width: 0;
+    border-right-width: 0;
+    border-top-width: 0;
+    border-bottom-width: 0;
+    flex-shrink: 0;
+}
+
+.ht-logo-image {
+    width: 100%;
+    max-width: 100%;
+    height: 80px;
+    flex-shrink: 1;
+}
+
+.ht-version-badge {
+    position: absolute;
+    right: 16px;
+    bottom: 12px;
+}
+
+.ht-navbar {
+    min-height: 40px;
+}
+
+.ht-navbar-rail {
+    min-width: 0;
+    overflow: hidden;
+    background-color: transparent;
+}
+
+.ht-navbar-strip {
+    min-width: 0;
+    padding-left: 4px;
+    padding-right: 4px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: var(--border);
+    border-right-color: var(--border);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    background-color: rgba(255, 255, 255, 0.022);
+    overflow: hidden;
+}
+
+.ht-tab-scroll {
+    min-height: 40px;
+    background-color: transparent;
+    min-width: 0;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.ht-tab-scroll > .unity-scroll-view__content-viewport {
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ht-tab-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    min-width: 0;
+    flex-direction: row;
+    flex-wrap: wrap;
+}
+
+.ht-tab-row {
+    min-height: 32px;
+    flex-shrink: 1;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.ht-body-scroll {
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    background-color: transparent;
+}
+
+.ht-body-scroll > .unity-scroll-view__content-viewport {
+    margin-right: 10px;
+}
+
+.ht-body-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    padding-right: 6px;
+}
+
+.ht-module-content-root {
+    min-height: 0;
+    padding-right: 4px;
+}
+
+.ht-body-surface {
+    flex-grow: 1;
+    min-width: 0;
+    min-height: 0;
+    padding-left: 18px;
+    padding-right: 18px;
+    padding-top: 14px;
+    padding-bottom: 12px;
+    border-top-left-radius: 8px;
+    border-top-right-radius: 8px;
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: var(--border);
+    border-right-color: var(--border);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    background-color: rgba(255, 255, 255, 0.028);
+    overflow: hidden;
+}
+
+.ht-footer-card {
+    padding-top: 10px;
+    padding-bottom: 12px;
+    overflow: hidden;
+}
+
+.ht-footer-header {
+    margin-bottom: 8px;
+}
+
+.ht-context-card {
+    padding-top: 10px;
+    padding-bottom: 12px;
+    overflow: hidden;
+}
+
+.ht-context-header {
+    margin-bottom: 8px;
+}
+
+.ht-footer-action-rail {
+    min-width: 0;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 6px;
+    padding-bottom: 6px;
+    border-top-left-radius: 6px;
+    border-top-right-radius: 6px;
+    border-bottom-left-radius: 6px;
+    border-bottom-right-radius: 6px;
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: var(--border);
+    border-right-color: var(--border);
+    border-top-color: var(--border);
+    border-bottom-color: var(--border);
+    background-color: rgba(255, 255, 255, 0.024);
+    overflow: hidden;
+}
+
+.ht-context-content-rail {
+    background-color: rgba(255, 255, 255, 0.028);
+    margin-right: 8px;
+}
+
+.ht-footer-row {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    align-items: stretch;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.ht-footer-button {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.ht-main-model-row {
+    min-width: 0;
+    flex-wrap: nowrap;
+    align-items: center;
+}
+
+.ht-main-model-field {
+    flex-grow: 1;
+    min-width: 220px;
+}
+
+.ht-main-action-button {
+    flex-shrink: 0;
+    min-width: 92px;
+    min-height: 28px;
+}
+
+.ht-main-panel {
+    min-width: 0;
+}
+
+.ht-placement-top-row,
+.ht-placement-option-row {
+    min-width: 0;
+    flex-wrap: wrap;
+    align-items: flex-end;
+}
+
+.ht-placement-wide-field {
+    flex-grow: 1;
+    min-width: 220px;
+}
+
+.ht-placement-compact-field {
+    min-width: 160px;
+}
+
+.ht-placement-apply-button {
+    min-width: 72px;
+    flex-shrink: 0;
+}
+
+.ht-module-grid {
+    flex-direction: column;
+}
+
+.ht-empty-state {
+    min-height: 180px;
+    justify-content: center;
+}
+
+.ht-width-narrow {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.ht-width-narrow .ht-card {
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.ht-width-narrow .ht-banner-card {
+    height: auto;
+    min-height: 96px;
+    padding-left: 12px;
+    padding-right: 12px;
+}
+
+.ht-width-narrow .ht-banner-row {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.ht-width-narrow .ht-logo-container,
+.ht-width-narrow .ht-logo-image {
+    width: 260px;
+    height: 52px;
+}
+
+.ht-width-narrow .ht-footer-row {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.ht-width-narrow .ht-main-model-field,
+.ht-width-standard .ht-main-model-field {
+    min-width: 0;
+}
+
+.ht-width-narrow .ht-main-action-button,
+.ht-width-standard .ht-main-action-button {
+    min-width: 76px;
+}
+
+.ht-width-narrow .ht-placement-wide-field,
+.ht-width-standard .ht-placement-wide-field,
+.ht-width-narrow .ht-placement-compact-field,
+.ht-width-standard .ht-placement-compact-field {
+    min-width: 0;
+}
+
+.ht-width-standard .ht-banner-row {
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.ht-width-standard .ht-logo-container,
+.ht-width-standard .ht-logo-image {
+    width: 340px;
+    height: 64px;
+}
+
+.ht-width-standard .ht-footer-row {
+    flex-direction: row;
+    align-items: stretch;
+}
+
+.ht-width-standard .ht-version-badge,
+.ht-width-narrow .ht-version-badge {
+    right: 12px;
+    bottom: 10px;
+}
+
+.ht-width-wide .ht-footer-row {
+    flex-direction: row;
+}
+
+.ht-width-wide .ht-module-grid {
+    flex-direction: row;
+    flex-wrap: wrap;
+    margin-left: -8px;
+    margin-top: -8px;
+}
+
+.ht-width-wide .ht-module-grid > * {
+    flex-grow: 1;
+    min-width: 180px;
+    margin-left: 8px;
+    margin-top: 8px;
+}
+
+.ht-width-wide .ht-footer-button {
+    flex-basis: 0;
+    min-width: 160px;
+    max-width: 220px;
+}
+
+.ht-width-standard .ht-footer-button,
+.ht-width-narrow .ht-footer-button {
+    flex-basis: 0;
+}
+
+.ht-width-standard .ht-footer-action-rail,
+.ht-width-narrow .ht-footer-action-rail {
+    padding-left: 4px;
+    padding-right: 4px;
+}

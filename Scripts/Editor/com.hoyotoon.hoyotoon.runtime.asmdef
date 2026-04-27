@@ -1,0 +1,19 @@
+{
+    "name": "com.hoyotoon.hoyotoon.editor",
+    "rootNamespace": "HoyoToon.Editor",
+    "references": [
+        "com.hoyotoon.hoyotoon.runtime",
+        "Unity.RenderPipelines.Core.Runtime",
+        "Unity.RenderPipelines.Core.Editor",
+        "Unity.RenderPipelines.Universal.Editor"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

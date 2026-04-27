@@ -1,157 +1,170 @@
 #if UNITY_EDITOR
 using System;
-using System.Collections.Generic;
-using UnityEngine;
+using System.Text;
+using System.Threading;
 
-namespace HoyoToon.Editor.Utilities
+namespace HoyoToon.Editor.Utilities.Debugging
 {
-    public static class LogCore
+    internal enum HoyoToonLogLevel
     {
-        private readonly struct ThrottleEntry
-        {
-            public readonly DateTime LastLogUtc;
-            public readonly TimeSpan Gate;
+        Error = 0,
+        Warning = 1,
+        Info = 2,
+        Verbose = 3,
+    }
 
-            public ThrottleEntry(DateTime lastLogUtc, TimeSpan gate)
+    public enum HoyoToonLogCategory
+    {
+        General,
+        Setup,
+        Api,
+        Detection,
+        Prerequisites,
+        Resources,
+        Materials,
+        Converter,
+        HoyoToonFBX,
+        Models,
+        Textures,
+    }
+
+    internal static class LogCore
+    {
+        internal const string DebugEnabledEditorPrefsKey = "HoyoToon.Editor.DebugEnabled";
+        internal const string LegacyDebugModeEditorPrefsKey = "HoyoToon.Editor.DebugMode";
+
+        private const string HoyoToonColorHex = "#C000FF";
+        private const string SetupColorHex = "#9AA8FF";
+        private const string ApiColorHex = "#1EA7FF";
+        private const string DetectionColorHex = "#FFB000";
+        private const string PrerequisitesColorHex = "#00CFA0";
+        private const string ResourcesColorHex = "#6D9EFF";
+        private const string MaterialsColorHex = "#38D96B";
+        private const string ConverterColorHex = "#00B86B";
+        private const string HoyoToonFbxColorHex = "#00C7FF";
+        private const string ModelsColorHex = "#2CC8B8";
+        private const string TexturesColorHex = "#FF6B6B";
+        private const string AutoColorHex = "#B7C4FF";
+        private static readonly AsyncLocal<int> setupScopeDepth = new AsyncLocal<int>();
+
+        internal static bool ShouldLog(bool enabled, HoyoToonLogLevel level)
+        {
+            return enabled || level == HoyoToonLogLevel.Warning || level == HoyoToonLogLevel.Error;
+        }
+
+        internal static IDisposable PushSetupScope()
+        {
+            setupScopeDepth.Value++;
+            return new SetupScope();
+        }
+
+        internal static string FormatMessage(HoyoToonLogCategory category, string message, bool isBackgroundOperation)
+        {
+            var prefixBuilder = new StringBuilder();
+            prefixBuilder.Append(FormatBracket("HoyoToon", HoyoToonColorHex));
+
+            string categoryLabel = GetCategoryLabel(category);
+            if (categoryLabel != null)
             {
-                LastLogUtc = lastLogUtc;
-                Gate = gate;
+                prefixBuilder.Append(FormatBracket(categoryLabel, GetCategoryColorHex(category)));
             }
-        }
 
-        private const string Prefix = "<color=purple>[HoyoToon]</color>";
-        private const string DefaultCategoryColor = "#C0C0C0";
-        private static readonly Dictionary<string, ThrottleEntry> s_LastLogUtc = new Dictionary<string, ThrottleEntry>(StringComparer.OrdinalIgnoreCase);
-        private static readonly object s_ThrottleGate = new object();
-        private static readonly TimeSpan DefaultThrottle = TimeSpan.FromMinutes(2);
-        private const int ThrottleCleanupStride = 64;
-        private static int s_ThrottleWriteCount;
-
-        private static readonly Dictionary<string, string> s_CategoryColors = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-        {
-            { "Shader",   "#80C7FF" },
-            { "UI",       "#FFB000" },
-            { "Model",    "#A0FF80" },
-            { "API",      "#80E5FF" },
-            { "Texture",  "#FF80A0" },
-            { "Material", "#B180FF" },
-            { "Manager",  "#FFD480" },
-            { "Resources", "#FF8080" },
-            { "Updater",  "#40FF40" },
-            { "FBX Converter", "#FFA040" },
-            { "Async",    "#80FF80" },
-            { "Tour",     "#FF80FF" },
-            { "System",   "#C0C0C0" },
-        };
-
-        public static event Action<string, LogType> OnLog;
-
-        public static void Log(string message, UnityEngine.Object context = null) => InternalLog(message, LogType.Log, context);
-        public static void Warn(string message, UnityEngine.Object context = null) => InternalLog(message, LogType.Warning, context);
-        public static void Error(string message, UnityEngine.Object context = null) => InternalLog(message, LogType.Error, context);
-
-        public static void LogCategory(string category, string message, UnityEngine.Object context = null) => InternalLog(message, LogType.Log, context, false, category);
-        public static void WarnCategory(string category, string message, UnityEngine.Object context = null) => InternalLog(message, LogType.Warning, context, false, category);
-        public static void ErrorCategory(string category, string message, UnityEngine.Object context = null) => InternalLog(message, LogType.Error, context, false, category);
-
-        public static void LogAlways(string message, LogType type = LogType.Log) => InternalLog(message, type, null, true);
-        public static void LogAlwaysCategory(string category, string message, LogType type = LogType.Log) => InternalLog(message, type, null, true, category);
-
-        public static void ThrottleLog(string key, string message, TimeSpan? throttle = null, string category = "System")
-            => ThrottleInternal(key, message, LogType.Log, throttle ?? DefaultThrottle, category);
-
-        public static void ThrottleWarn(string key, string message, TimeSpan? throttle = null, string category = "System")
-            => ThrottleInternal(key, message, LogType.Warning, throttle ?? DefaultThrottle, category);
-
-        public static void ThrottleError(string key, string message, TimeSpan? throttle = null, string category = "System")
-            => ThrottleInternal(key, message, LogType.Error, throttle ?? DefaultThrottle, category);
-
-        public static void SetCategoryColor(string category, Color color)
-        {
-            if (string.IsNullOrEmpty(category)) return;
-            s_CategoryColors[category] = "#" + ColorUtility.ToHtmlStringRGB(color);
-        }
-
-        public static void SetCategoryColor(string category, string htmlColor)
-        {
-            if (string.IsNullOrEmpty(category) || string.IsNullOrEmpty(htmlColor)) return;
-            s_CategoryColors[category] = htmlColor;
-        }
-
-        private static void InternalLog(string message, LogType type, UnityEngine.Object context = null, bool force = false, string category = null)
-        {
-            if (!force && !HoyoToonDebug.Enabled) return;
-            string categoryPart = string.Empty;
-            if (!string.IsNullOrEmpty(category))
+            if (category != HoyoToonLogCategory.Setup && setupScopeDepth.Value > 0)
             {
-                string color = s_CategoryColors.TryGetValue(category, out var hex) ? hex : DefaultCategoryColor;
-                categoryPart = $" <color={color}>[{category}]</color>";
+                prefixBuilder.Append(FormatBracket(GetCategoryLabel(HoyoToonLogCategory.Setup), GetCategoryColorHex(HoyoToonLogCategory.Setup)));
             }
-            string formatted = $"{Prefix}{categoryPart} {message}";
 
-            RouteToUnityLog(formatted, type, context);
+            if (isBackgroundOperation)
+            {
+                prefixBuilder.Append(FormatBracket("Auto", AutoColorHex));
+            }
 
-            try { OnLog?.Invoke(message, type); }
-            catch (Exception ex) { Debug.LogException(ex); }
+            string prefix = prefixBuilder.ToString();
+            return string.IsNullOrWhiteSpace(message)
+                ? prefix
+                : $"{prefix} {message}";
         }
 
-        private static void RouteToUnityLog(string formatted, LogType type, UnityEngine.Object context)
+        private static string FormatBracket(string label, string colorHex)
         {
-            switch (type)
+            return $"<color={colorHex}>[{label}]</color>";
+        }
+
+        private static string GetCategoryLabel(HoyoToonLogCategory category)
+        {
+            switch (category)
             {
-                case LogType.Error:
-                case LogType.Exception:
-                    if (context != null) Debug.LogError(formatted, context); else Debug.LogError(formatted);
-                    return;
-                case LogType.Warning:
-                    if (context != null) Debug.LogWarning(formatted, context); else Debug.LogWarning(formatted);
-                    return;
+                case HoyoToonLogCategory.Setup:
+                    return "Setup";
+                case HoyoToonLogCategory.Api:
+                    return "API";
+                case HoyoToonLogCategory.Detection:
+                    return "Detection";
+                case HoyoToonLogCategory.Prerequisites:
+                    return "Prerequisites";
+                case HoyoToonLogCategory.Resources:
+                    return "Resources";
+                case HoyoToonLogCategory.Materials:
+                    return "Materials";
+                case HoyoToonLogCategory.Converter:
+                    return "Converter";
+                case HoyoToonLogCategory.HoyoToonFBX:
+                    return "HoyoToonFBX";
+                case HoyoToonLogCategory.Models:
+                    return "Models";
+                case HoyoToonLogCategory.Textures:
+                    return "Textures";
                 default:
-                    if (context != null) Debug.Log(formatted, context); else Debug.Log(formatted);
-                    return;
+                    return null;
             }
         }
 
-        private static void ThrottleInternal(string key, string message, LogType type, TimeSpan throttle, string category)
+        private static string GetCategoryColorHex(HoyoToonLogCategory category)
         {
-            if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(message)) return;
-            var now = DateTime.UtcNow;
-            lock (s_ThrottleGate)
+            switch (category)
             {
-                if (s_LastLogUtc.TryGetValue(key, out var entry) && now - entry.LastLogUtc < throttle)
-                    return;
+                case HoyoToonLogCategory.Setup:
+                    return SetupColorHex;
+                case HoyoToonLogCategory.Api:
+                    return ApiColorHex;
+                case HoyoToonLogCategory.Detection:
+                    return DetectionColorHex;
+                case HoyoToonLogCategory.Prerequisites:
+                    return PrerequisitesColorHex;
+                case HoyoToonLogCategory.Resources:
+                    return ResourcesColorHex;
+                case HoyoToonLogCategory.Materials:
+                    return MaterialsColorHex;
+                case HoyoToonLogCategory.Converter:
+                    return ConverterColorHex;
+                case HoyoToonLogCategory.HoyoToonFBX:
+                    return HoyoToonFbxColorHex;
+                case HoyoToonLogCategory.Models:
+                    return ModelsColorHex;
+                case HoyoToonLogCategory.Textures:
+                    return TexturesColorHex;
+                default:
+                    return HoyoToonColorHex;
+            }
+        }
 
-                s_LastLogUtc[key] = new ThrottleEntry(now, throttle);
+        private sealed class SetupScope : IDisposable
+        {
+            private bool disposed;
 
-                s_ThrottleWriteCount++;
-                if (s_ThrottleWriteCount >= ThrottleCleanupStride)
+            public void Dispose()
+            {
+                if (disposed)
                 {
-                    s_ThrottleWriteCount = 0;
-                    CleanupStaleThrottleEntries(now);
+                    return;
+                }
+
+                disposed = true;
+                if (setupScopeDepth.Value > 0)
+                {
+                    setupScopeDepth.Value--;
                 }
             }
-
-            InternalLog(message, type, null, true, category);
-        }
-
-        private static void CleanupStaleThrottleEntries(DateTime now)
-        {
-            if (s_LastLogUtc.Count == 0) return;
-
-            var staleKeys = new List<string>();
-            foreach (var kv in s_LastLogUtc)
-            {
-                var gateTicks = kv.Value.Gate.Ticks;
-                var evictionGate = gateTicks > (long.MaxValue / 2)
-                    ? TimeSpan.MaxValue
-                    : TimeSpan.FromTicks(gateTicks * 2);
-
-                if (now - kv.Value.LastLogUtc > evictionGate)
-                    staleKeys.Add(kv.Key);
-            }
-
-            for (int i = 0; i < staleKeys.Count; i++)
-                s_LastLogUtc.Remove(staleKeys[i]);
         }
     }
 }

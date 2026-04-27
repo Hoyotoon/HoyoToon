@@ -2605,6 +2605,226 @@ namespace LWGUI
 			}
 		}
 	}
+
+	/// <summary>
+	/// Draw a 0-1 min-max slider backed by a Vector4 packed as:
+	/// 	x = min
+	/// 	y = max
+	/// 	z = 1 / (max - min)
+	/// 	w = min / (max - min)
+	///
+	/// This allows shader-side remap code such as: value * z + (-w), which is equivalent to (value - min) / (max - min).
+	///
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
+	/// sliderMin: minimum UI range bound (Default: 0)
+	/// sliderMax: maximum UI range bound (Default: 1)
+	/// Target Property Type: Vector
+	/// </summary>
+	public class SubRemap01SliderDrawer : SubDrawer
+	{
+		private readonly float _sliderMin;
+		private readonly float _sliderMax;
+
+		public SubRemap01SliderDrawer() : this("_", 0f, 1f) { }
+
+		public SubRemap01SliderDrawer(string group) : this(group, 0f, 1f) { }
+
+		public SubRemap01SliderDrawer(string group, float sliderMin, float sliderMax)
+		{
+			this.group = group;
+			_sliderMin = sliderMin;
+			_sliderMax = sliderMax > sliderMin ? sliderMax : sliderMin + 1f;
+		}
+
+		protected override bool IsMatchPropType(MaterialProperty property) => property.GetPropertyType() == ShaderPropertyType.Vector;
+
+		private static Vector4 EncodeRemap(float min, float max)
+		{
+			const float kEpsilon = 1e-6f;
+			var range = Mathf.Max(max - min, kEpsilon);
+			return new Vector4(min, max, 1f / range, min / range);
+		}
+
+		public override void GetDefaultValueDescription(Shader inShader, MaterialProperty inProp, MaterialProperty inDefaultProp, PerShaderData inPerShaderData, PerMaterialData inoutPerMaterialData)
+		{
+			inoutPerMaterialData.propDynamicDatas[inProp.name].defaultValueDescription =
+				$"{inDefaultProp.vectorValue.x:0.###} - {inDefaultProp.vectorValue.y:0.###}";
+		}
+
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			var packed = prop.vectorValue;
+			var min = packed.x;
+			var max = packed.y;
+
+			var controlRect = position;
+			var labelWidth = EditorGUIUtility.labelWidth;
+			EditorGUIUtility.labelWidth = 0f;
+			var inputRect = MaterialEditor.GetRectAfterLabelWidth(controlRect);
+
+			EditorGUI.PrefixLabel(controlRect, label);
+
+			var indentLevel = EditorGUI.indentLevel;
+			EditorGUI.indentLevel = 0;
+			var splitRects = Helper.SplitRect(inputRect, 3);
+
+			EditorGUI.BeginChangeCheck();
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+			var newMin = EditorGUI.FloatField(splitRects[0], min);
+			var newMax = EditorGUI.FloatField(splitRects[2], max);
+			if (splitRects[1].width > 50f)
+				EditorGUI.MinMaxSlider(splitRects[1], ref newMin, ref newMax, _sliderMin, _sliderMax);
+
+			EditorGUI.showMixedValue = false;
+			if (Helper.EndChangeCheck(metaDatas, prop))
+			{
+				newMin = Mathf.Clamp(newMin, _sliderMin, _sliderMax);
+				newMax = Mathf.Clamp(newMax, _sliderMin, _sliderMax);
+				if (newMax < newMin)
+					(newMin, newMax) = (newMax, newMin);
+
+				prop.vectorValue = EncodeRemap(newMin, newMax);
+			}
+
+			EditorGUI.indentLevel = indentLevel;
+			EditorGUIUtility.labelWidth = labelWidth;
+		}
+	}
+
+	/// <summary>
+	/// Similar to SubRemap01Slider(), but can be used outside groups.
+	/// </summary>
+	public class Remap01SliderDrawer : SubRemap01SliderDrawer
+	{
+		public Remap01SliderDrawer() : base(string.Empty) { }
+
+		public Remap01SliderDrawer(string group) : base(group) { }
+
+		public Remap01SliderDrawer(float sliderMin, float sliderMax) : base(string.Empty, sliderMin, sliderMax) { }
+
+		public Remap01SliderDrawer(string group, float sliderMin, float sliderMax) : base(group, sliderMin, sliderMax) { }
+	}
+
+	/// <summary>
+	/// Draws only XY controls for a Vector property.
+	///
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
+	/// Target Property Type: Vector
+	/// </summary>
+	public class SubVector2Drawer : SubDrawer
+	{
+		private static readonly GUIContent[] _labels =
+		{
+			new GUIContent("X"),
+			new GUIContent("Y")
+		};
+
+		public SubVector2Drawer() { }
+
+		public SubVector2Drawer(string group)
+		{
+			this.group = group;
+		}
+
+		protected override bool IsMatchPropType(MaterialProperty property) => property.GetPropertyType() == ShaderPropertyType.Vector;
+
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			RevertableHelper.FixGUIWidthMismatch(prop.GetPropertyType(), editor);
+
+			var controlRect = position;
+			var labelWidth = EditorGUIUtility.labelWidth;
+			EditorGUIUtility.labelWidth = 0f;
+			var inputRect = MaterialEditor.GetRectAfterLabelWidth(controlRect);
+			EditorGUI.PrefixLabel(controlRect, label);
+
+			var indentLevel = EditorGUI.indentLevel;
+			EditorGUI.indentLevel = 0;
+
+			EditorGUI.BeginChangeCheck();
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+			var src = prop.vectorValue;
+			var values = new[] { src.x, src.y };
+			EditorGUI.MultiFloatField(inputRect, GUIContent.none, _labels, values);
+			EditorGUI.showMixedValue = false;
+			if (Helper.EndChangeCheck(metaDatas, prop))
+				prop.vectorValue = new Vector4(values[0], values[1], src.z, src.w);
+
+			EditorGUI.indentLevel = indentLevel;
+			EditorGUIUtility.labelWidth = labelWidth;
+		}
+	}
+
+	/// <summary>
+	/// Similar to SubVector2(), but can be used outside groups.
+	/// </summary>
+	public class Vector2Drawer : SubVector2Drawer
+	{
+		public Vector2Drawer() : base(string.Empty) { }
+
+		public Vector2Drawer(string group) : base(group) { }
+	}
+
+	/// <summary>
+	/// Draws only XYZ controls for a Vector property.
+	///
+	/// group: parent group name or "MainGroupName_SubGroupName" for SubGroup properties (Default: none)
+	/// Target Property Type: Vector
+	/// </summary>
+	public class SubVector3Drawer : SubDrawer
+	{
+		private static readonly GUIContent[] _labels =
+		{
+			new GUIContent("X"),
+			new GUIContent("Y"),
+			new GUIContent("Z")
+		};
+
+		public SubVector3Drawer() { }
+
+		public SubVector3Drawer(string group)
+		{
+			this.group = group;
+		}
+
+		protected override bool IsMatchPropType(MaterialProperty property) => property.GetPropertyType() == ShaderPropertyType.Vector;
+
+		public override void DrawProp(Rect position, MaterialProperty prop, GUIContent label, MaterialEditor editor)
+		{
+			RevertableHelper.FixGUIWidthMismatch(prop.GetPropertyType(), editor);
+
+			var controlRect = position;
+			var labelWidth = EditorGUIUtility.labelWidth;
+			EditorGUIUtility.labelWidth = 0f;
+			var inputRect = MaterialEditor.GetRectAfterLabelWidth(controlRect);
+			EditorGUI.PrefixLabel(controlRect, label);
+
+			var indentLevel = EditorGUI.indentLevel;
+			EditorGUI.indentLevel = 0;
+
+			EditorGUI.BeginChangeCheck();
+			EditorGUI.showMixedValue = prop.hasMixedValue;
+			var src = prop.vectorValue;
+			var values = new[] { src.x, src.y, src.z };
+			EditorGUI.MultiFloatField(inputRect, GUIContent.none, _labels, values);
+			EditorGUI.showMixedValue = false;
+			if (Helper.EndChangeCheck(metaDatas, prop))
+				prop.vectorValue = new Vector4(values[0], values[1], values[2], src.w);
+
+			EditorGUI.indentLevel = indentLevel;
+			EditorGUIUtility.labelWidth = labelWidth;
+		}
+	}
+
+	/// <summary>
+	/// Similar to SubVector3(), but can be used outside groups.
+	/// </summary>
+	public class Vector3Drawer : SubVector3Drawer
+	{
+		public Vector3Drawer() : base(string.Empty) { }
+
+		public Vector3Drawer(string group) : base(group) { }
+	}
 	#endregion
 
 	#region Other

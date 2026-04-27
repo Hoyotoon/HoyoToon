@@ -1,0 +1,376 @@
+.ht-dialog-root {
+    min-width: 0;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.ht-dialog-header {
+    margin-bottom: 8px;
+}
+
+.ht-dialog-banner-card {
+    height: 84px;
+    min-height: 84px;
+    padding-left: 18px;
+    padding-right: 18px;
+}
+
+.ht-dialog-header-row {
+    position: relative;
+    height: 100%;
+    align-items: center;
+    justify-content: flex-start;
+}
+
+.ht-dialog-logo-container {
+    width: 132px;
+    height: 48px;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+}
+
+.ht-dialog-logo-image {
+    width: 132px;
+    height: 48px;
+}
+
+.ht-dialog-title-column {
+    margin-left: 10px;
+    min-width: 0;
+}
+
+.ht-dialog-title {
+    white-space: normal;
+}
+
+.ht-dialog-subtitle {
+    white-space: normal;
+}
+
+.ht-dialog-body {
+    margin-bottom: 0;
+    min-height: 0;
+}
+
+.ht-dialog-body-surface {
+    flex-direction: column;
+    min-height: 0;
+    padding-left: 14px;
+    padding-right: 8px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.ht-dialog-body-scroll {
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: 0;
+    min-height: 0;
+}
+
+.ht-dialog-body-scroll > .unity-scroll-view__content-viewport {
+    margin-right: 26px;
+}
+
+.ht-dialog-body-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    padding-right: 24px;
+}
+
+.ht-dialog-body-scroll > .unity-scroll-view__vertical-scroller {
+    margin-left: 16px;
+}
+
+.ht-dialog-body-content {
+    min-width: 0;
+    min-height: 0;
+    padding-right: 24px;
+}
+
+.ht-dialog-card {
+    min-width: 0;
+    flex-shrink: 0;
+}
+
+.ht-dialog-status {
+    align-self: flex-start;
+    padding-left: 8px;
+    padding-right: 8px;
+    padding-top: 4px;
+    padding-bottom: 4px;
+    border-top-left-radius: 999px;
+    border-top-right-radius: 999px;
+    border-bottom-left-radius: 999px;
+    border-bottom-right-radius: 999px;
+    font-size: 11px;
+    -unity-font-style: bold;
+}
+
+.ht-dialog-status--info,
+.ht-dialog-status--question {
+    background-color: rgba(124, 77, 255, 0.12);
+    color: #B99DFF;
+}
+
+.ht-dialog-status--success {
+    background-color: rgba(76, 175, 109, 0.12);
+    color: var(--success);
+}
+
+.ht-dialog-status--warning {
+    background-color: rgba(255, 176, 32, 0.12);
+    color: var(--warning);
+}
+
+.ht-dialog-status--error {
+    background-color: rgba(255, 92, 92, 0.12);
+    color: var(--danger);
+}
+
+.ht-dialog-message {
+    color: var(--text-primary);
+    font-size: 13px;
+    white-space: normal;
+    margin-right: 2px;
+}
+
+.ht-dialog-markdown {
+    min-width: 0;
+}
+
+.ht-dialog-markdown-spacer {
+    height: 6px;
+    min-height: 6px;
+}
+
+.ht-dialog-markdown-heading {
+    color: var(--text-primary);
+    white-space: normal;
+    -unity-font-style: bold;
+}
+
+.ht-dialog-markdown-heading--1 {
+    font-size: 18px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.ht-dialog-markdown-heading--2 {
+    font-size: 16px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.ht-dialog-markdown-heading--3 {
+    font-size: 14px;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.ht-dialog-markdown-inline {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+.ht-dialog-markdown-inline-text {
+    color: var(--text-primary);
+    font-size: 13px;
+    white-space: normal;
+    flex-shrink: 1;
+}
+
+.ht-dialog-link {
+    color: #B99DFF;
+    font-size: 13px;
+    white-space: normal;
+    border-bottom-width: 1px;
+    border-bottom-color: rgba(185, 157, 255, 0.65);
+    margin-left: 0;
+    margin-right: 0;
+    margin-top: 0;
+    margin-bottom: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.ht-dialog-link:hover {
+    color: #D8CAFF;
+    border-bottom-color: rgba(216, 202, 255, 0.90);
+}
+
+.ht-dialog-markdown-bullet-row {
+    flex-direction: row;
+    align-items: flex-start;
+    min-width: 0;
+}
+
+.ht-dialog-markdown-bullet {
+    color: var(--text-primary);
+    width: 13px;
+    min-width: 13px;
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.ht-dialog-markdown-bullet-content {
+    flex-grow: 1;
+    flex-shrink: 1;
+    min-width: 0;
+}
+
+.ht-dialog-detail {
+    color: var(--text-secondary);
+    font-size: 12px;
+    white-space: normal;
+}
+
+.ht-dialog-custom-body {
+    min-width: 0;
+    margin-top: 4px;
+}
+
+.ht-dialog-button-row {
+    flex-direction: row;
+    justify-content: flex-end;
+    align-items: stretch;
+    flex-wrap: wrap;
+    min-width: 0;
+    margin-top: -6px;
+}
+
+.ht-dialog-button {
+    min-width: 118px;
+    min-height: 28px;
+    margin-left: 8px;
+    margin-top: 6px;
+    flex-shrink: 0;
+}
+
+.ht-dialog-action-content {
+    flex-shrink: 0;
+    min-width: 0;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top-width: 1px;
+    border-top-color: rgba(255, 255, 255, 0.080);
+}
+
+.ht-progress-card {
+    min-width: 0;
+    flex-shrink: 0;
+    padding-left: 14px;
+    padding-right: 14px;
+    padding-top: 14px;
+    padding-bottom: 14px;
+}
+
+.ht-progress-summary-row {
+    min-width: 0;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.ht-progress-message {
+    color: var(--text-primary);
+    font-size: 13px;
+    white-space: normal;
+    margin-top: 2px;
+    margin-bottom: 2px;
+}
+
+.ht-progress-track {
+    height: 18px;
+    min-height: 18px;
+    max-height: 18px;
+    min-width: 0;
+    width: 100%;
+    background-color: rgba(255, 255, 255, 0.055);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(255, 255, 255, 0.090);
+    border-right-color: rgba(255, 255, 255, 0.090);
+    border-top-color: rgba(255, 255, 255, 0.090);
+    border-bottom-color: rgba(255, 255, 255, 0.090);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    padding-left: 2px;
+    padding-right: 2px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    overflow: hidden;
+}
+
+.ht-progress-fill {
+    height: 100%;
+    min-width: 0;
+    background-color: var(--accent-primary);
+    border-top-left-radius: 3px;
+    border-top-right-radius: 3px;
+    border-bottom-left-radius: 3px;
+    border-bottom-right-radius: 3px;
+}
+
+.ht-progress-fill--indeterminate {
+    width: 35%;
+    background-color: var(--accent-hover);
+}
+
+.ht-progress-percent {
+    color: var(--text-secondary);
+    font-size: 11px;
+    width: 52px;
+    min-width: 52px;
+    -unity-text-align: middle-right;
+    flex-shrink: 0;
+}
+
+.ht-progress-cancel-row {
+    justify-content: flex-end;
+    margin-top: 2px;
+}
+
+.ht-progress-cancel-button {
+    min-width: 96px;
+    min-height: 28px;
+}
+
+.ht-width-narrow .ht-dialog-banner-card {
+    height: auto;
+    min-height: 84px;
+}
+
+.ht-width-narrow .ht-dialog-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 8px;
+    padding-bottom: 8px;
+}
+
+.ht-width-narrow .ht-dialog-logo-container,
+.ht-width-narrow .ht-dialog-logo-image {
+    width: 112px;
+    height: 40px;
+}
+
+.ht-width-narrow .ht-dialog-title-column {
+    margin-left: 0;
+    margin-top: 6px;
+}
+
+.ht-width-narrow .ht-dialog-button-row {
+    justify-content: stretch;
+}
+
+.ht-width-narrow .ht-dialog-button {
+    flex-grow: 1;
+    min-width: 118px;
+}

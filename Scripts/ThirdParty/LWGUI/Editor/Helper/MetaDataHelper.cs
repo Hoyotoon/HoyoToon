@@ -203,10 +203,18 @@ namespace LWGUI
 			if (propStaticData.materialIdFilters == null || propStaticData.materialIdFilters.Count == 0)
 				return true;
 
-			if (perInspectorData == null || perInspectorData.materialIdFilterSelected < 0)
+			if (perInspectorData == null
+			 || perInspectorData.materialIdFilterSelectedIds == null
+			 || perInspectorData.materialIdFilterSelectedIds.Count == 0)
 				return true;
 
-			return propStaticData.materialIdFilters.Contains(perInspectorData.materialIdFilterSelected);
+			foreach (var selectedId in perInspectorData.materialIdFilterSelectedIds)
+			{
+				if (propStaticData.materialIdFilters.Contains(selectedId))
+					return true;
+			}
+
+			return false;
 		}
 
 		public static bool GetParentPropertyVisibility(PropertyStaticData parentPropStaticData, Material material, LWGUIMetaDatas metaDatas)

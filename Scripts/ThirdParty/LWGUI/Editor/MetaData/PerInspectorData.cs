@@ -1,6 +1,7 @@
 ﻿// Copyright (c) Jason Ma
 // Per Shader > Per Material > Per Inspector
 
+using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -13,7 +14,8 @@ namespace LWGUI
 	{
 		public MaterialEditor materialEditor = null;
 		public int materialIdFilterCount = 0;
-		public int materialIdFilterSelected = -1; // -1 = All
+		// Empty set means "All".
+		public HashSet<int> materialIdFilterSelectedIds = new();
 
 		public PerInspectorData() { }
 

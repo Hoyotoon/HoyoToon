@@ -1,37 +1,46 @@
 #if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
-using HoyoToon.Editor.Utilities;
 
-namespace HoyoToon.Editor.Prerequisites
+namespace HoyoToon.Editor.Prerequisites.ColorSpace
 {
-    public sealed class ColorSpaceLinearCheck : IPrerequisiteCheck
+    internal sealed class ColorSpaceLinearCheck : IPrerequisiteCheck
     {
-        public string Name => "Color Space must be Linear";
+        private const string CheckId = "color-space-linear";
+        private const string DisplayNameValue = "Color Space";
 
-        public PrerequisiteResult Evaluate()
+        public string Id => CheckId;
+
+        public string DisplayName => DisplayNameValue;
+
+        public PrerequisiteEvaluation Evaluate()
         {
-            if (PlayerSettings.colorSpace == ColorSpace.Linear)
+            if (PlayerSettings.colorSpace == UnityEngine.ColorSpace.Linear)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Color Space already Linear.");
-                return PrerequisiteResult.Ok("Color Space is Linear.");
+                return PrerequisiteEvaluation.Pass(
+                    Id,
+                    DisplayName,
+                    "Project color space is already set to Linear.");
             }
-            return PrerequisiteResult.Fail(PrerequisiteSeverity.Error,
-                "The Color Space is currently set to Gamma. To ensure proper rendering, it should be Linear.");
+
+            return PrerequisiteEvaluation.Error(
+                Id,
+                DisplayName,
+                "Project color space is set to Gamma, but HoyoToon shaders expect Linear color space.",
+                canAutoFix: true,
+                actionHint: "Change Player Settings > Color Space to Linear or use the safe-fix command.");
         }
 
-        public bool TryFix()
+        public PrerequisiteFixResult TryApplySafeFix()
         {
             try
             {
-                PlayerSettings.colorSpace = ColorSpace.Linear;
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Manager, LogLevel.Info, "Set Color Space to Linear.");
-                return true;
+                PlayerSettings.colorSpace = UnityEngine.ColorSpace.Linear;
+                return PrerequisiteFixResult.AppliedFix("Changed Player Settings > Color Space to Linear.");
             }
-            catch (System.Exception ex)
+            catch (System.Exception exception)
             {
-                HoyoToonLogger.Always("Manager", $"Failed to set Color Space to Linear: {ex}", LogType.Exception);
-                return false;
+                return PrerequisiteFixResult.Failed($"Failed to update Color Space: {exception.Message}");
             }
         }
     }

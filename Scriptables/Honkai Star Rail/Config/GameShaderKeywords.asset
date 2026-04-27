@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a2b419a6e7d4e94a0f5ed7bd4e5b92c, type: 3}
+  m_Name: GameShaderKeywords
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameShaderKeywordsSO
+  entries:
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/Base
+    keywords:
+    - _UseMoonHalo
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/Crystal
+    keywords:
+    - _ParallaxTex
+    - _ParallaxAlpha
+    - _ParallaxScale
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/EyeShadow
+    keywords:
+    - _EyeShadowColor
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/Face
+    keywords:
+    - _FaceMap
+    - _FaceExpression
+    - _LipLineFixMax
+    - _LipLineFixStart
+    - _LipLineFixThrd
+    - _NoseLinePower
+    - _OutlineFixFront
+    - _OutlineFixRange1
+    - _OutlineFixRange2
+    - _OutlineFixRange3
+    - _OutlineFixRange4
+    - _OutlineFixSide
+    - _ExCheekColor
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/Hair
+    keywords:
+    - _HairBlendOffset
+    - _HairBlendWeight
+    - _HairStencilComp
+    - _HairStencilMask
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/Stencil Clear
+    keywords:
+    - _FaceMaskColor
+  - gameKey: Honkai Star Rail
+    shaderPath: HoyoToon/Honkai Star Rail/Character/Transparent
+    keywords:
+    - RenderType==Transparent
+    - _Sunglasses
+    - _Android_Debug_ToonSpecular
+    - _BendValue

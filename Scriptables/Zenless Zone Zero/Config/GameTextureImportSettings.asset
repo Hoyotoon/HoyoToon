@@ -1,0 +1,140 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 334ee1cc1b5e40cbad5ed6c2d5b7f104, type: 3}
+  m_Name: GameTextureImportSettings
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameTextureImportSettingsSO
+  gameKey: Zenless Zone Zero
+  defaults:
+    compression: 
+    filterMode: 
+    maxTextureSize:
+      hasValue: 0
+      value: 0
+    mipmapEnabled:
+      hasValue: 1
+      value: 0
+    npotScale: 
+    srgbTexture:
+      hasValue: 0
+      value: 0
+    streamingMipmaps:
+      hasValue: 0
+      value: 0
+    textureCompression: Uncompressed
+    textureType: 
+    wrapMode: 
+  nameEquals:
+    entries: []
+  nameContains:
+    entries:
+    - key: LUT
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: _A
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: _D
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: _M
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+    - key: _N
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 1
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 0
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: 
+        textureType: 
+        wrapMode: 
+  nameEndsWith:
+    entries: []

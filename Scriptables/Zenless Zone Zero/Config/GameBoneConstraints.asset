@@ -1,0 +1,32 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ac4ce59a9f14919b7289108d4a60ad5, type: 3}
+  m_Name: GameBoneConstraints
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameBoneConstraintsSO
+  entries:
+  - gameKey: Zenless Zone Zero
+    targetBone: Example Twist
+    sourceBone: Example Humanoid
+    constraintType: Parent
+    weight: 1
+    sourceWeight: 1
+    positionAxes:
+      x: 1
+      y: 1
+      z: 1
+    rotationAxes:
+      x: 1
+      y: 1
+      z: 1
+    maintainOffset: 1
+    active: 1
+    locked: 0

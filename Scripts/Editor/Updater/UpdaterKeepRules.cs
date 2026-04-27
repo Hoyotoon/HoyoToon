@@ -3,14 +3,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.RegularExpressions;
-
-using HoyoToon.Editor.Utilities;
+using HoyoToon.Editor.Utilities.Debugging;
 
 namespace HoyoToon.Editor.Updater
 {
     internal sealed class UpdaterKeepRules
     {
-        private readonly List<Rule> _rules = new List<Rule>();
+        private readonly List<Rule> rules = new List<Rule>();
 
         private struct Rule
         {
@@ -18,15 +17,13 @@ namespace HoyoToon.Editor.Updater
             public bool IsNegation;
         }
 
-        public bool HasRules => _rules.Count > 0;
-
         public static UpdaterKeepRules Load(string rootPath)
         {
-            var rules = new UpdaterKeepRules();
+            var keepRules = new UpdaterKeepRules();
             string gitIgnorePath = Path.Combine(rootPath, ".gitignore");
             if (!File.Exists(gitIgnorePath))
             {
-                return rules;
+                return keepRules;
             }
 
             try
@@ -55,56 +52,45 @@ namespace HoyoToon.Editor.Updater
 
                     if (trimmed.StartsWith("# updater-keep:", StringComparison.OrdinalIgnoreCase))
                     {
-                        string pattern = trimmed.Substring(trimmed.IndexOf(':') + 1).Trim();
-                        rules.TryAddRule(pattern);
+                        keepRules.TryAddRule(trimmed.Substring(trimmed.IndexOf(':') + 1).Trim());
                         foundTaggedSyntax = true;
                         continue;
                     }
 
-                    if (!inTaggedBlock)
+                    if (!inTaggedBlock || string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#", StringComparison.Ordinal))
                     {
                         continue;
                     }
 
-                    if (string.IsNullOrWhiteSpace(trimmed) || trimmed.StartsWith("#", StringComparison.Ordinal))
-                    {
-                        continue;
-                    }
-
-                    rules.TryAddRule(trimmed);
+                    keepRules.TryAddRule(trimmed);
                 }
 
                 if (!foundTaggedSyntax)
                 {
-                    rules._rules.Clear();
+                    keepRules.rules.Clear();
                 }
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Warning, $"Failed to read updater keep rules from .gitignore: {ex.Message}");
-                rules._rules.Clear();
+                HoyoToonLogger.Warning(HoyoToonLogCategory.General, $"Failed to read updater keep rules from .gitignore: {exception.Message}");
+                keepRules.rules.Clear();
             }
 
-            return rules;
+            return keepRules;
         }
 
-        public bool IsKept(string relativePath, bool isDirectory)
+        public bool IsKept(string relativePath)
         {
-            if (!HasRules || string.IsNullOrWhiteSpace(relativePath))
+            if (rules.Count <= 0 || string.IsNullOrWhiteSpace(relativePath))
             {
                 return false;
             }
 
             string normalized = relativePath.Replace('\\', '/');
             bool kept = false;
-            foreach (Rule rule in _rules)
+            foreach (Rule rule in rules)
             {
-                if (rule.Regex == null)
-                {
-                    continue;
-                }
-
-                if (!rule.Regex.IsMatch(normalized))
+                if (rule.Regex == null || !rule.Regex.IsMatch(normalized))
                 {
                     continue;
                 }
@@ -120,7 +106,7 @@ namespace HoyoToon.Editor.Updater
             Rule rule = BuildRule(pattern);
             if (rule.Regex != null)
             {
-                _rules.Add(rule);
+                rules.Add(rule);
             }
         }
 
@@ -148,7 +134,7 @@ namespace HoyoToon.Editor.Updater
             return new Rule
             {
                 Regex = CompilePattern(working),
-                IsNegation = isNegation
+                IsNegation = isNegation,
             };
         }
 
@@ -173,9 +159,9 @@ namespace HoyoToon.Editor.Updater
 
                 return new Regex(regexPattern, RegexOptions.Compiled | RegexOptions.IgnoreCase);
             }
-            catch (Exception ex)
+            catch (Exception exception)
             {
-                HoyoToonLogger.Log(HoyoToonLogger.Categories.Updater, LogLevel.Warning, $"Failed to compile updater keep rule '{pattern}': {ex.Message}");
+                HoyoToonLogger.Warning(HoyoToonLogCategory.General, $"Failed to compile updater keep rule '{pattern}': {exception.Message}");
                 return null;
             }
         }

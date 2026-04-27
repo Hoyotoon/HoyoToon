@@ -85,23 +85,24 @@ void build_face_shadow_uv(in float3 light_dir, in float2 base_uv, out float3 fac
     float light_length = length(light_dir.xyz);
     has_valid_light = light_length >= 0.899999976;
 
-    float3 object_light_dir = mul(light_dir.zxy, (float3x3)unity_WorldToObject);
-    float2 projected_yz = normalize(object_light_dir).yz;
-    projected_yz.xy = -projected_yz.xy;
+    float3 localUp = normalize(mul((float3x3)unity_WorldToObject, float3(0, 1, 0)));
 
-    float projected_x = dot(float2(0.984809995, 0.173649997), projected_yz);
-    float projected_y = dot(float2(-0.173649997, 0.984809995), projected_yz);
+    // Check which local axis is most aligned with world up
+    float upY = abs(localUp.y);
+    float upZ = abs(localUp.z);
 
-    float angle = atan2(projected_y, projected_x);
+    float rot_x, rot_z;
 
-    bool mirror_u = 0.0 < (-angle);
-    float angle_coord = abs(angle * -0.318309903);
-    angle_coord = clamp(angle_coord, 9.99999975e-05, 0.999899983);
+    float3 light = mul((float3x3)unity_WorldToObject, -light_dir.xyz);
+    rot_x = -light.z;
+    rot_z = -light.y;
 
-    float2 mirrored_uv = float2(1.0 - base_uv.x, base_uv.y);
-    float2 final_uv = mirror_u ? mirrored_uv : base_uv;
-
-    face_uv = float3(final_uv, angle_coord);
+    
+    float angle = atan2(rot_x, rot_z);
+    float facing = saturate(abs(angle) * (1.0f / 3.1459));
+    
+    face_uv.xy = (angle < 0.0f) ? base_uv * float2(-1.0, 1.0) + float2(1.0f, 0.0f) : base_uv;
+    face_uv = float3(face_uv.xy, facing);
 }
 
 

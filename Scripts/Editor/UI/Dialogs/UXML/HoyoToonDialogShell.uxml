@@ -1,0 +1,27 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <ui:VisualElement name="HoyoToonDialogRoot" class="ht-root ht-dialog-root ht-width-standard">
+        <ui:VisualElement name="DialogHeaderContainer" class="ht-header ht-dialog-header">
+            <ui:VisualElement name="DialogHeaderCard" class="ht-card ht-banner-card ht-dialog-banner-card">
+                <ui:Image name="DialogBannerBackground" class="ht-banner-background" />
+                <ui:VisualElement name="DialogHeaderRow" class="ht-row ht-gap-12 ht-dialog-header-row">
+                    <ui:VisualElement name="DialogLogoContainer" class="ht-dialog-logo-container">
+                        <ui:Image name="DialogLogoImage" class="ht-dialog-logo-image" />
+                    </ui:VisualElement>
+                    <ui:VisualElement name="DialogTitleColumn" class="ht-column ht-gap-4 ht-grow ht-dialog-title-column">
+                        <ui:Label name="DialogTitleLabel" text="HoyoToon" class="ht-title-md ht-dialog-title" />
+                        <ui:Label name="DialogSubtitleLabel" text="Editor message" class="ht-body-text ht-dialog-subtitle" />
+                    </ui:VisualElement>
+                </ui:VisualElement>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="DialogBodyContainer" class="ht-body ht-dialog-body">
+            <ui:VisualElement name="DialogBodySurface" class="ht-body-surface ht-dialog-body-surface">
+                <ui:ScrollView name="DialogBodyScrollView" class="ht-body-scroll ht-dialog-body-scroll">
+                    <ui:VisualElement name="DialogBodyContent" class="ht-column ht-gap-8 ht-dialog-body-content" />
+                </ui:ScrollView>
+                <ui:VisualElement name="DialogActionContent" class="ht-dialog-action-content" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

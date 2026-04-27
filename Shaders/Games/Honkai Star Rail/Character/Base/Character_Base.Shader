@@ -568,7 +568,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
         }
         // UsePass "Standard/ShadowCaster"
     }
-     CustomEditor "LWGUI.LWGUI" 
-     
+    CustomEditor "LWGUI.LWGUI" 
+    
     FallBack "Diffuse"
 }

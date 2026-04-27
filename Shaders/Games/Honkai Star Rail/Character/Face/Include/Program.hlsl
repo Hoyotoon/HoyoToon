@@ -52,7 +52,7 @@ vertex_out vert_base(vertex_in v, uint vertexID : SV_VertexID)
     lightdir = _IsMonster > 0.5 ? _ES_MonsterLightDir.xyz : lightdir;
 
     float3 object_up_axis = normalize(float3(unity_WorldToObject[0].y, unity_WorldToObject[1].y, unity_WorldToObject[2].y));
-    float light_wrap = dot(object_up_axis.xyz, float3(-lightdir.z, -lightdir.x, lightdir.y));
+    float light_wrap = dot(object_up_axis.xyz, float3(lightdir.z, lightdir.y, -lightdir.x));
     o.face_misc.z = saturate(light_wrap + 1.0);
 
     if(0.5<_UseUVChannel2){

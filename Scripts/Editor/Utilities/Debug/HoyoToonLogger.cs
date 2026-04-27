@@ -2,66 +2,104 @@
 using System;
 using UnityEngine;
 
-namespace HoyoToon.Editor.Utilities
+namespace HoyoToon.Editor.Utilities.Debugging
 {
-    public enum LogLevel
-    {
-        Info,
-        Warning,
-        Error,
-    }
-
     public static class HoyoToonLogger
     {
-        public static class Categories
+        public static void Verbose(
+            HoyoToonLogCategory category,
+            string message,
+            bool isBackgroundOperation = false,
+            UnityEngine.Object context = null)
         {
-            public const string System = "System";
-            public const string Shader = "Shader";
-            public const string UI = "UI";
-            public const string Model = "Model";
-            public const string API = "API";
-            public const string Texture = "Texture";
-            public const string Material = "Material";
-            public const string Manager = "Manager";
-            public const string Resources = "Resources";
-            public const string Updater = "Updater";
-            public const string FBXConverter = "FBX Converter";
-            public const string Async = "Async";
-            public const string Tour = "Tour";
+            Log(HoyoToonLogLevel.Verbose, category, message, null, isBackgroundOperation, context);
         }
 
-        public static void Log(string category, LogLevel level, string message, UnityEngine.Object context = null)
+        public static void Info(
+            HoyoToonLogCategory category,
+            string message,
+            bool isBackgroundOperation = false,
+            UnityEngine.Object context = null)
         {
+            Log(HoyoToonLogLevel.Info, category, message, null, isBackgroundOperation, context);
+        }
+
+        public static void Warning(
+            HoyoToonLogCategory category,
+            string message,
+            Exception exception = null,
+            bool isBackgroundOperation = false,
+            UnityEngine.Object context = null)
+        {
+            Log(HoyoToonLogLevel.Warning, category, message, exception, isBackgroundOperation, context);
+        }
+
+        public static void Error(
+            HoyoToonLogCategory category,
+            string message,
+            Exception exception = null,
+            bool isBackgroundOperation = false,
+            UnityEngine.Object context = null)
+        {
+            Log(HoyoToonLogLevel.Error, category, message, exception, isBackgroundOperation, context);
+        }
+
+        internal static void Log(
+            HoyoToonLogLevel level,
+            HoyoToonLogCategory category,
+            string message,
+            Exception exception,
+            bool isBackgroundOperation,
+            UnityEngine.Object context)
+        {
+            if (!HoyoToonDebug.ShouldLog(level))
+            {
+                return;
+            }
+
+            string formattedMessage = LogCore.FormatMessage(category, message, isBackgroundOperation);
+            if (exception != null)
+            {
+                formattedMessage = HoyoToonDebug.Enabled
+                    ? $"{formattedMessage}\n{exception}"
+                    : $"{formattedMessage} ({exception.GetType().Name}: {exception.Message})";
+            }
+
             switch (level)
             {
-                case LogLevel.Warning:
-                    LogCore.WarnCategory(category, message, context);
+                case HoyoToonLogLevel.Error:
+                    if (context != null)
+                    {
+                        Debug.LogError(formattedMessage, context);
+                    }
+                    else
+                    {
+                        Debug.LogError(formattedMessage);
+                    }
                     break;
-                case LogLevel.Error:
-                    LogCore.ErrorCategory(category, message, context);
+
+                case HoyoToonLogLevel.Warning:
+                    if (context != null)
+                    {
+                        Debug.LogWarning(formattedMessage, context);
+                    }
+                    else
+                    {
+                        Debug.LogWarning(formattedMessage);
+                    }
                     break;
+
                 default:
-                    LogCore.LogCategory(category, message, context);
+                    if (context != null)
+                    {
+                        Debug.Log(formattedMessage, context);
+                    }
+                    else
+                    {
+                        Debug.Log(formattedMessage);
+                    }
                     break;
             }
-        }
-
-        public static void ThrottleInfo(string key, string message, TimeSpan? throttle = null, string category = Categories.System)
-            => LogCore.ThrottleLog(key, message, throttle, category);
-
-        public static void ThrottleWarning(string key, string message, TimeSpan? throttle = null, string category = Categories.System)
-            => LogCore.ThrottleWarn(key, message, throttle, category);
-
-        public static void ThrottleError(string key, string message, TimeSpan? throttle = null, string category = Categories.System)
-            => LogCore.ThrottleError(key, message, throttle, category);
-
-        public static void Always(string message, LogType type = LogType.Log) => LogCore.LogAlways(message, type);
-        public static void Always(string category, string message, LogType type) => LogCore.LogAlwaysCategory(category, message, type);
-
-        public static event Action<string, LogType> OnLog
-        {
-            add { LogCore.OnLog += value; }
-            remove { LogCore.OnLog -= value; }
         }
     }
 }
