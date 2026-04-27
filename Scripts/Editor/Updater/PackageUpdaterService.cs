@@ -208,7 +208,63 @@ namespace HoyoToon.Editor.Updater
                     yield break;
                 }
 
-                yield return InstallRoutine(plan);
+                UpdatePlan installPlan = null;
+                errorMessage = null;
+                if (!automatic)
+                {
+                    progressShown = true;
+                }
+
+                yield return BuildPlanRoutine(plan.CleanMissingFiles, automatic, value => installPlan = value, value => errorMessage = value);
+
+                if (!string.IsNullOrWhiteSpace(errorMessage))
+                {
+                    Fail(errorMessage, automatic);
+                    yield break;
+                }
+
+                if (installPlan == null)
+                {
+                    yield break;
+                }
+
+                if (!ArePlansEquivalent(plan, installPlan))
+                {
+                    HoyoToonLogger.Info(
+                        HoyoToonLogCategory.General,
+                        $"Updater refreshed install target from '{plan.RemoteVersion}' to '{installPlan.RemoteVersion}' before applying.",
+                        isBackgroundOperation: automatic);
+                }
+
+                SetStatus(installPlan.AvailabilityState, installPlan.LocalVersion, installPlan.RemoteVersion, installPlan.StatusMessage, hasPendingApply: false);
+
+                if (installPlan.AvailabilityState == UpdateAvailabilityState.UpToDate)
+                {
+                    HoyoToonLogger.Info(HoyoToonLogCategory.General, installPlan.StatusMessage, isBackgroundOperation: automatic);
+                    if (showUpToDateDialog)
+                    {
+                        HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+                        progressShown = false;
+                        HoyoToon.Editor.UI.Dialogs.HoyoToonDialog.DisplayDialog("HoyoToon Updater", installPlan.StatusMessage, "OK");
+                    }
+
+                    yield break;
+                }
+
+                if (installPlan.AvailabilityState == UpdateAvailabilityState.LocalAhead)
+                {
+                    HoyoToonLogger.Warning(HoyoToonLogCategory.General, installPlan.StatusMessage, isBackgroundOperation: automatic);
+                    if (!automatic)
+                    {
+                        HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+                        progressShown = false;
+                        HoyoToon.Editor.UI.Dialogs.HoyoToonDialog.DisplayDialog("HoyoToon Updater", installPlan.StatusMessage, "OK");
+                    }
+
+                    yield break;
+                }
+
+                yield return InstallRoutine(installPlan);
             }
             finally
             {
@@ -416,6 +472,59 @@ namespace HoyoToon.Editor.Updater
         {
             string completionTitle = null;
             string completionMessage = null;
+            PendingInstallState pendingState = PackageUpdaterStorage.ReadPendingState();
+            if (pendingState == null)
+            {
+                Fail("No staged updater state was available to apply.", automatic: false);
+                yield break;
+            }
+
+            UpdatePlan latestPlan = null;
+            string latestPlanError = null;
+
+            HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Checking latest updater manifest before applying staged files...", 0.05f);
+            yield return BuildPlanRoutine(pendingState.cleanMissingFiles, automatic: false, value => latestPlan = value, value => latestPlanError = value);
+
+            if (!string.IsNullOrWhiteSpace(latestPlanError))
+            {
+                HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+                Fail($"Failed to verify the latest update before applying staged files: {latestPlanError}", automatic: false, preservePendingArtifacts: true);
+                yield break;
+            }
+
+            if (latestPlan == null)
+            {
+                HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+                yield break;
+            }
+
+            if (!IsPendingStateCurrent(pendingState, latestPlan))
+            {
+                HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.ClearProgressBar();
+                PackageUpdaterStorage.ClearPendingArtifacts();
+                SetStatus(latestPlan.AvailabilityState, latestPlan.LocalVersion, latestPlan.RemoteVersion, latestPlan.StatusMessage, hasPendingApply: false);
+
+                if (latestPlan.AvailabilityState == UpdateAvailabilityState.UpdateAvailable)
+                {
+                    HoyoToonLogger.Info(
+                        HoyoToonLogCategory.General,
+                        $"Discarded stale staged updater version '{pendingState.remoteVersion}' and downloading latest version '{latestPlan.RemoteVersion}'.");
+                    yield return InstallRoutine(latestPlan);
+                    yield break;
+                }
+
+                if (latestPlan.AvailabilityState == UpdateAvailabilityState.UpToDate)
+                {
+                    EditorApplication.delayCall += () => HoyoToon.Editor.UI.Dialogs.HoyoToonDialog.DisplayDialog(
+                        "HoyoToon Updater",
+                        "A stale staged update was discarded because HoyoToon is already up to date.",
+                        "OK");
+                    yield break;
+                }
+
+                HoyoToon.Editor.UI.Dialogs.HoyoToonDialog.DisplayDialog("HoyoToon Updater", latestPlan.StatusMessage, "OK");
+                yield break;
+            }
 
             PrepareLock();
             HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Resuming a staged HoyoToon update...", 0f);
@@ -423,7 +532,7 @@ namespace HoyoToon.Editor.Updater
             try
             {
                 HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar("HoyoToon Updater", "Applying staged files...", 0.5f);
-                if (!ApplyPendingState(PackageUpdaterStorage.ReadPendingState(), out string applyError))
+                if (!ApplyPendingState(pendingState, out string applyError))
                 {
                     Fail(applyError, automatic: false, preservePendingArtifacts: true);
                     yield break;
@@ -754,11 +863,12 @@ namespace HoyoToon.Editor.Updater
 
         private static bool TryRecoverInterruptedLock(UpdaterLockState lockState)
         {
-            if (lockState == null || EditorCoroutine.IsRunning || PackageUpdaterStorage.HasPendingState())
+            if (lockState == null || EditorCoroutine.IsRunning)
             {
                 return false;
             }
 
+            bool hasPendingState = PackageUpdaterStorage.HasPendingState();
             PackageUpdaterStorage.ClearLockState();
             UpdaterStatusSnapshot snapshot = cachedStatusSnapshot ?? PackageUpdaterStorage.ReadStatusSnapshot();
             UpdateAvailabilityState state = snapshot != null
@@ -772,7 +882,78 @@ namespace HoyoToon.Editor.Updater
                     PackageUpdaterStorage.GetLocalPackageVersion(),
                     snapshot?.remoteVersion,
                     "The previous HoyoToon updater operation was interrupted before it could finish. Retry the update.",
-                    hasPendingApply: false);
+                    hasPendingApply: hasPendingState);
+            }
+
+            return true;
+        }
+
+        private static bool ArePlansEquivalent(UpdatePlan left, UpdatePlan right)
+        {
+            if (left == null || right == null)
+            {
+                return left == right;
+            }
+
+            return string.Equals(left.Branch ?? string.Empty, right.Branch ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(left.RemoteVersion ?? string.Empty, right.RemoteVersion ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                && left.CleanMissingFiles == right.CleanMissingFiles
+                && ArePathListsEquivalent(left.FilesToCopy, right.FilesToCopy)
+                && ArePathListsEquivalent(left.FilesToDelete, right.FilesToDelete);
+        }
+
+        private static bool IsPendingStateCurrent(PendingInstallState pendingState, UpdatePlan latestPlan)
+        {
+            if (pendingState == null || latestPlan == null || latestPlan.AvailabilityState != UpdateAvailabilityState.UpdateAvailable)
+            {
+                return false;
+            }
+
+            string pendingBranch = PackageUpdaterStorage.NormalizeBranch(pendingState.branch);
+            return string.Equals(pendingBranch, latestPlan.Branch ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(pendingState.remoteVersion ?? string.Empty, latestPlan.RemoteVersion ?? string.Empty, StringComparison.OrdinalIgnoreCase)
+                && pendingState.cleanMissingFiles == latestPlan.CleanMissingFiles
+                && ArePathListsEquivalent(pendingState.filesToCopy, latestPlan.FilesToCopy)
+                && ArePathListsEquivalent(pendingState.filesToDelete, latestPlan.FilesToDelete);
+        }
+
+        private static bool ArePathListsEquivalent(IReadOnlyCollection<string> left, IReadOnlyCollection<string> right)
+        {
+            int leftCount = left?.Count ?? 0;
+            int rightCount = right?.Count ?? 0;
+            if (leftCount != rightCount)
+            {
+                return false;
+            }
+
+            if (leftCount == 0)
+            {
+                return true;
+            }
+
+            var normalizedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string path in left)
+            {
+                if (!PackageUpdaterStorage.TryNormalizeRelativePath(path, out string normalizedPath, out _))
+                {
+                    return false;
+                }
+
+                normalizedPaths.Add(normalizedPath);
+            }
+
+            if (normalizedPaths.Count != leftCount)
+            {
+                return false;
+            }
+
+            foreach (string path in right)
+            {
+                if (!PackageUpdaterStorage.TryNormalizeRelativePath(path, out string normalizedPath, out _)
+                    || !normalizedPaths.Contains(normalizedPath))
+                {
+                    return false;
+                }
             }
 
             return true;
