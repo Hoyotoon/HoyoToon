@@ -276,6 +276,7 @@ namespace HoyoToon.Editor.Updater
             }
 
             state.branch = string.IsNullOrWhiteSpace(state.branch) ? CurrentBranch : NormalizeBranch(state.branch);
+            state.remoteContentReference = state.remoteContentReference ?? string.Empty;
             state.localVersion = state.localVersion ?? string.Empty;
             state.remoteVersion = state.remoteVersion ?? string.Empty;
             state.filesToCopy = state.filesToCopy ?? new System.Collections.Generic.List<string>();
