@@ -2,9 +2,6 @@ using System.Collections.Generic;
 using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Utilities;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityScene = UnityEngine.SceneManagement.Scene;
@@ -103,6 +100,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private bool m_HasPendingPlacementRequest;
         private bool m_HasPendingForcedPlacementRequest;
         private bool m_ManagedModelDiscoveryDirty = true;
+        private bool m_HasScheduledEditModePlacementRequest;
         private InputAction m_PreviousModelAction;
         private InputAction m_NextModelAction;
         private int m_InputSwitchVersion;
@@ -354,10 +352,8 @@ namespace HoyoToon.Runtime.Scene.Placement
             Register(this);
             HSRCharacterController.ActiveControllerRegistryChanged -= HandleCharacterRegistryChanged;
             HSRCharacterController.ActiveControllerRegistryChanged += HandleCharacterRegistryChanged;
-#if UNITY_EDITOR
-            EditorApplication.hierarchyChanged -= HandleEditorHierarchyChanged;
-            EditorApplication.hierarchyChanged += HandleEditorHierarchyChanged;
-#endif
+            RuntimeEditorBridge.UnregisterHierarchyChanged(HandleEditModeHierarchyChanged);
+            RuntimeEditorBridge.RegisterHierarchyChanged(HandleEditModeHierarchyChanged);
             BindInputActions();
             SetInputActionsEnabled(true);
             CameraTargetUtility.ClearCachedBaselines();
@@ -368,10 +364,9 @@ namespace HoyoToon.Runtime.Scene.Placement
         private void OnDisable()
         {
             HSRCharacterController.ActiveControllerRegistryChanged -= HandleCharacterRegistryChanged;
-#if UNITY_EDITOR
-            EditorApplication.hierarchyChanged -= HandleEditorHierarchyChanged;
-#endif
+            RuntimeEditorBridge.UnregisterHierarchyChanged(HandleEditModeHierarchyChanged);
             SetInputActionsEnabled(false);
+            CancelScheduledEditModePlacementRequest();
             Unregister(this);
             ResetCameraTargetSyncState();
             m_HasAppliedLayout = false;
@@ -383,10 +378,9 @@ namespace HoyoToon.Runtime.Scene.Placement
         private void OnDestroy()
         {
             HSRCharacterController.ActiveControllerRegistryChanged -= HandleCharacterRegistryChanged;
-#if UNITY_EDITOR
-            EditorApplication.hierarchyChanged -= HandleEditorHierarchyChanged;
-#endif
+            RuntimeEditorBridge.UnregisterHierarchyChanged(HandleEditModeHierarchyChanged);
             SetInputActionsEnabled(false);
+            CancelScheduledEditModePlacementRequest();
             Unregister(this);
         }
 
@@ -410,7 +404,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         private void Update()
         {
-            if (TryConsumePendingPlacementRequest(out bool force))
+            if (Application.isPlaying && TryConsumePendingPlacementRequest(out bool force))
             {
                 ApplyPlacement(force);
             }
@@ -749,7 +743,9 @@ namespace HoyoToon.Runtime.Scene.Placement
             m_HasPendingPlacementRequest = true;
             m_HasPendingForcedPlacementRequest |= force;
             if (!Application.isPlaying)
-                RuntimeEditorBridge.RequestPlayerLoopUpdate();
+            {
+                ScheduleEditModePlacementRequest();
+            }
         }
 
         private bool TryConsumePendingPlacementRequest(out bool force)
@@ -770,8 +766,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             RequestPlacement(force: true);
         }
 
-#if UNITY_EDITOR
-        private void HandleEditorHierarchyChanged()
+        private void HandleEditModeHierarchyChanged()
         {
             if (!isActiveAndEnabled || Application.isPlaying)
                 return;
@@ -779,7 +774,36 @@ namespace HoyoToon.Runtime.Scene.Placement
             MarkManagedModelDiscoveryDirty();
             QueuePlacementRequest(force: true);
         }
-#endif
+
+        private void ScheduleEditModePlacementRequest()
+        {
+            if (m_HasScheduledEditModePlacementRequest)
+                return;
+
+            m_HasScheduledEditModePlacementRequest = true;
+            RuntimeEditorBridge.ScheduleDelayedEditModeAction(ApplyPendingEditModePlacementRequest);
+            RuntimeEditorBridge.RequestPlayerLoopUpdate();
+        }
+
+        private void CancelScheduledEditModePlacementRequest()
+        {
+            if (!m_HasScheduledEditModePlacementRequest)
+                return;
+
+            RuntimeEditorBridge.CancelDelayedEditModeAction(ApplyPendingEditModePlacementRequest);
+            m_HasScheduledEditModePlacementRequest = false;
+        }
+
+        private void ApplyPendingEditModePlacementRequest()
+        {
+            m_HasScheduledEditModePlacementRequest = false;
+
+            if (this == null || Application.isPlaying || !isActiveAndEnabled)
+                return;
+
+            if (TryConsumePendingPlacementRequest(out bool force))
+                ApplyPlacement(force);
+        }
 
         private void MarkManagedModelDiscoveryDirty()
         {

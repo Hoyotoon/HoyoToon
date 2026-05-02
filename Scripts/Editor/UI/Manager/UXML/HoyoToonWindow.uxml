@@ -4,6 +4,18 @@
             <ui:VisualElement name="BannerCard" class="ht-card ht-banner-card">
                 <ui:Image name="BannerBackground" class="ht-banner-background" />
                 <ui:VisualElement name="BannerContentRow" class="ht-row ht-gap-12 ht-banner-row">
+                    <ui:VisualElement name="UserProfileButton" class="ht-user-profile-panel">
+                        <ui:VisualElement name="UserAvatarFrame" class="ht-user-avatar-frame">
+                            <ui:Image name="UserAvatarImage" class="ht-user-avatar-image" />
+                            <ui:Label name="UserAvatarInitials" text="?" class="ht-user-avatar-initials" />
+                        </ui:VisualElement>
+                        <ui:VisualElement name="UserProfileTextStack" class="ht-user-profile-text-stack">
+                            <ui:Label name="UserProfileName" text="Set profile" class="ht-user-profile-name" />
+                            <ui:Label name="UserProfileRole" text="Member" class="ht-user-profile-role" />
+                            <ui:Label name="UserProfileUid" text="UID: Not assigned" class="ht-user-profile-uid" />
+                            <ui:Label name="UserProfileTagline" text="Click to create your HoyoToon profile." class="ht-user-profile-tagline" />
+                        </ui:VisualElement>
+                    </ui:VisualElement>
                     <ui:VisualElement name="LogoContainer" class="ht-logo-container">
                         <ui:Image name="LogoImage" class="ht-logo-image" />
                     </ui:VisualElement>

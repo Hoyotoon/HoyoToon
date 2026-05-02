@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using HoyoToon.Editor.API.Users;
 using HoyoToon.Editor.Assets;
 using HoyoToon.Editor.Prerequisites;
 using HoyoToon.Editor.Prerequisites.RenderPipeline;
@@ -46,6 +47,12 @@ namespace HoyoToon.Editor.Onboarding
         private static string[] resourceSyncTargetKeys = Array.Empty<string>();
         private static string[] resourceSyncConfigurationErrors = Array.Empty<string>();
         private static bool updaterCheckRequested;
+        private static bool userProfilePromptOpen;
+        private static bool userProfileRestoreRequested;
+        private static bool completedOnboardingUserProfilePromptRequested;
+        private static string userProfileCreationError = string.Empty;
+        private static Task userProfileRestoreTask;
+        private static Task userProfileCreationTask;
         private static bool sceneOpenRequested;
         private static string sceneOpenError = string.Empty;
         private static bool outlineScaleTrackingReady;
@@ -109,6 +116,143 @@ namespace HoyoToon.Editor.Onboarding
                 }
 
                 return "version unavailable";
+            }
+        }
+
+        public static bool HasLocalUserProfile()
+        {
+            return HoyoToonUserProfileService.HasCompleteLocalProfile;
+        }
+
+        public static void PromptForMissingLocalUserProfileAfterCompletedOnboarding(bool force = false)
+        {
+            if (!OnboardingPersistence.IsCompleted
+                || (!force && completedOnboardingUserProfilePromptRequested)
+                || HasLocalUserProfile()
+                || userProfilePromptOpen
+                || userProfileRestoreRequested
+                || HoyoToonUserProfileService.IsCreating)
+            {
+                return;
+            }
+
+            completedOnboardingUserProfilePromptRequested = true;
+            PromptForLocalUserProfileForOnboarding();
+        }
+
+        public static void PromptForLocalUserProfileForOnboarding()
+        {
+            if (HasLocalUserProfile()
+                || userProfilePromptOpen
+                || userProfileRestoreRequested
+                || HoyoToonUserProfileService.IsCreating)
+            {
+                return;
+            }
+
+            userProfileCreationError = string.Empty;
+            if (HoyoToonUserProfileGlobalStore.TryLoad(out _))
+            {
+                userProfileRestoreRequested = true;
+                userProfileRestoreTask = RestoreLocalUserProfileForOnboardingAsync();
+                OnboardingManager.RefreshDialog();
+                return;
+            }
+
+            userProfilePromptOpen = true;
+            HoyoToonUserProfilePrompt.Show(
+                BeginLocalUserProfileCreationForOnboarding,
+                () =>
+                {
+                    userProfilePromptOpen = false;
+                    OnboardingManager.RefreshDialog();
+                    RefreshOpenManagerForOnboarding();
+                });
+        }
+
+        public static OnboardingAsyncStatus GetLocalUserProfileStatus()
+        {
+            if (HasLocalUserProfile())
+            {
+                var profile = HoyoToonUserProfileService.LocalProfile;
+                string username = profile != null && !string.IsNullOrWhiteSpace(profile.Username)
+                    ? profile.Username
+                    : "your HoyoToon user";
+                return OnboardingAsyncStatus.Succeeded("HoyoToon profile is ready for " + username + ".");
+            }
+
+            if (userProfileRestoreRequested
+                || (userProfileRestoreTask != null && !userProfileRestoreTask.IsCompleted))
+            {
+                return OnboardingAsyncStatus.Running("Restoring your HoyoToon profile from the API...");
+            }
+
+            if (HoyoToonUserProfileService.IsCreating
+                || (userProfileCreationTask != null && !userProfileCreationTask.IsCompleted))
+            {
+                return OnboardingAsyncStatus.Running("Creating your HoyoToon profile and reserving a unique UID...");
+            }
+
+            if (!string.IsNullOrWhiteSpace(userProfileCreationError))
+            {
+                return OnboardingAsyncStatus.Failed(userProfileCreationError);
+            }
+
+            return userProfilePromptOpen
+                ? OnboardingAsyncStatus.Idle("Enter your username in the profile dialog.")
+                : OnboardingAsyncStatus.Idle("Create a HoyoToon profile before continuing.");
+        }
+
+        private static void BeginLocalUserProfileCreationForOnboarding(string username)
+        {
+            userProfileCreationError = string.Empty;
+            userProfileCreationTask = CreateLocalUserProfileForOnboardingAsync(username);
+            OnboardingManager.RefreshDialog();
+        }
+
+        private static async Task RestoreLocalUserProfileForOnboardingAsync()
+        {
+            try
+            {
+                await HoyoToonUserProfileService.RestoreLocalUserProfileAsync(System.Threading.CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                userProfileCreationError = exception.Message;
+            }
+            finally
+            {
+                userProfileRestoreRequested = false;
+                EditorApplication.delayCall += () =>
+                {
+                    if (!HasLocalUserProfile() && string.IsNullOrWhiteSpace(userProfileCreationError))
+                    {
+                        PromptForLocalUserProfileForOnboarding();
+                    }
+
+                    RefreshOpenManagerForOnboarding();
+                    OnboardingManager.RefreshDialog();
+                };
+            }
+        }
+
+        private static async Task CreateLocalUserProfileForOnboardingAsync(string username)
+        {
+            try
+            {
+                await HoyoToonUserProfileService.CreateLocalUserProfileAsync(username, System.Threading.CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                userProfileCreationError = exception.Message;
+            }
+            finally
+            {
+                EditorApplication.delayCall += () =>
+                {
+                    RefreshOpenManagerForOnboarding();
+                    OnboardingManager.RefreshDialog();
+                };
             }
         }
 

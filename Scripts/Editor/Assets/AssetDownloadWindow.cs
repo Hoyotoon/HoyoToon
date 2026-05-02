@@ -1926,14 +1926,6 @@ namespace HoyoToon.Editor.Assets
             variants.Clear();
             activeCharacterName = string.Empty;
             variantSectionScroll = Vector2.zero;
-
-            if (characters.Count > 0)
-            {
-                string firstCharacter = characters[0];
-                selectedCharacters.Add(firstCharacter);
-                activeCharacterName = firstCharacter;
-                EnsureVariantsLoadedForCharacter(game, firstCharacter);
-            }
         }
 
         private void EnsureDefaultVariantSelection(

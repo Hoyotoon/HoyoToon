@@ -528,8 +528,12 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             toggle.RegisterValueChangedCallback(evt =>
             {
                 GameObject currentModel = controller != null ? controller.ActiveModel : null;
-                SetWeaponVisible(currentModel, evt.newValue);
-                window?.RefreshManagerContext();
+                bool visible = evt.newValue;
+                EditorApplication.delayCall += () =>
+                {
+                    SetWeaponVisible(currentModel, visible);
+                    window?.RefreshManagerContext();
+                };
             });
             return toggle;
         }

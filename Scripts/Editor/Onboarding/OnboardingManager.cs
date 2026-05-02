@@ -69,15 +69,16 @@ namespace HoyoToon.Editor.Onboarding
                 return;
             }
 
-            if (!OnboardingPersistence.ShouldStartOnboarding)
-            {
-                return;
-            }
-
             bool hasResumeStep = OnboardingPersistence.HasResumeStep;
             if (EditorApplication.isCompiling || EditorApplication.isUpdating)
             {
                 EditorApplication.delayCall += StartFirstTimeIfNeeded;
+                return;
+            }
+
+            if (!OnboardingPersistence.ShouldStartOnboarding)
+            {
+                OnboardingValidation.PromptForMissingLocalUserProfileAfterCompletedOnboarding();
                 return;
             }
 

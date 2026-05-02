@@ -30,6 +30,26 @@ namespace HoyoToon.Editor.Onboarding
                 "Start the guided onboarding."));
 
             steps.Add(ActionStep(
+                "UserProfile.Create",
+                "Create local profile",
+                Md(
+                    "### Your HoyoToon profile",
+                    "What should we call you?",
+                    "",
+                    "The HoyoToon API will assign the next numeric UID and create your user record.",
+                    "",
+                    "Only your local user profile is stored as a ScriptableObject; the API user table is not mirrored into project assets.",
+                    "",
+                    "If you already created a HoyoToon profile on this computer, onboarding will restore it before asking for a new username."),
+                new string[0],
+                new string[0],
+                OnboardingValidation.HasLocalUserProfile,
+                OnboardingValidation.GetLocalUserProfileStatus,
+                OnboardingValidation.PromptForLocalUserProfileForOnboarding,
+                OnboardingValidation.PromptForLocalUserProfileForOnboarding,
+                "Enter your HoyoToon username."));
+
+            steps.Add(ActionStep(
                 "Updater.Check",
                 "Check for HoyoToon updates",
                 Md(
@@ -704,6 +724,7 @@ namespace HoyoToon.Editor.Onboarding
                     "- Create screenshot and turnaround renders.",
                     "- Enter Play Mode and use the simulator camera controls.",
                     "- Use the Manager header badge to check for updates later.",
+                    "- See your HoyoToon profile in the Manager header.",
                     "",
                     "Need help or want to report an issue?",
                     "",

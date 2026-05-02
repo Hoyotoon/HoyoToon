@@ -64,6 +64,286 @@
     opacity: 0.75;
 }
 
+.ht-user-profile-panel {
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    min-height: 0;
+    max-width: 100%;
+    min-width: 0;
+    background-color: transparent;
+    color: var(--text-primary);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: visible;
+}
+
+.ht-user-profile-panel:hover {
+    background-color: transparent;
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-top-color: transparent;
+    border-bottom-color: transparent;
+}
+
+.ht-user-profile-panel:disabled {
+    opacity: 0.75;
+}
+
+.ht-user-avatar-frame {
+    width: 88px;
+    height: 88px;
+    min-width: 88px;
+    min-height: 88px;
+    max-width: 88px;
+    max-height: 88px;
+    flex-shrink: 0;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    border-left-width: 3px;
+    border-right-width: 3px;
+    border-top-width: 3px;
+    border-bottom-width: 3px;
+    border-left-color: rgba(44, 12, 84, 0.96);
+    border-right-color: rgba(44, 12, 84, 0.96);
+    border-top-color: rgba(44, 12, 84, 0.96);
+    border-bottom-color: rgba(44, 12, 84, 0.96);
+    border-top-left-radius: 44px;
+    border-top-right-radius: 44px;
+    border-bottom-left-radius: 44px;
+    border-bottom-right-radius: 44px;
+    background-color: rgba(38, 10, 74, 0.84);
+}
+
+.ht-user-avatar-image {
+    width: 82px;
+    height: 82px;
+}
+
+.ht-user-avatar-initials {
+    color: var(--text-primary);
+    font-size: 25px;
+    -unity-font-style: bold;
+    -unity-text-align: middle-center;
+}
+
+.ht-user-profile-text-stack {
+    flex-direction: column;
+    flex-grow: 0;
+    flex-shrink: 1;
+    min-width: 0;
+    margin-left: 0;
+    margin-top: 1px;
+    overflow: visible;
+    align-items: center;
+    width: 124px;
+}
+
+.ht-user-profile-name {
+    color: var(--text-primary);
+    font-size: 20px;
+    -unity-font-style: bold;
+    margin-left: 0;
+    -unity-text-align: middle-center;
+    width: 100%;
+    min-height: 18px;
+    height: 19px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    -unity-text-outline-width: 0;
+}
+
+.ht-user-profile-uid {
+    color: var(--text-secondary);
+    font-size: 12px;
+    margin-top: 2px;
+    -unity-text-align: middle-center;
+    width: 100%;
+    min-height: 13px;
+    height: 14px;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ht-user-profile-role {
+    color: var(--accent-primary);
+    font-size: 12px;
+    -unity-font-style: bold;
+    margin-top: 3px;
+    padding-left: 7px;
+    padding-right: 7px;
+    padding-top: 1px;
+    padding-bottom: 2px;
+    -unity-text-align: middle-center;
+    align-self: center;
+    min-height: 18px;
+    height: 19px;
+    min-width: 0;
+    max-width: 100%;
+    background-color: rgba(18, 8, 34, 0.78);
+    border-left-width: 1px;
+    border-right-width: 1px;
+    border-top-width: 1px;
+    border-bottom-width: 1px;
+    border-left-color: rgba(160, 105, 255, 0.40);
+    border-right-color: rgba(160, 105, 255, 0.40);
+    border-top-color: rgba(160, 105, 255, 0.40);
+    border-bottom-color: rgba(160, 105, 255, 0.40);
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+    -unity-text-outline-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ht-user-profile-tagline {
+    color: rgba(230, 232, 238, 0.70);
+    font-size: 11px;
+    margin-top: 8px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: none;
+}
+
+.ht-width-standard .ht-user-profile-panel,
+.ht-width-narrow .ht-user-profile-panel {
+    padding-left: 0;
+    padding-right: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+}
+
+.ht-width-standard .ht-user-avatar-frame,
+.ht-width-narrow .ht-user-avatar-frame {
+    width: 70px;
+    height: 70px;
+    min-width: 70px;
+    min-height: 70px;
+    max-width: 70px;
+    max-height: 70px;
+    border-top-left-radius: 35px;
+    border-top-right-radius: 35px;
+    border-bottom-left-radius: 35px;
+    border-bottom-right-radius: 35px;
+}
+
+.ht-width-narrow .ht-user-avatar-frame {
+    width: 56px;
+    height: 56px;
+    min-width: 56px;
+    min-height: 56px;
+    max-width: 56px;
+    max-height: 56px;
+    border-top-left-radius: 28px;
+    border-top-right-radius: 28px;
+    border-bottom-left-radius: 28px;
+    border-bottom-right-radius: 28px;
+}
+
+.ht-width-standard .ht-user-avatar-image,
+.ht-width-narrow .ht-user-avatar-image {
+    width: 64px;
+    height: 64px;
+}
+
+.ht-width-narrow .ht-user-avatar-image {
+    width: 50px;
+    height: 50px;
+}
+
+.ht-width-standard .ht-user-avatar-initials,
+.ht-width-narrow .ht-user-avatar-initials {
+    font-size: 19px;
+}
+
+.ht-width-standard .ht-user-profile-name,
+.ht-width-narrow .ht-user-profile-name {
+    font-size: 13px;
+    min-height: 15px;
+    height: 16px;
+}
+
+.ht-width-standard .ht-user-profile-uid {
+    font-size: 11px;
+    min-height: 13px;
+    height: 14px;
+    margin-top: 1px;
+}
+
+.ht-width-standard .ht-user-profile-role {
+    font-size: 11px;
+    min-height: 16px;
+    height: 17px;
+    margin-top: 1px;
+    padding-left: 6px;
+    padding-right: 6px;
+    padding-top: 0;
+    padding-bottom: 1px;
+}
+
+.ht-width-standard .ht-user-profile-text-stack {
+    width: 118px;
+    margin-top: 0;
+}
+
+.ht-width-narrow .ht-user-profile-text-stack {
+    width: 86px;
+    margin-top: 0;
+}
+
+.ht-width-narrow .ht-user-profile-name,
+.ht-width-narrow .ht-user-profile-uid {
+    font-size: 10px;
+}
+
+.ht-width-narrow .ht-user-profile-uid {
+    margin-top: 1px;
+    min-height: 13px;
+    height: 14px;
+}
+
+.ht-width-narrow .ht-user-profile-role {
+    font-size: 11px;
+    margin-top: 1px;
+    min-height: 16px;
+    height: 17px;
+    padding-left: 5px;
+    padding-right: 5px;
+    padding-top: 0;
+    padding-bottom: 1px;
+}
+
+.ht-width-standard .ht-user-profile-tagline,
+.ht-width-narrow .ht-user-profile-tagline {
+    display: none;
+}
+
 .ht-version-badge--unknown {
     color: #7cd4ff;
     border-left-color: rgba(124, 212, 255, 0.45);

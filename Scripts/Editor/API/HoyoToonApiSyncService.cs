@@ -1,12 +1,17 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HoyoToon.Editor.API.Games;
 using HoyoToon.Editor.API.Resources;
+using HoyoToon.Editor.API.Users;
 using HoyoToon.Editor.Utilities.API;
 using HoyoToon.Editor.Utilities.Debugging;
+using HoyoToon.Runtime.ScriptableObjects.Users;
 using UnityEditor;
+using Utf8Json;
 
 namespace HoyoToon.Editor.API
 {
@@ -23,6 +28,7 @@ namespace HoyoToon.Editor.API
             lastPayloadHashKey: "HoyoToon.GamesApi.LastPayloadHash",
             lastSchemaVersionKey: "HoyoToon.GamesApi.LastSchemaVersion",
             schemaVersion: "3",
+            fetchPayload: FetchArrayPayloadAsync<GameRecordDto>,
             needsWrite: GamesScriptableObjectSync.NeedsWrite,
             writeAssets: GamesScriptableObjectSync.WriteAssets);
 
@@ -34,8 +40,22 @@ namespace HoyoToon.Editor.API
             lastPayloadHashKey: "HoyoToon.ResourcesApi.LastPayloadHash",
             lastSchemaVersionKey: "HoyoToon.ResourcesApi.LastSchemaVersion",
             schemaVersion: "3",
+            fetchPayload: FetchArrayPayloadAsync<ResourceRecordDto>,
             needsWrite: ResourcesScriptableObjectSync.NeedsWrite,
             writeAssets: ResourcesScriptableObjectSync.WriteAssets);
+
+        private static readonly SyncEndpoint<UserRecordDto> UserProfileEndpoint = new SyncEndpoint<UserRecordDto>(
+            displayName: "user profile",
+            payloadName: "user profile",
+            sourceUrl: HoyoToonApi.UsersHttpUrl,
+            lastCheckTicksKey: "HoyoToon.UsersApi.LastCheckTicks",
+            lastPayloadHashKey: "HoyoToon.UsersApi.LastPayloadHash",
+            lastSchemaVersionKey: "HoyoToon.UsersApi.LastSchemaVersion",
+            schemaVersion: "1",
+            fetchPayload: FetchUserProfilePayloadAsync,
+            needsWrite: UserProfileNeedsWrite,
+            writeAssets: WriteUserProfile,
+            hasRefreshTarget: HasUserProfileRefreshTarget);
 
         private static double nextHeartbeatTime;
 
@@ -50,12 +70,23 @@ namespace HoyoToon.Editor.API
         {
             LogManualRefreshResult(GamesEndpoint, TryStartRefresh(GamesEndpoint, true));
             LogManualRefreshResult(ResourcesEndpoint, TryStartRefresh(ResourcesEndpoint, true));
+            LogManualRefreshResult(UserProfileEndpoint, TryStartRefresh(UserProfileEndpoint, true));
+        }
+
+        internal static bool IsUserProfileRefreshing => UserProfileEndpoint.IsRefreshing;
+
+        internal static DateTime? LastUserProfileRefreshUtc => GetLastCheckUtc(UserProfileEndpoint.LastCheckTicksKey);
+
+        internal static HoyoToonApiSyncRefreshStartResult RefreshUserProfileNow()
+        {
+            return TryStartRefresh(UserProfileEndpoint, true);
         }
 
         private static void TriggerInitialRefresh()
         {
             TryStartRefresh(GamesEndpoint, false);
             TryStartRefresh(ResourcesEndpoint, false);
+            TryStartRefresh(UserProfileEndpoint, false);
         }
 
         private static void OnEditorUpdate()
@@ -67,27 +98,33 @@ namespace HoyoToon.Editor.API
 
             TryStartRefresh(GamesEndpoint, false);
             TryStartRefresh(ResourcesEndpoint, false);
+            TryStartRefresh(UserProfileEndpoint, false);
         }
 
-        private static RefreshStartResult TryStartRefresh<TRecord>(SyncEndpoint<TRecord> endpoint, bool force)
+        private static HoyoToonApiSyncRefreshStartResult TryStartRefresh<TRecord>(SyncEndpoint<TRecord> endpoint, bool force)
         {
             if (endpoint.IsRefreshing)
             {
-                return RefreshStartResult.AlreadyRefreshing;
+                return HoyoToonApiSyncRefreshStartResult.AlreadyRefreshing;
             }
 
             if (!HoyoToonApiSyncUtility.IsEditorReadyForRefresh())
             {
-                return RefreshStartResult.EditorNotReady;
+                return HoyoToonApiSyncRefreshStartResult.EditorNotReady;
+            }
+
+            if (!endpoint.HasRefreshTarget())
+            {
+                return HoyoToonApiSyncRefreshStartResult.NoRefreshTarget;
             }
 
             if (!force && !HoyoToonApiSyncUtility.IsRefreshDue(endpoint.LastCheckTicksKey, PollInterval))
             {
-                return RefreshStartResult.NotDue;
+                return HoyoToonApiSyncRefreshStartResult.NotDue;
             }
 
             _ = RefreshAsync(endpoint, force);
-            return RefreshStartResult.Started;
+            return HoyoToonApiSyncRefreshStartResult.Started;
         }
 
         private static async Task RefreshAsync<TRecord>(SyncEndpoint<TRecord> endpoint, bool force)
@@ -101,8 +138,7 @@ namespace HoyoToon.Editor.API
                     $"Starting {(force ? "manual" : "background")} refresh for {endpoint.DisplayName} from {endpoint.SourceUrl}.",
                     isBackgroundOperation: !force);
 
-                HoyoToonApiPayloadResult<TRecord> payload = await HoyoToonApiFetchUtility
-                    .FetchArrayPayloadAsync<TRecord>(endpoint.SourceUrl, endpoint.PayloadName, CancellationToken.None);
+                HoyoToonApiPayloadResult<TRecord> payload = await endpoint.FetchPayload(endpoint, CancellationToken.None);
                 HoyoToonLogger.Verbose(
                     HoyoToonLogCategory.Api,
                     $"Fetched {payload.Records.Count} record(s) for {endpoint.DisplayName}.",
@@ -178,24 +214,112 @@ namespace HoyoToon.Editor.API
             }
         }
 
-        private static void LogManualRefreshResult<TRecord>(SyncEndpoint<TRecord> endpoint, RefreshStartResult result)
+        private static Task<HoyoToonApiPayloadResult<TRecord>> FetchArrayPayloadAsync<TRecord>(
+            SyncEndpoint<TRecord> endpoint,
+            CancellationToken cancellationToken)
+        {
+            return HoyoToonApiFetchUtility.FetchArrayPayloadAsync<TRecord>(
+                endpoint.SourceUrl,
+                endpoint.PayloadName,
+                cancellationToken);
+        }
+
+        private static async Task<HoyoToonApiPayloadResult<UserRecordDto>> FetchUserProfilePayloadAsync(
+            SyncEndpoint<UserRecordDto> endpoint,
+            CancellationToken cancellationToken)
+        {
+            string uid = ResolveUserProfileRefreshUid();
+            if (string.IsNullOrWhiteSpace(uid))
+            {
+                return new HoyoToonApiPayloadResult<UserRecordDto>(
+                    string.Empty,
+                    new List<UserRecordDto>(),
+                    endpoint.SourceUrl);
+            }
+
+            string sourceUrl = endpoint.SourceUrl + "?UID=" + Uri.EscapeDataString(uid);
+            UserRecordDto apiUser = await HoyoToonUserApiClient.GetUserAsync(uid, cancellationToken);
+            var records = apiUser == null
+                ? new List<UserRecordDto>()
+                : new List<UserRecordDto> { apiUser };
+            string rawPayload = apiUser == null
+                ? string.Empty
+                : Encoding.UTF8.GetString(JsonSerializer.Serialize(apiUser, HoyoToonApi.JsonResolver));
+            return new HoyoToonApiPayloadResult<UserRecordDto>(rawPayload, records, sourceUrl);
+        }
+
+        private static bool HasUserProfileRefreshTarget()
+        {
+            return HoyoToonUserProfileStorage.HasCompleteLocalProfile()
+                || HoyoToonUserProfileGlobalStore.TryLoad(out _);
+        }
+
+        private static string ResolveUserProfileRefreshUid()
+        {
+            HoyoToonUserProfileSO localProfile = HoyoToonUserProfileStorage.GetLocalProfile();
+            if (HoyoToonUserProfileStorage.IsComplete(localProfile))
+            {
+                return localProfile.UID;
+            }
+
+            return HoyoToonUserProfileGlobalStore.TryLoad(out UserProfileGlobalRecord cachedProfile)
+                ? cachedProfile.UID
+                : string.Empty;
+        }
+
+        private static bool UserProfileNeedsWrite(IReadOnlyList<UserRecordDto> users)
+        {
+            return users != null
+                && users.Count > 0
+                && !HoyoToonUserProfileService.LocalProfileMatchesApiUser(users[0]);
+        }
+
+        private static void WriteUserProfile(IReadOnlyList<UserRecordDto> users)
+        {
+            if (users == null || users.Count <= 0)
+            {
+                return;
+            }
+
+            HoyoToonUserProfileService.SaveApiUserProfile(users[0]);
+        }
+
+        private static void LogManualRefreshResult<TRecord>(SyncEndpoint<TRecord> endpoint, HoyoToonApiSyncRefreshStartResult result)
         {
             switch (result)
             {
-                case RefreshStartResult.Started:
+                case HoyoToonApiSyncRefreshStartResult.Started:
                     HoyoToonLogger.Info(HoyoToonLogCategory.Api, $"Refreshing {endpoint.DisplayName}.");
                     break;
 
-                case RefreshStartResult.AlreadyRefreshing:
+                case HoyoToonApiSyncRefreshStartResult.AlreadyRefreshing:
                     HoyoToonLogger.Info(HoyoToonLogCategory.Api, $"{FormatDisplayName(endpoint.DisplayName)} refresh is already in progress.");
                     break;
 
-                case RefreshStartResult.EditorNotReady:
+                case HoyoToonApiSyncRefreshStartResult.EditorNotReady:
                     HoyoToonLogger.Info(
                         HoyoToonLogCategory.Api,
                         $"Cannot refresh {endpoint.DisplayName} while the editor is compiling, updating assets, or entering Play Mode.");
                     break;
+
+                case HoyoToonApiSyncRefreshStartResult.NoRefreshTarget:
+                    HoyoToonLogger.Info(
+                        HoyoToonLogCategory.Api,
+                        $"No {endpoint.DisplayName} target is available to refresh.");
+                    break;
             }
+        }
+
+        private static DateTime? GetLastCheckUtc(string lastCheckTicksKey)
+        {
+            string rawTicks = EditorPrefs.GetString(HoyoToonApiSyncUtility.PrefsKey(lastCheckTicksKey), string.Empty);
+            if (!long.TryParse(rawTicks, NumberStyles.Integer, CultureInfo.InvariantCulture, out long ticks)
+                || ticks <= 0)
+            {
+                return null;
+            }
+
+            return new DateTime(ticks, DateTimeKind.Utc);
         }
 
         private static string FormatDisplayName(string displayName)
@@ -208,14 +332,6 @@ namespace HoyoToon.Editor.API
             return char.ToUpperInvariant(displayName[0]) + displayName.Substring(1);
         }
 
-        private enum RefreshStartResult
-        {
-            Started,
-            AlreadyRefreshing,
-            EditorNotReady,
-            NotDue,
-        }
-
         private sealed class SyncEndpoint<TRecord>
         {
             internal SyncEndpoint(
@@ -226,8 +342,10 @@ namespace HoyoToon.Editor.API
                 string lastPayloadHashKey,
                 string lastSchemaVersionKey,
                 string schemaVersion,
+                Func<SyncEndpoint<TRecord>, CancellationToken, Task<HoyoToonApiPayloadResult<TRecord>>> fetchPayload,
                 Func<IReadOnlyList<TRecord>, bool> needsWrite,
-                Action<IReadOnlyList<TRecord>> writeAssets)
+                Action<IReadOnlyList<TRecord>> writeAssets,
+                Func<bool> hasRefreshTarget = null)
             {
                 DisplayName = displayName;
                 PayloadName = payloadName;
@@ -236,9 +354,13 @@ namespace HoyoToon.Editor.API
                 LastPayloadHashKey = lastPayloadHashKey;
                 LastSchemaVersionKey = lastSchemaVersionKey;
                 SchemaVersion = schemaVersion;
+                FetchPayload = fetchPayload;
                 NeedsWrite = needsWrite;
                 WriteAssets = writeAssets;
+                hasRefreshTargetCallback = hasRefreshTarget;
             }
+
+            private readonly Func<bool> hasRefreshTargetCallback;
 
             internal string DisplayName { get; }
 
@@ -254,11 +376,27 @@ namespace HoyoToon.Editor.API
 
             internal string SchemaVersion { get; }
 
+            internal Func<SyncEndpoint<TRecord>, CancellationToken, Task<HoyoToonApiPayloadResult<TRecord>>> FetchPayload { get; }
+
             internal Func<IReadOnlyList<TRecord>, bool> NeedsWrite { get; }
 
             internal Action<IReadOnlyList<TRecord>> WriteAssets { get; }
 
             internal bool IsRefreshing { get; set; }
+
+            internal bool HasRefreshTarget()
+            {
+                return hasRefreshTargetCallback == null || hasRefreshTargetCallback.Invoke();
+            }
         }
+    }
+
+    internal enum HoyoToonApiSyncRefreshStartResult
+    {
+        Started,
+        AlreadyRefreshing,
+        EditorNotReady,
+        NoRefreshTarget,
+        NotDue,
     }
 }

@@ -4,9 +4,6 @@ using System.Runtime.InteropServices;
 using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Scene.HSR;
 using HoyoToon.Runtime.Utilities;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 using UnityEngine;
 
 namespace HoyoToon.Runtime.Character.HSR
@@ -64,15 +61,10 @@ namespace HoyoToon.Runtime.Character.HSR
         public static event Action RendererTopologyChanged;
         public static int RendererTopologyVersion => s_RendererTopologyVersion;
 
-#if UNITY_EDITOR
         static HSRCharacterController()
         {
-            AssemblyReloadEvents.beforeAssemblyReload -= ReleaseGlobalFallbackSkinnedVerticesBuffer;
-            AssemblyReloadEvents.beforeAssemblyReload += ReleaseGlobalFallbackSkinnedVerticesBuffer;
-            EditorApplication.quitting -= ReleaseGlobalFallbackSkinnedVerticesBuffer;
-            EditorApplication.quitting += ReleaseGlobalFallbackSkinnedVerticesBuffer;
+            RuntimeEditorBridge.RegisterEditModeCleanup(ReleaseGlobalFallbackSkinnedVerticesBuffer);
         }
-#endif
 
         public enum CharacterSkinningMode
         {

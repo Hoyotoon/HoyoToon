@@ -2,6 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+using HoyoToon.Editor.API;
+using HoyoToon.Editor.API.Users;
 using HoyoToon.Editor.AssetPipeline.Materials;
 using HoyoToon.Editor.AssetPipeline.Models;
 using HoyoToon.Editor.Detection.Character;
@@ -12,10 +16,12 @@ using HoyoToon.Editor.UI.Manager.Modules;
 using HoyoToon.Editor.Updater;
 using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Runtime.ScriptableObjects.Games;
+using HoyoToon.Runtime.ScriptableObjects.Users;
 using HoyoToon.Runtime.Scene.Placement;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UIElements;
 using Object = UnityEngine.Object;
 
@@ -45,6 +51,12 @@ namespace HoyoToon.Editor.UI.Manager
         private const string VersionBadgeErrorClass = "ht-version-badge--error";
 
         private static readonly Vector2 MinimumWindowSize = new Vector2(360f, 520f);
+        private static readonly Dictionary<string, Texture2D> RemoteAvatarTextures =
+            new Dictionary<string, Texture2D>(StringComparer.Ordinal);
+        private static readonly HashSet<string> RemoteAvatarLoads =
+            new HashSet<string>(StringComparer.Ordinal);
+        private static readonly HashSet<string> FailedRemoteAvatarLoads =
+            new HashSet<string>(StringComparer.Ordinal);
 
         private readonly Dictionary<string, Button> tabButtonsById = new Dictionary<string, Button>(StringComparer.Ordinal);
         private readonly List<InspectorAction> footerActions = new List<InspectorAction>();
@@ -73,11 +85,23 @@ namespace HoyoToon.Editor.UI.Manager
         private Image bannerBackground;
         private Button versionBadgeButton;
         private Image logoImage;
+        private VisualElement userProfileButton;
+        private Image userAvatarImage;
+        private Label userAvatarInitials;
+        private Label userProfileName;
+        private Label userProfileRole;
+        private Label userProfileUid;
+        private Label userProfileTagline;
         private VisualElement globalContextHost;
         private Button createPrefabButton;
         private Button regenerateMaterialsButton;
         private Button regenerateTangentsButton;
         private IVisualElementScheduledItem versionBadgeSchedule;
+        private bool userProfilePromptOpen;
+        private bool userProfileRestoreRequested;
+        private bool userProfileRestoreAttempted;
+        private bool userProfileRefreshRequested;
+        private bool userProfileRefreshAttempted;
 
         internal string ActiveModuleId => activeModule != null ? activeModule.Id : string.Empty;
         internal ModuleContext CurrentContext => currentContext;
@@ -114,11 +138,14 @@ namespace HoyoToon.Editor.UI.Manager
             titleContent = new GUIContent("HoyoToon");
             minSize = MinimumWindowSize;
             packageVersionLabel = ResolvePackageVersionLabel();
+            HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
+            HoyoToonUserProfileStorage.ProfileChanged += HandleUserProfileChanged;
         }
 
         private void OnDisable()
         {
             versionBadgeSchedule?.Pause();
+            HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
             activeModule?.OnDeselected(currentContext);
             OnboardingManager.NotifyManagerClosed(this);
         }
@@ -127,6 +154,7 @@ namespace HoyoToon.Editor.UI.Manager
         {
             RefreshManualContext();
             UpdateVersionBadge();
+            RefreshUserProfileHeader();
         }
 
         public void CreateGUI()
@@ -153,6 +181,7 @@ namespace HoyoToon.Editor.UI.Manager
             BuildFooterActions();
             RefreshGlobalContext();
             UpdateVersionBadge();
+            RefreshUserProfileHeader();
             StartVersionBadgeSchedule();
             ApplyWidthClass(position.width);
             SetActiveModule(activeModule != null ? activeModule.Id : string.Empty, true);
@@ -206,6 +235,13 @@ namespace HoyoToon.Editor.UI.Manager
             bannerBackground = shellRoot.Q<Image>("BannerBackground");
             versionBadgeButton = shellRoot.Q<Button>("VersionBadge");
             logoImage = shellRoot.Q<Image>("LogoImage");
+            userProfileButton = shellRoot.Q<VisualElement>("UserProfileButton");
+            userAvatarImage = shellRoot.Q<Image>("UserAvatarImage");
+            userAvatarInitials = shellRoot.Q<Label>("UserAvatarInitials");
+            userProfileName = shellRoot.Q<Label>("UserProfileName");
+            userProfileRole = shellRoot.Q<Label>("UserProfileRole");
+            userProfileUid = shellRoot.Q<Label>("UserProfileUid");
+            userProfileTagline = shellRoot.Q<Label>("UserProfileTagline");
             globalContextHost = shellRoot.Q<VisualElement>("GlobalContextHost");
             createPrefabButton = shellRoot.Q<Button>("CreatePrefabButton");
             regenerateMaterialsButton = shellRoot.Q<Button>("RegenerateMaterialsButton");
@@ -214,6 +250,16 @@ namespace HoyoToon.Editor.UI.Manager
             if (versionBadgeButton != null)
             {
                 versionBadgeButton.clicked += HandleVersionBadgeClicked;
+            }
+
+            if (userProfileButton != null)
+            {
+                userProfileButton.RegisterCallback<ClickEvent>(HandleUserProfileClicked);
+            }
+
+            if (userProfileUid != null)
+            {
+                userProfileUid.RegisterCallback<ClickEvent>(HandleUserProfileUidClicked);
             }
 
             ApplyHeaderArtwork();
@@ -648,6 +694,418 @@ namespace HoyoToon.Editor.UI.Manager
             versionBadgeButton.AddToClassList(GetUpdaterStateClass(visualState));
         }
 
+        private void RefreshUserProfileHeader()
+        {
+            if (userProfileButton == null)
+            {
+                return;
+            }
+
+            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            bool hasProfile = HoyoToonUserProfileStorage.IsComplete(profile);
+            if (hasProfile)
+            {
+                TryRefreshUserProfileForHeader(profile);
+            }
+            else
+            {
+                TryRestoreUserProfileForHeader();
+            }
+
+            string displayName = hasProfile
+                ? profile.Username
+                : userProfileRestoreRequested
+                    ? "Restoring profile"
+                    : HoyoToonUserProfileService.IsCreating
+                        ? "Creating profile"
+                        : "Set profile";
+            string uidText = hasProfile ? "UID: " + profile.UID : "UID: Not assigned";
+            string roleName = hasProfile && !string.IsNullOrWhiteSpace(profile.RoleName)
+                ? profile.RoleName.Trim()
+                : HoyoToonApi.DefaultUserRoleName;
+            string roleColor = hasProfile && !string.IsNullOrWhiteSpace(profile.RoleColor)
+                ? profile.RoleColor.Trim()
+                : HoyoToonApi.DefaultUserRoleColor;
+            Color resolvedRoleColor = ResolveUserRoleColor(roleColor);
+            string taglineText = hasProfile
+                ? HoyoToonUserProfileService.IsUpdatingAvatar
+                    ? "Updating avatar URL..."
+                    : "Click to update avatar URL."
+                : userProfileRestoreRequested
+                    ? "Checking your saved HoyoToon profile..."
+                    : HoyoToonUserProfileService.IsCreating
+                        ? "Reserving your HoyoToon UID..."
+                        : "Click to create your HoyoToon profile.";
+            Texture2D avatarTexture = hasProfile ? ResolveUserAvatarTexture(profile.Avatar) : null;
+
+            userProfileButton.tooltip = hasProfile
+                ? "HoyoToon profile\nUsername: " + profile.Username + "\nUID: " + profile.UID + "\nClick to update avatar URL."
+                : "Create your local HoyoToon profile.";
+            userProfileButton.SetEnabled(!HoyoToonUserProfileService.IsCreating
+                && !HoyoToonUserProfileService.IsUpdatingAvatar
+                && !userProfileRestoreRequested);
+
+            if (userProfileName != null)
+            {
+                userProfileName.text = displayName;
+            }
+
+            if (userProfileRole != null)
+            {
+                userProfileRole.text = hasProfile ? roleName : string.Empty;
+                userProfileRole.style.display = hasProfile ? DisplayStyle.Flex : DisplayStyle.None;
+                userProfileRole.style.color = resolvedRoleColor;
+                userProfileRole.tooltip = hasProfile ? roleName : string.Empty;
+            }
+
+            if (userProfileUid != null)
+            {
+                userProfileUid.text = uidText;
+                userProfileUid.tooltip = hasProfile ? "Click to copy UID." : "UID is not assigned yet.";
+            }
+
+            if (userProfileTagline != null)
+            {
+                userProfileTagline.text = taglineText;
+            }
+
+            if (userAvatarImage != null)
+            {
+                userAvatarImage.image = avatarTexture;
+                userAvatarImage.scaleMode = ScaleMode.ScaleAndCrop;
+                userAvatarImage.style.display = avatarTexture != null ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+
+            if (userAvatarInitials != null)
+            {
+                userAvatarInitials.text = BuildUserInitials(displayName);
+                userAvatarInitials.style.display = avatarTexture == null ? DisplayStyle.Flex : DisplayStyle.None;
+            }
+        }
+
+        private void TryRestoreUserProfileForHeader()
+        {
+            if (userProfileRestoreRequested
+                || userProfileRestoreAttempted
+                || !HoyoToonUserProfileGlobalStore.TryLoad(out _))
+            {
+                return;
+            }
+
+            userProfileRestoreAttempted = true;
+            userProfileRestoreRequested = true;
+            _ = RestoreUserProfileForHeaderAsync();
+        }
+
+        private async Task RestoreUserProfileForHeaderAsync()
+        {
+            try
+            {
+                await HoyoToonUserProfileService.RestoreLocalUserProfileAsync(CancellationToken.None);
+                userProfileRefreshAttempted = true;
+            }
+            catch
+            {
+            }
+            finally
+            {
+                userProfileRestoreRequested = false;
+                RefreshUserProfileHeader();
+                Repaint();
+            }
+        }
+
+        private void TryRefreshUserProfileForHeader(HoyoToonUserProfileSO profile)
+        {
+            if (userProfileRefreshRequested
+                || userProfileRefreshAttempted
+                || !HoyoToonUserProfileStorage.IsComplete(profile))
+            {
+                return;
+            }
+
+            userProfileRefreshAttempted = true;
+            userProfileRefreshRequested = true;
+            _ = RefreshUserProfileForHeaderAsync(profile);
+        }
+
+        private async Task RefreshUserProfileForHeaderAsync(HoyoToonUserProfileSO profile)
+        {
+            try
+            {
+                await HoyoToonUserProfileService.RefreshLocalProfileFromApiAsync(profile, CancellationToken.None);
+            }
+            catch
+            {
+            }
+            finally
+            {
+                userProfileRefreshRequested = false;
+                RefreshUserProfileHeader();
+                Repaint();
+            }
+        }
+
+        private void HandleUserProfileChanged()
+        {
+            RefreshUserProfileHeader();
+            Repaint();
+        }
+
+        private void HandleUserProfileClicked(ClickEvent evt)
+        {
+            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            if (HoyoToonUserProfileStorage.IsComplete(profile))
+            {
+                if (userProfilePromptOpen || HoyoToonUserProfileService.IsUpdatingAvatar)
+                {
+                    return;
+                }
+
+                userProfilePromptOpen = true;
+                RefreshUserProfileHeader();
+                HoyoToonUserProfilePrompt.ShowAvatarEditor(
+                    profile,
+                    avatarUrl => _ = UpdateUserAvatarFromHeaderAsync(avatarUrl),
+                    () =>
+                    {
+                        userProfilePromptOpen = false;
+                        RefreshUserProfileHeader();
+                    });
+                return;
+            }
+
+            if (userProfilePromptOpen
+                || HoyoToonUserProfileService.IsCreating
+                || HoyoToonUserProfileService.IsUpdatingAvatar)
+            {
+                return;
+            }
+
+            userProfilePromptOpen = true;
+            RefreshUserProfileHeader();
+            HoyoToonUserProfilePrompt.Show(
+                username => _ = CreateUserProfileFromHeaderAsync(username),
+                () =>
+                {
+                    userProfilePromptOpen = false;
+                    RefreshUserProfileHeader();
+                });
+        }
+
+        private void HandleUserProfileUidClicked(ClickEvent evt)
+        {
+            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            if (!HoyoToonUserProfileStorage.IsComplete(profile))
+            {
+                return;
+            }
+
+            evt?.StopPropagation();
+            EditorGUIUtility.systemCopyBuffer = profile.UID;
+            ShowNotification(new GUIContent("Copied UID " + profile.UID));
+        }
+
+        private async Task CreateUserProfileFromHeaderAsync(string username)
+        {
+            try
+            {
+                await HoyoToonUserProfileService.CreateLocalUserProfileAsync(username, CancellationToken.None);
+            }
+            catch (Exception exception)
+            {
+                HoyoToon.Editor.UI.Dialogs.HoyoToonDialog.DisplayDialog(
+                    "Create HoyoToon Profile",
+                    exception.Message,
+                    "OK");
+            }
+            finally
+            {
+                RefreshUserProfileHeader();
+            }
+        }
+
+        private async Task UpdateUserAvatarFromHeaderAsync(string avatarUrl)
+        {
+            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            string previousAvatar = profile != null ? profile.Avatar : string.Empty;
+            if (HoyoToonUserProfileService.TryNormalizeAvatarUrl(
+                avatarUrl,
+                out string normalizedAvatarUrl,
+                out _))
+            {
+                ClearRemoteUserAvatarCache(normalizedAvatarUrl);
+            }
+
+            try
+            {
+                HoyoToonUserProfileSO updatedProfile = await HoyoToonUserProfileService.UpdateLocalUserAvatarAsync(
+                    profile,
+                    avatarUrl,
+                    CancellationToken.None);
+                ClearRemoteUserAvatarCache(previousAvatar);
+                ClearRemoteUserAvatarCache(updatedProfile != null ? updatedProfile.Avatar : avatarUrl);
+            }
+            catch (Exception exception)
+            {
+                HoyoToon.Editor.UI.Dialogs.HoyoToonDialog.DisplayDialog(
+                    "Update HoyoToon Avatar",
+                    exception.Message,
+                    "OK");
+            }
+            finally
+            {
+                RefreshUserProfileHeader();
+            }
+        }
+
+        private Texture2D ResolveUserAvatarTexture(string avatar)
+        {
+            if (string.IsNullOrWhiteSpace(avatar))
+            {
+                return null;
+            }
+
+            string normalizedAvatar = avatar.Trim().Replace('\\', '/');
+            if (normalizedAvatar.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
+                || normalizedAvatar.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            {
+                if (FailedRemoteAvatarLoads.Contains(normalizedAvatar))
+                {
+                    return null;
+                }
+
+                if (RemoteAvatarTextures.TryGetValue(normalizedAvatar, out Texture2D remoteTexture))
+                {
+                    return remoteTexture;
+                }
+
+                BeginRemoteUserAvatarLoad(normalizedAvatar);
+                return null;
+            }
+
+            if (normalizedAvatar.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase)
+                || normalizedAvatar.StartsWith("Packages/", StringComparison.OrdinalIgnoreCase))
+            {
+                Texture2D assetTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(normalizedAvatar);
+                if (assetTexture != null)
+                {
+                    return assetTexture;
+                }
+            }
+
+            const string ResourcesSegment = "/Resources/";
+            int resourcesIndex = normalizedAvatar.IndexOf(ResourcesSegment, StringComparison.OrdinalIgnoreCase);
+            if (resourcesIndex >= 0)
+            {
+                normalizedAvatar = normalizedAvatar.Substring(resourcesIndex + ResourcesSegment.Length);
+            }
+
+            string resourceKey = Path.ChangeExtension(normalizedAvatar, null);
+            return UnityEngine.Resources.Load<Texture2D>(resourceKey)
+                ?? UnityEngine.Resources.Load<Texture2D>("UI/" + resourceKey);
+        }
+
+        private void BeginRemoteUserAvatarLoad(string avatarUrl)
+        {
+            if (string.IsNullOrWhiteSpace(avatarUrl) || !RemoteAvatarLoads.Add(avatarUrl))
+            {
+                return;
+            }
+
+            UnityWebRequest request = UnityWebRequestTexture.GetTexture(avatarUrl);
+            UnityWebRequestAsyncOperation operation = request.SendWebRequest();
+            operation.completed += _ =>
+            {
+                try
+                {
+                    if (!IsUnityWebRequestFailed(request))
+                    {
+                        Texture2D texture = DownloadHandlerTexture.GetContent(request);
+                        if (texture != null)
+                        {
+                            RemoteAvatarTextures[avatarUrl] = texture;
+                        }
+                        else
+                        {
+                            FailedRemoteAvatarLoads.Add(avatarUrl);
+                        }
+                    }
+                    else
+                    {
+                        FailedRemoteAvatarLoads.Add(avatarUrl);
+                    }
+                }
+                finally
+                {
+                    RemoteAvatarLoads.Remove(avatarUrl);
+                    request.Dispose();
+                    RefreshUserProfileHeader();
+                    Repaint();
+                }
+            };
+        }
+
+        private static void ClearRemoteUserAvatarCache(string avatarUrl)
+        {
+            if (string.IsNullOrWhiteSpace(avatarUrl))
+            {
+                return;
+            }
+
+            string normalizedAvatar = avatarUrl.Trim().Replace('\\', '/');
+            RemoteAvatarTextures.Remove(normalizedAvatar);
+            RemoteAvatarLoads.Remove(normalizedAvatar);
+            FailedRemoteAvatarLoads.Remove(normalizedAvatar);
+        }
+
+        private static Color ResolveUserRoleColor(string roleColor)
+        {
+            if (!string.IsNullOrWhiteSpace(roleColor)
+                && ColorUtility.TryParseHtmlString(roleColor.Trim(), out Color parsedColor))
+            {
+                return parsedColor;
+            }
+
+            ColorUtility.TryParseHtmlString(HoyoToonApi.DefaultUserRoleColor, out Color fallbackColor);
+            return fallbackColor;
+        }
+
+        private static bool IsUnityWebRequestFailed(UnityWebRequest request)
+        {
+            if (request == null)
+            {
+                return true;
+            }
+
+#if UNITY_2020_2_OR_NEWER
+            return request.result == UnityWebRequest.Result.ConnectionError
+                || request.result == UnityWebRequest.Result.ProtocolError
+                || request.result == UnityWebRequest.Result.DataProcessingError;
+#else
+            return request.isNetworkError || request.isHttpError;
+#endif
+        }
+
+        private static string BuildUserInitials(string displayName)
+        {
+            if (string.IsNullOrWhiteSpace(displayName))
+            {
+                return "?";
+            }
+
+            string[] parts = displayName
+                .Split(new[] { ' ', '\t', '-', '_' }, StringSplitOptions.RemoveEmptyEntries);
+            if (parts.Length <= 0)
+            {
+                return displayName.Substring(0, 1).ToUpperInvariant();
+            }
+
+            string first = parts[0].Substring(0, 1);
+            string second = parts.Length > 1 ? parts[1].Substring(0, 1) : string.Empty;
+            return (first + second).ToUpperInvariant();
+        }
+
         private void ApplyHeaderArtwork()
         {
             Texture2D backgroundTexture = LoadAsset<Texture2D>(HeaderBackgroundAssetPath);
@@ -1030,6 +1488,16 @@ namespace HoyoToon.Editor.UI.Manager
                     "Header update button",
                     "Manager Header",
                     () => versionBadgeButton.Focus());
+            }
+
+            if (userProfileButton != null)
+            {
+                OnboardingTargetRegistry.RegisterVisualElement(
+                    "Manager.HeaderUserProfile",
+                    userProfileButton,
+                    "Header user profile",
+                    "Manager Header",
+                    () => userProfileButton.Focus());
             }
 
             RegisterTabOnboardingTargets();
@@ -1867,11 +2335,11 @@ namespace HoyoToon.Editor.UI.Manager
             shellRoot.RemoveFromClassList(WidthStandardClass);
             shellRoot.RemoveFromClassList(WidthWideClass);
 
-            if (width <= 359f)
+            if (width <= 479f)
             {
                 shellRoot.AddToClassList(WidthNarrowClass);
             }
-            else if (width <= 619f)
+            else if (width <= 699f)
             {
                 shellRoot.AddToClassList(WidthStandardClass);
             }

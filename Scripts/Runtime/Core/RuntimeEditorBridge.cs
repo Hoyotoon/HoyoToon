@@ -9,6 +9,11 @@ namespace HoyoToon.Runtime.Core
         internal static Action<UnityEngine.Object> DestroyHandler;
         internal static Func<bool> IsGameViewFocusedHandler;
         internal static Action RequestPlayerLoopUpdateHandler;
+        internal static Action<Action> RegisterHierarchyChangedHandler;
+        internal static Action<Action> UnregisterHierarchyChangedHandler;
+        internal static Action<Action> ScheduleDelayedEditModeActionHandler;
+        internal static Action<Action> CancelDelayedEditModeActionHandler;
+        internal static Action<Action> RegisterEditModeCleanupHandler;
 
         internal static void MarkDirty(UnityEngine.Object target)
         {
@@ -49,6 +54,56 @@ namespace HoyoToon.Runtime.Core
             }
 
             RequestPlayerLoopUpdateHandler?.Invoke();
+        }
+
+        internal static void RegisterHierarchyChanged(Action handler)
+        {
+            if (handler == null || Application.isPlaying)
+            {
+                return;
+            }
+
+            RegisterHierarchyChangedHandler?.Invoke(handler);
+        }
+
+        internal static void UnregisterHierarchyChanged(Action handler)
+        {
+            if (handler == null)
+            {
+                return;
+            }
+
+            UnregisterHierarchyChangedHandler?.Invoke(handler);
+        }
+
+        internal static void ScheduleDelayedEditModeAction(Action action)
+        {
+            if (action == null || Application.isPlaying)
+            {
+                return;
+            }
+
+            ScheduleDelayedEditModeActionHandler?.Invoke(action);
+        }
+
+        internal static void CancelDelayedEditModeAction(Action action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            CancelDelayedEditModeActionHandler?.Invoke(action);
+        }
+
+        internal static void RegisterEditModeCleanup(Action cleanup)
+        {
+            if (cleanup == null)
+            {
+                return;
+            }
+
+            RegisterEditModeCleanupHandler?.Invoke(cleanup);
         }
     }
 }

@@ -32,7 +32,7 @@
 
 .ht-banner-card {
     position: relative;
-    height: 96px;
+    height: 136px;
     overflow: hidden;
     padding-left: 24px;
     padding-right: 24px;
@@ -65,9 +65,9 @@
 }
 
 .ht-logo-container {
-    width: 420px;
+    width: 460px;
     max-width: 100%;
-    height: 80px;
+    height: 86px;
     align-items: center;
     justify-content: center;
     background-color: transparent;
@@ -81,14 +81,22 @@
 .ht-logo-image {
     width: 100%;
     max-width: 100%;
-    height: 80px;
+    height: 86px;
     flex-shrink: 1;
 }
 
 .ht-version-badge {
     position: absolute;
-    right: 16px;
+    right: 20px;
     bottom: 12px;
+}
+
+.ht-user-profile-panel {
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 120px;
 }
 
 .ht-navbar {
@@ -322,9 +330,11 @@
 
 .ht-width-narrow .ht-banner-card {
     height: auto;
-    min-height: 96px;
+    min-height: 128px;
     padding-left: 12px;
     padding-right: 12px;
+    padding-top: 0;
+    padding-bottom: 0;
 }
 
 .ht-width-narrow .ht-banner-row {
@@ -334,8 +344,8 @@
 
 .ht-width-narrow .ht-logo-container,
 .ht-width-narrow .ht-logo-image {
-    width: 260px;
-    height: 52px;
+    width: 218px;
+    height: 50px;
 }
 
 .ht-width-narrow .ht-footer-row {
@@ -368,7 +378,7 @@
 .ht-width-standard .ht-logo-container,
 .ht-width-standard .ht-logo-image {
     width: 340px;
-    height: 64px;
+    height: 68px;
 }
 
 .ht-width-standard .ht-footer-row {
@@ -380,6 +390,25 @@
 .ht-width-narrow .ht-version-badge {
     right: 12px;
     bottom: 10px;
+}
+
+.ht-width-standard .ht-user-profile-panel,
+.ht-width-narrow .ht-user-profile-panel {
+    right: auto;
+    top: 2px;
+    bottom: 0;
+}
+
+.ht-width-standard .ht-user-profile-panel {
+    left: -12px;
+    top: -8px;
+    width: 112px;
+}
+
+.ht-width-narrow .ht-user-profile-panel {
+    left: -8px;
+    top: -14px;
+    width: 86px;
 }
 
 .ht-width-wide .ht-footer-row {
