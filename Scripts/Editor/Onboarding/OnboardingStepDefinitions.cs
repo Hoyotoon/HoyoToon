@@ -38,7 +38,7 @@ namespace HoyoToon.Editor.Onboarding
                     "",
                     "The HoyoToon API will assign the next numeric UID and create your user record.",
                     "",
-                    "Only your local user profile is stored as a ScriptableObject; the API user table is not mirrored into project assets.",
+                    "Only your local user profile is stored outside the Unity project; the API user table is not mirrored into project assets.",
                     "",
                     "If you already created a HoyoToon profile on this computer, onboarding will restore it before asking for a new username."),
                 new string[0],

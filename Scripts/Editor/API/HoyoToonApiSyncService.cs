@@ -256,28 +256,30 @@ namespace HoyoToon.Editor.API
 
         private static string ResolveUserProfileRefreshUid()
         {
-            HoyoToonUserProfileSO localProfile = HoyoToonUserProfileStorage.GetLocalProfile();
-            if (HoyoToonUserProfileStorage.IsComplete(localProfile))
-            {
-                return localProfile.UID;
-            }
-
-            return HoyoToonUserProfileGlobalStore.TryLoad(out UserProfileGlobalRecord cachedProfile)
-                ? cachedProfile.UID
+            return HoyoToonUserProfileService.TryResolveAuthoritativeRefreshUid(
+                HoyoToonUserProfileStorage.GetLocalProfile(),
+                out string uid,
+                out _)
+                ? uid
                 : string.Empty;
         }
 
         private static bool UserProfileNeedsWrite(IReadOnlyList<UserRecordDto> users)
         {
-            return users != null
-                && users.Count > 0
-                && !HoyoToonUserProfileService.LocalProfileMatchesApiUser(users[0]);
+            if (users != null && users.Count > 0)
+            {
+                return !HoyoToonUserProfileService.LocalProfileMatchesApiUser(users[0]);
+            }
+
+            return HoyoToonUserProfileGlobalStore.TryLoad(out _)
+                && !HoyoToonUserProfileService.LocalProfileMatchesCachedUser();
         }
 
         private static void WriteUserProfile(IReadOnlyList<UserRecordDto> users)
         {
             if (users == null || users.Count <= 0)
             {
+                HoyoToonUserProfileService.SaveCachedUserProfile();
                 return;
             }
 

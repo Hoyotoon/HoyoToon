@@ -2,7 +2,6 @@ using UnityEngine;
 
 namespace HoyoToon.Runtime.ScriptableObjects.Users
 {
-    [CreateAssetMenu(fileName = "HoyoToonUserProfile", menuName = "HoyoToon/User Profile")]
     public class HoyoToonUserProfileSO : ScriptableObject
     {
         [SerializeField] private string uid;

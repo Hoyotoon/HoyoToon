@@ -85,7 +85,7 @@ namespace HoyoToon.Editor.API.Users
                 return await RefreshLocalProfileFromApiAsync(localProfile, cancellationToken);
             }
 
-            if (!HoyoToonUserProfileGlobalStore.TryLoad(out UserProfileGlobalRecord cachedProfile))
+            if (!TryLoadCachedProfile(out UserProfileGlobalRecord cachedProfile))
             {
                 return null;
             }
@@ -100,17 +100,7 @@ namespace HoyoToon.Editor.API.Users
             }
             catch
             {
-                if (!string.IsNullOrWhiteSpace(cachedProfile.username))
-                {
-                    return HoyoToonUserProfileStorage.SaveLocalProfile(
-                        cachedProfile.UID,
-                        cachedProfile.username,
-                        cachedProfile.avatar,
-                        cachedProfile.roleName,
-                        cachedProfile.roleColor);
-                }
-
-                throw;
+                return SaveCachedUser(cachedProfile, localProfile);
             }
 
             HoyoToonUserProfileGlobalStore.Clear();
@@ -172,14 +162,14 @@ namespace HoyoToon.Editor.API.Users
             HoyoToonUserProfileSO localProfile,
             CancellationToken cancellationToken)
         {
-            if (!HoyoToonUserProfileStorage.IsComplete(localProfile))
+            if (!TryResolveAuthoritativeRefreshUid(localProfile, out string refreshUid, out UserProfileGlobalRecord cachedProfile))
             {
                 return localProfile;
             }
 
             try
             {
-                UserRecordDto apiUser = await HoyoToonUserApiClient.GetUserAsync(localProfile.UID, cancellationToken);
+                UserRecordDto apiUser = await HoyoToonUserApiClient.GetUserAsync(refreshUid, cancellationToken);
                 if (apiUser != null)
                 {
                     return SaveApiUser(apiUser, localProfile);
@@ -187,21 +177,17 @@ namespace HoyoToon.Editor.API.Users
             }
             catch
             {
-                HoyoToonUserProfileGlobalStore.Save(
-                    localProfile.UID,
-                    localProfile.Username,
-                    localProfile.Avatar,
-                    localProfile.RoleName,
-                    localProfile.RoleColor);
+                SaveProfileSnapshotForFallback(localProfile, cachedProfile);
                 throw;
             }
 
-            HoyoToonUserProfileGlobalStore.Save(
-                localProfile.UID,
-                localProfile.Username,
-                localProfile.Avatar,
-                localProfile.RoleName,
-                localProfile.RoleColor);
+            HoyoToonUserProfileSO cachedProfileAsset = SaveCachedUser(cachedProfile, localProfile);
+            if (cachedProfileAsset != null)
+            {
+                return cachedProfileAsset;
+            }
+
+            HoyoToonUserProfileGlobalStore.Clear();
             return localProfile;
         }
 
@@ -227,9 +213,63 @@ namespace HoyoToon.Editor.API.Users
                 normalizedRoleColor);
         }
 
+        internal static bool LocalProfileMatchesCachedUser()
+        {
+            if (!TryLoadCachedProfile(out UserProfileGlobalRecord cachedProfile)
+                || !TryNormalizeCachedUser(
+                    cachedProfile,
+                    out string normalizedUid,
+                    out string normalizedUsername,
+                    out string normalizedAvatar,
+                    out string normalizedRoleName,
+                    out string normalizedRoleColor))
+            {
+                return false;
+            }
+
+            return IsSameProfile(
+                HoyoToonUserProfileStorage.GetLocalProfile(),
+                normalizedUid,
+                normalizedUsername,
+                normalizedAvatar,
+                normalizedRoleName,
+                normalizedRoleColor);
+        }
+
         internal static HoyoToonUserProfileSO SaveApiUserProfile(UserRecordDto apiUser)
         {
             return SaveApiUser(apiUser, HoyoToonUserProfileStorage.GetLocalProfile());
+        }
+
+        internal static HoyoToonUserProfileSO SaveCachedUserProfile()
+        {
+            HoyoToonUserProfileSO currentProfile = HoyoToonUserProfileStorage.GetLocalProfile();
+            return TryLoadCachedProfile(out UserProfileGlobalRecord cachedProfile)
+                ? SaveCachedUser(cachedProfile, currentProfile)
+                : currentProfile;
+        }
+
+        internal static bool TryResolveAuthoritativeRefreshUid(
+            HoyoToonUserProfileSO localProfile,
+            out string uid,
+            out UserProfileGlobalRecord cachedProfile)
+        {
+            cachedProfile = null;
+            uid = string.Empty;
+
+            if (TryLoadCachedProfile(out cachedProfile))
+            {
+                uid = cachedProfile.UID;
+                return true;
+            }
+
+            if (!HoyoToonUserProfileStorage.IsComplete(localProfile))
+            {
+                return false;
+            }
+
+            uid = localProfile.UID?.Trim() ?? string.Empty;
+            return HoyoToonUserProfileStorage.IsNumericUid(uid);
         }
 
         internal static bool TryNormalizeUsername(string username, out string normalizedUsername, out string validationMessage)
@@ -332,6 +372,40 @@ namespace HoyoToon.Editor.API.Users
                 normalizedRoleColor);
         }
 
+        private static HoyoToonUserProfileSO SaveCachedUser(
+            UserProfileGlobalRecord cachedProfile,
+            HoyoToonUserProfileSO currentProfile = null)
+        {
+            if (!TryNormalizeCachedUser(
+                cachedProfile,
+                out string normalizedUid,
+                out string normalizedUsername,
+                out string normalizedAvatar,
+                out string normalizedRoleName,
+                out string normalizedRoleColor))
+            {
+                return currentProfile;
+            }
+
+            if (IsSameProfile(
+                currentProfile,
+                normalizedUid,
+                normalizedUsername,
+                normalizedAvatar,
+                normalizedRoleName,
+                normalizedRoleColor))
+            {
+                return currentProfile;
+            }
+
+            return HoyoToonUserProfileStorage.SaveLocalProfile(
+                normalizedUid,
+                normalizedUsername,
+                normalizedAvatar,
+                normalizedRoleName,
+                normalizedRoleColor);
+        }
+
         private static bool TryNormalizeApiUser(
             UserRecordDto apiUser,
             out string normalizedUid,
@@ -346,28 +420,113 @@ namespace HoyoToon.Editor.API.Users
             normalizedRoleName = HoyoToonApi.DefaultUserRoleName;
             normalizedRoleColor = HoyoToonApi.DefaultUserRoleColor;
 
-            if (apiUser == null || string.IsNullOrWhiteSpace(apiUser.UID))
+            if (apiUser == null)
             {
                 return false;
             }
 
-            if (!HoyoToonUserProfileStorage.IsNumericUid(apiUser.UID))
+            return TryNormalizeProfileSnapshot(
+                apiUser.UID,
+                apiUser.username,
+                apiUser.avatar,
+                apiUser.roleName,
+                apiUser.roleColor,
+                out normalizedUid,
+                out normalizedUsername,
+                out normalizedAvatar,
+                out normalizedRoleName,
+                out normalizedRoleColor);
+        }
+
+        private static bool TryNormalizeCachedUser(
+            UserProfileGlobalRecord cachedProfile,
+            out string normalizedUid,
+            out string normalizedUsername,
+            out string normalizedAvatar,
+            out string normalizedRoleName,
+            out string normalizedRoleColor)
+        {
+            normalizedUid = string.Empty;
+            normalizedUsername = string.Empty;
+            normalizedAvatar = HoyoToonApi.DefaultUserAvatar;
+            normalizedRoleName = HoyoToonApi.DefaultUserRoleName;
+            normalizedRoleColor = HoyoToonApi.DefaultUserRoleColor;
+
+            if (cachedProfile == null)
             {
                 return false;
             }
 
-            normalizedUid = apiUser.UID.Trim();
-            normalizedUsername = apiUser.username?.Trim() ?? string.Empty;
-            normalizedAvatar = string.IsNullOrWhiteSpace(apiUser.avatar)
+            return TryNormalizeProfileSnapshot(
+                cachedProfile.UID,
+                cachedProfile.username,
+                cachedProfile.avatar,
+                cachedProfile.roleName,
+                cachedProfile.roleColor,
+                out normalizedUid,
+                out normalizedUsername,
+                out normalizedAvatar,
+                out normalizedRoleName,
+                out normalizedRoleColor);
+        }
+
+        private static bool TryNormalizeProfileSnapshot(
+            string uid,
+            string username,
+            string avatar,
+            string roleName,
+            string roleColor,
+            out string normalizedUid,
+            out string normalizedUsername,
+            out string normalizedAvatar,
+            out string normalizedRoleName,
+            out string normalizedRoleColor)
+        {
+            normalizedUid = string.Empty;
+            normalizedUsername = string.Empty;
+            normalizedAvatar = HoyoToonApi.DefaultUserAvatar;
+            normalizedRoleName = HoyoToonApi.DefaultUserRoleName;
+            normalizedRoleColor = HoyoToonApi.DefaultUserRoleColor;
+
+            if (string.IsNullOrWhiteSpace(uid) || !HoyoToonUserProfileStorage.IsNumericUid(uid))
+            {
+                return false;
+            }
+
+            normalizedUid = uid.Trim();
+            normalizedUsername = username?.Trim() ?? string.Empty;
+            normalizedAvatar = string.IsNullOrWhiteSpace(avatar)
                 ? HoyoToonApi.DefaultUserAvatar
-                : apiUser.avatar.Trim();
-            normalizedRoleName = string.IsNullOrWhiteSpace(apiUser.roleName)
+                : avatar.Trim();
+            normalizedRoleName = string.IsNullOrWhiteSpace(roleName)
                 ? HoyoToonApi.DefaultUserRoleName
-                : apiUser.roleName.Trim();
-            normalizedRoleColor = string.IsNullOrWhiteSpace(apiUser.roleColor)
+                : roleName.Trim();
+            normalizedRoleColor = string.IsNullOrWhiteSpace(roleColor)
                 ? HoyoToonApi.DefaultUserRoleColor
-                : apiUser.roleColor.Trim();
+                : roleColor.Trim();
             return true;
+        }
+
+        private static bool TryLoadCachedProfile(out UserProfileGlobalRecord cachedProfile)
+        {
+            return HoyoToonUserProfileGlobalStore.TryLoad(out cachedProfile);
+        }
+
+        private static void SaveProfileSnapshotForFallback(
+            HoyoToonUserProfileSO localProfile,
+            UserProfileGlobalRecord cachedProfile)
+        {
+            if (cachedProfile != null || !HoyoToonUserProfileStorage.IsComplete(localProfile))
+            {
+                return;
+            }
+
+            HoyoToonUserProfileGlobalStore.Save(
+                localProfile.UID,
+                localProfile.Username,
+                localProfile.Avatar,
+                localProfile.RoleName,
+                localProfile.RoleColor);
         }
 
         private static bool IsSameProfile(

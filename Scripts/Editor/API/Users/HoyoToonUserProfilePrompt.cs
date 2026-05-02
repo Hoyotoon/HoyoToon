@@ -25,7 +25,7 @@ namespace HoyoToon.Editor.API.Users
                 Title = "Create HoyoToon Profile",
                 Subtitle = "Local user setup",
                 Message =
-                    "Choose the username shown in your HoyoToon Manager. The HoyoToon API will assign the next numeric UID, and this install will store only your local profile as a ScriptableObject.",
+                    "Choose the username shown in your HoyoToon Manager. The HoyoToon API will assign the next numeric UID.",
                 DialogType = HoyoToonDialogType.Question,
                 Size = new Vector2(520f, 360f),
                 Buttons = new[]
