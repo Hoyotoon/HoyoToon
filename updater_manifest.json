@@ -1,5 +1,5 @@
 {
-  "version": "0.2.1",
+  "version": "0.2.2",
   "files": {
     ".gitignore": "009dca4b009a12805e80a8b1fe983425d32f915d",
     "HoyoToon.unity": "a95a07a0ae27a7d67495ddf02134b5422731cb19",
@@ -204,6 +204,8 @@
     "Scripts/Editor/Assets/AssetDownloadModels.cs.meta": "e7f4960b956e0d3a3506067658f768b3bdaf1f47",
     "Scripts/Editor/Assets/AssetDownloadWindow.cs": "6ac23f207c4c7f91033ec91456e31eae401cd2ab",
     "Scripts/Editor/Assets/AssetDownloadWindow.cs.meta": "ecc14f26933978052ecfaa3a666319e9a540865e",
+    "Scripts/Editor/Beta/Users/UserProfileDebugMenus.cs": "406d64d1210b3f5808b8288e23c8dd7c09e71269",
+    "Scripts/Editor/Beta/Users/UserProfileDebugMenus.cs.meta": "bd27c9aa8527a00b1f9660245162d0052839bfae",
     "Scripts/Editor/Detection.meta": "f6c9c3ab60689ea434b205f80c45573037b29492",
     "Scripts/Editor/Detection/Character.meta": "774a6081004316bc8d68d78029c5a679fb64d6e8",
     "Scripts/Editor/Detection/Character/CharacterNameDetector.cs": "5a1cb6cd716b7b1f816cfe74d6c4cf8d92e84543",
@@ -911,9 +913,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "2f0a8c612d6e131d0c0965259b4654c6cc4d3132",
+    "changelog.md": "1c54d8e04b0fd31852d62d873c6e18e766c431e1",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "545bcd4190a2afc1593ad93ac87dc68ba18540a9",
+    "package.json": "67ee5e44af23824a9887710d8270c404324736bb",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
