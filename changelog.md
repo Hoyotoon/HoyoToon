@@ -1,5 +1,5 @@
-# HoyoToon 0.2.1
+# HoyoToon 0.2.2
 
 
 ## API
-- We don't talk about this
+- Debug commands for Users System
