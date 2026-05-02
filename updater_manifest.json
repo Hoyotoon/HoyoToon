@@ -1,7 +1,7 @@
 {
-  "version": "0.2.0",
+  "version": "0.2.1",
   "files": {
-    ".gitignore": "f20b645dd9483ca4ba6c6c536743102d1a89fad7",
+    ".gitignore": "009dca4b009a12805e80a8b1fe983425d32f915d",
     "HoyoToon.unity": "a95a07a0ae27a7d67495ddf02134b5422731cb19",
     "HoyoToon.unity.meta": "2352059316a63978e26ada59d50c3f1708cfaedb",
     "LICENSE": "31a3d460bb3c7d98845187c716a30db81c44b615",
@@ -119,8 +119,6 @@
     "Scriptables/Honkai Star Rail/Resources/HoyoToonResources.asset": "90a24f5932ba8b62ac5e05ba778f0af1eacc49f4",
     "Scriptables/Honkai Star Rail/Resources/HoyoToonResources.asset.meta": "3539849a6f58b6d98e73042b146839356883b03b",
     "Scriptables/User.meta": "e6be073683680c045a5ce80113fd7009f2df3990",
-    "Scriptables/User/LocalUserProfile.asset": "ac2e8e3232f7fa4a6f42f56d76143c07dd49a360",
-    "Scriptables/User/LocalUserProfile.asset.meta": "5abf9c69f1855cfbbbe31f43cfb912b125c4b04e",
     "Scriptables/Zenless Zone Zero.meta": "ad799b5bcef73c03b35b8d71cd17f83be3ca373e",
     "Scriptables/Zenless Zone Zero/Config.meta": "af548cd32d85a28ede4414686984979b67b9ca24",
     "Scriptables/Zenless Zone Zero/Config/GameBoneConstraints.asset": "9422cbaeb84883ef4148bb938d4f0caf142b08d8",
@@ -913,9 +911,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "8fef5ed9729b593544a5c03ea5f51378fcd477b7",
+    "changelog.md": "2f0a8c612d6e131d0c0965259b4654c6cc4d3132",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "efb9e7fcdda72117ab2b0c1887c3adc1a94a3566",
+    "package.json": "545bcd4190a2afc1593ad93ac87dc68ba18540a9",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
