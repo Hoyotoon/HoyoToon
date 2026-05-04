@@ -1,5 +1,5 @@
 {
-  "version": "0.2.4",
+  "version": "0.2.5",
   "files": {
     ".gitignore": "c81828dfd1a4663869cdac6e58690bfe84ab6b6b",
     "HoyoToon.unity": "a95a07a0ae27a7d67495ddf02134b5422731cb19",
@@ -215,7 +215,7 @@
     "Scripts/Editor/Assets/AssetDownloadWindow.cs.meta": "ecc14f26933978052ecfaa3a666319e9a540865e",
     "Scripts/Editor/Detection.meta": "f6c9c3ab60689ea434b205f80c45573037b29492",
     "Scripts/Editor/Detection/Character.meta": "774a6081004316bc8d68d78029c5a679fb64d6e8",
-    "Scripts/Editor/Detection/Character/CharacterIconDetector.cs": "14040f5f64f0b88e2116c0900358370e0367fa8a",
+    "Scripts/Editor/Detection/Character/CharacterIconDetector.cs": "ec8c862fb162c08b9da89cd51adc2b8c54cc5c86",
     "Scripts/Editor/Detection/Character/CharacterIconDetector.cs.meta": "e9cbbb19e0c52fa20e92cf17868fbd4b717739f2",
     "Scripts/Editor/Detection/Character/CharacterNameDetector.cs": "09da9a948f95bc48ca874d859a0d01a7e016688d",
     "Scripts/Editor/Detection/Character/CharacterNameDetector.cs.meta": "030bddf022187f2526eb570bfb833b599769faea",
@@ -377,7 +377,7 @@
     "Scripts/Editor/UI/HoyoToonEditorUiAssets.cs": "cbae5ac2cb520e5a52ed527eb7e8c3ddc0fd53d1",
     "Scripts/Editor/UI/HoyoToonEditorUiAssets.cs.meta": "762ae2bcd6e85eb5f880b2cc5479a62b6987e8b5",
     "Scripts/Editor/UI/Manager.meta": "f6b6d4b3ebdf3c650b005050b4fceed3e5004cad",
-    "Scripts/Editor/UI/Manager/HoyoToonManagerWindow.cs": "be1f8b688be3a7fb6c0635cf7b2c9a98ddcf6dc5",
+    "Scripts/Editor/UI/Manager/HoyoToonManagerWindow.cs": "64b2ea9c0f4fbf391e97a9db43030cbbeea93bc3",
     "Scripts/Editor/UI/Manager/HoyoToonManagerWindow.cs.meta": "52e6305886c8b8dcd482e6bca5f4918f220219ba",
     "Scripts/Editor/UI/Manager/IManagerModule.cs": "f3971f6a2353879be33320514d9872234031f71d",
     "Scripts/Editor/UI/Manager/IManagerModule.cs.meta": "583fd68a35974b0662d256ae0dcd83f7a33f174d",
@@ -926,9 +926,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "26ddd4d1a70716cdd80aa43021f958c76257b9a1",
+    "changelog.md": "d16aa65878572be6398fa6d2a9e6949d715d99d3",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "be3d4dd1fe03339872e9369d6600764bafde4f01",
+    "package.json": "571b4015a477fa772140663b0182ae683b31edcf",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
