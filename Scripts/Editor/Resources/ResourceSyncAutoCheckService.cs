@@ -1,6 +1,7 @@
 #if UNITY_EDITOR
 using System;
 using System.Globalization;
+using HoyoToon.Editor.Onboarding;
 using HoyoToon.Editor.Utilities.API;
 using HoyoToon.Editor.Utilities.Editor;
 using UnityEditor;
@@ -34,7 +35,7 @@ namespace HoyoToon.Editor.Resources
         {
             TryHandleStartup();
 
-            if (!startupReadyHandled || !AutoCheckEnabled)
+            if (!startupReadyHandled || !AutoCheckEnabled || ShouldDeferForOnboarding())
             {
                 return;
             }
@@ -61,6 +62,11 @@ namespace HoyoToon.Editor.Resources
 
         private static void TryRunAutomaticCheck(bool force)
         {
+            if (ShouldDeferForOnboarding())
+            {
+                return;
+            }
+
             if (ResourceSyncService.IsBusy())
             {
                 return;
@@ -73,6 +79,11 @@ namespace HoyoToon.Editor.Resources
 
             EditorPrefs.SetString(PrefsKey(LastAutoCheckTicksKey), DateTime.UtcNow.Ticks.ToString(CultureInfo.InvariantCulture));
             _ = ResourceSyncService.CheckAllGamesInBackgroundAsync();
+        }
+
+        private static bool ShouldDeferForOnboarding()
+        {
+            return OnboardingManager.IsRunning || OnboardingPersistence.ShouldStartOnboarding;
         }
 
         private static string PrefsKey(string key)

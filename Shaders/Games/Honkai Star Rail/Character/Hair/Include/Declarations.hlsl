@@ -228,6 +228,8 @@ TEXTURE2D(_GBufferA);
 TEXTURE2D(_DepthBufferOrCopy);
 // #endif
 
+TEXTURE2D(_ES_GradientAtlas);
+
 #if defined(_USE_NORMAL_MAP)
 TEXTURE2D(_NormalMap);
 #endif

@@ -13,8 +13,7 @@ namespace HoyoToon.Runtime.Rendering.Core
         private const string DefaultReflectionTextureName = "_ReflectionColor";
         private static readonly string[] DefaultReflectionReceiverShaderNames =
         {
-            "HoyoToon/Honkai Star Rail/UI/Manikin/Floor",
-            "HoyoToon/Honkai Star Rail/UI/Manikin/Floor_SoftEdged"
+            "HoyoToon/Honkai Star Rail/UI/Manikin/Floor"
         };
 
         [Serializable]
@@ -180,14 +179,6 @@ namespace HoyoToon.Runtime.Rendering.Core
                 k_FilteredRenderers.Clear();
                 k_CurrentBakedMeshKeys.Clear();
 
-                if (layerMask == 0)
-                {
-                    m_CachedRenderers = Array.Empty<Renderer>();
-                    hasReflectionReceiver = false;
-                    PruneBakedMeshCache();
-                    return m_CachedRenderers;
-                }
-
 #if UNITY_2023_1_OR_NEWER
                 k_Renderers.Clear();
                 Renderer[] allRenderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
@@ -207,22 +198,11 @@ namespace HoyoToon.Runtime.Rendering.Core
                     if (go == null || !go.activeInHierarchy)
                         continue;
 
-                    if ((layerMask & (1 << go.layer)) == 0)
-                        continue;
-
                     if (RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
                     {
                         m_CachedHasReflectionReceiver = true;
                         break;
                     }
-                }
-
-                if (!m_CachedHasReflectionReceiver)
-                {
-                    m_CachedRenderers = Array.Empty<Renderer>();
-                    hasReflectionReceiver = false;
-                    PruneBakedMeshCache();
-                    return m_CachedRenderers;
                 }
 
                 for (int i = 0; i < k_Renderers.Count; ++i)
@@ -239,9 +219,6 @@ namespace HoyoToon.Runtime.Rendering.Core
                         continue;
 
                     if (RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
-                        continue;
-
-                    if (!HasRenderableReflectionPass(renderer))
                         continue;
 
                     k_FilteredRenderers.Add(renderer);
@@ -443,6 +420,7 @@ namespace HoyoToon.Runtime.Rendering.Core
                 string textureName = ResolveReflectionTextureName(settings);
                 int reflectionTextureId = Shader.PropertyToID(textureName);
 
+                // Only render reflections when both a receiver and at least one reflectable renderer exist.
                 if (!hasReflectionReceiver || targetRenderers.Length == 0)
                 {
                     Shader.SetGlobalTexture(reflectionTextureId, Texture2D.blackTexture);

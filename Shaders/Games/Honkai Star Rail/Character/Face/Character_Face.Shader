@@ -204,6 +204,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
             #include "Include/Common.hlsl"
             #include "Include/Program.hlsl"
             #pragma shader_feature_local _HEIGHTLERP
+            #pragma shader_feature_local _ENABLE_FOG
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma shader_feature_local _USE_DITHER 
             #pragma shader_feature_local _RECEIVE_SHADOWS
@@ -265,6 +266,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Face"
             #include "Include/Common.hlsl"
             #include "Include/Program.hlsl"
             #pragma shader_feature_local _HEIGHTLERP
+            #pragma shader_feature_local _ENABLE_FOG
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma shader_feature_local _USE_DITHER 
             #pragma vertex vert_base

@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: com.hoyotoon.HoyoToon.Runtime.Rendering::CustomRPTransparentBuffer
   m_Active: 1
   settings:
-    renderPassEvent: 500
+    renderPassEvent: 450
 --- !u!114 &-6748888645824887931
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -87,9 +87,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.Rendering.Core.HoyoToonPlanarReflection
   m_Active: 1
   settings:
-    renderPassEvent: 100
-    reflectionWidth: 2048
-    reflectionHeight: 2048
+    renderPassEvent: 150
+    reflectionWidth: 1024
+    reflectionHeight: 1024
     reflectionPlaneY: 0
     reflectionTextureName: _ReflectionColor
     reflectionReceiverShaderNames:
@@ -137,7 +137,8 @@ MonoBehaviour:
   - {fileID: 4190297477508948689}
   - {fileID: 4664727860857836403}
   - {fileID: -9210987722599293580}
-  m_RendererFeatureMap: d96f8ad68adf48e185c3f0a4882157a2cab86e08f27cabceebe09daa1acffcbadeb7a1dafc57f4284740da8d80fab426a39880ccb51a5e72de8fb36be83c96afd1e222ca5aed263a73934c504671bc40741dfcdb77ff2b80
+  - {fileID: 8989090364477144648}
+  m_RendererFeatureMap: d96f8ad68adf48e185c3f0a4882157a2cab86e08f27cabceebe09daa1acffcbadeb7a1dafc57f4284740da8d80fab426a39880ccb51a5e72de8fb36be83c96afd1e222ca5aed263a73934c504671bc40741dfcdb77ff2b8048fe8b6c0faabf7c
   m_UseNativeRenderPass: 0
   xrSystemData: {fileID: 0}
   postProcessData: {fileID: 11400000, guid: afaa659b0098a8747afa0bf536b444ac, type: 2}
@@ -254,3 +255,41 @@ MonoBehaviour:
     renderPassEvent: 210
     maxAtlasResolution: 4098
     excludeFromMainShadowMap: 1
+--- !u!114 &8989090364477144648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ece914547e2b4b4987cac4d0ba6eee9, type: 3}
+  m_Name: CharacterManikinAreaFloorShadow
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.Rendering.HSR.CharacterManikinAreaFloorShadow
+  m_Active: 1
+  settings:
+    renderPassEvent: 210
+    maxAtlasResolution: 2048
+    maxCharacters: 4
+    slicesPerCharacter: 3
+    slotResolution: 512
+    lightFollowAmount: 1
+    firstSliceUsesSceneLight: 0
+    firstSliceFakePitch: 50
+    firstSliceFakeYaw: 180
+    firstSliceFakeRoll: 151
+    nearPlane: 0.0001
+    farPlane: 10
+    floorProjectionDistance: 1
+    minOrthographicSize: 0.1
+    shadowStrength: 0.731
+    pcssSearchRadius: 7.76
+    pcssMinFilterRadius: 3.58
+    pcssMaxFilterRadius: 6.5
+    radialBlurStart: 0.8
+    radialBlurEnd: 1.62
+    radialBlurStrength: 3
+    radialFadeStart: 0.17
+    radialFadeEnd: 1.8
+    floorDepthThreshold: 0.0025

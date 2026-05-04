@@ -24,7 +24,7 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/FloorLine"
     SubShader
     {
         Name "CustomForward"
-        Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Geometry-40" "RenderType" = "Opaque" }
+        Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Geometry" "RenderType" = "Opaque" }
         Offset 20, 20
         HLSLINCLUDE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
@@ -84,27 +84,22 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/FloorLine"
                 vertex_output vert(vertex_input v)
                 {
                     vertex_output o = (vertex_output)0;
-                    float3 worldPos = v.vertex.yyy * (float3)unity_ObjectToWorld[1];
-                    worldPos = (float3)unity_ObjectToWorld[0] * v.vertex.xxx + worldPos;
-                    worldPos = (float3)unity_ObjectToWorld[2] * v.vertex.zzz + worldPos;
-                    worldPos = worldPos + unity_ObjectToWorld[3].xyz;
+                    float3 worldPos = TransformObjectToWorld(v.vertex.xyz);
                     float3 viewDir = (-worldPos) + _WorldSpaceCameraPos.xyz;
                     float viewDistance = dot(viewDir, viewDir);
                     viewDistance = sqrt(viewDistance);
                     float inflatedHeight = v.color.x * _InflateScale;
-                    viewDistance = inflatedHeight * viewDistance + v.vertex.y;
-                    float3 inflatedPos = viewDistance * (float3)unity_ObjectToWorld[1];
-                    float2 widthOffset = v.normal.xz * float2(_Width, _Width) + v.vertex.xz;
-                    inflatedPos = (float3)unity_ObjectToWorld[0] * widthOffset.xxx + inflatedPos;
-                    inflatedPos = (float3)unity_ObjectToWorld[2] * widthOffset.yyy + inflatedPos;
-                    inflatedPos = inflatedPos + unity_ObjectToWorld[3].xyz;
+                    float3 inflatedObjectPos = v.vertex.xyz;
+                    inflatedObjectPos.y = inflatedHeight * viewDistance + v.vertex.y;
+                    inflatedObjectPos.xz += v.normal.xz * _Width;
+                    float3 inflatedPos = TransformObjectToWorld(inflatedObjectPos);
                     o.vertex = mul(UNITY_MATRIX_VP, float4(inflatedPos, 1.0));
                     o.uv = v.uv;
                     o.uv1 = v.uv1;
                     o.uv2 = v.uv2;
                     o.ss_pos = float4(inflatedPos, 1.0);
                     o.color = v.color;
-                    o.normal = mul((float3x3)unity_ObjectToWorld, v.normal);
+                    o.normal = TransformObjectToWorldNormal(v.normal);
                     o.view = _WorldSpaceCameraPos - inflatedPos;
                     return o;
                 }

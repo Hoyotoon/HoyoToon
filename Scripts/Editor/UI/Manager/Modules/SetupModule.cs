@@ -6,6 +6,7 @@ using UnityEditor;
 using UnityEditor.UIElements;
 using HoyoToon.Editor.Onboarding;
 using HoyoToon.Runtime.Character.HSR;
+using HoyoToon.Runtime.Scene.Environment;
 using HoyoToon.Runtime.Scene.Placement;
 using UnityEngine;
 using UnityEngine.UIElements;
@@ -250,7 +251,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             }
 
             section.Add(CreatePlacementSelector(context, controller, window));
-            section.Add(CreatePlacementOptions(controller, window));
+            section.Add(CreatePlacementOptions(context, controller, window));
+
             return section;
         }
 
@@ -366,7 +368,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             return row;
         }
 
-        private static VisualElement CreatePlacementOptions(CharacterPlacementController controller, HoyoToonManagerWindow window)
+        private static VisualElement CreatePlacementOptions(ModuleContext context, CharacterPlacementController controller, HoyoToonManagerWindow window)
         {
             VisualElement section = new VisualElement();
             section.AddToClassList("ht-column");
@@ -444,6 +446,12 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
             section.Add(rowOne);
 
+            VisualElement environmentSelector = CreateEnvironmentSelector(context, window);
+            if (environmentSelector != null)
+            {
+                section.Add(environmentSelector);
+            }
+
             VisualElement rowTwo = new VisualElement();
             rowTwo.AddToClassList("ht-row");
             rowTwo.AddToClassList("ht-gap-8");
@@ -459,6 +467,125 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             section.Add(rowThree);
 
             return section;
+        }
+
+        private static VisualElement CreateEnvironmentSelector(ModuleContext context, HoyoToonManagerWindow window)
+        {
+            EnvironmentManager environmentManager = context != null ? context.EnvironmentManager : null;
+            if (environmentManager == null)
+            {
+                return null;
+            }
+
+            VisualElement row = new VisualElement();
+            row.AddToClassList("ht-row");
+            row.AddToClassList("ht-gap-8");
+            row.AddToClassList("ht-placement-option-row");
+
+            List<string> gameOptions = BuildUniquePlacementOptions(EnumerateGameLabels(environmentManager).ToList());
+            if (gameOptions.Count <= 0)
+            {
+                gameOptions.Add("No games");
+            }
+
+            int activeGameIndex = environmentManager.ActiveGameIndex;
+            DropdownField gameDropdown = new DropdownField("Game");
+            gameDropdown.AddToClassList("ht-field");
+            gameDropdown.AddToClassList("ht-placement-compact-field");
+            gameDropdown.choices = gameOptions;
+            gameDropdown.index = Mathf.Clamp(activeGameIndex, 0, gameOptions.Count - 1);
+            gameDropdown.SetEnabled(environmentManager.GameCount > 0);
+            OnboardingTargetRegistry.RegisterVisualElement("Scene.EnvironmentGameDropdown", gameDropdown, "Environment game dropdown", "Scene");
+            gameDropdown.RegisterValueChangedCallback(evt =>
+            {
+                OnboardingSignals.RecordValueChanged("Scene.EnvironmentGameDropdown", evt.newValue);
+                int newIndex = gameOptions.IndexOf(evt.newValue);
+                if (newIndex < 0)
+                {
+                    return;
+                }
+
+                ApplyEnvironmentChange(
+                    environmentManager,
+                    "HoyoToon Change Environment Game",
+                    () => environmentManager.SetActiveGameIndex(newIndex),
+                    window);
+            });
+            row.Add(gameDropdown);
+
+            List<string> environmentOptions = BuildUniquePlacementOptions(EnumerateEnvironmentLabels(environmentManager, activeGameIndex).ToList());
+            int environmentCount = environmentManager.GetEnvironmentCount(activeGameIndex);
+            environmentOptions.Insert(0, "None");
+
+            int activeEnvironmentIndex = environmentManager.GetActiveEnvironmentIndex(activeGameIndex);
+            DropdownField environmentDropdown = new DropdownField("Enviroment");
+            environmentDropdown.AddToClassList("ht-field");
+            environmentDropdown.AddToClassList("ht-placement-wide-field");
+            environmentDropdown.choices = environmentOptions;
+            environmentDropdown.index = activeEnvironmentIndex >= 0
+                ? Mathf.Clamp(activeEnvironmentIndex + 1, 0, environmentOptions.Count - 1)
+                : 0;
+            environmentDropdown.SetEnabled(environmentManager.GameCount > 0);
+            OnboardingTargetRegistry.RegisterVisualElement("Scene.EnvironmentDropdown", environmentDropdown, "Environment dropdown", "Scene");
+            environmentDropdown.RegisterValueChangedCallback(evt =>
+            {
+                OnboardingSignals.RecordValueChanged("Scene.EnvironmentDropdown", evt.newValue);
+                int newIndex = environmentOptions.IndexOf(evt.newValue);
+                if (newIndex < 0)
+                {
+                    return;
+                }
+
+                ApplyEnvironmentChange(
+                    environmentManager,
+                    "HoyoToon Change Environment",
+                    () => environmentManager.SetActiveEnvironmentIndex(newIndex == 0 ? -1 : Mathf.Clamp(newIndex - 1, -1, environmentCount - 1)),
+                    window);
+            });
+            row.Add(environmentDropdown);
+
+            return row;
+        }
+
+        private static IEnumerable<string> EnumerateGameLabels(EnvironmentManager environmentManager)
+        {
+            int gameCount = environmentManager != null ? environmentManager.GameCount : 0;
+            for (int index = 0; index < gameCount; index++)
+            {
+                yield return environmentManager.GetGameLabel(index);
+            }
+        }
+
+        private static IEnumerable<string> EnumerateEnvironmentLabels(EnvironmentManager environmentManager, int gameIndex)
+        {
+            int environmentCount = environmentManager != null ? environmentManager.GetEnvironmentCount(gameIndex) : 0;
+            for (int index = 0; index < environmentCount; index++)
+            {
+                yield return environmentManager.GetEnvironmentLabel(gameIndex, index);
+            }
+        }
+
+        private static void ApplyEnvironmentChange(EnvironmentManager environmentManager, string undoLabel, System.Action action, HoyoToonManagerWindow window)
+        {
+            if (environmentManager == null || action == null)
+            {
+                return;
+            }
+
+            List<UnityEngine.Object> undoTargets = new List<UnityEngine.Object>();
+            environmentManager.CollectManagedObjects(undoTargets);
+            if (undoTargets.Count > 0)
+            {
+                Undo.RecordObjects(undoTargets.ToArray(), undoLabel);
+            }
+            else
+            {
+                Undo.RecordObject(environmentManager, undoLabel);
+            }
+
+            action();
+            EditorUtility.SetDirty(environmentManager);
+            window?.RefreshManagerContext();
         }
 
         private static List<string> BuildUniquePlacementOptions(IReadOnlyList<string> labels)

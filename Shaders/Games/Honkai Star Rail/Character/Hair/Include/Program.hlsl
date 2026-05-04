@@ -467,6 +467,79 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
         final_color.xyz = lerp(maxed_final, rim_color, rim_values.y);
         // final_color.xyz = sampled_depth;
     }
+    #if defined(_ENABLE_FOG)
+        // Calculate distance from camera to world position
+        float3 camera_to_world = i.ws_pos.xyz - _WorldSpaceCameraPos.xyz;
+        float distance_to_camera = length(camera_to_world);
+        
+        // Set up fog parameters
+        float fog_near = _ES_FogNear;
+        float fog_far = _ES_FogFar;
+        float height_fog_near = _ES_HeightFogFogNear;
+        float height_fog_far = _ES_HeightFogFogFar;
+        
+        // Calculate fog ranges
+        float fog_range = fog_far - fog_near;
+        float height_fog_range = height_fog_far - height_fog_near;
+        float adjusted_fog_near = fog_near + fog_range * _ES_FogCharacterNearFactor;
+        float adjusted_height_fog_near = height_fog_near + height_fog_range * _ES_FogCharacterNearFactor;
+        
+        // Calculate fog density factors
+        float fog_density_factor = saturate((distance_to_camera - adjusted_fog_near) / (fog_far - adjusted_fog_near));
+        float height_fog_density_factor = saturate((distance_to_camera - adjusted_height_fog_near) / (height_fog_far - adjusted_height_fog_near));
+        
+        // Apply density
+        fog_density_factor *= _ES_FogDensity;
+        height_fog_density_factor *= _ES_HeightFogDensity;
+        
+        // Smooth fog curves
+        float fog_curve = fog_density_factor * (1.0 - fog_density_factor);
+        float height_fog_curve = height_fog_density_factor * (1.0 - height_fog_density_factor);
+        float final_fog_density = fog_density_factor + fog_curve;
+        float final_height_fog_density = height_fog_density_factor + height_fog_curve;
+        
+        // Calculate height fog influence
+        float height_offset = dot(i.ws_pos.xyz, _ES_GlobalRotMatrix[3].xyz) - _ES_GlobalRotMatrix[3].w;
+        float height_diff = (0.0 < _ES_HeightFogRange) ? (height_offset - _ES_HeightFogBaseHeight) : (_ES_HeightFogBaseHeight - height_offset);
+        height_diff = max(height_diff, 0.0) / (abs(_ES_HeightFogRange) + 1.0);
+        height_diff = saturate(height_diff);
+        float height_fog_influence = 1.0 - height_diff;
+        float adjusted_height_fog = saturate(height_fog_influence * _ES_HeightFogDensity - 1.0);
+        
+        // Transition fade
+        float transition_fade = (1.0 - _ES_DisableFogTransition) * _ES_TransitionRate;
+        
+        // Sample fog gradient
+        float2 fog_gradient_uv = float2(final_fog_density, transition_fade * 0.125 + _ES_FogColor);
+        float3 fog_color = _ES_GradientAtlas.SampleLevel(sampler_linear_clamp, fog_gradient_uv, 0.0).xyz;
+        
+        // Apply fog to final color
+        float fog_blend = saturate(final_fog_density);
+        float3 fog_applied = lerp(final_color.xyz, fog_color, fog_blend);
+        
+        float fog_intensity = saturate(_ES_FogDensity - 1.0);
+        final_color.xyz = lerp(fog_applied, fog_color, fog_intensity);
+        
+        // Sample height fog gradient
+        float2 height_fog_gradient_uv = float2(final_height_fog_density, transition_fade * 0.125 + _ES_HeightFogColor);
+        float3 height_fog_color = _ES_GradientAtlas.SampleLevel(sampler_linear_clamp, height_fog_gradient_uv, 0.0).xyz;
+        
+        // Apply height fog
+        float3 height_fog_applied = height_fog_influence * height_fog_color;
+        float3 blended_height_fog = lerp(final_color.xyz, height_fog_applied, final_height_fog_density);
+        float3 combined_height_fog = height_fog_applied + blended_height_fog;
+        float3 final_height_fog = combined_height_fog * adjusted_height_fog + blended_height_fog;
+        
+        // Calculate brightness influence
+        float max_brightness = max(max(height_fog_color.z, height_fog_color.y), height_fog_color.x);
+        float height_brightness_adjust = _ES_HeightFogAddAjust * (-max_brightness) + max_brightness;
+        
+        // Final composite
+        float3 height_fog_contribution = height_fog_influence * final_height_fog;
+        float3 blended_final = lerp(final_color.xyz, height_fog_contribution, final_height_fog_density);
+        final_color.xyz = height_fog_influence * (final_height_fog - final_color.xyz) + final_color.xyz;
+        final_color.xyz = lerp(final_color, blended_final, height_brightness_adjust);
+    #endif
 
 
     #if defined(_DIRECTIONALDISSOLVE)

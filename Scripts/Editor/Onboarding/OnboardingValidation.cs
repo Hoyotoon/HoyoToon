@@ -41,9 +41,11 @@ namespace HoyoToon.Editor.Onboarding
         private static PrerequisiteReport prerequisiteReport;
         private static bool resourceSyncRequested;
         private static bool resourceSyncCompleted;
+        private static bool resourceSyncWaitingForExistingSync;
         private static bool prerequisiteCheckAfterResourceSyncStarted;
         private static string resourceSyncFailureMessage = string.Empty;
         private static Task resourceSyncTask;
+        private static int resourceSyncRunVersion;
         private static string[] resourceSyncTargetKeys = Array.Empty<string>();
         private static string[] resourceSyncConfigurationErrors = Array.Empty<string>();
         private static bool updaterCheckRequested;
@@ -275,40 +277,10 @@ namespace HoyoToon.Editor.Onboarding
             ResetResourceAndPrerequisiteCheck();
             resourceSyncRequested = true;
 
-            if (ResourceSyncService.IsBusy())
-            {
-                resourceSyncCompleted = true;
-                resourceSyncFailureMessage = "A HoyoToon resource sync is already running. Wait for it to finish, then retry this onboarding step.";
-                return;
-            }
-
             try
             {
-                ResourceRegistry.Initialize();
-                if (!ResourceSyncTargetResolver.TryResolveAllTargets(out var targets, out var messages))
-                {
-                    resourceSyncCompleted = true;
-                    resourceSyncFailureMessage = BuildResourceResolutionFailureMessage(messages);
-                    return;
-                }
-
-                resourceSyncTargetKeys = targets
-                    .Where(target => target != null && !string.IsNullOrWhiteSpace(target.GameKey))
-                    .Select(target => target.GameKey)
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .ToArray();
-                ResourceSyncTargetLabels.Clear();
-                foreach (ResourceSyncTarget target in targets.Where(target => target != null && !string.IsNullOrWhiteSpace(target.GameKey)))
-                {
-                    ResourceSyncTargetLabels[target.GameKey] = target.OperationLabel;
-                }
-
-                resourceSyncConfigurationErrors = (messages ?? new List<string>())
-                    .Where(message => !string.IsNullOrWhiteSpace(message))
-                    .Distinct(StringComparer.Ordinal)
-                    .ToArray();
-
-                resourceSyncTask = RunResourceSyncForOnboardingAsync();
+                int runVersion = resourceSyncRunVersion;
+                resourceSyncTask = RunResourceSyncForOnboardingAsync(runVersion);
             }
             catch (Exception exception)
             {
@@ -346,6 +318,11 @@ namespace HoyoToon.Editor.Onboarding
 
             if (!IsResourceSyncFinished())
             {
+                if (resourceSyncWaitingForExistingSync)
+                {
+                    return OnboardingAsyncStatus.Running("Waiting for the active HoyoToon resource sync to finish...");
+                }
+
                 return OnboardingAsyncStatus.Running("Downloading and syncing required HoyoToon resources...");
             }
 
@@ -476,23 +453,94 @@ namespace HoyoToon.Editor.Onboarding
             return OnboardingAsyncStatus.Succeeded("All required resources are ready.");
         }
 
-        private static async Task RunResourceSyncForOnboardingAsync()
+        private static async Task RunResourceSyncForOnboardingAsync(int runVersion)
         {
             try
             {
+                if (!await WaitForResourceSyncToBecomeAvailableAsync(runVersion))
+                {
+                    return;
+                }
+
+                ResourceRegistry.Initialize();
+                if (!ResourceSyncTargetResolver.TryResolveAllTargets(out var targets, out var messages))
+                {
+                    if (IsCurrentResourceSyncRun(runVersion))
+                    {
+                        resourceSyncFailureMessage = BuildResourceResolutionFailureMessage(messages);
+                    }
+
+                    return;
+                }
+
+                if (!IsCurrentResourceSyncRun(runVersion))
+                {
+                    return;
+                }
+
+                resourceSyncTargetKeys = targets
+                    .Where(target => target != null && !string.IsNullOrWhiteSpace(target.GameKey))
+                    .Select(target => target.GameKey)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToArray();
+                ResourceSyncTargetLabels.Clear();
+                foreach (ResourceSyncTarget target in targets.Where(target => target != null && !string.IsNullOrWhiteSpace(target.GameKey)))
+                {
+                    ResourceSyncTargetLabels[target.GameKey] = target.OperationLabel;
+                }
+
+                resourceSyncConfigurationErrors = (messages ?? new List<string>())
+                    .Where(message => !string.IsNullOrWhiteSpace(message))
+                    .Distinct(StringComparer.Ordinal)
+                    .ToArray();
+
                 await ResourceSyncService.SyncAllGamesForOnboardingAsync();
             }
             catch (Exception exception)
             {
-                resourceSyncFailureMessage = string.IsNullOrWhiteSpace(exception.Message)
-                    ? "The HoyoToon resource sync failed."
-                    : exception.Message;
+                if (IsCurrentResourceSyncRun(runVersion))
+                {
+                    resourceSyncFailureMessage = string.IsNullOrWhiteSpace(exception.Message)
+                        ? "The HoyoToon resource sync failed."
+                        : exception.Message;
+                }
+
                 Debug.LogException(exception);
             }
             finally
             {
-                resourceSyncCompleted = true;
+                if (IsCurrentResourceSyncRun(runVersion))
+                {
+                    resourceSyncWaitingForExistingSync = false;
+                    resourceSyncCompleted = true;
+                }
             }
+        }
+
+        private static async Task<bool> WaitForResourceSyncToBecomeAvailableAsync(int runVersion)
+        {
+            resourceSyncWaitingForExistingSync = IsCurrentResourceSyncRun(runVersion) && ResourceSyncService.IsBusy();
+            try
+            {
+                while (IsCurrentResourceSyncRun(runVersion) && ResourceSyncService.IsBusy())
+                {
+                    await Task.Delay(500);
+                }
+
+                return IsCurrentResourceSyncRun(runVersion);
+            }
+            finally
+            {
+                if (IsCurrentResourceSyncRun(runVersion))
+                {
+                    resourceSyncWaitingForExistingSync = false;
+                }
+            }
+        }
+
+        private static bool IsCurrentResourceSyncRun(int runVersion)
+        {
+            return resourceSyncRequested && runVersion == resourceSyncRunVersion;
         }
 
         private static bool ResourceSyncPassed()
@@ -623,9 +671,11 @@ namespace HoyoToon.Editor.Onboarding
 
         private static void ResetResourceAndPrerequisiteCheck()
         {
+            resourceSyncRunVersion++;
             prerequisiteReport = null;
             resourceSyncRequested = false;
             resourceSyncCompleted = false;
+            resourceSyncWaitingForExistingSync = false;
             prerequisiteCheckAfterResourceSyncStarted = false;
             resourceSyncFailureMessage = string.Empty;
             resourceSyncTask = null;

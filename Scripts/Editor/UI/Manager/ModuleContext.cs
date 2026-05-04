@@ -1,4 +1,5 @@
 using System;
+using HoyoToon.Runtime.Scene.Environment;
 using HoyoToon.Runtime.Scene.Placement;
 using UnityEditor;
 using UnityEngine;
@@ -48,6 +49,7 @@ namespace HoyoToon.Editor.UI.Manager
         public string PlacementActiveGameKey { get; set; } = string.Empty;
         public string[] PlacementManagedCharacterNames { get; set; } = Array.Empty<string>();
         public string[] PlacementTeamCharacterNames { get; set; } = Array.Empty<string>();
+        public EnvironmentManager EnvironmentManager { get; set; }
 
         public bool HasSelection => SelectedObjects != null && SelectedObjects.Length > 0;
         public bool HasBatchModels => BatchModelDetections != null && BatchModelDetections.Length > 0;

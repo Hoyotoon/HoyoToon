@@ -1,12 +1,18 @@
-# HoyoToon 0.2.6
+# HoyoToon 0.2.7
 
-## API
-- API will now attempt to download and import 3 sets of Character Icons from each character when you set them up.
+## Onboarding
+- Fixed an potential bug where the resource step could hang.
+
+
+## Rendering
+- Fixed an issue where the planar reflection wouldn't disable when the gameobject was disabled.
+
+## Enviroment
+- Added a new enviroment manager that'll detect and handle all map related enviroments.
+- Added `Character Screen` enviroment to `Honkai Star Rail`
 
 
 ## Manager
-- Header will now display the active character it's Splash art.
-- Fixed an issue where Undo/Redo wouldn't register.
-- Fixed an issue where the `Clear Selection` button would not turn off when you manually deselect the character.
-- Fixed an issue where the profile image would disappear randomly.
-- Fixed an issue where the Main Light color would revert back to white when modified.
+- Added a new dropdown menu to the manager for selecting which Game Enviroment to use.
+- Added a new dropdown menu to the manager for selecting which enviroment to use for the current game.
+- Fixed an error that would occur when setting the game window to fullscreen mode while the manager was open.

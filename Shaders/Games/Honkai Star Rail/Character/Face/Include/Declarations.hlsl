@@ -249,7 +249,7 @@ SAMPLER(sampler_linear_clamp);
 
 
 TEXTURE2D(_CharacterHairShadowMap);
-
+TEXTURE2D(_ES_GradientAtlas);
 
 
 // #if defined(is_forwardemission)

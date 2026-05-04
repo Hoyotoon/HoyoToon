@@ -185,6 +185,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             #include "Include/Program.hlsl"
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma shader_feature_local _HEIGHTLERP
+            #pragma shader_feature_local _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _RIM_BACKLIGHT_ON
             #pragma shader_feature_local _USE_DITHER 
@@ -223,6 +224,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             HLSLPROGRAM
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma shader_feature_local _HEIGHTLERP
+            #pragma shader_feature_local _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _RIM_BACKLIGHT_ON
             #pragma shader_feature_local _USE_DITHER

@@ -20,7 +20,7 @@ using UnityEngine;
 
 namespace HoyoToon.Editor.Assets
 {
-    internal sealed class AssetDownloadWindow : EditorWindow
+    internal sealed class AssetDownloadWindow : ScriptableObject
     {
         private const string MenuPath = "HoyoToon/Assets/Downloader";
         private const string WindowTitle = "Asset Downloader";
@@ -105,6 +105,7 @@ namespace HoyoToon.Editor.Assets
             if (sharedBackend == null)
             {
                 sharedBackend = CreateInstance<AssetDownloadWindow>();
+                sharedBackend.name = WindowTitle + " Backend";
                 sharedBackend.hideFlags = HideFlags.HideAndDontSave;
             }
 
@@ -113,8 +114,6 @@ namespace HoyoToon.Editor.Assets
 
         private void OnEnable()
         {
-            titleContent = new GUIContent(WindowTitle);
-            minSize = new Vector2(460f, 560f);
             LoadPrefs();
             EditorApplication.update -= HandleWindowUpdate;
             EditorApplication.update += HandleWindowUpdate;
@@ -128,6 +127,10 @@ namespace HoyoToon.Editor.Assets
                 hasLoadedOnce = true;
                 BeginAutomaticRefresh();
             }
+        }
+
+        private void Repaint()
+        {
         }
 
         private void OnDisable()

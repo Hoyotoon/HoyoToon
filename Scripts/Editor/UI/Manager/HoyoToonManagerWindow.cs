@@ -19,6 +19,7 @@ using HoyoToon.Editor.Updater;
 using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Runtime.ScriptableObjects.Games;
 using HoyoToon.Runtime.ScriptableObjects.Users;
+using HoyoToon.Runtime.Scene.Environment;
 using HoyoToon.Runtime.Scene.Placement;
 using UnityEditor;
 using UnityEditor.PackageManager;
@@ -2189,6 +2190,8 @@ namespace HoyoToon.Editor.UI.Manager
             {
                 placementController.EnsureRosterConsistency();
             }
+
+            EnvironmentManager environmentManager = EnvironmentManager.GetPrimaryCachedOrFind();
             GameObject placementActiveModel = placementController != null ? placementController.ActiveModel : null;
             string placementActiveGameKey = ResolvePlacementGameKey(placementActiveModel);
             string placementActiveCharacterName = ResolvePlacementCharacterName(placementActiveModel);
@@ -2226,7 +2229,8 @@ namespace HoyoToon.Editor.UI.Manager
                 PlacementActiveCharacterName = placementActiveCharacterName,
                 PlacementActiveGameKey = placementActiveGameKey,
                 PlacementManagedCharacterNames = placementManagedCharacterNames,
-                PlacementTeamCharacterNames = placementTeamCharacterNames
+                PlacementTeamCharacterNames = placementTeamCharacterNames,
+                EnvironmentManager = environmentManager
             };
         }
 
