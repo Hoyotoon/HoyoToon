@@ -81,7 +81,6 @@ updater_manifest.json.meta
 /.github/scripts
 Temp
 Temp.meta
-Scriptables/User/
 
 # -------------------------------------------------------
 # HoyoToon Updater Tagged Ignore Examples
@@ -102,7 +101,6 @@ Resources/Honkai Star Rail.meta
 Resources/Zenless Zone Zero
 Resources/Zenless Zone Zero.meta
 Scripts/Editor/Data/
-Scriptables/User/
 # HOYOTOON-UPDATER-KEEP END
 #
 # Inline syntax (each line defines a single pattern):

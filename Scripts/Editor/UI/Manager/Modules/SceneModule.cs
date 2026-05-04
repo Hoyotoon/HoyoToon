@@ -201,7 +201,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 VisualElement lightSection = CreateFoldout(selectedEntry.Label, true);
                 lightSection.AddToClassList("ht-column");
                 lightSection.AddToClassList("ht-gap-4");
-                lightSection.Add(CreateSceneLightInspector(selectedEntry.Light, selectedEntry.IsMainLight, RefreshLightEditor));
+                lightSection.Add(CreateSceneLightInspector(match.Controller, selectedEntry.Light, selectedEntry.IsMainLight, RefreshLightEditor));
                 inspectorHost.Add(lightSection);
 
                 inspectorHost.Add(CreateDivider());
@@ -565,7 +565,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             return SerializedControllerInspectorUtility.CreateFieldElement(field, property, s_ControllerFieldClassNames);
         }
 
-        private VisualElement CreateSceneLightInspector(Light light, bool isMainLight, Action refreshLights)
+        private VisualElement CreateSceneLightInspector(Component controller, Light light, bool isMainLight, Action refreshLights)
         {
             VisualElement host = new VisualElement();
             host.AddToClassList("ht-column");
@@ -575,6 +575,19 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             {
                 host.Add(CreateHelpBox("No scene light selected.", HelpBoxMessageType.Info));
                 return host;
+            }
+
+            HSRSceneController hsrMainLightController = isMainLight ? controller as HSRSceneController : null;
+
+            void ApplyMainLightBackedChange(string undoName, Action<HSRSceneController> applyController, Action<Light> applyLight)
+            {
+                if (hsrMainLightController != null && applyController != null)
+                {
+                    ApplyHsrMainLightChange(hsrMainLightController, light, undoName, applyController, applyLight);
+                    return;
+                }
+
+                ApplyLightChange(light, undoName, applyLight);
             }
 
             if (isMainLight)
@@ -590,55 +603,103 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             host.Add(CreateTransformVector3Field(
                 "Rotation",
                 light.transform != null ? light.transform.eulerAngles : Vector3.zero,
-                newValue => ApplyTransformChange(light, "HoyoToon Update Scene Light Rotation", transform => transform.eulerAngles = newValue)));
+                newValue =>
+                {
+                    if (hsrMainLightController != null)
+                    {
+                        ApplyHsrMainLightTransformChange(
+                            hsrMainLightController,
+                            light,
+                            "HoyoToon Update Scene Main Light Rotation",
+                            target => target.MainLightRotation = NormalizeYaw(newValue.y),
+                            transform => transform.eulerAngles = newValue);
+                        return;
+                    }
 
-            host.Add(CreateLightEnumField(
+                    ApplyTransformChange(light, "HoyoToon Update Scene Light Rotation", transform => transform.eulerAngles = newValue);
+                }));
+
+            EnumField lightTypeField = CreateLightEnumField(
                 "Light Type",
                 light.type,
                 newValue =>
                 {
                     ApplyLightChange(light, "HoyoToon Update Scene Light Type", target => target.type = (LightType)newValue);
                     refreshLights?.Invoke();
-                }));
+                });
+            lightTypeField.SetEnabled(!isMainLight);
+            host.Add(lightTypeField);
 
             host.Add(CreateLightColorField(
                 "Color",
-                light.color,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Color", target => target.color = newValue)));
+                hsrMainLightController != null ? hsrMainLightController.MainLightColor : light.color,
+                newValue => ApplyMainLightBackedChange(
+                    "HoyoToon Update Scene Main Light Color",
+                    target => target.MainLightColor = newValue,
+                    target => target.color = newValue)));
 
             host.Add(CreateLightToggleField(
                 "Use Color Temperature",
-                light.useColorTemperature,
+                hsrMainLightController != null ? hsrMainLightController.MainLightUseColorTemperature : light.useColorTemperature,
                 newValue =>
                 {
-                    ApplyLightChange(light, "HoyoToon Update Scene Light Temperature Mode", target => target.useColorTemperature = newValue);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Temperature Mode",
+                        target => target.MainLightUseColorTemperature = newValue,
+                        target => target.useColorTemperature = newValue);
                     refreshLights?.Invoke();
                 }));
 
+            bool useColorTemperature = hsrMainLightController != null ? hsrMainLightController.MainLightUseColorTemperature : light.useColorTemperature;
             FloatField temperatureField = CreateLightFloatField(
                 "Temperature",
-                light.colorTemperature,
-                newValue => ApplyLightChange(
-                    light,
-                    "HoyoToon Update Scene Light Temperature",
-                    target => target.colorTemperature = Mathf.Clamp(newValue, MinColorTemperature, MaxColorTemperature)));
-            temperatureField.SetEnabled(light.useColorTemperature);
+                hsrMainLightController != null ? hsrMainLightController.MainLightColorTemperature : light.colorTemperature,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Clamp(newValue, MinColorTemperature, MaxColorTemperature);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Temperature",
+                        target => target.MainLightColorTemperature = clampedValue,
+                        target => target.colorTemperature = clampedValue);
+                });
+            temperatureField.SetEnabled(useColorTemperature);
             host.Add(temperatureField);
 
             host.Add(CreateLightFloatField(
                 "Intensity",
-                light.intensity,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Intensity", target => target.intensity = Mathf.Max(0f, newValue))));
+                hsrMainLightController != null ? hsrMainLightController.MainLightIntensity : light.intensity,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Max(0f, newValue);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Intensity",
+                        target => target.MainLightIntensity = clampedValue,
+                        target => target.intensity = clampedValue);
+                }));
 
             host.Add(CreateLightEnumField(
                 "Mode",
-                light.lightmapBakeType,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Mode", target => target.lightmapBakeType = (LightmapBakeType)newValue)));
+                hsrMainLightController != null ? hsrMainLightController.MainLightMode : light.lightmapBakeType,
+                newValue =>
+                {
+                    LightmapBakeType nextMode = (LightmapBakeType)newValue;
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Mode",
+                        target => target.MainLightMode = nextMode,
+                        target => target.lightmapBakeType = nextMode);
+                }));
 
             host.Add(CreateLightFloatField(
                 "Indirect Multiplier",
-                light.bounceIntensity,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Indirect Multiplier", target => target.bounceIntensity = Mathf.Max(0f, newValue))));
+                hsrMainLightController != null ? hsrMainLightController.MainLightIndirectMultiplier : light.bounceIntensity,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Max(0f, newValue);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Indirect Multiplier",
+                        target => target.MainLightIndirectMultiplier = clampedValue,
+                        target => target.bounceIntensity = clampedValue);
+                }));
 
             if (light.type != LightType.Directional)
             {
@@ -663,33 +724,75 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
             host.Add(CreateLightEnumField(
                 "Shadows",
-                light.shadows,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Shadows", target => target.shadows = (LightShadows)newValue)));
+                hsrMainLightController != null ? hsrMainLightController.MainLightShadowType : light.shadows,
+                newValue =>
+                {
+                    LightShadows nextShadows = (LightShadows)newValue;
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Shadows",
+                        target => target.MainLightShadowType = nextShadows,
+                        target => target.shadows = nextShadows);
+                }));
 
             host.Add(CreateLightEnumField(
                 "Shadow Resolution",
-                light.shadowResolution,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Shadow Resolution", target => target.shadowResolution = (LightShadowResolution)newValue)));
+                hsrMainLightController != null ? hsrMainLightController.MainLightShadowResolution : light.shadowResolution,
+                newValue =>
+                {
+                    LightShadowResolution nextResolution = (LightShadowResolution)newValue;
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Shadow Resolution",
+                        target => target.MainLightShadowResolution = nextResolution,
+                        target => target.shadowResolution = nextResolution);
+                }));
 
             host.Add(CreateLightFloatField(
                 "Shadow Strength",
-                light.shadowStrength,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Shadow Strength", target => target.shadowStrength = Mathf.Clamp01(newValue))));
+                hsrMainLightController != null ? hsrMainLightController.MainLightShadowStrength : light.shadowStrength,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Clamp(newValue, 0f, 2f);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Shadow Strength",
+                        target => target.MainLightShadowStrength = clampedValue,
+                        target => target.shadowStrength = clampedValue);
+                }));
 
             host.Add(CreateLightFloatField(
                 "Shadow Bias",
-                light.shadowBias,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Shadow Bias", target => target.shadowBias = Mathf.Clamp(newValue, 0f, 2f))));
+                hsrMainLightController != null ? hsrMainLightController.MainLightShadowBias : light.shadowBias,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Clamp(newValue, 0f, 2f);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Shadow Bias",
+                        target => target.MainLightShadowBias = clampedValue,
+                        target => target.shadowBias = clampedValue);
+                }));
 
             host.Add(CreateLightFloatField(
                 "Shadow Normal Bias",
-                light.shadowNormalBias,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Shadow Normal Bias", target => target.shadowNormalBias = Mathf.Clamp(newValue, 0f, 3f))));
+                hsrMainLightController != null ? hsrMainLightController.MainLightShadowNormalBias : light.shadowNormalBias,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Clamp(newValue, 0f, 3f);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Shadow Normal Bias",
+                        target => target.MainLightShadowNormalBias = clampedValue,
+                        target => target.shadowNormalBias = clampedValue);
+                }));
 
             host.Add(CreateLightFloatField(
                 "Shadow Near Plane",
-                light.shadowNearPlane,
-                newValue => ApplyLightChange(light, "HoyoToon Update Scene Light Shadow Near Plane", target => target.shadowNearPlane = Mathf.Clamp(newValue, 0.01f, 10f))));
+                hsrMainLightController != null ? hsrMainLightController.MainLightShadowNearPlane : light.shadowNearPlane,
+                newValue =>
+                {
+                    float clampedValue = Mathf.Clamp(newValue, 0.01f, 10f);
+                    ApplyMainLightBackedChange(
+                        "HoyoToon Update Scene Main Light Shadow Near Plane",
+                        target => target.MainLightShadowNearPlane = clampedValue,
+                        target => target.shadowNearPlane = clampedValue);
+                }));
 
             return host;
         }
@@ -1016,6 +1119,29 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             EditorUtility.SetDirty(light.transform);
         }
 
+        private static void ApplyHsrMainLightTransformChange(
+            HSRSceneController controller,
+            Light light,
+            string undoName,
+            Action<HSRSceneController> applyController,
+            Action<Transform> applyTransform)
+        {
+            if (controller == null || light == null || light.transform == null || applyController == null || applyTransform == null)
+            {
+                return;
+            }
+
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+            Undo.RecordObject(controller, undoName);
+            Undo.RecordObject(light.transform, undoName);
+            applyController(controller);
+            applyTransform(light.transform);
+            EditorUtility.SetDirty(controller);
+            EditorUtility.SetDirty(light.transform);
+            Undo.CollapseUndoOperations(undoGroup);
+        }
+
         private static void ApplyLightChange(Light light, string undoName, Action<Light> apply)
         {
             if (light == null || apply == null)
@@ -1026,6 +1152,37 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             Undo.RecordObject(light, undoName);
             apply(light);
             EditorUtility.SetDirty(light);
+        }
+
+        private static void ApplyHsrMainLightChange(
+            HSRSceneController controller,
+            Light light,
+            string undoName,
+            Action<HSRSceneController> applyController,
+            Action<Light> applyLight)
+        {
+            if (controller == null || applyController == null)
+            {
+                return;
+            }
+
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(undoName);
+            Undo.RecordObject(controller, undoName);
+            if (light != null)
+            {
+                Undo.RecordObject(light, undoName);
+            }
+
+            applyController(controller);
+            applyLight?.Invoke(light);
+            EditorUtility.SetDirty(controller);
+            if (light != null)
+            {
+                EditorUtility.SetDirty(light);
+            }
+
+            Undo.CollapseUndoOperations(undoGroup);
         }
 
         private static Button CreateActionButton(string label)

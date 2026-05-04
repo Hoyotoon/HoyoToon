@@ -1754,7 +1754,6 @@ namespace HoyoToon.Runtime.Character.HSR
                 return;
 
             CharacterLight.transform.rotation = SceneLight.transform.rotation;
-            _CharacterLocalMainLightColor = SceneLight.color;
         }
 
         private void OrbitLight()

@@ -32,6 +32,18 @@ namespace HoyoToon.Editor.API
             needsWrite: GamesScriptableObjectSync.NeedsWrite,
             writeAssets: GamesScriptableObjectSync.WriteAssets);
 
+        private static readonly SyncEndpoint<CharacterIdRecordDto> CharacterIdsEndpoint = new SyncEndpoint<CharacterIdRecordDto>(
+            displayName: "character ID data",
+            payloadName: "character IDs",
+            sourceUrl: HoyoToonApi.CharacterIdsHttpUrl,
+            lastCheckTicksKey: "HoyoToon.CharacterIdsApi.LastCheckTicks",
+            lastPayloadHashKey: "HoyoToon.CharacterIdsApi.LastPayloadHash",
+            lastSchemaVersionKey: "HoyoToon.CharacterIdsApi.LastSchemaVersion",
+            schemaVersion: "1",
+            fetchPayload: FetchArrayPayloadAsync<CharacterIdRecordDto>,
+            needsWrite: GameCharacterIdsScriptableObjectSync.NeedsWrite,
+            writeAssets: GameCharacterIdsScriptableObjectSync.WriteAssets);
+
         private static readonly SyncEndpoint<ResourceRecordDto> ResourcesEndpoint = new SyncEndpoint<ResourceRecordDto>(
             displayName: "resource data",
             payloadName: "resources",
@@ -69,6 +81,7 @@ namespace HoyoToon.Editor.API
         private static void CheckForApiUpdatesMenuItem()
         {
             LogManualRefreshResult(GamesEndpoint, TryStartRefresh(GamesEndpoint, true));
+            LogManualRefreshResult(CharacterIdsEndpoint, TryStartRefresh(CharacterIdsEndpoint, true));
             LogManualRefreshResult(ResourcesEndpoint, TryStartRefresh(ResourcesEndpoint, true));
             LogManualRefreshResult(UserProfileEndpoint, TryStartRefresh(UserProfileEndpoint, true));
         }
@@ -85,6 +98,7 @@ namespace HoyoToon.Editor.API
         private static void TriggerInitialRefresh()
         {
             TryStartRefresh(GamesEndpoint, false);
+            TryStartRefresh(CharacterIdsEndpoint, false);
             TryStartRefresh(ResourcesEndpoint, false);
             TryStartRefresh(UserProfileEndpoint, false);
         }
@@ -97,6 +111,7 @@ namespace HoyoToon.Editor.API
             }
 
             TryStartRefresh(GamesEndpoint, false);
+            TryStartRefresh(CharacterIdsEndpoint, false);
             TryStartRefresh(ResourcesEndpoint, false);
             TryStartRefresh(UserProfileEndpoint, false);
         }

@@ -1,0 +1,401 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a5ae5dd61404c85a30c3f78da1df2b2, type: 3}
+  m_Name: GameCharacterIds
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameCharacterIdsSO
+  gameKey: Zenless Zone Zero
+  entries:
+  - characterId: 1011
+    name: Anbi
+    sourceName: Anby
+    overrideName: Anbi
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect01.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle01.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole01.webp@png
+  - characterId: 1021
+    name: Tsubaki
+    sourceName: Nekomata
+    overrideName: Tsubaki
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect11.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle11.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole11.webp@png
+  - characterId: 1031
+    name: Nostradamus
+    sourceName: Nicole
+    overrideName: Nostradamus
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect12.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle12.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole12.webp@png
+  - characterId: 1041
+    name: Longinus
+    sourceName: Soldier 11
+    overrideName: Longinus
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect05.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle05.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole05.webp@png
+  - characterId: 1051
+    name: Yidhari
+    sourceName: Yidhari
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect52.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle52.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole52.webp@png
+  - characterId: 1061
+    name: Corin
+    sourceName: Corin
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect09.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle09.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole09.webp@png
+  - characterId: 1071
+    name: Caesar
+    sourceName: Caesar
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect25.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle25.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole25.webp@png
+  - characterId: 1081
+    name: Billy
+    sourceName: Billy
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect10.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle10.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole10.webp@png
+  - characterId: 1091
+    name: Unagi
+    sourceName: Miyabi
+    overrideName: Unagi
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect13.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle13.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole13.webp@png
+  - characterId: 1101
+    name: OokumaMari
+    sourceName: Koleda
+    overrideName: OokumaMari
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect14.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle14.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole14.webp@png
+  - characterId: 1111
+    name: Anton
+    sourceName: Anton
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect15.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle15.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole15.webp@png
+  - characterId: 1121
+    name: Ben
+    sourceName: Ben
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect16.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle16.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole16.webp@png
+  - characterId: 1131
+    name: Aokaku
+    sourceName: Soukaku
+    overrideName: Aokaku
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect17.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle17.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole17.webp@png
+  - characterId: 1141
+    name: Lycaon
+    sourceName: Lycaon
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect18.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle18.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole18.webp@png
+  - characterId: 1151
+    name: Lucy
+    sourceName: Lucy
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect27.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle27.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole27.webp@png
+  - characterId: 1161
+    name: Lighter
+    sourceName: Lighter
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect26.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle26.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole26.webp@png
+  - characterId: 1171
+    name: Burnice
+    sourceName: Burnice
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect32.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle32.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole32.webp@png
+  - characterId: 1181
+    name: Lisa
+    sourceName: Grace
+    overrideName: Lisa
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect20.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle20.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole20.webp@png
+  - characterId: 1191
+    name: Ellen
+    sourceName: Ellen
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect21.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle21.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole21.webp@png
+  - characterId: 1201
+    name: Harumasa
+    sourceName: Harumasa
+    overrideName: Harumasa
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect35.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle35.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole35.webp@png
+  - characterId: 1211
+    name: Rina
+    sourceName: Rina
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect22.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle22.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole22.webp@png
+  - characterId: 1221
+    name: Yanagi
+    sourceName: Yanagi
+    overrideName: Yanagi
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect31.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle31.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole31.webp@png
+  - characterId: 1241
+    name: ZhuYuan
+    sourceName: Zhu Yuan
+    overrideName: ZhuYuan
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect23.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle23.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole23.webp@png
+  - characterId: 1251
+    name: Qingyi
+    sourceName: Qingyi
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect29.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle29.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole29.webp@png
+  - characterId: 1261
+    name: Jane
+    sourceName: Jane
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect24.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle24.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole24.webp@png
+  - characterId: 1271
+    name: Seth
+    sourceName: Seth
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect30.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle30.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole30.webp@png
+  - characterId: 1281
+    name: Clara
+    sourceName: Piper
+    overrideName: Clara
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect28.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle28.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole28.webp@png
+  - characterId: 1291
+    name: Hugo
+    sourceName: Hugo
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect42.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle42.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole42.webp@png
+  - characterId: 1301
+    name: Brujas
+    sourceName: Orphie & Magus
+    overrideName: Brujas
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect49.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle49.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole49.webp@png
+  - characterId: 1311
+    name: Astra
+    sourceName: Astra Yao
+    overrideName: Astra
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect36.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle36.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole36.webp@png
+  - characterId: 1321
+    name: Evelyn
+    sourceName: Evelyn
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect37.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle37.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole37.webp@png
+  - characterId: 1331
+    name: Vivian
+    sourceName: Vivian
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect41.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle41.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole41.webp@png
+  - characterId: 1341
+    name: XiaoZhao
+    sourceName: Zhao
+    overrideName: XiaoZhao
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect56.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle56.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole56.webp@png
+  - characterId: 1351
+    name: Pulchra
+    sourceName: Pulchra
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect38.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle38.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole38.webp@png
+  - characterId: 1361
+    name: Trigger
+    sourceName: Trigger
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect39.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle39.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole39.webp@png
+  - characterId: 1371
+    name: Yixuan
+    sourceName: Yixuan
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect44.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle44.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole44.webp@png
+  - characterId: 1381
+    name: Soldier 0 - Anby
+    sourceName: Soldier 0 - Anby
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect40.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle40.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole40.webp@png
+  - characterId: 1391
+    name: JuFufu
+    sourceName: Ju Fufu
+    overrideName: JuFufu
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect43.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle43.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole43.webp@png
+  - characterId: 1401
+    name: Alice
+    sourceName: Alice
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect46.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle46.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole46.webp@png
+  - characterId: 1411
+    name: Yuzuha
+    sourceName: Yuzuha
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect47.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle47.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole47.webp@png
+  - characterId: 1421
+    name: PanYinhu
+    sourceName: Pan Yinhu
+    overrideName: PanYinhu
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect45.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle45.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole45.webp@png
+  - characterId: 1431
+    name: Zhenzhen
+    sourceName: Ye Shunguang
+    overrideName: Zhenzhen
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect55.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle55.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole55.webp@png
+  - characterId: 1441
+    name: Norano
+    sourceName: Manato
+    overrideName: Norano
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect51.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle51.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole51.webp@png
+  - characterId: 1451
+    name: Lucia
+    sourceName: Lucia
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect50.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle50.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole50.webp@png
+  - characterId: 1461
+    name: Seed
+    sourceName: Seed
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect48.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle48.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole48.webp@png
+  - characterId: 1471
+    name: Banyue
+    sourceName: Banyue
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect53.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle53.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole53.webp@png
+  - characterId: 1481
+    name: Azural
+    sourceName: Dialyn
+    overrideName: Azural
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect54.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle54.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole54.webp@png
+  - characterId: 1491
+    name: Summer
+    sourceName: Sunna
+    overrideName: Summer
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect58.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle58.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole58.webp@png
+  - characterId: 1501
+    name: AriaIdol
+    sourceName: Aria
+    overrideName: AriaIdol
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect57.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle57.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole57.webp@png
+  - characterId: 1511
+    name: NangongYu
+    sourceName: Nangong Yu
+    overrideName: NangongYu
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect59.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle59.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole59.webp@png
+  - characterId: 1521
+    name: Cissia
+    sourceName: Cissia
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect60.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle60.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole60.webp@png
+  - characterId: 1531
+    name: SPBilly
+    sourceName: Starlight - Billy
+    overrideName: SPBilly
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect62.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle62.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole62.webp@png
+  - characterId: 1541
+    name: Promeia
+    sourceName: Promeia
+    overrideName: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect61.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle61.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole61.webp@png
+  - characterId: 1561
+    name: Velina
+    sourceName: Velina
+    overrideName: 
+    avatarIcon: 
+    roundIcon: 
+    splashIcon: 
+  - characterId: 1571
+    name: Norma
+    sourceName: Norma
+    overrideName: 
+    avatarIcon: 
+    roundIcon: 
+    splashIcon: 

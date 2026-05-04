@@ -216,6 +216,8 @@ namespace HoyoToon.Editor.Setup
             messageBuilder.Append(result.ModelsConverted);
             messageBuilder.Append(", import settings applied=");
             messageBuilder.Append(result.ModelImportSettingsApplied);
+            messageBuilder.Append(", character icons cached=");
+            messageBuilder.Append(result.CharacterIconsCached);
             messageBuilder.Append(", tangents applied=");
             messageBuilder.Append(result.TangentApplications);
             messageBuilder.Append(", prerequisite failures=");

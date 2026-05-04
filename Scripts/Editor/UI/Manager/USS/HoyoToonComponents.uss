@@ -233,6 +233,7 @@
 
 .ht-width-standard .ht-user-profile-panel,
 .ht-width-narrow .ht-user-profile-panel {
+    justify-content: center;
     padding-left: 0;
     padding-right: 0;
     padding-top: 0;

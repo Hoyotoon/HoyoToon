@@ -19,18 +19,12 @@ namespace HoyoToon.Editor.Detection.Character
 		{
 			try
 			{
-				if (!TryResolveProblemListContext(gameKey, contextAssetPath, out GameProblemListsSO problemList, out string assetName))
+				if (!TryResolveProblemListContext(gameKey, contextAssetPath, out GameProblemListsSO problemList, out _))
 				{
 					return null;
 				}
 
-				string characterName = ExtractCharacterName(assetName, TryCreateRegex(problemList.Regex));
-				if (!string.IsNullOrWhiteSpace(characterName))
-				{
-					return characterName;
-				}
-
-				return MatchEntryName(assetName, problemList.Entries);
+				return TryExtractCharacterNameFromAssetPath(problemList, contextAssetPath);
 			}
 			catch (Exception exception)
 			{
@@ -244,6 +238,24 @@ namespace HoyoToon.Editor.Detection.Character
 		private static string NormalizeToken(string value)
 		{
 			return StringTokenUtility.NormalizeAlphanumericLower(value);
+		}
+
+		private static string TryExtractCharacterNameFromAssetPath(GameProblemListsSO problemList, string assetPath)
+		{
+			string assetName = GetContextAssetName(assetPath);
+			string characterName = ExtractCharacterName(assetName, TryCreateRegex(problemList?.Regex));
+			if (!string.IsNullOrWhiteSpace(characterName))
+			{
+				return characterName;
+			}
+
+			characterName = MatchEntryName(assetName, problemList?.Entries);
+			if (!string.IsNullOrWhiteSpace(characterName))
+			{
+				return characterName;
+			}
+
+			return null;
 		}
 	}
 }

@@ -29,6 +29,66 @@ namespace HoyoToon.Editor.API.Games
         public List<string> gameProperties;
     }
 
+    public sealed class CharacterIdRecordDto
+    {
+        public string gameKey;
+        public int characterId;
+        public string name;
+        public string sourceName;
+        public string overrideName;
+        public string avatarIcon;
+        public string roundIcon;
+        public string splashIcon;
+
+        public string GameKey
+        {
+            get => gameKey;
+            set => gameKey = value;
+        }
+
+        public int CharacterId
+        {
+            get => characterId;
+            set => characterId = value;
+        }
+
+        public string Name
+        {
+            get => name;
+            set => name = value;
+        }
+
+        public string SourceName
+        {
+            get => sourceName;
+            set => sourceName = value;
+        }
+
+        public string OverrideName
+        {
+            get => overrideName;
+            set => overrideName = value;
+        }
+
+        public string AvatarIcon
+        {
+            get => avatarIcon;
+            set => avatarIcon = value;
+        }
+
+        public string RoundIcon
+        {
+            get => roundIcon;
+            set => roundIcon = value;
+        }
+
+        public string SplashIcon
+        {
+            get => splashIcon;
+            set => splashIcon = value;
+        }
+    }
+
     public sealed class BoneConstraintDto
     {
         public string gameKey;

@@ -20,6 +20,11 @@ namespace HoyoToon.Editor.Setup.Games.HSR
                     AutoSetupModelsUtility.ConvertSelectedModels,
                     context => context.Options.ConvertModels && context.SelectedFbxAssetPaths.Count > 0),
                 new AutoSetupFeature(
+                    "character-icons",
+                    "Detect character icons",
+                    AutoSetupModelsUtility.DetectCharacterIcons,
+                    context => !string.IsNullOrWhiteSpace(context.DetectedGameKey) && context.ModelAssetPaths.Count > 0),
+                new AutoSetupFeature(
                     "hsr-companion-materials",
                     "Copy HSR companion materials",
                     AutoSetupMaterialsUtility.CopyHsrCompanionMaterials,

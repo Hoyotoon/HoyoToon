@@ -34,12 +34,18 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             root.AddToClassList("ht-module-root");
             root.AddToClassList("ht-assets-module");
 
-            Button refreshLibraryButton = new Button(() => backend.RefreshLibraryForManager())
+            Action requestSync = null;
+            Button refreshLibraryButton = new Button(() =>
+            {
+                backend.RefreshLibraryForManager();
+                requestSync?.Invoke();
+            })
             {
                 text = "Refresh Library"
             };
             refreshLibraryButton.AddToClassList("ht-btn-secondary");
             refreshLibraryButton.AddToClassList("ht-assets-refresh-button");
+            refreshLibraryButton.style.display = DisplayStyle.None;
 
             ScrollView gameScroll = CreateSelectionScroll();
             gameScroll.style.maxHeight = 156f;
@@ -84,7 +90,11 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             autoSetupToggle.AddToClassList("ht-toggle");
             OnboardingTargetRegistry.RegisterVisualElement("Assets.AutoSetupToggle", autoSetupToggle, "Auto Setup toggle", "Assets");
 
-            Button clearSelectionButton = new Button(() => backend.ClearSelectionForManager())
+            Button clearSelectionButton = new Button(() =>
+            {
+                backend.ClearSelectionForManager();
+                requestSync?.Invoke();
+            })
             {
                 text = "Clear Selection"
             };
@@ -213,7 +223,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                     + string.Join("|", selectedCharacters);
                 if (!string.Equals(lastCharacterSnapshot, currentCharacterSnapshot, StringComparison.Ordinal))
                 {
-                    RebuildCharacterGrid(characterGrid, filteredCharacters, selectedCharacters, backend);
+                    RebuildCharacterGrid(characterGrid, filteredCharacters, selectedCharacters, backend, SyncModule);
                     characterSummaryLabel.text = filteredCharacters.Count + " shown | " + selectedCharacters.Count + " selected";
                     lastCharacterSnapshot = currentCharacterSnapshot;
                 }
@@ -255,7 +265,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                         selectedCharacters,
                         backend,
                         showPerCharacterHsrChoice,
-                        isBusy);
+                        isBusy,
+                        SyncModule);
                     lastVariantSnapshot = currentVariantSnapshot;
                 }
 
@@ -264,6 +275,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 downloadButton.SetEnabled(backend.CanDownloadSelectionForManager() && !isBusy);
             }
 
+            requestSync = SyncModule;
             SyncModule();
             root.schedule.Execute(SyncModule).Every(300);
             return root;
@@ -303,7 +315,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             VisualElement host,
             IReadOnlyList<string> filteredCharacters,
             IReadOnlyCollection<string> selectedCharacters,
-            AssetDownloadWindow backend)
+            AssetDownloadWindow backend,
+            Action requestSync)
         {
             host.Clear();
 
@@ -331,6 +344,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                         backend.SetCharacterSelectedForManager(
                             characterName,
                             isRequiredCharacter ? true : !isSelected);
+                        requestSync?.Invoke();
                     });
 
                 if (isRequiredCharacter)
@@ -413,7 +427,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             IReadOnlyList<string> selectedCharacters,
             AssetDownloadWindow backend,
             bool showPerCharacterHsrChoice,
-            bool controlsDisabled)
+            bool controlsDisabled,
+            Action requestSync)
         {
             host.Clear();
 
@@ -435,7 +450,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                         backend,
                         false,
                         false,
-                        controlsDisabled));
+                        controlsDisabled,
+                        requestSync));
                 return;
             }
 
@@ -449,7 +465,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                         backend,
                         true,
                         showPerCharacterHsrChoice,
-                        controlsDisabled));
+                        controlsDisabled,
+                        requestSync));
                 if (index < selectedCharacters.Count - 1)
                 {
                     host.Add(CreateVariantDivider());
@@ -463,7 +480,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             AssetDownloadWindow backend,
             bool includeLabel,
             bool includeHsrChoice,
-            bool controlsDisabled)
+            bool controlsDisabled,
+            Action requestSync)
         {
             VisualElement group = new VisualElement();
             group.AddToClassList("ht-column");
@@ -488,6 +506,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                         {
                             OnboardingSignals.RecordValueChanged("Assets.ModelTypeDropdown", HsrChoiceLabels[Math.Max(0, Math.Min(index, HsrChoiceLabels.Count - 1))]);
                             backend.SetHsrChoiceIndexForCharacterForManager(characterName, index);
+                            requestSync?.Invoke();
                         }));
             }
 
@@ -517,6 +536,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                             characterName,
                             variantName,
                             isRequiredVariant ? true : !isSelected);
+                        requestSync?.Invoke();
                     });
 
                 if (isRequiredVariant)

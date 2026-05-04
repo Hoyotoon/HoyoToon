@@ -33,7 +33,67 @@ MonoBehaviour:
     textureType: 
     wrapMode: 
   nameEquals:
-    entries: []
+    entries:
+    - key: Avatar
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: Sprite
+        wrapMode: 
+    - key: Round
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: Sprite
+        wrapMode: 
+    - key: Splash
+      value:
+        compression: 
+        filterMode: 
+        maxTextureSize:
+          hasValue: 0
+          value: 0
+        mipmapEnabled:
+          hasValue: 0
+          value: 0
+        npotScale: 
+        srgbTexture:
+          hasValue: 1
+          value: 1
+        streamingMipmaps:
+          hasValue: 0
+          value: 0
+        textureCompression: Uncompressed
+        textureType: Sprite
+        wrapMode: 
   nameContains:
     entries:
     - key: LUT

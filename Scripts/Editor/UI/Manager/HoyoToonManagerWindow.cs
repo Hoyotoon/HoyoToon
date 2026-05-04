@@ -2,6 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using HoyoToon.Editor.API;
@@ -31,12 +33,16 @@ namespace HoyoToon.Editor.UI.Manager
     {
         private const string MenuPath = "HoyoToon/Manager";
         private const string PackageAssetRoot = "Packages/com.hoyotoon.hoyotoon/Scripts/Editor/UI/Manager";
+        private const string AvatarCacheRelativePath = "Library/HoyoToon/UserAvatarCache";
         private const string UxmlAssetPath = PackageAssetRoot + "/UXML/HoyoToonWindow.uxml";
         private const string ThemeAssetPath = PackageAssetRoot + "/USS/HoyoToonTheme.uss";
         private const string LayoutAssetPath = PackageAssetRoot + "/USS/HoyoToonLayout.uss";
         private const string ComponentsAssetPath = PackageAssetRoot + "/USS/HoyoToonComponents.uss";
         private const string HeaderBackgroundAssetPath = "Packages/com.hoyotoon.hoyotoon/Resources/UI/background.png";
         private const string HeaderLogoAssetPath = "Packages/com.hoyotoon.hoyotoon/Resources/UI/hoyotoon.png";
+        private const string LastCharacterSplashAssetPathSessionKey = "HoyoToon.Manager.LastCharacterSplashAssetPath";
+        private const string LastCharacterSplashModelAssetPathSessionKey = "HoyoToon.Manager.LastCharacterSplashModelAssetPath";
+        private const double CharacterSplashPlayModeRefreshIntervalSeconds = 0.15d;
         private const string ConvertedAssetLabel = "HoyoToonConverted";
         private const string VersionUnavailableLabel = "Version unavailable";
         private const string WidthNarrowClass = "ht-width-narrow";
@@ -49,14 +55,16 @@ namespace HoyoToon.Editor.UI.Manager
         private const string VersionBadgeLocalAheadClass = "ht-version-badge--local-ahead";
         private const string VersionBadgeApplyingClass = "ht-version-badge--applying";
         private const string VersionBadgeErrorClass = "ht-version-badge--error";
+        private const double RemoteAvatarRetryDelaySeconds = 30d;
+        private const int MaxRemoteAvatarPayloadBytes = 2 * 1024 * 1024;
 
         private static readonly Vector2 MinimumWindowSize = new Vector2(360f, 520f);
         private static readonly Dictionary<string, Texture2D> RemoteAvatarTextures =
             new Dictionary<string, Texture2D>(StringComparer.Ordinal);
         private static readonly HashSet<string> RemoteAvatarLoads =
             new HashSet<string>(StringComparer.Ordinal);
-        private static readonly HashSet<string> FailedRemoteAvatarLoads =
-            new HashSet<string>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, double> FailedRemoteAvatarRetryTimes =
+            new Dictionary<string, double>(StringComparer.Ordinal);
 
         private readonly Dictionary<string, Button> tabButtonsById = new Dictionary<string, Button>(StringComparer.Ordinal);
         private readonly List<InspectorAction> footerActions = new List<InspectorAction>();
@@ -83,6 +91,7 @@ namespace HoyoToon.Editor.UI.Manager
         private VisualElement shellRoot;
         private VisualElement moduleContentRoot;
         private Image bannerBackground;
+        private Image characterSplashImage;
         private Button versionBadgeButton;
         private Image logoImage;
         private VisualElement userProfileButton;
@@ -102,6 +111,15 @@ namespace HoyoToon.Editor.UI.Manager
         private bool userProfileRestoreAttempted;
         private bool userProfileRefreshRequested;
         private bool userProfileRefreshAttempted;
+        private bool managerRefreshQueued;
+        private string lastCharacterSplashAssetPath = string.Empty;
+        private string lastCharacterSplashModelAssetPath = string.Empty;
+        private int lastCharacterSplashModelInstanceId;
+        private int observedPlayModePlacementControllerId;
+        private int observedPlayModeActiveModelId;
+        private int observedPlayModeActiveModelIndex = -1;
+        private int observedPlayModeInputSwitchVersion = -1;
+        private double nextCharacterSplashPlayModeRefreshTime;
 
         internal string ActiveModuleId => activeModule != null ? activeModule.Id : string.Empty;
         internal ModuleContext CurrentContext => currentContext;
@@ -140,18 +158,75 @@ namespace HoyoToon.Editor.UI.Manager
             packageVersionLabel = ResolvePackageVersionLabel();
             HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
             HoyoToonUserProfileStorage.ProfileChanged += HandleUserProfileChanged;
+            Undo.undoRedoPerformed -= HandleUndoRedoPerformed;
+            Undo.undoRedoPerformed += HandleUndoRedoPerformed;
+            EditorApplication.hierarchyChanged -= HandleEditorContextChanged;
+            EditorApplication.hierarchyChanged += HandleEditorContextChanged;
+            EditorApplication.projectChanged -= HandleEditorContextChanged;
+            EditorApplication.projectChanged += HandleEditorContextChanged;
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
+            EditorApplication.update -= RefreshCharacterSplashArtworkDuringPlayMode;
+            EditorApplication.update += RefreshCharacterSplashArtworkDuringPlayMode;
         }
 
         private void OnDisable()
         {
             versionBadgeSchedule?.Pause();
             HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
+            Undo.undoRedoPerformed -= HandleUndoRedoPerformed;
+            EditorApplication.hierarchyChanged -= HandleEditorContextChanged;
+            EditorApplication.projectChanged -= HandleEditorContextChanged;
+            EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
+            EditorApplication.update -= RefreshCharacterSplashArtworkDuringPlayMode;
+            EditorApplication.delayCall -= RefreshManagerContextAfterEditorChange;
+            managerRefreshQueued = false;
             activeModule?.OnDeselected(currentContext);
             OnboardingManager.NotifyManagerClosed(this);
         }
 
         private void OnFocus()
         {
+            RefreshManualContext();
+            UpdateVersionBadge();
+            RefreshUserProfileHeader();
+        }
+
+        private void HandleUndoRedoPerformed()
+        {
+            RequestDeferredManagerRefresh();
+        }
+
+        private void HandleEditorContextChanged()
+        {
+            RequestDeferredManagerRefresh();
+        }
+
+        private void HandlePlayModeStateChanged(PlayModeStateChange state)
+        {
+            ResetObservedPlayModeCharacterSplashState();
+            RequestDeferredManagerRefresh();
+        }
+
+        private void RequestDeferredManagerRefresh()
+        {
+            if (managerRefreshQueued)
+            {
+                return;
+            }
+
+            managerRefreshQueued = true;
+            EditorApplication.delayCall += RefreshManagerContextAfterEditorChange;
+        }
+
+        private void RefreshManagerContextAfterEditorChange()
+        {
+            managerRefreshQueued = false;
+            if (this == null)
+            {
+                return;
+            }
+
             RefreshManualContext();
             UpdateVersionBadge();
             RefreshUserProfileHeader();
@@ -233,6 +308,7 @@ namespace HoyoToon.Editor.UI.Manager
 
             moduleContentRoot = shellRoot.Q<VisualElement>("ModuleContentRoot");
             bannerBackground = shellRoot.Q<Image>("BannerBackground");
+            characterSplashImage = shellRoot.Q<Image>("CharacterSplashImage");
             versionBadgeButton = shellRoot.Q<Button>("VersionBadge");
             logoImage = shellRoot.Q<Image>("LogoImage");
             userProfileButton = shellRoot.Q<VisualElement>("UserProfileButton");
@@ -970,14 +1046,30 @@ namespace HoyoToon.Editor.UI.Manager
             if (normalizedAvatar.StartsWith("http://", StringComparison.OrdinalIgnoreCase)
                 || normalizedAvatar.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
             {
-                if (FailedRemoteAvatarLoads.Contains(normalizedAvatar))
-                {
-                    return null;
-                }
-
                 if (RemoteAvatarTextures.TryGetValue(normalizedAvatar, out Texture2D remoteTexture))
                 {
-                    return remoteTexture;
+                    if (remoteTexture != null)
+                    {
+                        return remoteTexture;
+                    }
+
+                    RemoteAvatarTextures.Remove(normalizedAvatar);
+                }
+
+                if (TryLoadCachedRemoteAvatarTexture(normalizedAvatar, out Texture2D cachedTexture))
+                {
+                    RemoteAvatarTextures[normalizedAvatar] = cachedTexture;
+                    return cachedTexture;
+                }
+
+                if (FailedRemoteAvatarRetryTimes.TryGetValue(normalizedAvatar, out double retryTime))
+                {
+                    if (EditorApplication.timeSinceStartup < retryTime)
+                    {
+                        return null;
+                    }
+
+                    FailedRemoteAvatarRetryTimes.Remove(normalizedAvatar);
                 }
 
                 BeginRemoteUserAvatarLoad(normalizedAvatar);
@@ -1013,7 +1105,8 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
-            UnityWebRequest request = UnityWebRequestTexture.GetTexture(avatarUrl);
+            UnityWebRequest request = UnityWebRequest.Get(avatarUrl);
+            request.timeout = 15;
             UnityWebRequestAsyncOperation operation = request.SendWebRequest();
             operation.completed += _ =>
             {
@@ -1021,19 +1114,22 @@ namespace HoyoToon.Editor.UI.Manager
                 {
                     if (!IsUnityWebRequestFailed(request))
                     {
-                        Texture2D texture = DownloadHandlerTexture.GetContent(request);
-                        if (texture != null)
+                        byte[] payload = request.downloadHandler != null ? request.downloadHandler.data : null;
+                        if (TryCreateRemoteAvatarTexture(payload, out Texture2D texture))
                         {
+                            ClearRemoteAvatarTextureOnly(avatarUrl);
                             RemoteAvatarTextures[avatarUrl] = texture;
+                            FailedRemoteAvatarRetryTimes.Remove(avatarUrl);
+                            TrySaveRemoteAvatarCache(avatarUrl, payload);
                         }
                         else
                         {
-                            FailedRemoteAvatarLoads.Add(avatarUrl);
+                            MarkRemoteAvatarLoadFailed(avatarUrl);
                         }
                     }
                     else
                     {
-                        FailedRemoteAvatarLoads.Add(avatarUrl);
+                        MarkRemoteAvatarLoadFailed(avatarUrl);
                     }
                 }
                 finally
@@ -1054,9 +1150,164 @@ namespace HoyoToon.Editor.UI.Manager
             }
 
             string normalizedAvatar = avatarUrl.Trim().Replace('\\', '/');
-            RemoteAvatarTextures.Remove(normalizedAvatar);
+            ClearRemoteAvatarTextureOnly(normalizedAvatar);
             RemoteAvatarLoads.Remove(normalizedAvatar);
-            FailedRemoteAvatarLoads.Remove(normalizedAvatar);
+            FailedRemoteAvatarRetryTimes.Remove(normalizedAvatar);
+            DeleteRemoteAvatarCache(normalizedAvatar);
+        }
+
+        private static void ClearRemoteAvatarTextureOnly(string avatarUrl)
+        {
+            if (string.IsNullOrWhiteSpace(avatarUrl))
+            {
+                return;
+            }
+
+            string normalizedAvatar = avatarUrl.Trim().Replace('\\', '/');
+            if (RemoteAvatarTextures.TryGetValue(normalizedAvatar, out Texture2D texture))
+            {
+                DestroyRemoteAvatarTexture(texture);
+            }
+
+            RemoteAvatarTextures.Remove(normalizedAvatar);
+        }
+
+        private static void MarkRemoteAvatarLoadFailed(string avatarUrl)
+        {
+            if (string.IsNullOrWhiteSpace(avatarUrl))
+            {
+                return;
+            }
+
+            FailedRemoteAvatarRetryTimes[avatarUrl] = EditorApplication.timeSinceStartup + RemoteAvatarRetryDelaySeconds;
+        }
+
+        private static bool TryLoadCachedRemoteAvatarTexture(string avatarUrl, out Texture2D texture)
+        {
+            texture = null;
+            if (!TryGetRemoteAvatarCachePath(avatarUrl, out string cachePath) || !File.Exists(cachePath))
+            {
+                return false;
+            }
+
+            try
+            {
+                if (new FileInfo(cachePath).Length > MaxRemoteAvatarPayloadBytes)
+                {
+                    File.Delete(cachePath);
+                    return false;
+                }
+
+                byte[] payload = File.ReadAllBytes(cachePath);
+                return TryCreateRemoteAvatarTexture(payload, out texture);
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private static void TrySaveRemoteAvatarCache(string avatarUrl, byte[] payload)
+        {
+            if (payload == null
+                || payload.Length <= 0
+                || payload.Length > MaxRemoteAvatarPayloadBytes
+                || !TryGetRemoteAvatarCachePath(avatarUrl, out string cachePath))
+            {
+                return;
+            }
+
+            try
+            {
+                string cacheDirectory = Path.GetDirectoryName(cachePath);
+                if (!string.IsNullOrWhiteSpace(cacheDirectory))
+                {
+                    Directory.CreateDirectory(cacheDirectory);
+                }
+
+                File.WriteAllBytes(cachePath, payload);
+            }
+            catch
+            {
+            }
+        }
+
+        private static void DeleteRemoteAvatarCache(string avatarUrl)
+        {
+            if (!TryGetRemoteAvatarCachePath(avatarUrl, out string cachePath))
+            {
+                return;
+            }
+
+            try
+            {
+                if (File.Exists(cachePath))
+                {
+                    File.Delete(cachePath);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        private static bool TryCreateRemoteAvatarTexture(byte[] payload, out Texture2D texture)
+        {
+            texture = null;
+            if (payload == null || payload.Length <= 0 || payload.Length > MaxRemoteAvatarPayloadBytes)
+            {
+                return false;
+            }
+
+            Texture2D loadedTexture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
+            {
+                name = "HoyoToon User Avatar",
+                hideFlags = HideFlags.HideAndDontSave
+            };
+
+            if (!ImageConversion.LoadImage(loadedTexture, payload))
+            {
+                DestroyRemoteAvatarTexture(loadedTexture);
+                return false;
+            }
+
+            texture = loadedTexture;
+            return true;
+        }
+
+        private static void DestroyRemoteAvatarTexture(Texture2D texture)
+        {
+            if (texture != null)
+            {
+                UnityEngine.Object.DestroyImmediate(texture);
+            }
+        }
+
+        private static bool TryGetRemoteAvatarCachePath(string avatarUrl, out string cachePath)
+        {
+            cachePath = string.Empty;
+            if (string.IsNullOrWhiteSpace(avatarUrl) || string.IsNullOrWhiteSpace(Application.dataPath))
+            {
+                return false;
+            }
+
+            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+            string cacheDirectory = Path.GetFullPath(Path.Combine(projectRoot, AvatarCacheRelativePath));
+            cachePath = Path.Combine(cacheDirectory, ComputeStableHash(avatarUrl) + ".bytes");
+            return true;
+        }
+
+        private static string ComputeStableHash(string value)
+        {
+            using SHA256 sha256 = SHA256.Create();
+            byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(value ?? string.Empty));
+            StringBuilder builder = new StringBuilder(hash.Length * 2);
+            for (int index = 0; index < hash.Length; index++)
+            {
+                builder.Append(hash[index].ToString("x2"));
+            }
+
+            return builder.ToString();
         }
 
         private static Color ResolveUserRoleColor(string roleColor)
@@ -1124,6 +1375,300 @@ namespace HoyoToon.Editor.UI.Manager
                 logoImage.style.display = logoTexture != null ? DisplayStyle.Flex : DisplayStyle.None;
             }
 
+            ApplyActiveCharacterSplashArtwork();
+        }
+
+        private void ApplyActiveCharacterSplashArtwork()
+        {
+            if (characterSplashImage == null)
+            {
+                return;
+            }
+
+            GameObject activeModel = ResolveLivePlacementActiveModel();
+            Texture2D splashTexture = ResolveActiveCharacterSplashTexture(activeModel, out string activeModelAssetPath);
+            if (splashTexture == null && ShouldUseRememberedCharacterSplash(activeModel, activeModelAssetPath))
+            {
+                splashTexture = ResolveRememberedCharacterSplashTexture();
+            }
+
+            characterSplashImage.image = splashTexture;
+            characterSplashImage.scaleMode = ScaleMode.ScaleToFit;
+            characterSplashImage.style.display = splashTexture != null ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private Texture2D ResolveActiveCharacterSplashTexture(GameObject activeModel, out string activeModelAssetPath)
+        {
+            activeModelAssetPath = string.Empty;
+            if (activeModel == null)
+            {
+                return null;
+            }
+
+            foreach (string contextAssetPath in EnumerateCharacterSplashContextAssetPaths(activeModel))
+            {
+                string gameKey = ResolveCharacterSplashGameKey(activeModel, contextAssetPath);
+                if (string.IsNullOrWhiteSpace(gameKey))
+                {
+                    continue;
+                }
+
+                Texture2D splashTexture = ResolveCharacterSplashTexture(gameKey, contextAssetPath, out string splashAssetPath);
+                if (splashTexture == null)
+                {
+                    continue;
+                }
+
+                activeModelAssetPath = contextAssetPath;
+                RememberCharacterSplashAssetPath(activeModel.GetInstanceID(), contextAssetPath, splashAssetPath);
+                return splashTexture;
+            }
+
+            return null;
+        }
+
+        private Texture2D ResolveCharacterSplashTexture(string gameKey, string contextAssetPath, out string splashAssetPath)
+        {
+            splashAssetPath = string.Empty;
+            CharacterIconDetector.CharacterIconResolutionResult result =
+                CharacterIconDetector.ResolveCharacterIcon(gameKey, contextAssetPath);
+            if (!result.Succeeded || string.IsNullOrWhiteSpace(result.SplashIconUrl))
+            {
+                return null;
+            }
+
+            if (!CharacterIconCacheUtility.TryGetCachedCharacterIconPath(
+                contextAssetPath,
+                null,
+                null,
+                result.SplashIconUrl,
+                out string cachedSplashIconPath))
+            {
+                return null;
+            }
+
+            splashAssetPath = AssetContextJsonQueryUtility.ToAssetPath(cachedSplashIconPath);
+            if (string.IsNullOrWhiteSpace(splashAssetPath))
+            {
+                return null;
+            }
+
+            return AssetDatabase.LoadAssetAtPath<Texture2D>(splashAssetPath);
+        }
+
+        private string ResolveCharacterSplashGameKey(GameObject activeModel, string contextAssetPath)
+        {
+            string gameKey = currentContext != null && activeModel == currentContext.PlacementActiveModel
+                ? currentContext.PlacementActiveGameKey
+                : string.Empty;
+            if (!string.IsNullOrWhiteSpace(gameKey))
+            {
+                return gameKey;
+            }
+
+            if (GameDetector.TryDetectGameFromAssetContext(contextAssetPath, out GameConfigSO game, out _)
+                && game != null)
+            {
+                return game.Key ?? string.Empty;
+            }
+
+            return ResolvePlacementGameKey(activeModel);
+        }
+
+        private void RememberCharacterSplashAssetPath(int modelInstanceId, string modelAssetPath, string splashAssetPath)
+        {
+            if (string.IsNullOrWhiteSpace(modelAssetPath) || string.IsNullOrWhiteSpace(splashAssetPath))
+            {
+                return;
+            }
+
+            lastCharacterSplashModelInstanceId = modelInstanceId;
+            lastCharacterSplashModelAssetPath = modelAssetPath;
+            lastCharacterSplashAssetPath = splashAssetPath;
+            SessionState.SetString(LastCharacterSplashModelAssetPathSessionKey, modelAssetPath);
+            SessionState.SetString(LastCharacterSplashAssetPathSessionKey, splashAssetPath);
+        }
+
+        private bool ShouldUseRememberedCharacterSplash(GameObject activeModel, string activeModelAssetPath)
+        {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                return false;
+            }
+
+            if (activeModel != null
+                && lastCharacterSplashModelInstanceId != 0
+                && activeModel.GetInstanceID() == lastCharacterSplashModelInstanceId)
+            {
+                return true;
+            }
+
+            if (string.IsNullOrWhiteSpace(activeModelAssetPath))
+            {
+                return activeModel == null;
+            }
+
+            string rememberedModelAssetPath = GetRememberedCharacterSplashModelAssetPath();
+            return !string.IsNullOrWhiteSpace(rememberedModelAssetPath)
+                && string.Equals(activeModelAssetPath, rememberedModelAssetPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private Texture2D ResolveRememberedCharacterSplashTexture()
+        {
+            string splashAssetPath = !string.IsNullOrWhiteSpace(lastCharacterSplashAssetPath)
+                ? lastCharacterSplashAssetPath
+                : SessionState.GetString(LastCharacterSplashAssetPathSessionKey, string.Empty);
+            if (string.IsNullOrWhiteSpace(splashAssetPath))
+            {
+                return null;
+            }
+
+            Texture2D splashTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(splashAssetPath);
+            if (splashTexture == null)
+            {
+                return null;
+            }
+
+            lastCharacterSplashAssetPath = splashAssetPath;
+            return splashTexture;
+        }
+
+        private string GetRememberedCharacterSplashModelAssetPath()
+        {
+            if (!string.IsNullOrWhiteSpace(lastCharacterSplashModelAssetPath))
+            {
+                return lastCharacterSplashModelAssetPath;
+            }
+
+            lastCharacterSplashModelAssetPath =
+                SessionState.GetString(LastCharacterSplashModelAssetPathSessionKey, string.Empty);
+            return lastCharacterSplashModelAssetPath;
+        }
+
+        private static IEnumerable<string> EnumerateCharacterSplashContextAssetPaths(GameObject activeModel)
+        {
+            if (activeModel == null)
+            {
+                yield break;
+            }
+
+            HashSet<string> emittedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            if (TryResolveModelAssetPath(activeModel, out string modelAssetPath)
+                && emittedPaths.Add(modelAssetPath))
+            {
+                yield return modelAssetPath;
+            }
+
+            foreach (Renderer renderer in activeModel.GetComponentsInChildren<Renderer>(true))
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                Material[] materials = renderer.sharedMaterials;
+                for (int index = 0; index < (materials != null ? materials.Length : 0); index++)
+                {
+                    string materialAssetPath = AssetDatabase.GetAssetPath(materials[index]);
+                    if (!string.IsNullOrWhiteSpace(materialAssetPath)
+                        && emittedPaths.Add(materialAssetPath))
+                    {
+                        yield return materialAssetPath;
+                    }
+                }
+            }
+
+            foreach (SkinnedMeshRenderer skinnedMeshRenderer in activeModel.GetComponentsInChildren<SkinnedMeshRenderer>(true))
+            {
+                string meshAssetPath = skinnedMeshRenderer != null && skinnedMeshRenderer.sharedMesh != null
+                    ? AssetDatabase.GetAssetPath(skinnedMeshRenderer.sharedMesh)
+                    : string.Empty;
+                if (!string.IsNullOrWhiteSpace(meshAssetPath)
+                    && emittedPaths.Add(meshAssetPath))
+                {
+                    yield return meshAssetPath;
+                }
+            }
+
+            foreach (MeshFilter meshFilter in activeModel.GetComponentsInChildren<MeshFilter>(true))
+            {
+                string meshAssetPath = meshFilter != null && meshFilter.sharedMesh != null
+                    ? AssetDatabase.GetAssetPath(meshFilter.sharedMesh)
+                    : string.Empty;
+                if (!string.IsNullOrWhiteSpace(meshAssetPath)
+                    && emittedPaths.Add(meshAssetPath))
+                {
+                    yield return meshAssetPath;
+                }
+            }
+        }
+
+        private GameObject ResolveLivePlacementActiveModel()
+        {
+            CharacterPlacementController placementController = ResolveLivePlacementController();
+            return placementController != null ? placementController.ActiveModel : currentContext?.PlacementActiveModel;
+        }
+
+        private CharacterPlacementController ResolveLivePlacementController()
+        {
+            if (EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                CharacterPlacementController playModeController = CharacterPlacementController.GetPrimaryCachedOrFind();
+                if (playModeController != null)
+                {
+                    return playModeController;
+                }
+            }
+
+            return currentContext?.PlacementController ?? CharacterPlacementController.GetPrimaryCachedOrFind();
+        }
+
+        private void RefreshCharacterSplashArtworkDuringPlayMode()
+        {
+            if (!EditorApplication.isPlayingOrWillChangePlaymode)
+            {
+                ResetObservedPlayModeCharacterSplashState();
+                return;
+            }
+
+            if (EditorApplication.timeSinceStartup < nextCharacterSplashPlayModeRefreshTime)
+            {
+                return;
+            }
+
+            nextCharacterSplashPlayModeRefreshTime =
+                EditorApplication.timeSinceStartup + CharacterSplashPlayModeRefreshIntervalSeconds;
+
+            CharacterPlacementController placementController = ResolveLivePlacementController();
+            GameObject activeModel = placementController != null ? placementController.ActiveModel : null;
+            int placementControllerId = placementController != null ? placementController.GetInstanceID() : 0;
+            int activeModelId = activeModel != null ? activeModel.GetInstanceID() : 0;
+            int activeModelIndex = placementController != null ? placementController.ActiveModelIndex : -1;
+            int inputSwitchVersion = placementController != null ? placementController.InputSwitchVersion : -1;
+
+            if (observedPlayModePlacementControllerId == placementControllerId
+                && observedPlayModeActiveModelId == activeModelId
+                && observedPlayModeActiveModelIndex == activeModelIndex
+                && observedPlayModeInputSwitchVersion == inputSwitchVersion)
+            {
+                return;
+            }
+
+            observedPlayModePlacementControllerId = placementControllerId;
+            observedPlayModeActiveModelId = activeModelId;
+            observedPlayModeActiveModelIndex = activeModelIndex;
+            observedPlayModeInputSwitchVersion = inputSwitchVersion;
+            currentContext = BuildModuleContext();
+            ApplyActiveCharacterSplashArtwork();
+        }
+
+        private void ResetObservedPlayModeCharacterSplashState()
+        {
+            observedPlayModePlacementControllerId = 0;
+            observedPlayModeActiveModelId = 0;
+            observedPlayModeActiveModelIndex = -1;
+            observedPlayModeInputSwitchVersion = -1;
+            nextCharacterSplashPlayModeRefreshTime = 0d;
         }
 
         private void StartVersionBadgeSchedule()
@@ -1221,6 +1766,8 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void RefreshGlobalContext()
         {
+            ApplyActiveCharacterSplashArtwork();
+
             if (globalContextHost == null)
             {
                 return;

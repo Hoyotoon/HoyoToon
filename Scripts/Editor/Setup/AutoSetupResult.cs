@@ -38,6 +38,8 @@ namespace HoyoToon.Editor.Setup
 
         public int ModelImportSettingsApplied { get; set; }
 
+        public int CharacterIconsCached { get; set; }
+
         public int TangentApplications { get; set; }
 
         public int PrerequisiteFailures { get; set; }

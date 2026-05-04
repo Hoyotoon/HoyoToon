@@ -2,8 +2,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using HoyoToon.Editor.Setup;
 using HoyoToon.Editor.AssetPipeline.Models;
+using HoyoToon.Editor.Detection.Character;
+using HoyoToon.Editor.Setup;
+using HoyoToon.Editor.Utilities.Assets;
 using UnityEditor;
 using UnityEngine;
 
@@ -149,6 +151,47 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
             }
         }
 
+        public static void DetectCharacterIcons(AutoSetupContext context, AutoSetupResult result)
+        {
+            if (context == null || result == null || string.IsNullOrWhiteSpace(context.DetectedGameKey))
+            {
+                return;
+            }
+
+            IReadOnlyList<string> targetModelAssetPaths = CollectTargetModelAssetPaths(context);
+            for (int i = 0; i < targetModelAssetPaths.Count; i++)
+            {
+                string modelAssetPath = targetModelAssetPaths[i];
+                CharacterIconDetector.CharacterIconResolutionResult iconResult =
+                    CharacterIconDetector.ResolveCharacterIcon(context.DetectedGameKey, modelAssetPath);
+
+                if (!iconResult.Succeeded)
+                {
+                    result.RecordWarning(BuildCharacterIconWarning(modelAssetPath, iconResult));
+                    continue;
+                }
+
+                if (string.IsNullOrWhiteSpace(iconResult.SplashIconUrl))
+                {
+                    result.RecordWarning($"Auto setup detected '{iconResult.CharacterName}' for '{modelAssetPath}', but no splash icon URL was available.");
+                    continue;
+                }
+
+                if (CharacterIconCacheUtility.TryGetCachedCharacterIconPath(
+                    modelAssetPath,
+                    null,
+                    null,
+                    iconResult.SplashIconUrl,
+                    out _))
+                {
+                    result.CharacterIconsCached++;
+                    continue;
+                }
+
+                result.RecordWarning($"Auto setup detected '{iconResult.CharacterName}' for '{modelAssetPath}', but the splash icon could not be cached.");
+            }
+        }
+
         public static void ApplyTangents(AutoSetupContext context, AutoSetupResult result)
         {
             if (context == null || result == null)
@@ -235,6 +278,19 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
             return !string.IsNullOrWhiteSpace(normalizedAssetPath)
                 && !AssetDatabase.IsValidFolder(normalizedAssetPath)
                 && AssetDatabase.LoadAssetAtPath<GameObject>(normalizedAssetPath) != null;
+        }
+
+        private static string BuildCharacterIconWarning(
+            string modelAssetPath,
+            CharacterIconDetector.CharacterIconResolutionResult iconResult)
+        {
+            string status = iconResult.Status.ToString();
+            if (!string.IsNullOrWhiteSpace(iconResult.CharacterName))
+            {
+                return $"Auto setup could not resolve a character icon for '{iconResult.CharacterName}' at '{modelAssetPath}' ({status}).";
+            }
+
+            return $"Auto setup could not resolve a character icon for '{modelAssetPath}' ({status}).";
         }
 
         private static IReadOnlyList<string> CollectTargetModelAssetPaths(AutoSetupContext context)

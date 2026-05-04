@@ -2879,6 +2879,7 @@ namespace HoyoToon.Editor.Assets
                 return;
             }
 
+            bool wasMultiSelection = selectedCharacters.Count > 1;
             if (isSelected)
             {
                 selectedCharacters.Add(characterName);
@@ -2894,6 +2895,20 @@ namespace HoyoToon.Editor.Assets
                 {
                     activeCharacterName = GetOrderedSelectedCharacters().FirstOrDefault() ?? string.Empty;
                 }
+            }
+
+            bool isMultiSelection = selectedCharacters.Count > 1;
+            if (!wasMultiSelection && isMultiSelection)
+            {
+                MigrateSharedVariantSelectionToActiveCharacter();
+            }
+            else if (wasMultiSelection && !isMultiSelection)
+            {
+                MigratePerCharacterSelectionToSharedSelection();
+            }
+            else if (selectedCharacters.Count <= 0)
+            {
+                ClearVariantSelection();
             }
 
             Repaint();

@@ -1,0 +1,849 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4a5ae5dd61404c85a30c3f78da1df2b2, type: 3}
+  m_Name: GameCharacterIds
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameCharacterIdsSO
+  gameKey: Genshin Impact
+  entries:
+  - characterId: 10000002
+    name: Ayaka
+    sourceName: Kamisato Ayaka
+    overrideName: Ayaka
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ayaka.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ayaka.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ayaka.png
+  - characterId: 10000003
+    name: Qin
+    sourceName: Jean
+    overrideName: Qin
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Qin.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Qin.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Qin.png
+  - characterId: 10000005
+    name: Traveler (Male)
+    sourceName: Traveler (Male)
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_PlayerBoy.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_PlayerBoy.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_PlayerBoy.png
+  - characterId: 10000006
+    name: Lisa
+    sourceName: Lisa
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Lisa.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Lisa.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Lisa.png
+  - characterId: 10000007
+    name: Traveler (Female)
+    sourceName: Traveler (Female)
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_PlayerGirl.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_PlayerGirl.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_PlayerGirl.png
+  - characterId: 10000014
+    name: Barbara
+    sourceName: Barbara
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Barbara.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Barbara.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Barbara.png
+  - characterId: 10000015
+    name: Kaeya
+    sourceName: Kaeya
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Kaeya.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Kaeya.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Kaeya.png
+  - characterId: 10000016
+    name: Diluc
+    sourceName: Diluc
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Diluc.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Diluc.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Diluc.png
+  - characterId: 10000020
+    name: Razor
+    sourceName: Razor
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Razor.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Razor.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Razor.png
+  - characterId: 10000021
+    name: Ambor
+    sourceName: Amber
+    overrideName: Ambor
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ambor.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ambor.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ambor.png
+  - characterId: 10000022
+    name: Venti
+    sourceName: Venti
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Venti.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Venti.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Venti.png
+  - characterId: 10000023
+    name: Xiangling
+    sourceName: Xiangling
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Xiangling.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Xiangling.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Xiangling.png
+  - characterId: 10000024
+    name: Beidou
+    sourceName: Beidou
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Beidou.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Beidou.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Beidou.png
+  - characterId: 10000025
+    name: Xingqiu
+    sourceName: Xingqiu
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Xingqiu.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Xingqiu.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Xingqiu.png
+  - characterId: 10000026
+    name: Xiao
+    sourceName: Xiao
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Xiao.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Xiao.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Xiao.png
+  - characterId: 10000027
+    name: Ningguang
+    sourceName: Ningguang
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ningguang.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ningguang.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ningguang.png
+  - characterId: 10000029
+    name: Klee
+    sourceName: Klee
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Klee.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Klee.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Klee.png
+  - characterId: 10000030
+    name: Zhongli
+    sourceName: Zhongli
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Zhongli.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Zhongli.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Zhongli.png
+  - characterId: 10000031
+    name: Fischl
+    sourceName: Fischl
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Fischl.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Fischl.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Fischl.png
+  - characterId: 10000032
+    name: Bennett
+    sourceName: Bennett
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Bennett.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Bennett.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Bennett.png
+  - characterId: 10000033
+    name: Tartaglia
+    sourceName: Tartaglia
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Tartaglia.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Tartaglia.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Tartaglia.png
+  - characterId: 10000034
+    name: Noel
+    sourceName: Noelle
+    overrideName: Noel
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Noel.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Noel.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Noel.png
+  - characterId: 10000035
+    name: Qiqi
+    sourceName: Qiqi
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Qiqi.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Qiqi.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Qiqi.png
+  - characterId: 10000036
+    name: Chongyun
+    sourceName: Chongyun
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Chongyun.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Chongyun.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Chongyun.png
+  - characterId: 10000037
+    name: Ganyu
+    sourceName: Ganyu
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ganyu.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ganyu.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ganyu.png
+  - characterId: 10000038
+    name: Albedo
+    sourceName: Albedo
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Albedo.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Albedo.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Albedo.png
+  - characterId: 10000039
+    name: Diona
+    sourceName: Diona
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Diona.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Diona.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Diona.png
+  - characterId: 10000041
+    name: Mona
+    sourceName: Mona
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Mona.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Mona.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Mona.png
+  - characterId: 10000042
+    name: Keqing
+    sourceName: Keqing
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Keqing.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Keqing.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Keqing.png
+  - characterId: 10000043
+    name: Sucrose
+    sourceName: Sucrose
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Sucrose.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Sucrose.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Sucrose.png
+  - characterId: 10000044
+    name: Xinyan
+    sourceName: Xinyan
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Xinyan.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Xinyan.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Xinyan.png
+  - characterId: 10000045
+    name: Rosaria
+    sourceName: Rosaria
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Rosaria.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Rosaria.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Rosaria.png
+  - characterId: 10000046
+    name: Hu Tao
+    sourceName: Hu Tao
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Hutao.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Hutao.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Hutao.png
+  - characterId: 10000047
+    name: Kazuha
+    sourceName: Kaedehara Kazuha
+    overrideName: Kazuha
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Kazuha.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Kazuha.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Kazuha.png
+  - characterId: 10000048
+    name: Feiyan
+    sourceName: Yanfei
+    overrideName: Feiyan
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Feiyan.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Feiyan.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Feiyan.png
+  - characterId: 10000049
+    name: Yoimiya
+    sourceName: Yoimiya
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Yoimiya.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Yoimiya.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Yoimiya.png
+  - characterId: 10000050
+    name: Tohma
+    sourceName: Thoma
+    overrideName: Tohma
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Tohma.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Tohma.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Tohma.png
+  - characterId: 10000051
+    name: Eula
+    sourceName: Eula
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Eula.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Eula.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Eula.png
+  - characterId: 10000052
+    name: Shougun
+    sourceName: Raiden Shogun
+    overrideName: Shougun
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Shougun.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Shougun.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Shougun.png
+  - characterId: 10000053
+    name: Sayu
+    sourceName: Sayu
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Sayu.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Sayu.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Sayu.png
+  - characterId: 10000054
+    name: Kokomi
+    sourceName: Sangonomiya Kokomi
+    overrideName: Kokomi
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Kokomi.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Kokomi.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Kokomi.png
+  - characterId: 10000055
+    name: Gorou
+    sourceName: Gorou
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Gorou.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Gorou.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Gorou.png
+  - characterId: 10000056
+    name: Sara
+    sourceName: Kujou Sara
+    overrideName: Sara
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Sara.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Sara.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Sara.png
+  - characterId: 10000057
+    name: Itto
+    sourceName: Arataki Itto
+    overrideName: Itto
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Itto.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Itto.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Itto.png
+  - characterId: 10000058
+    name: Yae
+    sourceName: Yae Miko
+    overrideName: Yae
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Yae.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Yae.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Yae.png
+  - characterId: 10000059
+    name: Heizo
+    sourceName: Shikanoin Heizou
+    overrideName: Heizo
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Heizo.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Heizo.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Heizo.png
+  - characterId: 10000060
+    name: Yelan
+    sourceName: Yelan
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Yelan.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Yelan.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Yelan.png
+  - characterId: 10000061
+    name: Momoka
+    sourceName: Kirara
+    overrideName: Momoka
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Momoka.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Momoka.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Momoka.png
+  - characterId: 10000062
+    name: Aloy
+    sourceName: Aloy
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Aloy.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Aloy.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Aloy.png
+  - characterId: 10000063
+    name: Shenhe
+    sourceName: Shenhe
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Shenhe.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Shenhe.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Shenhe.png
+  - characterId: 10000064
+    name: Yun Jin
+    sourceName: Yun Jin
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Yunjin.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Yunjin.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Yunjin.png
+  - characterId: 10000065
+    name: Shinobu
+    sourceName: Kuki Shinobu
+    overrideName: Shinobu
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Shinobu.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Shinobu.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Shinobu.png
+  - characterId: 10000066
+    name: Ayato
+    sourceName: Kamisato Ayato
+    overrideName: Ayato
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ayato.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ayato.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ayato.png
+  - characterId: 10000067
+    name: Collei
+    sourceName: Collei
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Collei.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Collei.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Collei.png
+  - characterId: 10000068
+    name: Dori
+    sourceName: Dori
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Dori.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Dori.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Dori.png
+  - characterId: 10000069
+    name: Tighnari
+    sourceName: Tighnari
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Tighnari.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Tighnari.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Tighnari.png
+  - characterId: 10000070
+    name: Nilou
+    sourceName: Nilou
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Nilou.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Nilou.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Nilou.png
+  - characterId: 10000071
+    name: Cyno
+    sourceName: Cyno
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Cyno.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Cyno.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Cyno.png
+  - characterId: 10000072
+    name: Candace
+    sourceName: Candace
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Candace.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Candace.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Candace.png
+  - characterId: 10000073
+    name: Nahida
+    sourceName: Nahida
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Nahida.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Nahida.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Nahida.png
+  - characterId: 10000074
+    name: Layla
+    sourceName: Layla
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Layla.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Layla.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Layla.png
+  - characterId: 10000075
+    name: Wanderer
+    sourceName: Wanderer
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Wanderer.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Wanderer.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Wanderer.png
+  - characterId: 10000076
+    name: Faruzan
+    sourceName: Faruzan
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Faruzan.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Faruzan.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Faruzan.png
+  - characterId: 10000077
+    name: Yaoyao
+    sourceName: Yaoyao
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Yaoyao.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Yaoyao.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Yaoyao.png
+  - characterId: 10000078
+    name: Alhaitham
+    sourceName: Alhaitham
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Alhatham.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Alhatham.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Alhatham.png
+  - characterId: 10000079
+    name: Dehya
+    sourceName: Dehya
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Dehya.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Dehya.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Dehya.png
+  - characterId: 10000080
+    name: Mika
+    sourceName: Mika
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Mika.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Mika.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Mika.png
+  - characterId: 10000081
+    name: Kaveh
+    sourceName: Kaveh
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Kaveh.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Kaveh.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Kaveh.png
+  - characterId: 10000082
+    name: Baizhuer
+    sourceName: Baizhu
+    overrideName: Baizhuer
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Baizhuer.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Baizhuer.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Baizhuer.png
+  - characterId: 10000083
+    name: Linette
+    sourceName: Lynette
+    overrideName: Linette
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Linette.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Linette.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Linette.png
+  - characterId: 10000084
+    name: Lyney
+    sourceName: Lyney
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Liney.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Liney.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Liney.png
+  - characterId: 10000085
+    name: Freminet
+    sourceName: Freminet
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Freminet.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Freminet.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Freminet.png
+  - characterId: 10000086
+    name: Wriothesley
+    sourceName: Wriothesley
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Wriothesley.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Wriothesley.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Wriothesley.png
+  - characterId: 10000087
+    name: Neuvillette
+    sourceName: Neuvillette
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Neuvillette.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Neuvillette.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Neuvillette.png
+  - characterId: 10000088
+    name: Charlotte
+    sourceName: Charlotte
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Charlotte.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Charlotte.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Charlotte.png
+  - characterId: 10000089
+    name: Furina
+    sourceName: Furina
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Furina.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Furina.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Furina.png
+  - characterId: 10000090
+    name: Chevreuse
+    sourceName: Chevreuse
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Chevreuse.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Chevreuse.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Chevreuse.png
+  - characterId: 10000091
+    name: Navia
+    sourceName: Navia
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Navia.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Navia.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Navia.png
+  - characterId: 10000092
+    name: Gaming
+    sourceName: Gaming
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Gaming.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Gaming.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Gaming.png
+  - characterId: 10000093
+    name: Liuyun
+    sourceName: Xianyun
+    overrideName: Liuyun
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Liuyun.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Liuyun.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Liuyun.png
+  - characterId: 10000094
+    name: Chiori
+    sourceName: Chiori
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Chiori.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Chiori.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Chiori.png
+  - characterId: 10000095
+    name: Sigewinne
+    sourceName: Sigewinne
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Sigewinne.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Sigewinne.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Sigewinne.png
+  - characterId: 10000096
+    name: Arlecchino
+    sourceName: Arlecchino
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Arlecchino.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Arlecchino.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Arlecchino.png
+  - characterId: 10000097
+    name: Sethos
+    sourceName: Sethos
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Sethos.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Sethos.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Sethos.png
+  - characterId: 10000098
+    name: Clorinde
+    sourceName: Clorinde
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Clorinde.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Clorinde.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Clorinde.png
+  - characterId: 10000099
+    name: Emilie
+    sourceName: Emilie
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Emilie.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Emilie.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Emilie.png
+  - characterId: 10000100
+    name: Kachina
+    sourceName: Kachina
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Kachina.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Kachina.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Kachina.png
+  - characterId: 10000101
+    name: Kinich
+    sourceName: Kinich
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Kinich.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Kinich.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Kinich.png
+  - characterId: 10000102
+    name: Mualani
+    sourceName: Mualani
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Mualani.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Mualani.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Mualani.png
+  - characterId: 10000103
+    name: Xilonen
+    sourceName: Xilonen
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Xilonen.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Xilonen.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Xilonen.png
+  - characterId: 10000104
+    name: Chasca
+    sourceName: Chasca
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Chasca.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Chasca.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Chasca.png
+  - characterId: 10000105
+    name: Olorun
+    sourceName: Ororon
+    overrideName: Olorun
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Olorun.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Olorun.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Olorun.png
+  - characterId: 10000106
+    name: Mavuika
+    sourceName: Mavuika
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Mavuika.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Mavuika.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Mavuika.png
+  - characterId: 10000107
+    name: Citlali
+    sourceName: Citlali
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Citlali.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Citlali.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Citlali.png
+  - characterId: 10000108
+    name: Lan Yan
+    sourceName: Lan Yan
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Lanyan.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Lanyan.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Lanyan.png
+  - characterId: 10000109
+    name: Mizuku
+    sourceName: Yumemizuki Mizuki
+    overrideName: Mizuku
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Mizuki.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Mizuki.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Mizuki.png
+  - characterId: 10000110
+    name: Iansan
+    sourceName: Iansan
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Iansan.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Iansan.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Iansan.png
+  - characterId: 10000111
+    name: Varesa
+    sourceName: Varesa
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Varesa.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Varesa.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Varesa.png
+  - characterId: 10000112
+    name: Escoffier
+    sourceName: Escoffier
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Escoffier.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Escoffier.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Escoffier.png
+  - characterId: 10000113
+    name: Ifa
+    sourceName: Ifa
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ifa.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ifa.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ifa.png
+  - characterId: 10000114
+    name: SkirkNew
+    sourceName: Skirk
+    overrideName: SkirkNew
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_SkirkNew.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_SkirkNew.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_SkirkNew.png
+  - characterId: 10000115
+    name: Dahlia
+    sourceName: Dahlia
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Dahlia.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Dahlia.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Dahlia.png
+  - characterId: 10000116
+    name: Ineffa
+    sourceName: Ineffa
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Ineffa.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Ineffa.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Ineffa.png
+  - characterId: 10000117
+    name: Manekin
+    sourceName: Manekin
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_MannequinBoy.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_MannequinBoy.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_MannequinBoy.png
+  - characterId: 10000118
+    name: Manekina
+    sourceName: Manekina
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_MannequinGirl.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_MannequinGirl.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_MannequinGirl.png
+  - characterId: 10000119
+    name: Lauma
+    sourceName: Lauma
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Lauma.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Lauma.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Lauma.png
+  - characterId: 10000120
+    name: Flins
+    sourceName: Flins
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Flins.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Flins.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Flins.png
+  - characterId: 10000121
+    name: Aino
+    sourceName: Aino
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Aino.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Aino.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Aino.png
+  - characterId: 10000122
+    name: Nefer
+    sourceName: Nefer
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Nefer.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Nefer.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Nefer.png
+  - characterId: 10000123
+    name: Durin
+    sourceName: Durin
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Durin.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Durin.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Durin.png
+  - characterId: 10000124
+    name: Jahoda
+    sourceName: Jahoda
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Jahoda.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Jahoda.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Jahoda.png
+  - characterId: 10000125
+    name: Columbina
+    sourceName: Columbina
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Columbina.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Columbina.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Columbina.png
+  - characterId: 10000126
+    name: Zibai
+    sourceName: Zibai
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Zibai.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Zibai.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Zibai.png
+  - characterId: 10000127
+    name: Illuga
+    sourceName: Illuga
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Illuga.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Illuga.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Illuga.png
+  - characterId: 10000128
+    name: Varka
+    sourceName: Varka
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Varka.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Varka.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Varka.png
+  - characterId: 10000129
+    name: Lohen
+    sourceName: Lohen
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Lohen.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Lohen.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Lohen.png
+  - characterId: 10000130
+    name: Linnea
+    sourceName: Linnea
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Linnea.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Linnea.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Linnea.png
+  - characterId: 10000131
+    name: Nicole
+    sourceName: Nicole
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Nicole.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Nicole.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Nicole.png
+  - characterId: 10000132
+    name: Prune
+    sourceName: Prune
+    overrideName: 
+    avatarIcon: https://api.lunaris.moe/data/assets/avataricon/UI_AvatarIcon_Prune.png
+    roundIcon: https://api.lunaris.moe/data/assets/avatarside/UI_AvatarIcon_Side_Prune.png
+    splashIcon: https://api.lunaris.moe/data/assets/gachaicon/UI_Gacha_AvatarIcon_Prune.png

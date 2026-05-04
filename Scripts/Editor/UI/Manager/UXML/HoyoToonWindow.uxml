@@ -3,6 +3,7 @@
         <ui:VisualElement name="HeaderContainer" class="ht-header">
             <ui:VisualElement name="BannerCard" class="ht-card ht-banner-card">
                 <ui:Image name="BannerBackground" class="ht-banner-background" />
+                <ui:Image name="CharacterSplashImage" class="ht-character-splash-image" />
                 <ui:VisualElement name="BannerContentRow" class="ht-row ht-gap-12 ht-banner-row">
                     <ui:VisualElement name="UserProfileButton" class="ht-user-profile-panel">
                         <ui:VisualElement name="UserAvatarFrame" class="ht-user-avatar-frame">
