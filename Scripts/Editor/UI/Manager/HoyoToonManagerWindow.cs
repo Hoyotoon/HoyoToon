@@ -159,12 +159,12 @@ namespace HoyoToon.Editor.UI.Manager
             packageVersionLabel = ResolvePackageVersionLabel();
             HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
             HoyoToonUserProfileStorage.ProfileChanged += HandleUserProfileChanged;
+            CharacterIconCacheUtility.CharacterIconsCached -= HandleCharacterIconsCached;
+            CharacterIconCacheUtility.CharacterIconsCached += HandleCharacterIconsCached;
             Undo.undoRedoPerformed -= HandleUndoRedoPerformed;
             Undo.undoRedoPerformed += HandleUndoRedoPerformed;
             EditorApplication.hierarchyChanged -= HandleEditorContextChanged;
             EditorApplication.hierarchyChanged += HandleEditorContextChanged;
-            EditorApplication.projectChanged -= HandleEditorContextChanged;
-            EditorApplication.projectChanged += HandleEditorContextChanged;
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
             EditorApplication.update -= RefreshCharacterSplashArtworkDuringPlayMode;
@@ -175,9 +175,9 @@ namespace HoyoToon.Editor.UI.Manager
         {
             versionBadgeSchedule?.Pause();
             HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
+            CharacterIconCacheUtility.CharacterIconsCached -= HandleCharacterIconsCached;
             Undo.undoRedoPerformed -= HandleUndoRedoPerformed;
             EditorApplication.hierarchyChanged -= HandleEditorContextChanged;
-            EditorApplication.projectChanged -= HandleEditorContextChanged;
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.update -= RefreshCharacterSplashArtworkDuringPlayMode;
             EditorApplication.delayCall -= RefreshManagerContextAfterEditorChange;
@@ -201,6 +201,17 @@ namespace HoyoToon.Editor.UI.Manager
         private void HandleEditorContextChanged()
         {
             RequestDeferredManagerRefresh();
+        }
+
+        private void HandleCharacterIconsCached(string contextAssetPath)
+        {
+            if (this == null || characterSplashImage == null || !IsCurrentCharacterSplashContext(contextAssetPath))
+            {
+                return;
+            }
+
+            ApplyActiveCharacterSplashArtwork();
+            Repaint();
         }
 
         private void HandlePlayModeStateChanged(PlayModeStateChange state)
@@ -1556,6 +1567,27 @@ namespace HoyoToon.Editor.UI.Manager
             return ResolvePlacementGameKey(activeModel);
         }
 
+        private bool IsCurrentCharacterSplashContext(string contextAssetPath)
+        {
+            if (string.IsNullOrWhiteSpace(contextAssetPath))
+            {
+                return true;
+            }
+
+            GameObject activeModel = ResolveLivePlacementActiveModel();
+            if (activeModel == null)
+            {
+                return false;
+            }
+
+            string normalizedContextAssetPath = AssetContextJsonQueryUtility.NormalizeAssetPath(contextAssetPath);
+            return EnumerateCharacterSplashContextAssetPaths(activeModel)
+                .Any(assetPath => string.Equals(
+                    AssetContextJsonQueryUtility.NormalizeAssetPath(assetPath),
+                    normalizedContextAssetPath,
+                    StringComparison.OrdinalIgnoreCase));
+        }
+
         private static string NormalizeSceneCharacterName(string characterName)
         {
             if (string.IsNullOrWhiteSpace(characterName))
@@ -2346,7 +2378,6 @@ namespace HoyoToon.Editor.UI.Manager
         private static List<BatchModelDetectionInfo> CollapseConvertedDuplicates(IEnumerable<BatchModelDetectionInfo> detections)
         {
             List<BatchModelDetectionInfo> orderedDetections = new List<BatchModelDetectionInfo>();
-            Dictionary<string, int> indexByKey = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
             foreach (BatchModelDetectionInfo detection in detections ?? Array.Empty<BatchModelDetectionInfo>())
             {
@@ -2355,10 +2386,9 @@ namespace HoyoToon.Editor.UI.Manager
                     continue;
                 }
 
-                string key = BuildBatchDuplicateKey(detection);
-                if (!indexByKey.TryGetValue(key, out int existingIndex))
+                int existingIndex = FindDuplicateQueuedDetectionIndex(orderedDetections, detection);
+                if (existingIndex < 0)
                 {
-                    indexByKey[key] = orderedDetections.Count;
                     orderedDetections.Add(detection);
                     continue;
                 }
@@ -2371,6 +2401,54 @@ namespace HoyoToon.Editor.UI.Manager
             }
 
             return orderedDetections;
+        }
+
+        private static int FindDuplicateQueuedDetectionIndex(
+            IReadOnlyList<BatchModelDetectionInfo> existingDetections,
+            BatchModelDetectionInfo candidateDetection)
+        {
+            if (existingDetections == null || candidateDetection == null)
+            {
+                return -1;
+            }
+
+            for (int index = 0; index < existingDetections.Count; index++)
+            {
+                if (IsDuplicateQueuedDetection(existingDetections[index], candidateDetection))
+                {
+                    return index;
+                }
+            }
+
+            return -1;
+        }
+
+        private static bool IsDuplicateQueuedDetection(
+            BatchModelDetectionInfo existingDetection,
+            BatchModelDetectionInfo candidateDetection)
+        {
+            if (existingDetection == null || candidateDetection == null)
+            {
+                return false;
+            }
+
+            string existingAssetPath = AssetContextJsonQueryUtility.NormalizeAssetPath(existingDetection.AssetPath);
+            string candidateAssetPath = AssetContextJsonQueryUtility.NormalizeAssetPath(candidateDetection.AssetPath);
+            if (!string.IsNullOrWhiteSpace(existingAssetPath)
+                && string.Equals(existingAssetPath, candidateAssetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+
+            if (existingDetection.IsConverted == candidateDetection.IsConverted)
+            {
+                return false;
+            }
+
+            return string.Equals(
+                BuildBatchDuplicateKey(existingDetection),
+                BuildBatchDuplicateKey(candidateDetection),
+                StringComparison.OrdinalIgnoreCase);
         }
 
         private static string BuildBatchDuplicateKey(BatchModelDetectionInfo detection)

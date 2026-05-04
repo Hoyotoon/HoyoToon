@@ -1,7 +1,12 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using HoyoToon.Editor.AssetPipeline.Textures;
 using HoyoToon.Editor.Detection.Game;
 using HoyoToon.Editor.Utilities.Debugging;
@@ -14,6 +19,10 @@ namespace HoyoToon.Editor.Utilities.Assets
     public static class CharacterIconCacheUtility
     {
         private static readonly HttpClient Client = CreateClient();
+        private static readonly HashSet<string> PendingIconDownloads = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        private static SynchronizationContext editorSynchronizationContext;
+
+        public static event Action<string> CharacterIconsCached;
 
         public static bool TryGetCachedCharacterIconPath(
             string contextAssetPath,
@@ -68,7 +77,7 @@ namespace HoyoToon.Editor.Utilities.Assets
                     continue;
                 }
 
-                if (!TryEnsureCharacterIconCached(contextAssetPath, gameKey, characterId, iconKinds[i], iconUrl, out string iconCachedPath))
+                if (!TryGetOrRequestCharacterIconCached(contextAssetPath, gameKey, characterId, iconKinds[i], iconUrl, out string iconCachedPath))
                 {
                     continue;
                 }
@@ -93,7 +102,7 @@ namespace HoyoToon.Editor.Utilities.Assets
             return cachedAny;
         }
 
-        private static bool TryEnsureCharacterIconCached(
+        private static bool TryGetOrRequestCharacterIconCached(
             string contextAssetPath,
             string gameKey,
             int characterId,
@@ -110,11 +119,51 @@ namespace HoyoToon.Editor.Utilities.Assets
 
             if (IsCacheFileValid(cacheAbsolutePath))
             {
-                ApplyTextureImportSettings(gameKey, cacheAbsolutePath);
+                ApplyTextureImportSettings(gameKey, cacheAbsolutePath, false);
                 cachedIconPath = cacheAbsolutePath;
                 return true;
             }
 
+            QueueCharacterIconDownload(contextAssetPath, gameKey, characterId, iconKind, iconUrl, cacheAbsolutePath);
+            return false;
+        }
+
+        private static void QueueCharacterIconDownload(
+            string contextAssetPath,
+            string gameKey,
+            int characterId,
+            string iconKind,
+            string iconUrl,
+            string cacheAbsolutePath)
+        {
+            if (string.IsNullOrWhiteSpace(cacheAbsolutePath) || string.IsNullOrWhiteSpace(iconUrl))
+            {
+                return;
+            }
+
+            editorSynchronizationContext = SynchronizationContext.Current ?? editorSynchronizationContext;
+
+            string downloadKey = cacheAbsolutePath + "|" + iconUrl;
+            lock (PendingIconDownloads)
+            {
+                if (!PendingIconDownloads.Add(downloadKey))
+                {
+                    return;
+                }
+            }
+
+            _ = DownloadCharacterIconAsync(contextAssetPath, gameKey, characterId, iconKind, iconUrl, cacheAbsolutePath, downloadKey);
+        }
+
+        private static async Task DownloadCharacterIconAsync(
+            string contextAssetPath,
+            string gameKey,
+            int characterId,
+            string iconKind,
+            string iconUrl,
+            string cacheAbsolutePath,
+            string downloadKey)
+        {
             string tempFilePath = cacheAbsolutePath + ".download";
 
             try
@@ -122,20 +171,20 @@ namespace HoyoToon.Editor.Utilities.Assets
                 string cacheDirectory = Path.GetDirectoryName(cacheAbsolutePath);
                 if (string.IsNullOrWhiteSpace(cacheDirectory))
                 {
-                    return false;
+                    CompleteCharacterIconDownload(downloadKey);
+                    return;
                 }
 
                 Directory.CreateDirectory(cacheDirectory);
 
-                byte[] payload = Client
+                byte[] payload = await Client
                     .GetByteArrayAsync(iconUrl)
-                    .ConfigureAwait(false)
-                    .GetAwaiter()
-                    .GetResult();
+                    .ConfigureAwait(false);
 
                 if (payload == null || payload.Length <= 0)
                 {
-                    return false;
+                    CompleteCharacterIconDownload(downloadKey);
+                    return;
                 }
 
                 File.WriteAllBytes(tempFilePath, payload);
@@ -146,22 +195,32 @@ namespace HoyoToon.Editor.Utilities.Assets
                 }
 
                 File.Move(tempFilePath, cacheAbsolutePath);
-                ApplyTextureImportSettings(gameKey, cacheAbsolutePath);
-                cachedIconPath = cacheAbsolutePath;
-                return true;
+                PostToEditorThread(() =>
+                {
+                    try
+                    {
+                        ApplyTextureImportSettings(gameKey, cacheAbsolutePath, true);
+                        CharacterIconsCached?.Invoke(contextAssetPath ?? string.Empty);
+                    }
+                    finally
+                    {
+                        CompleteCharacterIconDownload(downloadKey);
+                    }
+                });
             }
             catch (Exception exception)
             {
-                if (IsCacheFileValid(cacheAbsolutePath))
+                PostToEditorThread(() =>
                 {
-                    cachedIconPath = cacheAbsolutePath;
-                    return true;
-                }
+                    if (!IsCacheFileValid(cacheAbsolutePath))
+                    {
+                        HoyoToonLogger.Verbose(
+                            HoyoToonLogCategory.Detection,
+                            $"Character icon caching skipped for character ID '{characterId}' in game '{gameKey}' ({iconKind}). URL: {iconUrl}. {exception.GetType().Name}: {exception.Message}");
+                    }
 
-                HoyoToonLogger.Verbose(
-                    HoyoToonLogCategory.Detection,
-                    $"Character icon caching skipped for character ID '{characterId}' in game '{gameKey}' ({iconKind}). URL: {iconUrl}. {exception.GetType().Name}: {exception.Message}");
-                return false;
+                    CompleteCharacterIconDownload(downloadKey);
+                });
             }
             finally
             {
@@ -170,6 +229,36 @@ namespace HoyoToon.Editor.Utilities.Assets
                     File.Delete(tempFilePath);
                 }
             }
+        }
+
+        private static void CompleteCharacterIconDownload(string downloadKey)
+        {
+            if (string.IsNullOrWhiteSpace(downloadKey))
+            {
+                return;
+            }
+
+            lock (PendingIconDownloads)
+            {
+                PendingIconDownloads.Remove(downloadKey);
+            }
+        }
+
+        private static void PostToEditorThread(Action action)
+        {
+            if (action == null)
+            {
+                return;
+            }
+
+            SynchronizationContext context = editorSynchronizationContext;
+            if (context != null)
+            {
+                context.Post(_ => action(), null);
+                return;
+            }
+
+            EditorApplication.delayCall += () => action();
         }
 
         private static bool TryGetCharacterIconCacheAbsolutePath(string contextAssetPath, string iconKind, string iconUrl, out string cacheAbsolutePath)
@@ -190,7 +279,7 @@ namespace HoyoToon.Editor.Utilities.Assets
                 return false;
             }
 
-            cacheAbsolutePath = Path.Combine(iconsDirectory, $"{iconKind}{extension}");
+            cacheAbsolutePath = Path.Combine(iconsDirectory, $"{iconKind}_{ComputeStableHash(iconUrl)}{extension}");
             return true;
         }
 
@@ -283,7 +372,7 @@ namespace HoyoToon.Editor.Utilities.Assets
             }
         }
 
-        private static void ApplyTextureImportSettings(string gameKey, string absoluteTexturePath)
+        private static void ApplyTextureImportSettings(string gameKey, string absoluteTexturePath, bool forceImport)
         {
             string textureAssetPath = AssetContextJsonQueryUtility.ToAssetPath(absoluteTexturePath);
             if (string.IsNullOrWhiteSpace(textureAssetPath)
@@ -293,7 +382,11 @@ namespace HoyoToon.Editor.Utilities.Assets
                 return;
             }
 
-            AssetDatabase.ImportAsset(textureAssetPath, ImportAssetOptions.ForceUpdate);
+            if (forceImport || AssetImporter.GetAtPath(textureAssetPath) == null)
+            {
+                AssetDatabase.ImportAsset(textureAssetPath, ImportAssetOptions.ForceUpdate);
+            }
+
             TextureImportSettingsApplicator.Apply(game, textureAssetPath);
         }
 
@@ -302,6 +395,19 @@ namespace HoyoToon.Editor.Utilities.Assets
             return !string.IsNullOrWhiteSpace(filePath)
                 && File.Exists(filePath)
                 && new FileInfo(filePath).Length > 0;
+        }
+
+        private static string ComputeStableHash(string value)
+        {
+            using SHA256 sha256 = SHA256.Create();
+            byte[] hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(value ?? string.Empty));
+            StringBuilder builder = new StringBuilder(16);
+            for (int index = 0; index < 8 && index < hash.Length; index++)
+            {
+                builder.Append(hash[index].ToString("x2"));
+            }
+
+            return builder.ToString();
         }
 
         private static HttpClient CreateClient()
