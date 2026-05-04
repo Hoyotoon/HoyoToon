@@ -1,5 +1,5 @@
 {
-  "version": "0.2.5",
+  "version": "0.2.6",
   "files": {
     ".gitignore": "c81828dfd1a4663869cdac6e58690bfe84ab6b6b",
     "HoyoToon.unity": "a95a07a0ae27a7d67495ddf02134b5422731cb19",
@@ -377,7 +377,7 @@
     "Scripts/Editor/UI/HoyoToonEditorUiAssets.cs": "cbae5ac2cb520e5a52ed527eb7e8c3ddc0fd53d1",
     "Scripts/Editor/UI/HoyoToonEditorUiAssets.cs.meta": "762ae2bcd6e85eb5f880b2cc5479a62b6987e8b5",
     "Scripts/Editor/UI/Manager.meta": "f6b6d4b3ebdf3c650b005050b4fceed3e5004cad",
-    "Scripts/Editor/UI/Manager/HoyoToonManagerWindow.cs": "64b2ea9c0f4fbf391e97a9db43030cbbeea93bc3",
+    "Scripts/Editor/UI/Manager/HoyoToonManagerWindow.cs": "f4604c78d508f94b432ae53af8b8c8a8e42b3f07",
     "Scripts/Editor/UI/Manager/HoyoToonManagerWindow.cs.meta": "52e6305886c8b8dcd482e6bca5f4918f220219ba",
     "Scripts/Editor/UI/Manager/IManagerModule.cs": "f3971f6a2353879be33320514d9872234031f71d",
     "Scripts/Editor/UI/Manager/IManagerModule.cs.meta": "583fd68a35974b0662d256ae0dcd83f7a33f174d",
@@ -926,9 +926,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "d16aa65878572be6398fa6d2a9e6949d715d99d3",
+    "changelog.md": "bd4336ba0e2d578719718a0224bf37706611be11",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "571b4015a477fa772140663b0182ae683b31edcf",
+    "package.json": "25275c9c2852efe8e92747bf45f289921b64db41",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
