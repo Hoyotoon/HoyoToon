@@ -1479,10 +1479,10 @@ namespace HoyoToon.Editor.UI.Manager
             }
 
             string resolvedGameKey = gameKey;
-            int characterId;
-            string avatarIconUrl;
-            string roundIconUrl;
-            string splashIconUrl;
+            int characterId = 0;
+            string avatarIconUrl = null;
+            string roundIconUrl = null;
+            string splashIconUrl = null;
             bool resolved = false;
             if (!string.IsNullOrWhiteSpace(resolvedGameKey))
             {
