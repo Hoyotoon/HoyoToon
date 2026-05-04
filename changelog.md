@@ -1,4 +1,4 @@
-# HoyoToon 0.2.4
+# HoyoToon 0.2.5
 
 ## API
 - API will now attempt to download and import 3 sets of Character Icons from each character when you set them up.

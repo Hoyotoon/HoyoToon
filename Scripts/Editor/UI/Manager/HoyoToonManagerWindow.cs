@@ -1416,6 +1416,15 @@ namespace HoyoToon.Editor.UI.Manager
                 Texture2D splashTexture = ResolveCharacterSplashTexture(gameKey, contextAssetPath, out string splashAssetPath);
                 if (splashTexture == null)
                 {
+                    splashTexture = ResolveCharacterSplashTextureByName(
+                        activeModel,
+                        gameKey,
+                        contextAssetPath,
+                        out splashAssetPath);
+                }
+
+                if (splashTexture == null)
+                {
                     continue;
                 }
 
@@ -1456,6 +1465,77 @@ namespace HoyoToon.Editor.UI.Manager
             return AssetDatabase.LoadAssetAtPath<Texture2D>(splashAssetPath);
         }
 
+        private Texture2D ResolveCharacterSplashTextureByName(
+            GameObject activeModel,
+            string gameKey,
+            string contextAssetPath,
+            out string splashAssetPath)
+        {
+            splashAssetPath = string.Empty;
+            string characterName = NormalizeSceneCharacterName(ResolvePlacementCharacterName(activeModel));
+            if (string.IsNullOrWhiteSpace(characterName))
+            {
+                return null;
+            }
+
+            string resolvedGameKey = gameKey;
+            int characterId;
+            string avatarIconUrl;
+            string roundIconUrl;
+            string splashIconUrl;
+            bool resolved = false;
+            if (!string.IsNullOrWhiteSpace(resolvedGameKey))
+            {
+                resolved = CharacterIconDetector.TryResolveCharacterIconUrls(
+                    resolvedGameKey,
+                    characterName,
+                    out characterId,
+                    out avatarIconUrl,
+                    out roundIconUrl,
+                    out splashIconUrl);
+            }
+
+            if (!resolved)
+            {
+                resolved = CharacterIconDetector.TryResolveCharacterIconUrls(
+                    characterName,
+                    out resolvedGameKey,
+                    out characterId,
+                    out avatarIconUrl,
+                    out roundIconUrl,
+                    out splashIconUrl);
+            }
+
+            if (!resolved || string.IsNullOrWhiteSpace(resolvedGameKey) || string.IsNullOrWhiteSpace(splashIconUrl))
+            {
+                return null;
+            }
+
+            CharacterIconCacheUtility.TryEnsureCharacterIconsCached(
+                contextAssetPath,
+                resolvedGameKey,
+                characterId,
+                avatarIconUrl,
+                roundIconUrl,
+                splashIconUrl,
+                out _);
+
+            if (!CharacterIconCacheUtility.TryGetCachedCharacterIconPath(
+                contextAssetPath,
+                null,
+                null,
+                splashIconUrl,
+                out string cachedSplashIconPath))
+            {
+                return null;
+            }
+
+            splashAssetPath = AssetContextJsonQueryUtility.ToAssetPath(cachedSplashIconPath);
+            return string.IsNullOrWhiteSpace(splashAssetPath)
+                ? null
+                : AssetDatabase.LoadAssetAtPath<Texture2D>(splashAssetPath);
+        }
+
         private string ResolveCharacterSplashGameKey(GameObject activeModel, string contextAssetPath)
         {
             string gameKey = currentContext != null && activeModel == currentContext.PlacementActiveModel
@@ -1473,6 +1553,23 @@ namespace HoyoToon.Editor.UI.Manager
             }
 
             return ResolvePlacementGameKey(activeModel);
+        }
+
+        private static string NormalizeSceneCharacterName(string characterName)
+        {
+            if (string.IsNullOrWhiteSpace(characterName))
+            {
+                return string.Empty;
+            }
+
+            string normalizedName = characterName.Trim();
+            const string CloneSuffix = "(Clone)";
+            if (normalizedName.EndsWith(CloneSuffix, StringComparison.OrdinalIgnoreCase))
+            {
+                normalizedName = normalizedName.Substring(0, normalizedName.Length - CloneSuffix.Length).Trim();
+            }
+
+            return normalizedName;
         }
 
         private void RememberCharacterSplashAssetPath(int modelInstanceId, string modelAssetPath, string splashAssetPath)

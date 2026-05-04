@@ -261,6 +261,59 @@ namespace HoyoToon.Editor.Detection.Character
             return true;
         }
 
+        public static bool TryResolveCharacterIconUrls(
+            string gameKey,
+            string characterName,
+            out int characterId,
+            out string avatarIconUrl,
+            out string roundIconUrl,
+            out string splashIconUrl)
+        {
+            characterId = 0;
+            avatarIconUrl = null;
+            roundIconUrl = null;
+            splashIconUrl = null;
+
+            if (!TryResolveCharacterEntry(gameKey, characterName, out _, out GameCharacterIdsSO.Entry entry, out _)
+                || entry == null)
+            {
+                return false;
+            }
+
+            characterId = entry.CharacterId;
+            avatarIconUrl = entry.AvatarIcon;
+            roundIconUrl = entry.RoundIcon;
+            splashIconUrl = entry.SplashIcon;
+            return true;
+        }
+
+        public static bool TryResolveCharacterIconUrls(
+            string characterName,
+            out string gameKey,
+            out int characterId,
+            out string avatarIconUrl,
+            out string roundIconUrl,
+            out string splashIconUrl)
+        {
+            gameKey = null;
+            characterId = 0;
+            avatarIconUrl = null;
+            roundIconUrl = null;
+            splashIconUrl = null;
+
+            if (!TryResolveCharacterEntry(characterName, out gameKey, out GameCharacterIdsSO.Entry entry)
+                || entry == null)
+            {
+                return false;
+            }
+
+            characterId = entry.CharacterId;
+            avatarIconUrl = entry.AvatarIcon;
+            roundIconUrl = entry.RoundIcon;
+            splashIconUrl = entry.SplashIcon;
+            return true;
+        }
+
         public static CharacterIconResolutionResult ResolveCharacterIcon(string gameKey, string contextAssetPath)
         {
             try
