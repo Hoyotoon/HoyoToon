@@ -1,0 +1,135 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Manikin_Floor_05
+  m_Shader: {fileID: 4800000, guid: a5cd25c67fc5fc946883b69994df348b, type: 3}
+  m_Parent: {fileID: 0}
+  m_ModifiedSerializedProperties: 0
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_LockedProperties: 
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _BaseTex:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _BumpMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailAlbedoMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailMask:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DetailNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _EmissionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MainTex:
+        m_Texture: {fileID: 2800000, guid: 2432118ed17a27c429d0458341428a32, type: 3}
+        m_Scale: {x: 4, y: 0.6}
+        m_Offset: {x: 0, y: 0}
+    - _MaskTex:
+        m_Texture: {fileID: 2800000, guid: 2432118ed17a27c429d0458341428a32, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _MetallicGlossMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _OcclusionMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _ParallaxMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _BaseTexInst: 0
+    - _BaseTexMax: 1
+    - _BaseTexRange: 0.01
+    - _BaseTexSharp: 0.01
+    - _BumpScale: 1
+    - _ColorRangeMax: 0.225
+    - _ColorRangeMin: 0.1
+    - _ColorRangeTop: 0.4
+    - _Cutoff: 0.5
+    - _DetailNormalMapScale: 1
+    - _DstBlend: 0
+    - _GlossMapScale: 1
+    - _Glossiness: 0.5
+    - _GlossyReflections: 1
+    - _MainDistortion: 0.111
+    - _MainRangeMax: 0.05
+    - _MainRangeMin: 0.75
+    - _MainSpeedX: 0.003
+    - _MainSpeedY: -0.005
+    - _MaskDistortion: 0.1
+    - _MaskRangeMax: 0.4
+    - _MaskRangeMin: 0.05
+    - _MaskSpeedX: -4.55
+    - _MaskSpeedY: -4.63
+    - _Metallic: 0
+    - _Mode: 0
+    - _OcclusionStrength: 1
+    - _Opacity: 1
+    - _Parallax: 0.02
+    - _Pattern1SpeedX: -0.05
+    - _Pattern1SpeedY: -0.02
+    - _PolygonOffsetFactor: 10
+    - _PolygonOffsetUnits: 10
+    - _ReflectWeight: 0.5
+    - _ReflectionThs: 0.2
+    - _RimRange: 1
+    - _SatRangeEnd: 0.8
+    - _SatRangeStar: 0.3
+    - _SmoothnessTextureChannel: 0
+    - _SpecularHighlights: 1
+    - _SrcBlend: 1
+    - _StencilComp: 8
+    - _StencilPass: 2
+    - _StencilReadMask: 255
+    - _StencilRefValue: 0
+    - _UVSec: 0
+    - _ViewOffset: 0
+    - _ZWrite: 1
+    - _ZWriteMode: 0
+    m_Colors:
+    - _BaseTexSpeed: {r: 0, g: 0, b: 0, a: 0}
+    - _CenterPos: {r: 0, g: 0, b: -0.6, a: 1}
+    - _CenterPos1: {r: -0.09, g: 0.65, b: -0.75, a: 0.45}
+    - _CenterPos2: {r: 0.235, g: 0.575, b: 0.625, a: 0.65}
+    - _CenterPos3: {r: 0.3, g: 0.3, b: 0.125, a: 0.225}
+    - _Color: {r: 0.5613208, g: 0.74908423, b: 1, a: 1}
+    - _Color1: {r: 0.6775098, g: 0.79193896, b: 0.990566, a: 1}
+    - _Color2: {r: 0.9386792, g: 0.9795598, b: 1, a: 1}
+    - _Color3: {r: 1, g: 1, b: 1, a: 1}
+    - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
+    - _Pattern1: {r: 0.61, g: 0.94, b: 0, a: 0}
+    - _RimColor: {r: 1.2, g: 1.2, b: 1.2, a: 1}
+  m_BuildTextureStacks: []
+  m_AllowLocking: 1

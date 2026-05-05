@@ -53,7 +53,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             {
                 objectType = typeof(GameObject),
                 allowSceneObjects = false,
-                value = context != null ? context.SelectedModelAsset : null
+                value = null
             };
             modelField.AddToClassList("ht-field");
             modelField.AddToClassList("ht-main-model-field");
@@ -64,6 +64,12 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             {
                 GameObject model = evt.newValue as GameObject;
                 OnboardingSignals.RecordValueChanged("Setup.ModelInputField", model != null ? model.name : string.Empty);
+                if (model == null)
+                {
+                    return;
+                }
+
+                modelField.SetValueWithoutNotify(null);
                 window?.SetSelectedModelAsset(model);
             });
             actionRow.Add(modelField);

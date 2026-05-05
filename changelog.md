@@ -1,7 +1,7 @@
-# HoyoToon 0.2.8
+# HoyoToon 0.2.9
 
 
 ## Manager
-- Fixed an issue where selecting an FBX while the manager wasn't focused could cause the manager to get stuck refreshing the character icon.
-- Fixed character icons being cached too broadly when multiple characters shared the same folder.
-- Fixed an issue where adding multiple FBX variants for the same character could remove one from the setup queue.
+- Fixed an issue where the Add Model field wouldn't update when adding a second model.
+- Fixed an issue where batching setup could fail due to the bug above ^
+- **Actually add the character screen this time**

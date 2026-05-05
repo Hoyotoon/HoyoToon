@@ -1,0 +1,291 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1001 &4820847084436585665
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 0}
+    m_Modifications:
+    - target: {fileID: -9159815899012060562, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_04
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8550184052325333924, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: UI_Ceiling
+      objectReference: {fileID: 0}
+    - target: {fileID: -8550184052325333924, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8399553492886822916, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Skybox
+      objectReference: {fileID: 0}
+    - target: {fileID: -8399553492886822916, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8161507684457459677, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8018938339643559280, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: SkyBox
+      objectReference: {fileID: 0}
+    - target: {fileID: -7938471071350057841, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: ShadowBlur
+      objectReference: {fileID: 0}
+    - target: {fileID: -7850051625140044573, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor
+      objectReference: {fileID: 0}
+    - target: {fileID: -7833159476312026743, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7725731306828549560, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -7658777440315908511, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: UI_TeamFloor
+      objectReference: {fileID: 0}
+    - target: {fileID: -7658777440315908511, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7286505663129454804, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: FloorCloud
+      objectReference: {fileID: 0}
+    - target: {fileID: -3408318129079145386, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2526816755146651145, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_Line06
+      objectReference: {fileID: 0}
+    - target: {fileID: -2526816755146651145, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -2408270557476799643, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: UI_Floor
+      objectReference: {fileID: 0}
+    - target: {fileID: -2408270557476799643, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -1142940060980051919, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_Smoke
+      objectReference: {fileID: 0}
+    - target: {fileID: -1139957971279013982, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -1121193373714493182, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 50424124119796480, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Character Screen
+      objectReference: {fileID: 0}
+    - target: {fileID: 2553321520150751029, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2556631920966241232, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_Line05
+      objectReference: {fileID: 0}
+    - target: {fileID: 2556631920966241232, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4378765312626906922, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4395896425177911947, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 4395896425177911947, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4726102700845068433, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5228066629589092919, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5328805800684942794, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 3bd8657161d9ccd449be3d39f33ef196, type: 2}
+    - target: {fileID: 6044004807103630596, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6177769096256012467, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: UI_Skybox
+      objectReference: {fileID: 0}
+    - target: {fileID: 6177769096256012467, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6369204893719109697, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6606617715308443967, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7039438521877354948, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7621866254790245385, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_ShadowBlur
+      objectReference: {fileID: 0}
+    - target: {fileID: 7621866254790245385, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8161152034093381569, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8391840185317379895, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: Floor_Glow
+      objectReference: {fileID: 0}
+    - target: {fileID: 8391840185317379895, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596020280972212988, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596020280972212988, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596020280972212988, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8596020280972212988, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9054022227899875081, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_Name
+      value: CharacterUI_FloorCloud
+      objectReference: {fileID: 0}
+    - target: {fileID: 9054022227899875081, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: -8349727072804255231, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 1963549138086034258, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 6044004807103630596, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 8161152034093381569, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 50424124119796480, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: -8161507684457459677, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 4726102700845068433, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 7039438521877354948, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 65702495048144492, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 4191376841708193398, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: -7833159476312026743, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 6606617715308443967, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 6341373432435534907, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: -598787146637974012, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    - {fileID: 5332809968238436118, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2553321520150751029, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2042682603026954843}
+  m_SourcePrefab: {fileID: 100100000, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+--- !u!1 &7027918368848206836 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2553321520150751029, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+  m_PrefabInstance: {fileID: 4820847084436585665}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2042682603026954843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7027918368848206836}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a17ddefbdfaf2f44ab02d07b2d26b96e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.Scene.HSR.Rotatable
+  targetCamera: {fileID: 0}
