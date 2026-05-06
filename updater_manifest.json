@@ -1,8 +1,8 @@
 {
-  "version": "0.3.1",
+  "version": "0.3.2",
   "files": {
     ".gitignore": "c81828dfd1a4663869cdac6e58690bfe84ab6b6b",
-    "HoyoToon.unity": "126c054acf29e3eb1513b4bece3851715a8623e5",
+    "HoyoToon.unity": "e16c8aebeddbcff0aa20117062e90ee8674fae5e",
     "HoyoToon.unity.meta": "2352059316a63978e26ada59d50c3f1708cfaedb",
     "LICENSE": "31a3d460bb3c7d98845187c716a30db81c44b615",
     "Plugins.meta": "55897274651327a5c083bd0217e2a849dbe7969e",
@@ -1088,9 +1088,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "4819249c605f996688d1b288de9cc8faf46fb0a8",
+    "changelog.md": "75bda1ffc0969ff5c0bd3315d2da32c12d19dbf9",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "acda0f05fe907fa8ec9154553d8856d359e45f95",
+    "package.json": "5549f8e9d1d745d8c640940974910394059f855f",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
