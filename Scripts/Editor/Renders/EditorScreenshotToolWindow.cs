@@ -73,7 +73,7 @@ namespace HoyoToon.Editor.Renders
         private bool m_SyncWithSceneView;
         private Camera m_SyncedCamera;
         private CameraState m_SyncedCameraState;
-        private Behaviour m_DisabledBrain;
+        private readonly CinemachineBrainStateStore m_CinemachineBrainStates = new CinemachineBrainStateStore();
 
         internal static void OpenWindow()
         {
@@ -107,6 +107,11 @@ namespace HoyoToon.Editor.Renders
             EditorApplication.update += OnEditorUpdate;
             AssemblyReloadEvents.beforeAssemblyReload -= OnBeforeAssemblyReload;
             AssemblyReloadEvents.beforeAssemblyReload += OnBeforeAssemblyReload;
+
+            if (m_SyncWithSceneView)
+            {
+                BeginSceneViewSync();
+            }
         }
 
         private void OnDisable()
@@ -607,15 +612,23 @@ namespace HoyoToon.Editor.Renders
                 return;
             }
 
+            if (m_SyncedCamera == m_Camera)
+            {
+                m_CinemachineBrainStates.DisableForSync(m_Camera);
+                CopySceneViewStateToCaptureCamera();
+                return;
+            }
+
+            EndSceneViewSync();
             m_SyncedCamera = m_Camera;
             m_SyncedCameraState = TurnaroundCaptureUtility.CaptureState(m_Camera);
-            DisableCinemachineBrain(m_Camera);
+            m_CinemachineBrainStates.DisableForSync(m_Camera);
             CopySceneViewStateToCaptureCamera();
         }
 
         private void EndSceneViewSync()
         {
-            EnableDisabledBrain();
+            m_CinemachineBrainStates.Restore();
 
             if (m_SyncedCamera != null)
             {
@@ -641,35 +654,6 @@ namespace HoyoToon.Editor.Renders
             return SceneView.lastActiveSceneView != null
                 ? SceneView.lastActiveSceneView.camera
                 : null;
-        }
-
-        private void DisableCinemachineBrain(Camera camera)
-        {
-            if (camera == null)
-            {
-                return;
-            }
-
-            Behaviour[] behaviours = camera.GetComponents<Behaviour>();
-            for (int index = 0; index < behaviours.Length; index++)
-            {
-                Behaviour behaviour = behaviours[index];
-                if (behaviour != null && string.Equals(behaviour.GetType().Name, "CinemachineBrain", StringComparison.Ordinal))
-                {
-                    behaviour.enabled = false;
-                    m_DisabledBrain = behaviour;
-                    return;
-                }
-            }
-        }
-
-        private void EnableDisabledBrain()
-        {
-            if (m_DisabledBrain != null)
-            {
-                m_DisabledBrain.enabled = true;
-                m_DisabledBrain = null;
-            }
         }
 
         private string GetScreenshotPrerequisiteMessage()

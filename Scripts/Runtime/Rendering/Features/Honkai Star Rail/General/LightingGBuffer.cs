@@ -204,6 +204,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 public int RendererTopologyVersion;
                 public int MaterialPassCacheVersion;
                 public int ControllerSignature;
+                public int SceneControllerSignature;
                 public bool HasLightingWork;
             }
 
@@ -230,19 +231,22 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 int sceneHandle = scene.handle;
                 int controllerCount = HSRCharacterController.GetRegisteredActiveControllersInScene(scene, k_ActivityControllers);
                 int controllerSignature = BuildControllerSignature(controllerCount);
+                HSRSceneController sceneController = HSRSceneController.FindForSceneOrActiveScene(scene);
+                int sceneControllerSignature = sceneController != null ? sceneController.GetInstanceID() : 0;
                 int rendererTopologyVersion = HSRCharacterController.RendererTopologyVersion;
                 int materialPassCacheVersion = HsrRendererMaterialQueryUtility.MaterialPassCacheVersion;
 
                 if (k_SceneActivityCache.TryGetValue(sceneHandle, out SceneActivityCache cache)
                     && cache.RendererTopologyVersion == rendererTopologyVersion
                     && cache.MaterialPassCacheVersion == materialPassCacheVersion
-                    && cache.ControllerSignature == controllerSignature)
+                    && cache.ControllerSignature == controllerSignature
+                    && cache.SceneControllerSignature == sceneControllerSignature)
                 {
                     k_ActivityControllers.Clear();
                     return cache.HasLightingWork;
                 }
 
-                bool hasLightingWork = false;
+                bool hasLightingWork = sceneController != null;
                 for (int i = 0; i < controllerCount && !hasLightingWork; ++i)
                 {
                     HSRCharacterController controller = k_ActivityControllers[i];
@@ -258,6 +262,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     RendererTopologyVersion = rendererTopologyVersion,
                     MaterialPassCacheVersion = materialPassCacheVersion,
                     ControllerSignature = controllerSignature,
+                    SceneControllerSignature = sceneControllerSignature,
                     HasLightingWork = hasLightingWork
                 };
 

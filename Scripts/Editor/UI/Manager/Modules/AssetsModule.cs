@@ -46,7 +46,10 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             };
             refreshLibraryButton.AddToClassList("ht-btn-secondary");
             refreshLibraryButton.AddToClassList("ht-assets-refresh-button");
-            refreshLibraryButton.style.display = DisplayStyle.None;
+
+            Label libraryStatusLabel = CreateModuleSubtitle(string.Empty);
+            libraryStatusLabel.AddToClassList("ht-assets-status");
+            libraryStatusLabel.style.display = DisplayStyle.None;
 
             ScrollView gameScroll = CreateSelectionScroll();
             gameScroll.style.maxHeight = 156f;
@@ -120,6 +123,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             libraryActionRow.AddToClassList("ht-assets-refresh-row");
             libraryActionRow.Add(refreshLibraryButton);
             libraryCard.Add(libraryActionRow);
+            libraryCard.Add(libraryStatusLabel);
             libraryCard.Add(gameScroll);
             root.Add(libraryCard);
             root.Add(CreateDivider());
@@ -194,6 +198,12 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
                 bool lockGameSelectionToTutorial = IsTutorialGameSelectionStep();
                 List<string> gameChoices = backend.GetAvailableGameNamesForManager().ToList();
+                string backendStatus = backend.GetStatusMessageForManager();
+                bool hasGames = gameChoices.Count > 0;
+                bool showLibraryStatus = ShouldShowLibraryStatus(backendStatus, hasGames, isBusy);
+                libraryStatusLabel.text = showLibraryStatus ? backendStatus : string.Empty;
+                libraryStatusLabel.style.display = showLibraryStatus ? DisplayStyle.Flex : DisplayStyle.None;
+
                 int selectedGameIndex = backend.GetSelectedGameIndexForManager();
                 string currentGameSnapshot = string.Join("|", gameChoices) + "::" + selectedGameIndex + "::" + lockGameSelectionToTutorial;
                 if (!string.Equals(lastGameSnapshot, currentGameSnapshot, StringComparison.Ordinal))
@@ -203,6 +213,9 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 }
 
                 refreshLibraryButton.SetEnabled(!isBusy && !lockGameSelectionToTutorial);
+                refreshLibraryButton.style.display = ShouldShowRefreshLibraryButton(backendStatus, hasGames, isBusy)
+                    ? DisplayStyle.Flex
+                    : DisplayStyle.None;
 
                 string backendSearch = backend.GetCharacterSearchForManager();
                 if (!string.Equals(searchField.value, backendSearch, StringComparison.Ordinal))
@@ -421,6 +434,40 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         private static bool IsTutorialGameChoice(string gameName)
         {
             return string.Equals(gameName, TutorialGameDisplayName, StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool ShouldShowLibraryStatus(string statusMessage, bool hasGames, bool isBusy)
+        {
+            if (string.IsNullOrWhiteSpace(statusMessage))
+            {
+                return false;
+            }
+
+            return isBusy || !hasGames || IsProblemLibraryStatus(statusMessage);
+        }
+
+        private static bool ShouldShowRefreshLibraryButton(string statusMessage, bool hasGames, bool isBusy)
+        {
+            if (isBusy)
+            {
+                return false;
+            }
+
+            return !hasGames || IsProblemLibraryStatus(statusMessage);
+        }
+
+        private static bool IsProblemLibraryStatus(string statusMessage)
+        {
+            if (string.IsNullOrWhiteSpace(statusMessage))
+            {
+                return false;
+            }
+
+            return statusMessage.StartsWith("Failed", StringComparison.OrdinalIgnoreCase)
+                || statusMessage.StartsWith("Waiting", StringComparison.OrdinalIgnoreCase)
+                || statusMessage.StartsWith("The Unity editor is busy", StringComparison.OrdinalIgnoreCase)
+                || statusMessage.StartsWith("No matching", StringComparison.OrdinalIgnoreCase)
+                || statusMessage.StartsWith("No character", StringComparison.OrdinalIgnoreCase);
         }
 
         private static void RebuildVariantList(

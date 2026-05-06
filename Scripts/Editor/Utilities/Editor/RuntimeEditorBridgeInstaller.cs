@@ -114,9 +114,13 @@ namespace HoyoToon.Editor.Utilities.Editor
                 return false;
             }
 
-            EditorWindow activeWindow = EditorWindow.mouseOverWindow ?? EditorWindow.focusedWindow;
-            return activeWindow != null
-                && string.Equals(activeWindow.GetType().Name, "GameView", StringComparison.Ordinal);
+            return IsGameView(EditorWindow.focusedWindow) || IsGameView(EditorWindow.mouseOverWindow);
+        }
+
+        private static bool IsGameView(EditorWindow window)
+        {
+            return window != null
+                && string.Equals(window.GetType().Name, "GameView", StringComparison.Ordinal);
         }
     }
 }

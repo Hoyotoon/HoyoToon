@@ -90,7 +90,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         private string lastCapturePath = string.Empty;
         private Camera syncedCamera;
         private CameraState syncedCameraState;
-        private readonly List<Behaviour> disabledBrains = new List<Behaviour>();
+        private readonly CinemachineBrainStateStore cinemachineBrainStates = new CinemachineBrainStateStore();
 
         public override string Id => "renders";
 
@@ -1005,7 +1005,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private void EndSceneViewSync()
         {
-            EnableDisabledBrains();
+            cinemachineBrainStates.Restore();
 
             if (syncedCamera != null)
             {
@@ -1034,50 +1034,12 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private void DisableCinemachineBrainsForSync()
         {
-            DisableCinemachineBrain(captureCamera);
+            cinemachineBrainStates.DisableForSync(captureCamera);
             Camera mainCamera = Camera.main;
             if (mainCamera != null && mainCamera != captureCamera)
             {
-                DisableCinemachineBrain(mainCamera);
+                cinemachineBrainStates.DisableForSync(mainCamera);
             }
-        }
-
-        private void DisableCinemachineBrain(Camera camera)
-        {
-            if (camera == null)
-            {
-                return;
-            }
-
-            Behaviour[] behaviours = camera.GetComponents<Behaviour>();
-            for (int index = 0; index < behaviours.Length; index++)
-            {
-                Behaviour behaviour = behaviours[index];
-                if (behaviour == null
-                    || !behaviour.enabled
-                    || !string.Equals(behaviour.GetType().Name, "CinemachineBrain", StringComparison.Ordinal)
-                    || disabledBrains.Contains(behaviour))
-                {
-                    continue;
-                }
-
-                behaviour.enabled = false;
-                disabledBrains.Add(behaviour);
-            }
-        }
-
-        private void EnableDisabledBrains()
-        {
-            for (int index = 0; index < disabledBrains.Count; index++)
-            {
-                Behaviour behaviour = disabledBrains[index];
-                if (behaviour != null)
-                {
-                    behaviour.enabled = true;
-                }
-            }
-
-            disabledBrains.Clear();
         }
 
         private static Camera GetSceneViewCamera()
