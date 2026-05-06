@@ -4,10 +4,11 @@ using UnityEngine.UIElements;
 
 namespace HoyoToon.Editor.Onboarding
 {
-    internal sealed class OnboardingInputBlocker
+    internal sealed class OnboardingInputBlocker : System.IDisposable
     {
         private readonly VisualElement root;
         private OnboardingStep currentStep;
+        private bool disposed;
 
         public bool BlockingEnabled { get; set; } = true;
 
@@ -25,8 +26,33 @@ namespace HoyoToon.Editor.Onboarding
             root.RegisterCallback<KeyDownEvent>(HandleKeyDown, TrickleDown.TrickleDown);
         }
 
+        public void Dispose()
+        {
+            if (disposed)
+            {
+                return;
+            }
+
+            disposed = true;
+            currentStep = null;
+            if (root == null)
+            {
+                return;
+            }
+
+            root.UnregisterCallback<PointerDownEvent>(HandlePointerDown, TrickleDown.TrickleDown);
+            root.UnregisterCallback<MouseDownEvent>(HandleMouseDown, TrickleDown.TrickleDown);
+            root.UnregisterCallback<WheelEvent>(HandleWheel, TrickleDown.TrickleDown);
+            root.UnregisterCallback<KeyDownEvent>(HandleKeyDown, TrickleDown.TrickleDown);
+        }
+
         public void SetStep(OnboardingStep step)
         {
+            if (disposed)
+            {
+                return;
+            }
+
             currentStep = step;
         }
 

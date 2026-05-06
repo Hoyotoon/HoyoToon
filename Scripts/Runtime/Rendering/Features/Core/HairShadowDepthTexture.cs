@@ -9,6 +9,7 @@ using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Experimental.Rendering;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.Core
 {
@@ -73,8 +74,8 @@ namespace HoyoToon.Runtime.Rendering.Core
 
         class HairShadowDepthTexturePass : ScriptableRenderPass, IDisposable
         {
-            const int k_DepthPassCachePruneInterval = 64;
             const int k_DepthPassCacheMaxEntries = 256;
+            const int k_DepthMaterialPassQueryId = 1002;
 
             static readonly int k_CharacterHairShadowMapId = Shader.PropertyToID("_CharacterHairShadowMap");
             static readonly string[] k_DepthPassNames =
@@ -89,15 +90,13 @@ namespace HoyoToon.Runtime.Rendering.Core
             static readonly List<Renderer> k_HairRenderersScratch = new List<Renderer>(64);
             static readonly List<HSRCharacterController> k_ControllerScratch = new List<HSRCharacterController>(16);
             static readonly List<Material> k_MaterialScratch = new List<Material>(8);
-            static readonly List<Material> k_DepthPassCacheRemovalScratch = new List<Material>(16);
-            static readonly Dictionary<Material, int> k_DepthPassIndexByMaterial = new Dictionary<Material, int>();
             static readonly Plane[] k_FrustumPlanes = new Plane[6];
-            static int s_DepthPassCacheLookupsUntilPrune = k_DepthPassCachePruneInterval;
 
             readonly HairShadowDepthTextureSettings settings;
             readonly List<Renderer> m_CachedTaggedHairRenderers = new List<Renderer>(64);
             Renderer[] m_HairRendererSnapshot = Array.Empty<Renderer>();
             int m_CachedRendererTopologyVersion = -1;
+            int m_CachedSceneHandle;
             string m_CachedHairTag = string.Empty;
 
             public HairShadowDepthTexturePass(HairShadowDepthTextureSettings settings)
@@ -110,6 +109,7 @@ namespace HoyoToon.Runtime.Rendering.Core
                 m_CachedTaggedHairRenderers.Clear();
                 m_HairRendererSnapshot = Array.Empty<Renderer>();
                 m_CachedRendererTopologyVersion = -1;
+                m_CachedSceneHandle = 0;
                 m_CachedHairTag = string.Empty;
                 ClearDepthPassIndexCache();
             }
@@ -122,77 +122,29 @@ namespace HoyoToon.Runtime.Rendering.Core
                 public int hairRendererCount;
             }
 
+            private class ClearGlobalsPassData
+            {
+                public TextureHandle fallbackTexture;
+            }
+
             static int GetSubMeshCount(Renderer renderer)
             {
-                if (renderer is SkinnedMeshRenderer skinnedRenderer && skinnedRenderer.sharedMesh != null)
-                    return Mathf.Max(1, skinnedRenderer.sharedMesh.subMeshCount);
-
-                if (renderer is MeshRenderer meshRenderer)
-                {
-                    MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
-                    if (meshFilter != null && meshFilter.sharedMesh != null)
-                        return Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
-                }
-
-                return 1;
+                return Mathf.Max(1, RendererTraversalUtility.GetSubMeshCount(renderer));
             }
 
             static int GetDepthPassIndex(Material material)
             {
-                if (material == null)
-                    return -1;
-
-                PruneDepthPassIndexCache(force: false);
-
-                if (k_DepthPassIndexByMaterial.TryGetValue(material, out int cachedPassIndex))
-                    return cachedPassIndex;
-
-                if (k_DepthPassIndexByMaterial.Count >= k_DepthPassCacheMaxEntries)
-                    PruneDepthPassIndexCache(force: true);
-
-                for (int i = 0; i < k_DepthPassNames.Length; ++i)
-                {
-                    int passIndex = material.FindPass(k_DepthPassNames[i]);
-                    if (passIndex >= 0)
-                    {
-                        k_DepthPassIndexByMaterial[material] = passIndex;
-                        return passIndex;
-                    }
-                }
-
-                k_DepthPassIndexByMaterial[material] = 0;
-                return 0;
-            }
-
-            static void PruneDepthPassIndexCache(bool force)
-            {
-                if (!force)
-                {
-                    --s_DepthPassCacheLookupsUntilPrune;
-                    if (s_DepthPassCacheLookupsUntilPrune > 0)
-                        return;
-                }
-
-                s_DepthPassCacheLookupsUntilPrune = k_DepthPassCachePruneInterval;
-                k_DepthPassCacheRemovalScratch.Clear();
-
-                foreach (Material material in k_DepthPassIndexByMaterial.Keys)
-                {
-                    if (material == null)
-                        k_DepthPassCacheRemovalScratch.Add(material);
-                }
-
-                for (int i = 0; i < k_DepthPassCacheRemovalScratch.Count; ++i)
-                    k_DepthPassIndexByMaterial.Remove(k_DepthPassCacheRemovalScratch[i]);
-
-                k_DepthPassCacheRemovalScratch.Clear();
+                return MaterialPassResolver.ResolveFirstPass(
+                    material,
+                    k_DepthPassNames,
+                    k_DepthMaterialPassQueryId,
+                    fallbackToFirstPass: false,
+                    maxEntries: k_DepthPassCacheMaxEntries);
             }
 
             static void ClearDepthPassIndexCache()
             {
-                k_DepthPassIndexByMaterial.Clear();
-                k_DepthPassCacheRemovalScratch.Clear();
-                s_DepthPassCacheLookupsUntilPrune = k_DepthPassCachePruneInterval;
+                MaterialPassResolver.ClearQuery(k_DepthMaterialPassQueryId);
             }
 
             int CollectHairRenderers(Camera camera)
@@ -202,7 +154,11 @@ namespace HoyoToon.Runtime.Rendering.Core
                 if (string.IsNullOrEmpty(settings.hairTag))
                     return 0;
 
-                RebuildTaggedHairRendererCacheIfNeeded();
+                UnityScene renderScene = ResolveRenderScene(camera);
+                if (!renderScene.IsValid() || !renderScene.isLoaded)
+                    return 0;
+
+                RebuildTaggedHairRendererCacheIfNeeded(renderScene);
 
                 bool hasCamera = camera != null && IsFinite(camera.transform.position) && IsFinite(camera.transform.forward);
                 if (hasCamera)
@@ -211,7 +167,7 @@ namespace HoyoToon.Runtime.Rendering.Core
                 for (int i = 0; i < m_CachedTaggedHairRenderers.Count; ++i)
                 {
                     Renderer renderer = m_CachedTaggedHairRenderers[i];
-                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    if (!RendererTraversalUtility.IsRendererActive(renderer))
                         continue;
 
                     Bounds bounds = renderer.bounds;
@@ -227,10 +183,12 @@ namespace HoyoToon.Runtime.Rendering.Core
                 return RendererSnapshotUtility.CopyToSnapshot(k_HairRenderersScratch, ref m_HairRendererSnapshot);
             }
 
-            void RebuildTaggedHairRendererCacheIfNeeded()
+            void RebuildTaggedHairRendererCacheIfNeeded(UnityScene scene)
             {
                 int topologyVersion = HSRCharacterController.RendererTopologyVersion;
+                int sceneHandle = RenderSceneUtility.GetSceneHandleOrDefault(scene);
                 if (topologyVersion == m_CachedRendererTopologyVersion
+                    && sceneHandle == m_CachedSceneHandle
                     && string.Equals(settings.hairTag, m_CachedHairTag, StringComparison.Ordinal))
                 {
                     PruneNullCachedHairRenderers();
@@ -239,9 +197,10 @@ namespace HoyoToon.Runtime.Rendering.Core
 
                 m_CachedTaggedHairRenderers.Clear();
                 m_CachedRendererTopologyVersion = topologyVersion;
+                m_CachedSceneHandle = sceneHandle;
                 m_CachedHairTag = settings.hairTag ?? string.Empty;
 
-                HSRCharacterController.GetActiveControllers(k_ControllerScratch, forceRefresh: false);
+                HSRCharacterController.GetRegisteredActiveControllersInScene(scene, k_ControllerScratch);
                 for (int i = 0; i < k_ControllerScratch.Count; ++i)
                 {
                     HSRCharacterController controller = k_ControllerScratch[i];
@@ -265,6 +224,11 @@ namespace HoyoToon.Runtime.Rendering.Core
 
                     k_RendererScratch.Clear();
                 }
+            }
+
+            static UnityScene ResolveRenderScene(Camera camera)
+            {
+                return RenderSceneUtility.ResolveRenderScene(camera);
             }
 
             void PruneNullCachedHairRenderers()
@@ -331,6 +295,25 @@ namespace HoyoToon.Runtime.Rendering.Core
                 }
             }
 
+            static void ExecuteClearGlobalsPass(ClearGlobalsPassData data, RasterGraphContext context)
+            {
+                context.cmd.SetGlobalTexture(k_CharacterHairShadowMapId, data.fallbackTexture);
+            }
+
+            static void RecordClearGlobalsPass(RenderGraph renderGraph)
+            {
+                using (var builder = renderGraph.AddRasterRenderPass<ClearGlobalsPassData>("Hair Shadow Depth Texture Globals", out var passData))
+                {
+                    passData.fallbackTexture = renderGraph.defaultResources.blackTexture;
+
+                    builder.UseTexture(passData.fallbackTexture, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+                    builder.AllowPassCulling(false);
+                    builder.SetGlobalTextureAfterPass(passData.fallbackTexture, k_CharacterHairShadowMapId);
+                    builder.SetRenderFunc((ClearGlobalsPassData data, RasterGraphContext context) => ExecuteClearGlobalsPass(data, context));
+                }
+            }
+
             // RecordRenderGraph is where the RenderGraph handle can be accessed, through which render passes can be added to the graph.
             // FrameData is a context container through which URP resources can be accessed and managed.
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -347,7 +330,7 @@ namespace HoyoToon.Runtime.Rendering.Core
                 int hairRendererCount = CollectHairRenderers(cameraData.camera);
                 if (hairRendererCount == 0)
                 {
-                    Shader.SetGlobalTexture(k_CharacterHairShadowMapId, Texture2D.blackTexture);
+                    RecordClearGlobalsPass(renderGraph);
                     return;
                 }
 

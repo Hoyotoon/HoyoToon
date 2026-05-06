@@ -1,0 +1,16 @@
+{
+    "name": "com.hoyotoon.hoyotoon.runtime.scene",
+    "rootNamespace": "HoyoToon.Runtime.Scene",
+    "references": [
+        "com.hoyotoon.hoyotoon.runtime"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

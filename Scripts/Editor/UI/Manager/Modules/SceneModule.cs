@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HoyoToon.Editor.Onboarding;
+using HoyoToon.Editor.UI.Manager;
 using HoyoToon.Editor.Utilities.UI;
 using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Scene.HSR;
@@ -555,9 +556,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static VisualElement CreateDivider()
         {
-            VisualElement divider = new VisualElement();
-            divider.AddToClassList("ht-divider");
-            return divider;
+            return ManagerUiFactory.CreateDivider();
         }
 
         private static VisualElement CreateControllerFieldElement(FieldInfo field, SerializedProperty property)
@@ -1261,10 +1260,10 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             }
 
             UnityEngine.SceneManagement.Scene targetScene = controller.gameObject.scene;
-            Light[] allLights = UnityEngine.Resources.FindObjectsOfTypeAll<Light>();
-            for (int index = 0; index < allLights.Length; index++)
+            IReadOnlyList<Light> sceneLights = SceneLightService.GetLights(targetScene);
+            for (int index = 0; index < sceneLights.Count; index++)
             {
-                Light light = allLights[index];
+                Light light = sceneLights[index];
                 if (!IsSceneComponent(light))
                 {
                     continue;
@@ -1352,6 +1351,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
             EditorUtility.SetDirty(lightObject);
             EditorUtility.SetDirty(newLight);
+            SceneLightService.Invalidate(controller.gameObject.scene);
             return newLight;
         }
 
@@ -1369,6 +1369,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 return;
             }
 
+            UnityEngine.SceneManagement.Scene ownerScene = owner.scene;
             Component[] components = owner.GetComponents<Component>();
             List<Component> lightDependentComponents = new List<Component>();
             bool hasNonLightSpecificComponents = false;
@@ -1395,6 +1396,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             if (!hasNonLightSpecificComponents)
             {
                 Undo.DestroyObjectImmediate(owner);
+                SceneLightService.Invalidate(ownerScene);
                 return;
             }
 
@@ -1407,6 +1409,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             }
 
             Undo.DestroyObjectImmediate(light);
+            SceneLightService.Invalidate(ownerScene);
         }
 
         private static string GetUniqueSceneLightName(Transform parent)

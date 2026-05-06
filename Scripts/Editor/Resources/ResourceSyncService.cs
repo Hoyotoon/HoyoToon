@@ -6,7 +6,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using HoyoToon.Editor.Resources.Cloudreve;
+using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Editor.Utilities.Cloudreve;
+using HoyoToon.Editor.Utilities.Debugging;
 using HoyoToon.Editor.Utilities.Editor;
 using HoyoToon.Editor.Utilities.IO;
 using UnityEditor;
@@ -338,22 +340,15 @@ namespace HoyoToon.Editor.Resources
 
             EnsureEditorReady();
 
-            AssetDatabase.DisallowAutoRefresh();
-            AssetDatabase.StartAssetEditing();
-
-            try
+            using (AssetDatabaseEditingScope.Begin())
             {
                 foreach (ResourceSyncTarget target in targetList)
                 {
                     ClearTarget(target);
                 }
             }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
-                AssetDatabase.AllowAutoRefresh();
-                AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-            }
+
+            AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
 
             string summary = targetList.Count == 1
                 ? $"Cleared resources for '{targetList[0].OperationLabel}'."
@@ -661,11 +656,15 @@ namespace HoyoToon.Editor.Resources
             ValidateStagedFilesExist(target, plan);
 
             string rollbackRootPath = GetRollbackRootPath(target);
-            ManagedFileTransactionUtility.PrepareDirectory(rollbackRootPath);
-            BackupManagedPaths(target, touchedRelativePaths, rollbackRootPath);
+            ManagedFileTransaction transaction = ManagedFileTransaction.Begin(
+                rollbackRootPath,
+                target.DestinationAbsolutePath,
+                touchedRelativePaths,
+                relativePath => ResourceSyncStorage.GetManagedFileAbsolutePath(target.DestinationAbsolutePath, relativePath),
+                relativePath => Path.Combine(rollbackRootPath, ResourceSyncStorage.ToPlatformPath(relativePath)));
 
-            AssetDatabase.DisallowAutoRefresh();
-            AssetDatabase.StartAssetEditing();
+            AssetDatabaseEditingScope editingScope = AssetDatabaseEditingScope.Begin();
+            bool rollbackFailed = false;
 
             try
             {
@@ -688,18 +687,20 @@ namespace HoyoToon.Editor.Resources
                 }
 
                 ResourceSyncStorage.DeleteEmptyDirectories(target.DestinationAbsolutePath);
+                transaction.Commit();
             }
             catch (Exception exception)
             {
                 try
                 {
-                    RollbackManagedPaths(target, touchedRelativePaths, rollbackRootPath);
+                    transaction.Rollback();
                 }
                 catch (Exception rollbackException)
                 {
+                    rollbackFailed = true;
                     throw new ResourceSyncException(
                         "apply",
-                        $"Failed to apply resource changes for '{target.OperationLabel}', and rollback also failed: {rollbackException.Message}",
+                        $"Failed to apply resource changes for '{target.OperationLabel}', and rollback also failed: {rollbackException.Message}. Backup preserved at: {transaction.BackupRootPath}",
                         exception);
                 }
 
@@ -710,10 +711,12 @@ namespace HoyoToon.Editor.Resources
             }
             finally
             {
-                AssetDatabase.StopAssetEditing();
-                AssetDatabase.AllowAutoRefresh();
+                editingScope.Dispose();
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                ManagedFileTransactionUtility.DeleteDirectoryIfExists(rollbackRootPath);
+                if (rollbackFailed)
+                {
+                    HoyoToonLogger.Error(HoyoToonLogCategory.Resources, $"Resource sync rollback failed. Backup preserved at: {transaction.BackupRootPath}");
+                }
             }
         }
 
@@ -759,23 +762,6 @@ namespace HoyoToon.Editor.Resources
         private static string GetRollbackRootPath(ResourceSyncTarget target)
         {
             return Path.Combine(ResourceSyncStorage.GetStageRootPath(target.GameKey), "__rollback__");
-        }
-
-        private static void BackupManagedPaths(ResourceSyncTarget target, IReadOnlyList<string> touchedRelativePaths, string rollbackRootPath)
-        {
-            ManagedFileTransactionUtility.BackupTouchedPaths(
-                touchedRelativePaths,
-                relativePath => ResourceSyncStorage.GetManagedFileAbsolutePath(target.DestinationAbsolutePath, relativePath),
-                relativePath => Path.Combine(rollbackRootPath, ResourceSyncStorage.ToPlatformPath(relativePath)));
-        }
-
-        private static void RollbackManagedPaths(ResourceSyncTarget target, IReadOnlyList<string> touchedRelativePaths, string rollbackRootPath)
-        {
-            ManagedFileTransactionUtility.RollbackTouchedPaths(
-                target.DestinationAbsolutePath,
-                touchedRelativePaths,
-                relativePath => ResourceSyncStorage.GetManagedFileAbsolutePath(target.DestinationAbsolutePath, relativePath),
-                relativePath => Path.Combine(rollbackRootPath, ResourceSyncStorage.ToPlatformPath(relativePath)));
         }
 
         private static void WriteManifest(

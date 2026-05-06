@@ -15,6 +15,7 @@ namespace HoyoToon.Editor.Onboarding
         private double reminderUntil;
         private string flashTargetId = string.Empty;
         private double flashUntil;
+        private IVisualElementScheduledItem refreshSchedule;
 
         private struct TargetRect
         {
@@ -43,7 +44,12 @@ namespace HoyoToon.Editor.Onboarding
             style.display = DisplayStyle.None;
             RegisterCallback<AttachToPanelEvent>(_ =>
             {
-                schedule.Execute(Refresh).Every(33);
+                refreshSchedule ??= schedule.Execute(Refresh).Every(33);
+            });
+            RegisterCallback<DetachFromPanelEvent>(_ =>
+            {
+                refreshSchedule?.Pause();
+                refreshSchedule = null;
             });
         }
 

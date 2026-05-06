@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using HoyoToon.Editor.Onboarding;
+using HoyoToon.Editor.UI.Manager;
 using HoyoToon.Editor.Utilities.UI;
 using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Character.HSR;
@@ -250,9 +251,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static VisualElement CreateDivider()
         {
-            VisualElement divider = new VisualElement();
-            divider.AddToClassList("ht-divider");
-            return divider;
+            return ManagerUiFactory.CreateDivider();
         }
 
         private static VisualElement CreateFieldElement(FieldInfo field, SerializedProperty property)

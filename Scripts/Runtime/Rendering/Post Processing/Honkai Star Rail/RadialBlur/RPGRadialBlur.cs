@@ -22,7 +22,23 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.RadialBlur
         public ClampedFloatParameter Angle = new ClampedFloatParameter(0f, 0f, 360f);
         public BoolParameter AvoidBrightnessBug = new BoolParameter(false);
 
-        public bool IsActive() => true;
+        public bool IsActive()
+        {
+            if (!active || !AnyPropertiesIsOverridden())
+            {
+                return false;
+            }
+
+            bool radialBlurActive = RadialBlurRadius.overrideState
+                && !Mathf.Approximately(RadialBlurRadius.value, 0f);
+            bool directionalBlurActive = EnableDirectionBlur.overrideState
+                && EnableDirectionBlur.value
+                && BlurRadius.overrideState
+                && BlurRadius.value > 0f;
+
+            return radialBlurActive || directionalBlurActive;
+        }
+
         public bool IsTileCompatible() => true;
     }
 }

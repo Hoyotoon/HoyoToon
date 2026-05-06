@@ -1,29 +1,25 @@
 using System;
 using System.Collections.Generic;
 using HoyoToon.Runtime.Character.HSR;
+using HoyoToon.Runtime.Rendering.Utilities;
+using HoyoToon.Runtime.Utilities;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.HSR
 {
     public class CharacterSelfShadowAtlas : ScriptableRendererFeature
     {
         const string k_LightModeTagName = "LightMode";
-        const string k_LightingGBufferPassName = "LightingGBuffer";
         const string k_CustomForwardPassName = "CustomForward";
 
         [SerializeField] CharacterSelfShadowAtlasSettings settings = new CharacterSelfShadowAtlasSettings();
 
         CharacterSelfShadowAtlasPass m_Pass;
-        readonly Dictionary<Renderer, ShadowCastingMode> m_MainShadowCasterOriginalModes = new Dictionary<Renderer, ShadowCastingMode>();
-        readonly HashSet<Renderer> m_MainShadowCasterDesiredOff = new HashSet<Renderer>();
-        readonly List<Renderer> m_MainShadowCasterRestoreScratch = new List<Renderer>();
-        readonly List<HSRCharacterController> m_MainShadowControllerScratch = new List<HSRCharacterController>();
-        readonly List<Material> m_MainShadowMaterialScratch = new List<Material>(8);
-        int m_LastMainShadowFilterFrame = -1;
 
         public override void Create()
         {
@@ -40,145 +36,15 @@ namespace HoyoToon.Runtime.Rendering.HSR
             bool canAffectSceneRendering = !renderingData.cameraData.isPreviewCamera
                 && (cameraType == CameraType.Game || cameraType == CameraType.SceneView);
 
-            if (!settings.excludeFromMainShadowMap)
-            {
-                RestoreAllMainShadowCasterOverrides();
-            }
-            else if (canAffectSceneRendering)
-            {
-                // Multiple cameras can trigger AddRenderPasses in the same frame; filter once per frame.
-                if (m_LastMainShadowFilterFrame != Time.frameCount)
-                {
-                    UpdateMainShadowCasterFiltering();
-                    m_LastMainShadowFilterFrame = Time.frameCount;
-                }
-            }
-
             if (!canAffectSceneRendering)
                 return;
 
             renderer.EnqueuePass(m_Pass);
         }
 
-        protected override void Dispose(bool disposing)
+        static UnityScene ResolveRenderScene(Camera camera)
         {
-            RestoreAllMainShadowCasterOverrides();
-            base.Dispose(disposing);
-        }
-
-        bool RendererUsesExcludedMainShadowPass(Renderer renderer)
-        {
-            if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, m_MainShadowMaterialScratch, out int materialCount))
-                return false;
-
-            try
-            {
-                for (int i = 0; i < materialCount; ++i)
-                {
-                    Material material = m_MainShadowMaterialScratch[i];
-                    if (HsrRendererMaterialQueryUtility.HasMaterialTagValue(
-                        material,
-                        k_LightModeTagName,
-                        k_LightingGBufferPassName,
-                        StringComparison.OrdinalIgnoreCase)
-                        || HsrRendererMaterialQueryUtility.HasNamedPass(material, k_LightingGBufferPassName))
-                    {
-                        return true;
-                    }
-
-                    if (HsrRendererMaterialQueryUtility.HasMaterialTagValue(
-                        material,
-                        k_LightModeTagName,
-                        k_CustomForwardPassName,
-                        StringComparison.OrdinalIgnoreCase)
-                        || HsrRendererMaterialQueryUtility.HasNamedPass(material, k_CustomForwardPassName))
-                    {
-                        return true;
-                    }
-                }
-            }
-            finally
-            {
-                m_MainShadowMaterialScratch.Clear();
-            }
-
-            return false;
-        }
-
-        void UpdateMainShadowCasterFiltering()
-        {
-            m_MainShadowCasterDesiredOff.Clear();
-            HSRCharacterController.GetActiveControllers(m_MainShadowControllerScratch, forceRefresh: false);
-
-            for (int i = 0; i < m_MainShadowControllerScratch.Count; ++i)
-            {
-                HSRCharacterController controller = m_MainShadowControllerScratch[i];
-                if (controller == null || !controller.EnableCharacterSelfShadow)
-                    continue;
-
-                Renderer[] scopedRenderers = controller.GetScopedRenderers();
-                if (scopedRenderers == null)
-                    continue;
-
-                for (int r = 0; r < scopedRenderers.Length; ++r)
-                {
-                    Renderer renderer = scopedRenderers[r];
-                    if (renderer == null)
-                        continue;
-
-                    if (!RendererUsesExcludedMainShadowPass(renderer))
-                        continue;
-
-                    m_MainShadowCasterDesiredOff.Add(renderer);
-                }
-            }
-
-            foreach (Renderer renderer in m_MainShadowCasterDesiredOff)
-            {
-                if (renderer == null)
-                    continue;
-
-                if (!m_MainShadowCasterOriginalModes.ContainsKey(renderer))
-                    m_MainShadowCasterOriginalModes.Add(renderer, renderer.shadowCastingMode);
-
-                if (renderer.shadowCastingMode != ShadowCastingMode.Off)
-                    renderer.shadowCastingMode = ShadowCastingMode.Off;
-            }
-
-            m_MainShadowCasterRestoreScratch.Clear();
-            foreach (var kvp in m_MainShadowCasterOriginalModes)
-            {
-                if (kvp.Key != null && m_MainShadowCasterDesiredOff.Contains(kvp.Key))
-                    continue;
-
-                m_MainShadowCasterRestoreScratch.Add(kvp.Key);
-            }
-
-            for (int i = 0; i < m_MainShadowCasterRestoreScratch.Count; ++i)
-            {
-                Renderer renderer = m_MainShadowCasterRestoreScratch[i];
-                if (renderer != null && m_MainShadowCasterOriginalModes.TryGetValue(renderer, out ShadowCastingMode originalMode))
-                    renderer.shadowCastingMode = originalMode;
-
-                m_MainShadowCasterOriginalModes.Remove(renderer);
-            }
-
-            m_MainShadowCasterRestoreScratch.Clear();
-            m_MainShadowControllerScratch.Clear();
-        }
-
-        void RestoreAllMainShadowCasterOverrides()
-        {
-            foreach (var kvp in m_MainShadowCasterOriginalModes)
-            {
-                if (kvp.Key != null)
-                    kvp.Key.shadowCastingMode = kvp.Value;
-            }
-
-            m_MainShadowCasterOriginalModes.Clear();
-            m_MainShadowCasterDesiredOff.Clear();
-            m_MainShadowCasterRestoreScratch.Clear();
-            m_MainShadowControllerScratch.Clear();
+            return RenderSceneUtility.ResolveRenderScene(camera);
         }
 
         [Serializable]
@@ -186,14 +52,17 @@ namespace HoyoToon.Runtime.Rendering.HSR
         {
             public RenderPassEvent renderPassEvent = RenderPassEvent.BeforeRenderingOpaques;
             [Min(512)] public int maxAtlasResolution = 4096;
+            [HideInInspector]
             public bool excludeFromMainShadowMap = true;
         }
 
         class CharacterSelfShadowAtlasPass : ScriptableRenderPass
         {
             const int k_MaxSlots = 4;
+            const int k_GlobalSnapshotRingSize = 8;
             const int k_PassMissing = -1;
             const int k_PassExcluded = -2;
+            const int k_MaterialPassResolverId = 1;
             const string k_CharacterLightName = "CharacterLight";
             const string k_CharacterShadowLightName = "CharacterShadowLight";
 
@@ -241,12 +110,17 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 Vector4.zero
             };
 
+            static readonly GlobalArraySnapshot[] k_GlobalSnapshotRing = CreateGlobalSnapshotRing();
             static readonly List<HSRCharacterController> k_ControllerScratch = new List<HSRCharacterController>(k_MaxSlots * 2);
             static readonly HashSet<HSRCharacterController> k_AssignedControllerSet = new HashSet<HSRCharacterController>();
             static readonly List<Light> k_LightScratch = new List<Light>(8);
             static readonly List<CullingCandidate> k_CandidateScratch = new List<CullingCandidate>(16);
             static readonly List<Material> k_MaterialScratch = new List<Material>(8);
             static readonly List<int> k_PassIndexScratch = new List<int>(8);
+            static readonly Dictionary<HsrRendererMaterialQueryUtility.MaterialPassCacheKey, int> k_MaterialPassIndexCache =
+                new Dictionary<HsrRendererMaterialQueryUtility.MaterialPassCacheKey, int>(128);
+            static int k_ObservedMaterialPassCacheVersion;
+            static int k_NextGlobalSnapshotIndex;
 
             readonly CharacterSelfShadowAtlasSettings m_Settings;
 
@@ -283,6 +157,16 @@ namespace HoyoToon.Runtime.Rendering.HSR
             class BindGlobalsPassData
             {
                 public TextureHandle atlasTexture;
+                public TextureHandle fallbackTexture;
+                public GlobalArraySnapshot globalsSnapshot;
+                public int slotCount;
+                public Vector4 atlasTexelSize;
+            }
+
+            sealed class GlobalArraySnapshot
+            {
+                public readonly Matrix4x4[] worldToShadowArray = new Matrix4x4[k_MaxSlots];
+                public readonly Vector4[] atlasRectArray = new Vector4[k_MaxSlots];
             }
 
             public CharacterSelfShadowAtlasPass(CharacterSelfShadowAtlasSettings settings)
@@ -292,17 +176,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
             static int GetSubMeshCount(Renderer renderer)
             {
-                if (renderer is SkinnedMeshRenderer skinnedRenderer && skinnedRenderer.sharedMesh != null)
-                    return Mathf.Max(1, skinnedRenderer.sharedMesh.subMeshCount);
-
-                if (renderer is MeshRenderer meshRenderer)
-                {
-                    MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
-                    if (meshFilter != null && meshFilter.sharedMesh != null)
-                        return Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
-                }
-
-                return 1;
+                return Mathf.Max(1, RendererTraversalUtility.GetSubMeshCount(renderer));
             }
 
             static bool UsesCustomForward(Material material)
@@ -342,6 +216,36 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (material == null)
                     return k_PassMissing;
 
+                SyncMaterialPassCacheVersion();
+                int excludedStateVersion = GetMaterialPassExcludedStateVersion(material);
+                if (HsrRendererMaterialQueryUtility.TryGetCachedMaterialPassIndex(
+                        k_MaterialPassIndexCache,
+                        material,
+                        preferredPassName,
+                        k_MaterialPassResolverId,
+                        excludedStateVersion,
+                        out int cachedPassIndex))
+                {
+                    return cachedPassIndex;
+                }
+
+                int passIndex = ResolveSelfShadowPassIndexUncached(material, preferredPassName);
+                HsrRendererMaterialQueryUtility.StoreCachedMaterialPassIndex(
+                    k_MaterialPassIndexCache,
+                    material,
+                    preferredPassName,
+                    k_MaterialPassResolverId,
+                    excludedStateVersion,
+                    passIndex);
+
+                return passIndex;
+            }
+
+            static int ResolveSelfShadowPassIndexUncached(Material material, string preferredPassName)
+            {
+                if (material == null)
+                    return k_PassMissing;
+
                 if (IsExplicitlyExcludedFromSelfShadow(material))
                     return k_PassExcluded;
 
@@ -351,7 +255,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
                 if (!string.IsNullOrEmpty(preferredPassName))
                 {
-                    int preferredPassIndex = material.FindPass(preferredPassName);
+                    int preferredPassIndex = MaterialPassResolver.ResolveNamedPass(material, preferredPassName);
                     if (preferredPassIndex >= 0)
                         return preferredPassIndex;
                 }
@@ -360,7 +264,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (hsrPassByTag >= 0)
                     return hsrPassByTag;
 
-                int hsrPass = material.FindPass("HSRPerObjectShadowCaster");
+                int hsrPass = MaterialPassResolver.ResolveNamedPass(material, "HSRPerObjectShadowCaster");
                 if (hsrPass >= 0)
                     return hsrPass;
 
@@ -368,7 +272,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (shadowCasterByTag >= 0)
                     return shadowCasterByTag;
 
-                int shadowCasterPass = material.FindPass("ShadowCaster");
+                int shadowCasterPass = MaterialPassResolver.ResolveNamedPass(material, "ShadowCaster");
                 if (shadowCasterPass >= 0)
                     return shadowCasterPass;
 
@@ -378,12 +282,27 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
                 for (int i = 0; i < k_FallbackCasterPassNames.Length; ++i)
                 {
-                    int passIndex = material.FindPass(k_FallbackCasterPassNames[i]);
+                    int passIndex = MaterialPassResolver.ResolveNamedPass(material, k_FallbackCasterPassNames[i]);
                     if (passIndex >= 0)
                         return passIndex;
                 }
 
                 return k_PassMissing;
+            }
+
+            static int GetMaterialPassExcludedStateVersion(Material material)
+            {
+                return material != null ? material.renderQueue : 0;
+            }
+
+            static void SyncMaterialPassCacheVersion()
+            {
+                int cacheVersion = HsrRendererMaterialQueryUtility.MaterialPassCacheVersion;
+                if (k_ObservedMaterialPassCacheVersion == cacheVersion)
+                    return;
+
+                k_MaterialPassIndexCache.Clear();
+                k_ObservedMaterialPassCacheVersion = cacheVersion;
             }
 
             static bool HasSelfShadowCaster(Renderer[] renderers, string preferredPassName)
@@ -394,7 +313,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 for (int r = 0; r < renderers.Length; ++r)
                 {
                     Renderer renderer = renderers[r];
-                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    if (!RendererTraversalUtility.IsRendererActive(renderer))
                         continue;
 
                     if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
@@ -504,20 +423,32 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 return matrix;
             }
 
-            static void ApplyDisabledSelfShadowGlobals()
+            static void ResetSelfShadowGlobalArrays()
             {
                 for (int i = 0; i < k_MaxSlots; ++i)
                 {
                     k_WorldToShadowArray[i] = Matrix4x4.identity;
                     k_AtlasRectArray[i] = Vector4.zero;
                 }
+            }
 
-                Shader.SetGlobalTexture(k_CharacterSelfShadowMapId, Texture2D.blackTexture);
-                Shader.SetGlobalTexture(k_CharacterSelfShadowTextureId, Texture2D.blackTexture);
-                Shader.SetGlobalMatrixArray(k_CharacterSelfShadowWorldToShadowArrId, k_WorldToShadowArray);
-                Shader.SetGlobalVectorArray(k_CharacterSelfShadowAtlasRectArrId, k_AtlasRectArray);
-                Shader.SetGlobalFloat(k_CharacterSelfShadowSlotCountId, 0f);
-                Shader.SetGlobalVector(k_CharacterSelfShadowAtlasTexelSizeId, new Vector4(1f, 1f, 1f, 1f));
+            static GlobalArraySnapshot[] CreateGlobalSnapshotRing()
+            {
+                var ring = new GlobalArraySnapshot[k_GlobalSnapshotRingSize];
+                for (int i = 0; i < ring.Length; ++i)
+                    ring[i] = new GlobalArraySnapshot();
+
+                return ring;
+            }
+
+            static GlobalArraySnapshot CaptureGlobalArraySnapshot()
+            {
+                GlobalArraySnapshot snapshot = k_GlobalSnapshotRing[k_NextGlobalSnapshotIndex];
+                k_NextGlobalSnapshotIndex = (k_NextGlobalSnapshotIndex + 1) % k_GlobalSnapshotRing.Length;
+
+                Array.Copy(k_WorldToShadowArray, snapshot.worldToShadowArray, k_MaxSlots);
+                Array.Copy(k_AtlasRectArray, snapshot.atlasRectArray, k_MaxSlots);
+                return snapshot;
             }
 
             static void ExecutePass(PassData data, RasterGraphContext context)
@@ -548,7 +479,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     for (int r = 0; r < renderers.Length; ++r)
                     {
                         Renderer renderer = renderers[r];
-                        if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                        if (!RendererTraversalUtility.IsRendererActive(renderer))
                             continue;
 
                         if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
@@ -604,8 +535,53 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
             static void ExecuteBindGlobalsPass(BindGlobalsPassData data, RasterGraphContext context)
             {
-                context.cmd.SetGlobalTexture(k_CharacterSelfShadowMapId, data.atlasTexture, RenderTextureSubElement.Depth);
-                context.cmd.SetGlobalTexture(k_CharacterSelfShadowTextureId, data.atlasTexture, RenderTextureSubElement.Depth);
+                if (data.atlasTexture.IsValid())
+                {
+                    context.cmd.SetGlobalTexture(k_CharacterSelfShadowMapId, data.atlasTexture, RenderTextureSubElement.Depth);
+                    context.cmd.SetGlobalTexture(k_CharacterSelfShadowTextureId, data.atlasTexture, RenderTextureSubElement.Depth);
+                }
+                else
+                {
+                    context.cmd.SetGlobalTexture(k_CharacterSelfShadowMapId, data.fallbackTexture);
+                    context.cmd.SetGlobalTexture(k_CharacterSelfShadowTextureId, data.fallbackTexture);
+                }
+
+                GlobalArraySnapshot snapshot = data.globalsSnapshot;
+                context.cmd.SetGlobalMatrixArray(k_CharacterSelfShadowWorldToShadowArrId, snapshot.worldToShadowArray);
+                context.cmd.SetGlobalVectorArray(k_CharacterSelfShadowAtlasRectArrId, snapshot.atlasRectArray);
+                context.cmd.SetGlobalFloat(k_CharacterSelfShadowSlotCountId, data.slotCount);
+                context.cmd.SetGlobalVector(k_CharacterSelfShadowAtlasTexelSizeId, data.atlasTexelSize);
+            }
+
+            static void RecordBindGlobalsPass(
+                RenderGraph renderGraph,
+                TextureHandle atlasTexture,
+                GlobalArraySnapshot globalsSnapshot,
+                int slotCount,
+                Vector4 atlasTexelSize)
+            {
+                using (var builder = renderGraph.AddRasterRenderPass<BindGlobalsPassData>("Character Self Shadow Atlas Globals", out var passData))
+                {
+                    passData.atlasTexture = atlasTexture;
+                    passData.fallbackTexture = renderGraph.defaultResources.blackTexture;
+                    passData.globalsSnapshot = globalsSnapshot;
+                    passData.slotCount = slotCount;
+                    passData.atlasTexelSize = atlasTexelSize;
+
+                    if (atlasTexture.IsValid())
+                        builder.UseTexture(atlasTexture, AccessFlags.Read);
+                    builder.UseTexture(passData.fallbackTexture, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+                    builder.AllowPassCulling(false);
+                    builder.SetGlobalTextureAfterPass(
+                        atlasTexture.IsValid() ? atlasTexture : passData.fallbackTexture,
+                        k_CharacterSelfShadowMapId);
+                    builder.SetGlobalTextureAfterPass(
+                        atlasTexture.IsValid() ? atlasTexture : passData.fallbackTexture,
+                        k_CharacterSelfShadowTextureId);
+
+                    builder.SetRenderFunc((BindGlobalsPassData data, RasterGraphContext context) => ExecuteBindGlobalsPass(data, context));
+                }
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -616,6 +592,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 CameraType cameraType = cameraData.cameraType;
                 bool supportedCamera = !cameraData.isPreviewCamera
                     && (cameraType == CameraType.Game || cameraType == CameraType.SceneView);
+                UnityScene renderScene = ResolveRenderScene(camera);
 
                 if (camera == null || !supportedCamera)
                 {
@@ -625,7 +602,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     return;
                 }
 
-                HSRCharacterController.GetActiveControllers(k_ControllerScratch, forceRefresh: false);
+                HSRCharacterController.GetRegisteredActiveControllersInScene(renderScene, k_ControllerScratch);
                 k_AssignedControllerSet.Clear();
                 k_CandidateScratch.Clear();
 
@@ -689,7 +666,13 @@ namespace HoyoToon.Runtime.Rendering.HSR
                             controller.SetCharacterSelfShadowState(Vector4.zero, 0, false);
                     }
 
-                    ApplyDisabledSelfShadowGlobals();
+                    ResetSelfShadowGlobalArrays();
+                    RecordBindGlobalsPass(
+                        renderGraph,
+                        TextureHandle.nullHandle,
+                        CaptureGlobalArraySnapshot(),
+                        0,
+                        new Vector4(1f, 1f, 1f, 1f));
                     k_ControllerScratch.Clear();
                     k_AssignedControllerSet.Clear();
                     k_CandidateScratch.Clear();
@@ -781,16 +764,12 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 k_AssignedControllerSet.Clear();
                 k_CandidateScratch.Clear();
 
-                Shader.SetGlobalMatrixArray(k_CharacterSelfShadowWorldToShadowArrId, k_WorldToShadowArray);
-                Shader.SetGlobalVectorArray(k_CharacterSelfShadowAtlasRectArrId, k_AtlasRectArray);
-                Shader.SetGlobalFloat(k_CharacterSelfShadowSlotCountId, assignedCount);
-                Shader.SetGlobalVector(
-                    k_CharacterSelfShadowAtlasTexelSizeId,
-                    new Vector4(
-                        1f / atlasWidth,
-                        1f / atlasHeight,
-                        atlasWidth,
-                        atlasHeight));
+                GlobalArraySnapshot globalsSnapshot = CaptureGlobalArraySnapshot();
+                Vector4 atlasTexelSize = new Vector4(
+                    1f / atlasWidth,
+                    1f / atlasHeight,
+                    atlasWidth,
+                    atlasHeight);
 
                 RenderTextureDescriptor atlasDescriptor = cameraData.cameraTargetDescriptor;
                 atlasDescriptor.width = atlasWidth;
@@ -826,16 +805,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
                 }
 
-                using (var builder = renderGraph.AddRasterRenderPass<BindGlobalsPassData>("Character Self Shadow Atlas Globals", out var passData))
-                {
-                    passData.atlasTexture = atlasTexture;
-
-                    builder.UseTexture(atlasTexture, AccessFlags.Read);
-                    builder.AllowGlobalStateModification(true);
-                    builder.AllowPassCulling(false);
-
-                    builder.SetRenderFunc((BindGlobalsPassData data, RasterGraphContext context) => ExecuteBindGlobalsPass(data, context));
-                }
+                RecordBindGlobalsPass(renderGraph, atlasTexture, globalsSnapshot, assignedCount, atlasTexelSize);
             }
         }
     }

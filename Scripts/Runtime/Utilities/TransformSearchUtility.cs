@@ -58,7 +58,7 @@ namespace HoyoToon.Runtime.Utilities
 
         public static Transform FindInScene(UnityScene scene, string name)
         {
-            if (!scene.IsValid() || string.IsNullOrWhiteSpace(name))
+            if (!RenderSceneUtility.IsSceneUsable(scene) || string.IsNullOrWhiteSpace(name))
             {
                 return null;
             }
@@ -78,7 +78,7 @@ namespace HoyoToon.Runtime.Utilities
 
         public static Transform FindInScene(UnityScene scene, IReadOnlyList<string> candidateNames)
         {
-            if (!scene.IsValid() || candidateNames == null || candidateNames.Count == 0)
+            if (!RenderSceneUtility.IsSceneUsable(scene) || candidateNames == null || candidateNames.Count == 0)
             {
                 return null;
             }

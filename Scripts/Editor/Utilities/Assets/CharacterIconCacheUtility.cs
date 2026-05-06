@@ -46,6 +46,7 @@ namespace HoyoToon.Editor.Utilities.Assets
                     continue;
                 }
 
+                ApplyCharacterIconImportSettings(cacheAbsolutePath, false);
                 cachedIconPath = cacheAbsolutePath;
                 return true;
             }
@@ -375,9 +376,7 @@ namespace HoyoToon.Editor.Utilities.Assets
         private static void ApplyTextureImportSettings(string gameKey, string absoluteTexturePath, bool forceImport)
         {
             string textureAssetPath = AssetContextJsonQueryUtility.ToAssetPath(absoluteTexturePath);
-            if (string.IsNullOrWhiteSpace(textureAssetPath)
-                || !GameRegistry.TryGetGame(gameKey, out GameConfigSO game)
-                || game == null)
+            if (string.IsNullOrWhiteSpace(textureAssetPath))
             {
                 return;
             }
@@ -387,7 +386,57 @@ namespace HoyoToon.Editor.Utilities.Assets
                 AssetDatabase.ImportAsset(textureAssetPath, ImportAssetOptions.ForceUpdate);
             }
 
-            TextureImportSettingsApplicator.Apply(game, textureAssetPath);
+            if (GameRegistry.TryGetGame(gameKey, out GameConfigSO game) && game != null)
+            {
+                TextureImportSettingsApplicator.Apply(game, textureAssetPath);
+            }
+
+            ApplyCharacterIconImportSettings(textureAssetPath, false);
+        }
+
+        private static void ApplyCharacterIconImportSettings(string texturePath, bool forceImport)
+        {
+            string textureAssetPath = AssetContextJsonQueryUtility.ToAssetPath(texturePath);
+            if (string.IsNullOrWhiteSpace(textureAssetPath))
+            {
+                return;
+            }
+
+            if (forceImport || AssetImporter.GetAtPath(textureAssetPath) == null)
+            {
+                AssetDatabase.ImportAsset(textureAssetPath, ImportAssetOptions.ForceUpdate);
+            }
+
+            var importer = AssetImporter.GetAtPath(textureAssetPath) as TextureImporter;
+            if (importer == null)
+            {
+                return;
+            }
+
+            bool changed = false;
+            changed |= SetImporterValue(importer.textureType, TextureImporterType.Sprite, value => importer.textureType = value);
+            changed |= SetImporterValue(importer.spriteImportMode, SpriteImportMode.Single, value => importer.spriteImportMode = value);
+            changed |= SetImporterValue(importer.mipmapEnabled, false, value => importer.mipmapEnabled = value);
+            changed |= SetImporterValue(importer.alphaIsTransparency, true, value => importer.alphaIsTransparency = value);
+
+            if (!changed)
+            {
+                return;
+            }
+
+            EditorUtility.SetDirty(importer);
+            importer.SaveAndReimport();
+        }
+
+        private static bool SetImporterValue<T>(T currentValue, T nextValue, Action<T> applyValue)
+        {
+            if (EqualityComparer<T>.Default.Equals(currentValue, nextValue))
+            {
+                return false;
+            }
+
+            applyValue(nextValue);
+            return true;
         }
 
         private static bool IsCacheFileValid(string filePath)

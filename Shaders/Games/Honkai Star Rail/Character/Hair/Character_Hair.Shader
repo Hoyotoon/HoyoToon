@@ -184,8 +184,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             #include "Include/Common.hlsl"
             #include "Include/Program.hlsl"
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
-            #pragma shader_feature_local _HEIGHTLERP
-            #pragma shader_feature_local _ENABLE_FOG
+            #pragma multi_compile _ _HEIGHTLERP
+            #pragma multi_compile _ _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _RIM_BACKLIGHT_ON
             #pragma shader_feature_local _USE_DITHER 
@@ -223,8 +223,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             ColorMask RGB
             HLSLPROGRAM
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
-            #pragma shader_feature_local _HEIGHTLERP
-            #pragma shader_feature_local _ENABLE_FOG
+            #pragma multi_compile _ _HEIGHTLERP
+            #pragma multi_compile _ _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _RIM_BACKLIGHT_ON
             #pragma shader_feature_local _USE_DITHER
@@ -271,7 +271,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             #pragma multi_compile_fragment _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
-            #pragma shader_feature_local _HEIGHTLERP
+            #pragma multi_compile _ _HEIGHTLERP
             #pragma shader_feature_local _USE_NORMAL_MAP
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _RIM_BACKLIGHT_ON

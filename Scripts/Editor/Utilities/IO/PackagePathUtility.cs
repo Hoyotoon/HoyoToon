@@ -17,7 +17,7 @@ namespace HoyoToon.Editor.Utilities.IO
                 return false;
             }
 
-            string candidate = path.Replace('\\', '/').Trim();
+            string candidate = EditorPathUtility.NormalizeAssetPath(path);
             if (string.IsNullOrWhiteSpace(candidate))
             {
                 error = "Empty paths are not allowed.";
@@ -98,23 +98,12 @@ namespace HoyoToon.Editor.Utilities.IO
 
         public static string ToPlatformPath(string normalizedRelativePath)
         {
-            return (normalizedRelativePath ?? string.Empty).Replace('/', Path.DirectorySeparatorChar);
+            return EditorPathUtility.ToPlatformPath(normalizedRelativePath);
         }
 
         public static bool IsPathWithinRoot(string path, string rootPath)
         {
-            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(rootPath))
-            {
-                return false;
-            }
-
-            string normalizedPath = Path.GetFullPath(path)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            string normalizedRoot = Path.GetFullPath(rootPath)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-            return string.Equals(normalizedPath, normalizedRoot, StringComparison.OrdinalIgnoreCase)
-                || normalizedPath.StartsWith(normalizedRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+            return EditorPathUtility.IsPathWithinRoot(path, rootPath);
         }
 
         private static bool HasDriveSpecifier(string value)

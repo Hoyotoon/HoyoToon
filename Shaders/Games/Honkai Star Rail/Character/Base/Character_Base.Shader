@@ -438,7 +438,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
             #pragma shader_feature_local _FRAGMENT_CLIP
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma shader_feature_local _USE_NORMAL_MAP
-            #pragma shader_feature_local _HEIGHTLERP
+            #pragma multi_compile _ _HEIGHTLERP
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _CHARACTER_SPECIAL_FEATURE
             #pragma shader_feature_local _USE_OVERHEATED
@@ -492,8 +492,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
             #pragma shader_feature_local _STATTYSKY
             #pragma shader_feature_local _FLAMECRYSTALEFFECT
             #pragma shader_feature_local _USE_OVERHEATED
-            #pragma shader_feature_local _HEIGHTLERP
-            #pragma shader_feature_local _ENABLE_FOG
+            #pragma multi_compile _ _HEIGHTLERP
+            #pragma multi_compile _ _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _USE_GLINT
             #pragma shader_feature_local _USE_DITHER

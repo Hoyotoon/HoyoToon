@@ -83,6 +83,15 @@ namespace HoyoToon.Editor.Renders
             window.Show();
         }
 
+        [InitializeOnLoadMethod]
+        private static void RegisterGeneratedDefaultTurnaroundBackgroundCleanup()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload -= ReleaseGeneratedDefaultTurnaroundBackground;
+            AssemblyReloadEvents.beforeAssemblyReload += ReleaseGeneratedDefaultTurnaroundBackground;
+            EditorApplication.quitting -= ReleaseGeneratedDefaultTurnaroundBackground;
+            EditorApplication.quitting += ReleaseGeneratedDefaultTurnaroundBackground;
+        }
+
         private void OnEnable()
         {
             titleContent = new GUIContent(WindowTitle);
@@ -832,6 +841,21 @@ namespace HoyoToon.Editor.Renders
             texture.Apply(false);
             s_DefaultTurnaroundBackground = texture;
             return s_DefaultTurnaroundBackground;
+        }
+
+        private static void ReleaseGeneratedDefaultTurnaroundBackground()
+        {
+            if (s_DefaultTurnaroundBackground == null)
+            {
+                return;
+            }
+
+            if ((s_DefaultTurnaroundBackground.hideFlags & HideFlags.HideAndDontSave) != 0)
+            {
+                UnityEngine.Object.DestroyImmediate(s_DefaultTurnaroundBackground);
+            }
+
+            s_DefaultTurnaroundBackground = null;
         }
 
         private string EnsureSavePath()

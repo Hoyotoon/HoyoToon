@@ -107,20 +107,30 @@ namespace HoyoToon.Editor.Onboarding
                 return;
             }
 
+            var elementReference = new WeakReference<VisualElement>(element);
             var target = new OnboardingTarget
             {
                 Id = id.Trim(),
                 DisplayName = string.IsNullOrWhiteSpace(displayName) ? id.Trim() : displayName.Trim(),
                 ModuleName = moduleName ?? string.Empty,
-                ElementReference = new WeakReference<VisualElement>(element),
-                GetRect = () => IsElementVisible(element) ? element.worldBound : Rect.zero,
-                IsAvailable = () => IsElementVisible(element),
+                ElementReference = elementReference,
+                GetRect = () => TryGetElement(elementReference, out VisualElement targetElement) && IsElementVisible(targetElement) ? targetElement.worldBound : Rect.zero,
+                IsAvailable = () => TryGetElement(elementReference, out VisualElement targetElement) && IsElementVisible(targetElement),
                 Focus = () =>
                 {
                     focus?.Invoke();
-                    FocusElement(element);
+                    if (TryGetElement(elementReference, out VisualElement targetElement))
+                    {
+                        FocusElement(targetElement);
+                    }
                 },
-                SetInteractable = setInteractable ?? (enabled => element.SetEnabled(enabled))
+                SetInteractable = setInteractable ?? (enabled =>
+                {
+                    if (TryGetElement(elementReference, out VisualElement targetElement))
+                    {
+                        targetElement.SetEnabled(enabled);
+                    }
+                })
             };
 
             Register(target);
@@ -300,6 +310,14 @@ namespace HoyoToon.Editor.Onboarding
                 && element.visible
                 && element.worldBound.width > 1f
                 && element.worldBound.height > 1f;
+        }
+
+        private static bool TryGetElement(WeakReference<VisualElement> elementReference, out VisualElement element)
+        {
+            element = null;
+            return elementReference != null
+                && elementReference.TryGetTarget(out element)
+                && element != null;
         }
 
         private static bool TryGetVisibleElementWorldRect(VisualElement element, out Rect rect)

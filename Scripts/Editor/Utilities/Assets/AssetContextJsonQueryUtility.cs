@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using HoyoToon.Editor.Utilities.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -88,7 +89,7 @@ namespace HoyoToon.Editor.Utilities.Assets
         {
             return string.IsNullOrWhiteSpace(assetPath)
                 ? assetPath
-                : assetPath.Replace('\\', '/');
+                : EditorPathUtility.NormalizeAssetPath(assetPath);
         }
 
         public static string ToAbsolutePath(string assetPath)
@@ -98,8 +99,7 @@ namespace HoyoToon.Editor.Utilities.Assets
                 return null;
             }
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            return Path.GetFullPath(Path.Combine(projectRoot, assetPath));
+            return EditorPathUtility.AbsoluteFromAssetPath(assetPath);
         }
 
         public static string ToAssetPath(string absolutePath)
@@ -109,16 +109,9 @@ namespace HoyoToon.Editor.Utilities.Assets
                 return null;
             }
 
-            string projectRoot = Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
-            string normalizedProjectRoot = projectRoot.Replace('\\', '/').TrimEnd('/');
-            string normalizedAbsolutePath = Path.GetFullPath(absolutePath).Replace('\\', '/');
-            if (!normalizedAbsolutePath.StartsWith(normalizedProjectRoot + "/", StringComparison.OrdinalIgnoreCase))
-            {
-                return null;
-            }
-
-            string relativePath = normalizedAbsolutePath.Substring(normalizedProjectRoot.Length + 1);
-            return NormalizeAssetPath(relativePath);
+            return EditorPathUtility.TryAssetPathFromAbsolute(absolutePath, out string assetPath)
+                ? assetPath
+                : null;
         }
 
         private static IEnumerable<string> EnumerateJsonFilePaths(string directoryPath, int remainingDepth)

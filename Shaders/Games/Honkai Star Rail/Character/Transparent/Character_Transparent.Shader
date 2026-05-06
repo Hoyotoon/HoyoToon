@@ -427,7 +427,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Transparent"
             #pragma shader_feature_local _ALPHATEST_ON
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma shader_feature_local _USE_NORMAL_MAP
-            #pragma shader_feature_local _HEIGHTLERP
+            #pragma multi_compile _ _HEIGHTLERP
+            #pragma multi_compile _ _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _SUNGLASSES
             #pragma shader_feature_local _USE_OVERHEATED

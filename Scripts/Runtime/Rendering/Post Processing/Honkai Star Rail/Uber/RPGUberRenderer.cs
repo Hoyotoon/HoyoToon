@@ -11,6 +11,46 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Uber
 {
     public class RPGUberRenderer : HsrPostProcessRendererFeature<RPGUberRenderer.RPGUberRenderPass>
     {
+        protected override bool ShouldEnqueuePass(ref RenderingData renderingData, RPGUberRenderPass renderPass)
+        {
+            RPGUber uberSettings = VolumeManager.instance.stack.GetComponent<RPGUber>();
+
+            RPGBloom bloomSettings = VolumeManager.instance.stack.GetComponent<RPGBloom>();
+            bool useUberControl = uberSettings != null
+                && uberSettings.UseUberControl.overrideState
+                && uberSettings.UseUberControl.value;
+            bool bloomAllowed = !useUberControl || uberSettings.EnableBloom.value;
+            bool bloomActive = bloomAllowed && bloomSettings != null && bloomSettings.IsActive();
+            if (bloomActive)
+                return true;
+
+            RPGTonemapping tonemappingSettings = VolumeManager.instance.stack.GetComponent<RPGTonemapping>();
+            if (tonemappingSettings != null
+                && tonemappingSettings.active
+                && tonemappingSettings.IsActive()
+                && tonemappingSettings.AnyPropertiesIsOverridden()
+                && tonemappingSettings.tonemapping == RPGTonemapping.TonemappingMethod.GenerateLUTTexture)
+            {
+                return true;
+            }
+
+            return HasActiveUberSettings(uberSettings);
+        }
+
+        private static bool HasActiveUberSettings(RPGUber settings)
+        {
+            if (settings == null || !settings.active)
+                return false;
+
+            if (settings.UseUberControl.value)
+                return true;
+
+            return settings.BakedLutTexture.overrideState
+                || settings.LutSlices.overrideState
+                || settings.LutFactor.overrideState
+                || settings.FlipLutY.overrideState;
+        }
+
         protected override RPGUberRenderPass CreateRenderPass()
         {
             return new RPGUberRenderPass();
@@ -73,7 +113,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Uber
                     && tonemappingSettings.IsActive()
                     && tonemappingSettings.AnyPropertiesIsOverridden()
                     && tonemappingSettings.tonemapping == RPGTonemapping.TonemappingMethod.GenerateLUTTexture
-                    && RPGTonemappingRenderer.HasGeneratedLutThisFrame;
+                    && RPGTonemappingRenderer.HasGeneratedLutForCamera(camera);
 
                 if (_useGeneratedTonemappingLut)
                 {

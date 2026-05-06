@@ -19,6 +19,20 @@ namespace HoyoToon.Editor.Rendering.Character
         {
             return AssetDatabase.LoadAssetAtPath<ComputeShader>(DefaultSkinningComputeShaderAssetPath);
         }
+
+        internal static bool TryAssignDefaultComputeShader(HSRCharacterController controller)
+        {
+            if (controller == null || controller.CustomSkinningCompute != null)
+                return false;
+
+            ComputeShader computeShader = ResolveDefaultComputeShader();
+            if (computeShader == null)
+                return false;
+
+            controller.CustomSkinningCompute = computeShader;
+            EditorUtility.SetDirty(controller);
+            return true;
+        }
     }
 }
 #endif

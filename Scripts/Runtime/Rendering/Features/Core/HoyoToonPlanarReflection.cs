@@ -1,10 +1,13 @@
 using System;
 using System.Collections.Generic;
+using HoyoToon.Runtime.Rendering.Utilities;
+using HoyoToon.Runtime.Utilities;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.Core
 {
@@ -24,6 +27,7 @@ namespace HoyoToon.Runtime.Rendering.Core
             [Min(1)] public int reflectionHeight = 1024;
             public float reflectionPlaneY = 0f;
             public string reflectionTextureName = DefaultReflectionTextureName;
+            [HideInInspector]
             public string[] reflectionReceiverShaderNames = (string[])DefaultReflectionReceiverShaderNames.Clone();
             public string[] layerNames =
             {
@@ -71,12 +75,22 @@ namespace HoyoToon.Runtime.Rendering.Core
 
         private class HoyoToonPlanarReflectionPass : ScriptableRenderPass
         {
-            private static readonly List<Renderer> k_Renderers = new List<Renderer>(512);
+            private const int LegacyMissScanIntervalFrames = 30;
+            private const int MaterialPassCacheMaxEntries = 512;
+            private const int ReflectionMaterialPassQueryId = 1001;
+
+            private static readonly List<HoyoToonPlanarReflectionParticipant> k_Participants =
+                new List<HoyoToonPlanarReflectionParticipant>(32);
+
             private static readonly List<Renderer> k_FilteredRenderers = new List<Renderer>(256);
+            private static readonly List<Renderer> k_ReflectionReceiverRenderers = new List<Renderer>(32);
+            private static readonly List<Renderer> k_LegacyRenderers = new List<Renderer>(512);
+            private static readonly List<Renderer> k_LegacyRendererScratch = new List<Renderer>(256);
+            private static readonly List<GameObject> k_LegacyRootScratch = new List<GameObject>(32);
             private static readonly List<Material> k_SharedMaterials = new List<Material>(16);
-            private static readonly Dictionary<int, Mesh> k_BakedMeshCache = new Dictionary<int, Mesh>(128);
-            private static readonly HashSet<int> k_CurrentBakedMeshKeys = new HashSet<int>();
-            private static readonly List<int> k_StaleBakedMeshKeys = new List<int>(32);
+            private static readonly HashSet<Renderer> k_UniqueRenderers = new HashSet<Renderer>();
+            private static readonly HashSet<Renderer> k_UniqueReceiverRenderers = new HashSet<Renderer>();
+            private static readonly HashSet<Renderer> k_LegacyReceiverRenderers = new HashSet<Renderer>();
             private static readonly string[] k_RenderPassNames =
             {
                 "CustomForward",
@@ -89,16 +103,35 @@ namespace HoyoToon.Runtime.Rendering.Core
             };
 
             private readonly HoyoToonPlanarReflectionSettings settings;
-            private int m_LastCollectedFrame = -1;
+            private int m_LastSceneHandle;
             private int m_LastLayerMask;
             private int m_LastReceiverShaderNamesHash;
+            private int m_LastRegistryVersion = -1;
             private bool m_CachedHasReflectionReceiver;
             private Renderer[] m_CachedRenderers = Array.Empty<Renderer>();
+            private Renderer[] m_CachedReflectionReceiverRenderers = Array.Empty<Renderer>();
+            private int m_LastLegacyScanFrame = -LegacyMissScanIntervalFrames;
+            private int m_LastLegacySceneHandle;
+            private int m_LastLegacyLayerMask;
+            private int m_LastLegacyReceiverShaderNamesHash;
+            private bool m_CachedLegacyHasReflectionReceiver;
+            private Renderer[] m_CachedLegacyRenderers = Array.Empty<Renderer>();
+            private Renderer[] m_CachedLegacyReceiverRenderers = Array.Empty<Renderer>();
 
             private class PassData
             {
                 public Renderer[] renderers;
                 public Matrix4x4 reflectionMatrix;
+                public Matrix4x4 reflectedViewMatrix;
+                public Matrix4x4 cameraViewMatrix;
+                public Matrix4x4 cameraProjectionMatrix;
+                public int layerMask;
+            }
+
+            private class ClearGlobalsPassData
+            {
+                public TextureHandle fallbackTexture;
+                public int reflectionTextureId;
             }
 
             public HoyoToonPlanarReflectionPass(HoyoToonPlanarReflectionSettings settings)
@@ -161,75 +194,278 @@ namespace HoyoToon.Runtime.Rendering.Core
                 }
             }
 
-            private Renderer[] CollectRenderers(int layerMask, string[] receiverShaderNames, out bool hasReflectionReceiver)
+            private Renderer[] CollectRenderers(UnityScene scene, int layerMask, out bool hasReflectionReceiver)
             {
+                int registryVersion = HoyoToonRenderParticipantRegistry.GetVersion(scene);
+                int sceneHandle = RenderSceneUtility.GetSceneHandleOrDefault(scene);
+                string[] receiverShaderNames = ResolveReflectionReceiverShaderNames(settings);
                 int receiverShaderNamesHash = ComputeStringArrayHash(receiverShaderNames);
-                if (m_LastCollectedFrame == Time.frameCount
+                bool legacyFallbackAllowed = IsLegacyReflectionFallbackAllowed();
+                bool cacheMatches = m_LastSceneHandle == sceneHandle
                     && m_LastLayerMask == layerMask
-                    && m_LastReceiverShaderNamesHash == receiverShaderNamesHash)
+                    && m_LastReceiverShaderNamesHash == receiverShaderNamesHash
+                    && m_LastRegistryVersion == registryVersion;
+                bool retryLegacyMiss = legacyFallbackAllowed
+                    && cacheMatches
+                    && !m_CachedHasReflectionReceiver
+                    && Time.frameCount - m_LastLegacyScanFrame >= LegacyMissScanIntervalFrames;
+                if (cacheMatches && !retryLegacyMiss)
                 {
-                    hasReflectionReceiver = m_CachedHasReflectionReceiver;
+                    hasReflectionReceiver = HasAnyActiveRenderer(m_CachedReflectionReceiverRenderers);
                     return m_CachedRenderers;
                 }
 
-                m_LastCollectedFrame = Time.frameCount;
+                m_LastSceneHandle = sceneHandle;
                 m_LastLayerMask = layerMask;
                 m_LastReceiverShaderNamesHash = receiverShaderNamesHash;
+                m_LastRegistryVersion = registryVersion;
                 m_CachedHasReflectionReceiver = false;
                 k_FilteredRenderers.Clear();
-                k_CurrentBakedMeshKeys.Clear();
+                k_ReflectionReceiverRenderers.Clear();
+                k_UniqueRenderers.Clear();
+                k_UniqueReceiverRenderers.Clear();
 
-#if UNITY_2023_1_OR_NEWER
-                k_Renderers.Clear();
-                Renderer[] allRenderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsSortMode.None);
-                k_Renderers.AddRange(allRenderers);
-#else
-                k_Renderers.Clear();
-                k_Renderers.AddRange(UnityEngine.Object.FindObjectsOfType<Renderer>());
-#endif
+                HoyoToonRenderParticipantRegistry.GetPlanarReflectionParticipants(scene, k_Participants);
 
-                for (int i = 0; i < k_Renderers.Count; ++i)
+                for (int i = 0; i < k_Participants.Count; ++i)
                 {
-                    Renderer renderer = k_Renderers[i];
-                    if (renderer == null || !renderer.enabled)
+                    HoyoToonPlanarReflectionParticipant participant = k_Participants[i];
+                    if (participant == null || !participant.ReceivesReflection)
                         continue;
 
-                    GameObject go = renderer.gameObject;
-                    if (go == null || !go.activeInHierarchy)
+                    AddReceiverRenderers(participant.Renderers);
+                }
+
+                bool hasMarkedReceiver = k_ReflectionReceiverRenderers.Count > 0;
+
+                for (int i = 0; i < k_Participants.Count; ++i)
+                {
+                    HoyoToonPlanarReflectionParticipant participant = k_Participants[i];
+                    if (participant == null || !participant.CastsReflection)
                         continue;
 
-                    if (RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
+                    IReadOnlyList<Renderer> renderers = participant.Renderers;
+                    if (renderers == null)
+                        continue;
+
+                    for (int rendererIndex = 0; rendererIndex < renderers.Count; ++rendererIndex)
                     {
-                        m_CachedHasReflectionReceiver = true;
-                        break;
+                        Renderer renderer = renderers[rendererIndex];
+                        if (!IsPotentialReflectionCaster(renderer, layerMask))
+                            continue;
+
+                        if (!k_UniqueRenderers.Add(renderer))
+                            continue;
+
+                        k_FilteredRenderers.Add(renderer);
                     }
                 }
 
-                for (int i = 0; i < k_Renderers.Count; ++i)
+                if (legacyFallbackAllowed && (!hasMarkedReceiver || k_FilteredRenderers.Count == 0))
                 {
-                    Renderer renderer = k_Renderers[i];
-                    if (renderer == null || !renderer.enabled)
-                        continue;
+                    Renderer[] legacyRenderers = CollectLegacyRenderers(
+                        scene,
+                        layerMask,
+                        receiverShaderNames,
+                        out Renderer[] legacyReceiverRenderers);
 
-                    GameObject go = renderer.gameObject;
-                    if (go == null || !go.activeInHierarchy)
-                        continue;
+                    for (int i = 0; i < legacyReceiverRenderers.Length; ++i)
+                    {
+                        AddReceiverRenderer(legacyReceiverRenderers[i]);
+                    }
 
-                    if ((layerMask & (1 << go.layer)) == 0)
-                        continue;
+                    for (int i = 0; i < legacyRenderers.Length; ++i)
+                    {
+                        Renderer renderer = legacyRenderers[i];
+                        if (!k_UniqueRenderers.Add(renderer))
+                            continue;
 
-                    if (RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
-                        continue;
-
-                    k_FilteredRenderers.Add(renderer);
-                    if (renderer is SkinnedMeshRenderer)
-                        k_CurrentBakedMeshKeys.Add(renderer.GetInstanceID());
+                        k_FilteredRenderers.Add(renderer);
+                    }
                 }
 
+                m_CachedHasReflectionReceiver = k_ReflectionReceiverRenderers.Count > 0;
                 m_CachedRenderers = k_FilteredRenderers.ToArray();
-                hasReflectionReceiver = m_CachedHasReflectionReceiver;
-                PruneBakedMeshCache();
+                m_CachedReflectionReceiverRenderers = k_ReflectionReceiverRenderers.ToArray();
+                hasReflectionReceiver = HasAnyActiveRenderer(m_CachedReflectionReceiverRenderers);
+                k_Participants.Clear();
+                k_ReflectionReceiverRenderers.Clear();
+                k_UniqueRenderers.Clear();
+                k_UniqueReceiverRenderers.Clear();
                 return m_CachedRenderers;
+            }
+
+            private static bool IsLegacyReflectionFallbackAllowed()
+            {
+                return true;
+            }
+
+            private Renderer[] CollectLegacyRenderers(
+                UnityScene scene,
+                int layerMask,
+                string[] receiverShaderNames,
+                out Renderer[] reflectionReceivers)
+            {
+                int sceneHandle = RenderSceneUtility.GetSceneHandleOrDefault(scene);
+                int receiverShaderNamesHash = ComputeStringArrayHash(receiverShaderNames);
+                if (m_LastLegacySceneHandle == sceneHandle
+                    && m_LastLegacyLayerMask == layerMask
+                    && m_LastLegacyReceiverShaderNamesHash == receiverShaderNamesHash)
+                {
+                    if (m_CachedLegacyHasReflectionReceiver
+                        || Time.frameCount - m_LastLegacyScanFrame < LegacyMissScanIntervalFrames)
+                    {
+                        reflectionReceivers = m_CachedLegacyReceiverRenderers;
+                        return m_CachedLegacyRenderers;
+                    }
+                }
+
+                m_LastLegacyScanFrame = Time.frameCount;
+                m_LastLegacySceneHandle = sceneHandle;
+                m_LastLegacyLayerMask = layerMask;
+                m_LastLegacyReceiverShaderNamesHash = receiverShaderNamesHash;
+                m_CachedLegacyHasReflectionReceiver = false;
+                k_LegacyRenderers.Clear();
+                k_LegacyReceiverRenderers.Clear();
+                k_LegacyRootScratch.Clear();
+
+                if (RenderSceneUtility.IsSceneUsable(scene))
+                {
+                    scene.GetRootGameObjects(k_LegacyRootScratch);
+                    for (int rootIndex = 0; rootIndex < k_LegacyRootScratch.Count; ++rootIndex)
+                    {
+                        GameObject root = k_LegacyRootScratch[rootIndex];
+                        if (root == null)
+                            continue;
+
+                        k_LegacyRendererScratch.Clear();
+                        root.GetComponentsInChildren(true, k_LegacyRendererScratch);
+                        for (int rendererIndex = 0; rendererIndex < k_LegacyRendererScratch.Count; ++rendererIndex)
+                        {
+                            Renderer renderer = k_LegacyRendererScratch[rendererIndex];
+                            if (renderer == null || renderer.gameObject == null)
+                                continue;
+
+                            if (!RendererUsesReflectionReceiverShader(renderer, receiverShaderNames))
+                                continue;
+
+                            k_LegacyReceiverRenderers.Add(renderer);
+                            m_CachedLegacyHasReflectionReceiver = true;
+                        }
+                    }
+
+                    for (int rootIndex = 0; rootIndex < k_LegacyRootScratch.Count; ++rootIndex)
+                    {
+                        GameObject root = k_LegacyRootScratch[rootIndex];
+                        if (root == null)
+                            continue;
+
+                        k_LegacyRendererScratch.Clear();
+                        root.GetComponentsInChildren(true, k_LegacyRendererScratch);
+                        for (int rendererIndex = 0; rendererIndex < k_LegacyRendererScratch.Count; ++rendererIndex)
+                        {
+                            Renderer renderer = k_LegacyRendererScratch[rendererIndex];
+                            if (renderer == null
+                                || renderer.gameObject == null
+                                || k_LegacyReceiverRenderers.Contains(renderer))
+                            {
+                                continue;
+                            }
+
+                            GameObject go = renderer.gameObject;
+                            if (go == null || (layerMask & (1 << go.layer)) == 0)
+                                continue;
+
+                            k_LegacyRenderers.Add(renderer);
+                        }
+                    }
+                }
+
+                m_CachedLegacyRenderers = k_LegacyRenderers.ToArray();
+                m_CachedLegacyReceiverRenderers = CopyRendererSetToArray(k_LegacyReceiverRenderers);
+                reflectionReceivers = m_CachedLegacyReceiverRenderers;
+                k_LegacyRenderers.Clear();
+                k_LegacyReceiverRenderers.Clear();
+                k_LegacyRendererScratch.Clear();
+                k_LegacyRootScratch.Clear();
+                return m_CachedLegacyRenderers;
+            }
+
+            private static Renderer[] CopyRendererSetToArray(HashSet<Renderer> renderers)
+            {
+                if (renderers == null || renderers.Count == 0)
+                    return Array.Empty<Renderer>();
+
+                Renderer[] copy = new Renderer[renderers.Count];
+                int index = 0;
+                foreach (Renderer renderer in renderers)
+                {
+                    copy[index++] = renderer;
+                }
+
+                return copy;
+            }
+
+            private static void AddReceiverRenderers(IReadOnlyList<Renderer> renderers)
+            {
+                if (renderers == null)
+                    return;
+
+                for (int i = 0; i < renderers.Count; ++i)
+                {
+                    AddReceiverRenderer(renderers[i]);
+                }
+            }
+
+            private static void AddReceiverRenderer(Renderer renderer)
+            {
+                if (renderer == null || renderer.gameObject == null)
+                    return;
+
+                if (k_UniqueReceiverRenderers.Add(renderer))
+                    k_ReflectionReceiverRenderers.Add(renderer);
+            }
+
+            private static bool HasAnyActiveRenderer(IReadOnlyList<Renderer> renderers)
+            {
+                if (renderers == null)
+                    return false;
+
+                for (int i = 0; i < renderers.Count; ++i)
+                {
+                    if (HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderers[i]))
+                        return true;
+                }
+
+                return false;
+            }
+
+            private static bool IsPotentialReflectionCaster(Renderer renderer, int layerMask)
+            {
+                if (renderer == null || renderer.gameObject == null)
+                    return false;
+
+                return (layerMask & (1 << renderer.gameObject.layer)) != 0;
+            }
+
+            private static bool IsRenderableReflectionCaster(Renderer renderer, int layerMask)
+            {
+                return IsPotentialReflectionCaster(renderer, layerMask)
+                    && HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderer);
+            }
+
+            private static bool HasAnyRenderableReflectionCaster(Renderer[] renderers, int layerMask)
+            {
+                if (renderers == null)
+                    return false;
+
+                for (int i = 0; i < renderers.Length; ++i)
+                {
+                    if (IsRenderableReflectionCaster(renderers[i], layerMask))
+                        return true;
+                }
+
+                return false;
             }
 
             private static bool RendererUsesReflectionReceiverShader(Renderer renderer, string[] receiverShaderNames)
@@ -267,49 +503,6 @@ namespace HoyoToon.Runtime.Rendering.Core
                 }
             }
 
-            private static bool HasRenderableReflectionPass(Renderer renderer)
-            {
-                if (renderer == null)
-                    return false;
-
-                renderer.GetSharedMaterials(k_SharedMaterials);
-                try
-                {
-                    for (int i = 0; i < k_SharedMaterials.Count; ++i)
-                    {
-                        if (GetMaterialPassIndex(k_SharedMaterials[i]) >= 0)
-                            return true;
-                    }
-
-                    return false;
-                }
-                finally
-                {
-                    k_SharedMaterials.Clear();
-                }
-            }
-
-            private static void PruneBakedMeshCache()
-            {
-                k_StaleBakedMeshKeys.Clear();
-                foreach (var pair in k_BakedMeshCache)
-                {
-                    if (!k_CurrentBakedMeshKeys.Contains(pair.Key))
-                        k_StaleBakedMeshKeys.Add(pair.Key);
-                }
-
-                for (int i = 0; i < k_StaleBakedMeshKeys.Count; ++i)
-                {
-                    int key = k_StaleBakedMeshKeys[i];
-                    if (k_BakedMeshCache.TryGetValue(key, out Mesh mesh) && mesh != null)
-                        CoreUtils.Destroy(mesh);
-
-                    k_BakedMeshCache.Remove(key);
-                }
-
-                k_StaleBakedMeshKeys.Clear();
-            }
-
             private static Matrix4x4 BuildReflectionMatrix(float planeY)
             {
                 // Reflect around the world plane y = planeY.
@@ -318,49 +511,50 @@ namespace HoyoToon.Runtime.Rendering.Core
 
             private static int GetMaterialPassIndex(Material material)
             {
-                if (material == null)
-                    return -1;
-
-                for (int i = 0; i < k_RenderPassNames.Length; ++i)
-                {
-                    int pass = material.FindPass(k_RenderPassNames[i]);
-                    if (pass >= 0)
-                        return pass;
-                }
-
-                return material.passCount > 0 ? 0 : -1;
+                return MaterialPassResolver.ResolveFirstPass(
+                    material,
+                    k_RenderPassNames,
+                    ReflectionMaterialPassQueryId,
+                    fallbackToFirstPass: true,
+                    maxEntries: MaterialPassCacheMaxEntries);
             }
 
-            private static Mesh GetBakedMesh(SkinnedMeshRenderer skinnedRenderer)
+            private static void ClearMaterialPassIndexCache()
             {
-                int key = skinnedRenderer.GetInstanceID();
-                if (!k_BakedMeshCache.TryGetValue(key, out Mesh bakedMesh) || bakedMesh == null)
-                {
-                    bakedMesh = new Mesh
-                    {
-                        name = "HoyoToonPlanarReflection_BakedMesh"
-                    };
-                    bakedMesh.MarkDynamic();
-                    k_BakedMeshCache[key] = bakedMesh;
-                }
-
-                bakedMesh.Clear();
-                skinnedRenderer.BakeMesh(bakedMesh);
-                return bakedMesh;
+                MaterialPassResolver.ClearQuery(ReflectionMaterialPassQueryId);
             }
 
             private static Mesh ResolveMesh(Renderer renderer)
             {
-                if (renderer is MeshRenderer meshRenderer)
+                return RendererTraversalUtility.GetRendererMesh(renderer);
+            }
+
+            private static int GetRendererSubMeshCount(Renderer renderer)
+            {
+                return RendererTraversalUtility.GetSubMeshCount(renderer);
+            }
+
+            private static void DrawRendererWithCurrentView(Renderer renderer, RasterCommandBuffer cmd)
+            {
+                int subMeshCount = GetRendererSubMeshCount(renderer);
+                if (subMeshCount <= 0)
+                    return;
+
+                k_SharedMaterials.Clear();
+                renderer.GetSharedMaterials(k_SharedMaterials);
+                if (k_SharedMaterials.Count == 0)
+                    return;
+
+                for (int subMesh = 0; subMesh < k_SharedMaterials.Count; ++subMesh)
                 {
-                    MeshFilter filter = meshRenderer.GetComponent<MeshFilter>();
-                    return filter != null ? filter.sharedMesh : null;
+                    Material sourceMaterial = k_SharedMaterials[subMesh];
+                    int passIndex = GetMaterialPassIndex(sourceMaterial);
+                    if (passIndex < 0)
+                        continue;
+
+                    int subMeshIndex = Mathf.Min(subMesh, Mathf.Max(0, subMeshCount - 1));
+                    cmd.DrawRenderer(renderer, sourceMaterial, subMeshIndex, passIndex);
                 }
-
-                if (renderer is SkinnedMeshRenderer skinnedRenderer)
-                    return GetBakedMesh(skinnedRenderer);
-
-                return null;
             }
 
             private static void ExecutePass(PassData data, RasterGraphContext context)
@@ -373,12 +567,32 @@ namespace HoyoToon.Runtime.Rendering.Core
                 try
                 {
                     context.cmd.SetInvertCulling(true);
+                    context.cmd.SetViewProjectionMatrices(data.cameraViewMatrix, data.cameraProjectionMatrix);
+                    bool usingReflectedViewMatrix = false;
 
                     for (int i = 0; i < data.renderers.Length; ++i)
                     {
                         Renderer renderer = data.renderers[i];
-                        if (renderer == null)
+                        if (!IsRenderableReflectionCaster(renderer, data.layerMask))
                             continue;
+
+                        if (renderer is SkinnedMeshRenderer)
+                        {
+                            if (!usingReflectedViewMatrix)
+                            {
+                                context.cmd.SetViewProjectionMatrices(data.reflectedViewMatrix, data.cameraProjectionMatrix);
+                                usingReflectedViewMatrix = true;
+                            }
+
+                            DrawRendererWithCurrentView(renderer, context.cmd);
+                            continue;
+                        }
+
+                        if (usingReflectedViewMatrix)
+                        {
+                            context.cmd.SetViewProjectionMatrices(data.cameraViewMatrix, data.cameraProjectionMatrix);
+                            usingReflectedViewMatrix = false;
+                        }
 
                         Mesh mesh = ResolveMesh(renderer);
                         if (mesh == null || mesh.subMeshCount == 0)
@@ -405,25 +619,47 @@ namespace HoyoToon.Runtime.Rendering.Core
                 }
                 finally
                 {
+                    context.cmd.SetViewProjectionMatrices(data.cameraViewMatrix, data.cameraProjectionMatrix);
                     context.cmd.SetInvertCulling(false);
+                }
+            }
+
+            private static void ExecuteClearGlobalsPass(ClearGlobalsPassData data, RasterGraphContext context)
+            {
+                context.cmd.SetGlobalTexture(data.reflectionTextureId, data.fallbackTexture);
+            }
+
+            private static void RecordClearGlobalsPass(RenderGraph renderGraph, int reflectionTextureId)
+            {
+                using (var builder = renderGraph.AddRasterRenderPass<ClearGlobalsPassData>("HoyoToon Planar Reflection Globals", out var passData))
+                {
+                    passData.fallbackTexture = renderGraph.defaultResources.blackTexture;
+                    passData.reflectionTextureId = reflectionTextureId;
+
+                    builder.UseTexture(passData.fallbackTexture, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+                    builder.AllowPassCulling(false);
+                    builder.SetGlobalTextureAfterPass(passData.fallbackTexture, reflectionTextureId);
+                    builder.SetRenderFunc((ClearGlobalsPassData data, RasterGraphContext context) => ExecuteClearGlobalsPass(data, context));
                 }
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+                UnityScene renderScene = ResolveRenderScene(cameraData.camera);
                 int layerMask = BuildLayerMask(settings.layerNames);
                 Renderer[] targetRenderers = CollectRenderers(
+                    renderScene,
                     layerMask,
-                    ResolveReflectionReceiverShaderNames(settings),
                     out bool hasReflectionReceiver);
                 string textureName = ResolveReflectionTextureName(settings);
                 int reflectionTextureId = Shader.PropertyToID(textureName);
 
                 // Only render reflections when both a receiver and at least one reflectable renderer exist.
-                if (!hasReflectionReceiver || targetRenderers.Length == 0)
+                if (!hasReflectionReceiver || !HasAnyRenderableReflectionCaster(targetRenderers, layerMask))
                 {
-                    Shader.SetGlobalTexture(reflectionTextureId, Texture2D.blackTexture);
+                    RecordClearGlobalsPass(renderGraph, reflectionTextureId);
                     return;
                 }
 
@@ -460,26 +696,35 @@ namespace HoyoToon.Runtime.Rendering.Core
                         "_ReflectionDepth",
                         false);
 
+                    Camera camera = cameraData.camera;
+                    Matrix4x4 cameraViewMatrix = camera != null ? camera.worldToCameraMatrix : Matrix4x4.identity;
+                    Matrix4x4 cameraProjectionMatrix = camera != null ? camera.projectionMatrix : Matrix4x4.identity;
+                    Matrix4x4 reflectionMatrix = BuildReflectionMatrix(settings.reflectionPlaneY);
+
                     passData.renderers = targetRenderers;
-                    passData.reflectionMatrix = BuildReflectionMatrix(settings.reflectionPlaneY);
+                    passData.reflectionMatrix = reflectionMatrix;
+                    passData.reflectedViewMatrix = cameraViewMatrix * reflectionMatrix;
+                    passData.cameraViewMatrix = cameraViewMatrix;
+                    passData.cameraProjectionMatrix = cameraProjectionMatrix;
+                    passData.layerMask = layerMask;
 
                     builder.SetRenderAttachment(reflectionTexture, 0, AccessFlags.Write);
                     builder.SetRenderAttachmentDepth(reflectionDepthTexture, AccessFlags.Write);
                     builder.SetGlobalTextureAfterPass(reflectionTexture, reflectionTextureId);
+                    builder.AllowGlobalStateModification(true);
                     builder.AllowPassCulling(false);
                     builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
                 }
             }
 
+            static UnityScene ResolveRenderScene(Camera camera)
+            {
+                return RenderSceneUtility.ResolveRenderScene(camera);
+            }
+
             public void Cleanup()
             {
-                foreach (var pair in k_BakedMeshCache)
-                {
-                    if (pair.Value != null)
-                        CoreUtils.Destroy(pair.Value);
-                }
-
-                k_BakedMeshCache.Clear();
+                ClearMaterialPassIndexCache();
             }
         }
 

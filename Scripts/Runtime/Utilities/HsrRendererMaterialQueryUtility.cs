@@ -3,10 +3,110 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
-namespace HoyoToon.Runtime.Rendering.HSR
+namespace HoyoToon.Runtime.Utilities
 {
     internal static class HsrRendererMaterialQueryUtility
     {
+        internal const int MaterialPassCacheMaxEntries = 512;
+
+        static int s_MaterialPassCacheVersion;
+
+        internal static int MaterialPassCacheVersion => s_MaterialPassCacheVersion;
+
+        internal readonly struct MaterialPassCacheKey : IEquatable<MaterialPassCacheKey>
+        {
+            readonly int m_MaterialId;
+            readonly int m_ShaderId;
+            readonly int m_ResolverId;
+            readonly int m_ExcludedStateVersion;
+            readonly string m_PreferredPassName;
+
+            public MaterialPassCacheKey(Material material, string preferredPassName, int resolverId, int excludedStateVersion)
+            {
+                m_MaterialId = material != null ? material.GetInstanceID() : 0;
+                Shader shader = material != null ? material.shader : null;
+                m_ShaderId = shader != null ? shader.GetInstanceID() : 0;
+                m_ResolverId = resolverId;
+                m_ExcludedStateVersion = excludedStateVersion;
+                m_PreferredPassName = preferredPassName ?? string.Empty;
+            }
+
+            public bool Equals(MaterialPassCacheKey other)
+            {
+                return m_MaterialId == other.m_MaterialId
+                    && m_ShaderId == other.m_ShaderId
+                    && m_ResolverId == other.m_ResolverId
+                    && m_ExcludedStateVersion == other.m_ExcludedStateVersion
+                    && string.Equals(m_PreferredPassName, other.m_PreferredPassName, StringComparison.Ordinal);
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is MaterialPassCacheKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = m_MaterialId;
+                    hash = (hash * 397) ^ m_ShaderId;
+                    hash = (hash * 397) ^ m_ResolverId;
+                    hash = (hash * 397) ^ m_ExcludedStateVersion;
+                    hash = (hash * 397) ^ (m_PreferredPassName != null ? StringComparer.Ordinal.GetHashCode(m_PreferredPassName) : 0);
+                    return hash;
+                }
+            }
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetMaterialPassCacheVersion()
+        {
+            s_MaterialPassCacheVersion = 0;
+        }
+
+        internal static void InvalidateMaterialPassCaches()
+        {
+            unchecked
+            {
+                ++s_MaterialPassCacheVersion;
+            }
+
+            if (s_MaterialPassCacheVersion == 0)
+                s_MaterialPassCacheVersion = 1;
+        }
+
+        internal static bool TryGetCachedMaterialPassIndex(
+            Dictionary<MaterialPassCacheKey, int> cache,
+            Material material,
+            string preferredPassName,
+            int resolverId,
+            int excludedStateVersion,
+            out int passIndex)
+        {
+            passIndex = -1;
+            return cache != null
+                && material != null
+                && cache.TryGetValue(new MaterialPassCacheKey(material, preferredPassName, resolverId, excludedStateVersion), out passIndex);
+        }
+
+        internal static void StoreCachedMaterialPassIndex(
+            Dictionary<MaterialPassCacheKey, int> cache,
+            Material material,
+            string preferredPassName,
+            int resolverId,
+            int excludedStateVersion,
+            int passIndex)
+        {
+            if (cache == null || material == null)
+                return;
+
+            if (cache.Count >= MaterialPassCacheMaxEntries)
+                cache.Clear();
+
+            cache[new MaterialPassCacheKey(material, preferredPassName, resolverId, excludedStateVersion)] = passIndex;
+        }
+
         internal static bool TryGetSharedMaterials(Renderer renderer, List<Material> scratch, out int materialCount)
         {
             materialCount = 0;

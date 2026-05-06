@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using HoyoToon.Editor.Utilities.Debugging;
+using HoyoToon.Editor.Utilities.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -210,20 +211,10 @@ namespace HoyoToon.Editor.Renders
                 return string.Empty;
             }
 
-            string projectRoot = Path.GetDirectoryName(Application.dataPath);
-            if (string.IsNullOrEmpty(projectRoot))
-            {
-                return absolutePath;
-            }
-
-            string normalizedProjectRoot = projectRoot.Replace('\\', '/').TrimEnd('/');
-            string normalizedAbsolutePath = absolutePath.Replace('\\', '/');
-            if (normalizedAbsolutePath.StartsWith(normalizedProjectRoot + "/Assets", StringComparison.OrdinalIgnoreCase))
-            {
-                return normalizedAbsolutePath.Substring(normalizedProjectRoot.Length + 1);
-            }
-
-            return absolutePath;
+            return EditorPathUtility.TryAssetPathFromAbsolute(absolutePath, out string assetPath)
+                && assetPath.StartsWith("Assets", StringComparison.OrdinalIgnoreCase)
+                    ? assetPath
+                    : absolutePath;
         }
 
         private static bool ValidateCaptureRequest(Camera sourceCamera, int width, int height)

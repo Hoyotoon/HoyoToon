@@ -7,6 +7,33 @@
     overflow: hidden;
 }
 
+.ht-shell-scroll {
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    background-color: transparent;
+}
+
+.ht-shell-scroll > .unity-scroll-view__content-viewport {
+    min-height: 0;
+    min-width: 0;
+}
+
+.ht-shell-scroll > .unity-scroll-view__content-viewport > .unity-scroll-view__content-container {
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+    padding-right: 6px;
+}
+
+.ht-shell-content {
+    flex-direction: column;
+    flex-grow: 1;
+    min-height: 0;
+    min-width: 0;
+}
+
 .ht-body {
     flex-grow: 1;
     min-height: 0;

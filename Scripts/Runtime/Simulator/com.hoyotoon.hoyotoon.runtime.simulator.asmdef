@@ -1,0 +1,19 @@
+{
+    "name": "com.hoyotoon.hoyotoon.runtime.simulator",
+    "rootNamespace": "HoyoToon.Runtime.Simulator",
+    "references": [
+        "com.hoyotoon.hoyotoon.runtime",
+        "com.hoyotoon.hoyotoon.runtime.scene",
+        "Cinemachine",
+        "Unity.InputSystem"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": false,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

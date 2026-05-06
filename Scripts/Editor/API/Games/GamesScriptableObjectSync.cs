@@ -75,9 +75,7 @@ namespace HoyoToon.Editor.API.Games
                 HoyoToonLogCategory.Api,
                 $"Synchronizing generated game assets for {syncGames.Count} game(s) and removing {staleGeneratedGameFolders.Count} stale folder(s).");
 
-            AssetDatabase.StartAssetEditing();
-
-            try
+            using (AssetDatabaseEditingScope.Begin(disallowAutoRefresh: false))
             {
                 CleanupStaleGeneratedGameFolders(staleGeneratedGameFolders);
 
@@ -88,10 +86,6 @@ namespace HoyoToon.Editor.API.Games
                     GeneratedAssetSyncUtility.EnsureAssetFolderExists(assetFolderPath);
                     WriteGameAssets(game, assetFolderPath);
                 }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
             }
 
             AssetDatabase.SaveAssets();

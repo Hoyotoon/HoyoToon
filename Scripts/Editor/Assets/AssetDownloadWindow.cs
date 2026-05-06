@@ -13,6 +13,7 @@ using HoyoToon.Editor.Resources;
 using HoyoToon.Editor.Setup;
 using HoyoToon.Editor.Utilities.Debugging;
 using HoyoToon.Editor.Utilities.Editor;
+using HoyoToon.Editor.Utilities.IO;
 using HoyoToon.Runtime.ScriptableObjects.Games;
 using HoyoToon.Runtime.ScriptableObjects.Resources;
 using UnityEditor;
@@ -30,6 +31,7 @@ namespace HoyoToon.Editor.Assets
         private const string PrefsPrefix = "HoyoToon.Editor.AssetDownloader.";
         private const string HsrFbxChoiceKey = PrefsPrefix + "HsrFbxChoice";
         private const string AutoSetupAfterDownloadKey = PrefsPrefix + "AutoSetupAfterDownload";
+        private const string DownloadStageRootRelativePath = "Library/HoyoToon/Downloads";
         private const int DownloadBatchSize = 4;
         private const float SectionSpacing = 6f;
         private const float SectionInnerSpacing = 4f;
@@ -831,13 +833,15 @@ namespace HoyoToon.Editor.Assets
         {
             AssetDownloadGameOption downloadedGame = null;
             string normalizedRoot = string.Empty;
+            string stageRootPath = string.Empty;
             string summary = null;
             bool shouldShowSummary = false;
             bool failed = false;
-            bool batchImportScopeOpened = false;
+            bool downloadedFilesReadyToInstall = false;
             var importedAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             var autoSetupAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             List<string> selectedCharacterNames = new List<string>();
+            List<AssetDownloadPreparedJob> preparedJobs = new List<AssetDownloadPreparedJob>();
 
             try
             {
@@ -866,9 +870,11 @@ namespace HoyoToon.Editor.Assets
                     throw new InvalidOperationException("Choose a valid destination inside the Unity project's Assets folder.");
                 }
 
-                List<AssetDownloadPreparedJob> preparedJobs = await PrepareDownloadJobsAsync(
+                stageRootPath = CreateDownloadStageRoot();
+                preparedJobs = await PrepareDownloadJobsAsync(
                     jobs,
                     normalizedRoot,
+                    stageRootPath,
                     cancellationToken).ConfigureAwait(false);
 
                 AssetDownloadPreparedJob cancelledJob = preparedJobs.FirstOrDefault(job => job != null && job.Cancelled);
@@ -889,9 +895,8 @@ namespace HoyoToon.Editor.Assets
                 int totalDownloadCount = preparedJobs.Sum(job => job?.FilesToDownload.Count ?? 0);
                 if (totalDownloadCount > 0)
                 {
-                    await BeginDownloadBatchAsync().ConfigureAwait(false);
-                    batchImportScopeOpened = true;
                     await DownloadPreparedJobsAsync(preparedJobs, cancellationToken).ConfigureAwait(false);
+                    downloadedFilesReadyToInstall = true;
                 }
 
                 int totalDownloadedFiles = 0;
@@ -940,12 +945,17 @@ namespace HoyoToon.Editor.Assets
             }
             finally
             {
-                if (batchImportScopeOpened)
+                if (downloadedFilesReadyToInstall)
                 {
                     try
                     {
                         await BeginDownloadImportPhaseAsync(importedAssetPaths.Count > 0).ConfigureAwait(false);
-                        await CompleteDownloadBatchAsync(importedAssetPaths, normalizedRoot).ConfigureAwait(false);
+                        await CompleteDownloadBatchAsync(preparedJobs, importedAssetPaths, normalizedRoot, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        failed = true;
+                        statusMessage = "Download cancelled.";
                     }
                     catch (Exception exception)
                     {
@@ -955,6 +965,8 @@ namespace HoyoToon.Editor.Assets
                         statusMessage = $"Download failed: {exception.Message}";
                     }
                 }
+
+                CleanupDownloadStage(stageRootPath);
 
                 if (!failed && ShouldRunAutoSetupForGame(downloadedGame))
                 {
@@ -1032,6 +1044,7 @@ namespace HoyoToon.Editor.Assets
         private async Task<List<AssetDownloadPreparedJob>> PrepareDownloadJobsAsync(
             IReadOnlyList<AssetDownloadJob> jobs,
             string normalizedRoot,
+            string stageRootPath,
             CancellationToken cancellationToken)
         {
             var preparedJobs = new List<AssetDownloadPreparedJob>();
@@ -1053,6 +1066,8 @@ namespace HoyoToon.Editor.Assets
                 AssetDownloadPreparedJob preparedJob = await PrepareDownloadJobAsync(
                     job,
                     normalizedRoot,
+                    stageRootPath,
+                    index,
                     hsrChoice,
                     cancellationToken)
                     .ConfigureAwait(false);
@@ -1069,6 +1084,8 @@ namespace HoyoToon.Editor.Assets
         private async Task<AssetDownloadPreparedJob> PrepareDownloadJobAsync(
             AssetDownloadJob job,
             string normalizedRoot,
+            string stageRootPath,
+            int jobIndex,
             AssetDownloadHsrFbxChoice hsrChoice,
             CancellationToken cancellationToken)
         {
@@ -1093,7 +1110,17 @@ namespace HoyoToon.Editor.Assets
                 throw new InvalidOperationException("The download target could not be resolved into a project Assets path.");
             }
 
-            Directory.CreateDirectory(absoluteTargetPath);
+            if (string.IsNullOrWhiteSpace(stageRootPath))
+            {
+                throw new InvalidOperationException("The download stage root could not be resolved.");
+            }
+
+            string absoluteStageTargetPath = Path.Combine(
+                stageRootPath,
+                Math.Max(0, jobIndex).ToString("D4"),
+                AssetDownloadPathUtility.SanitizeFolderName(job.Game.DisplayName),
+                AssetDownloadPathUtility.SanitizeFolderName(job.CharacterName),
+                AssetDownloadPathUtility.SanitizeFolderName(job.Variant.Name));
             var preparedJob = new AssetDownloadPreparedJob(job, assetTargetPath);
 
             List<RemoteResourceEntry> files = await AssetDownloadCloudreveService
@@ -1158,10 +1185,11 @@ namespace HoyoToon.Editor.Assets
             {
                 RemoteResourceEntry remoteFile = files[fileIndex];
                 string localFilePath = AssetDownloadPathUtility.GetLocalFilePath(absoluteTargetPath, remoteFile.RelativePath);
+                string stagedFilePath = AssetDownloadPathUtility.GetLocalFilePath(absoluteStageTargetPath, remoteFile.RelativePath);
                 string importedAssetPath = AssetDownloadPathUtility.TryConvertAbsolutePathToAssetsPath(localFilePath, out string convertedAssetPath)
                     ? convertedAssetPath
                     : string.Empty;
-                preparedJob.FilesToDownload.Add(new AssetDownloadPreparedFile(job, remoteFile, localFilePath, importedAssetPath));
+                preparedJob.FilesToDownload.Add(new AssetDownloadPreparedFile(job, remoteFile, localFilePath, importedAssetPath, stagedFilePath));
                 if (!string.IsNullOrWhiteSpace(importedAssetPath))
                 {
                     importedAssetPaths.Add(importedAssetPath);
@@ -1226,7 +1254,7 @@ namespace HoyoToon.Editor.Assets
             try
             {
                 await AssetDownloadCloudreveService
-                    .DownloadFileAsync(connectionContext, preparedFile.RemoteFile, preparedFile.LocalFilePath, cancellationToken)
+                    .DownloadFileAsync(connectionContext, preparedFile.RemoteFile, preparedFile.StagedFilePath, cancellationToken)
                     .ConfigureAwait(false);
 
                 int completedFileCount = reportCompleted?.Invoke() ?? 0;
@@ -1407,13 +1435,18 @@ namespace HoyoToon.Editor.Assets
             return new List<string> { resolvedVariant.Name };
         }
 
-        private Task BeginDownloadBatchAsync()
+        private static string CreateDownloadStageRoot()
         {
-            return InvokeOnMainThreadAsync(() =>
+            string stageBasePath = GetDownloadStageRootBasePath();
+            string operationFolderName = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff") + "-" + Guid.NewGuid().ToString("N");
+            string stageRootPath = Path.GetFullPath(Path.Combine(stageBasePath, operationFolderName));
+            if (!IsPathWithinRoot(stageRootPath, stageBasePath))
             {
-                AssetDatabase.DisallowAutoRefresh();
-                AssetDatabase.StartAssetEditing();
-            });
+                throw new InvalidOperationException("The download stage path resolved outside the HoyoToon download cache.");
+            }
+
+            Directory.CreateDirectory(stageRootPath);
+            return stageRootPath;
         }
 
         private async Task BeginDownloadImportPhaseAsync(bool hasImportedAssetPaths)
@@ -1431,43 +1464,34 @@ namespace HoyoToon.Editor.Assets
             await WaitForEditorDelayCallAsync().ConfigureAwait(false);
         }
 
-        private Task CompleteDownloadBatchAsync(IEnumerable<string> assetPaths, string rootAssetPath)
+        private Task CompleteDownloadBatchAsync(
+            IReadOnlyList<AssetDownloadPreparedJob> preparedJobs,
+            IEnumerable<string> assetPaths,
+            string rootAssetPath,
+            CancellationToken cancellationToken)
         {
             return InvokeOnMainThreadAsync(() =>
             {
+                cancellationToken.ThrowIfCancellationRequested();
+
                 List<string> normalizedAssetPaths = assetPaths?
                     .Where(path => !string.IsNullOrWhiteSpace(path))
-                    .Select(path => path.Replace('\\', '/'))
+                    .Select(EditorPathUtility.NormalizeAssetPath)
                     .Distinct(StringComparer.OrdinalIgnoreCase)
                     .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                     .ToList() ?? new List<string>();
                 string normalizedRootAssetPath = string.IsNullOrWhiteSpace(rootAssetPath)
                     ? string.Empty
-                    : rootAssetPath.Replace('\\', '/');
+                    : EditorPathUtility.NormalizeAssetPath(rootAssetPath);
 
                 if (normalizedAssetPaths.Count <= 0 && string.IsNullOrWhiteSpace(normalizedRootAssetPath))
                 {
-                    try
-                    {
-                        AssetDatabase.StopAssetEditing();
-                    }
-                    finally
-                    {
-                        AssetDatabase.AllowAutoRefresh();
-                        AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                    }
-
+                    AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
                     return;
                 }
 
-                try
-                {
-                    AssetDatabase.StopAssetEditing();
-                }
-                finally
-                {
-                    AssetDatabase.AllowAutoRefresh();
-                }
+                using (AssetDatabaseEditingScope.Begin())
+                    CopyStagedDownloadsToAssets(preparedJobs, cancellationToken);
 
                 statusMessage = "Refreshing Unity AssetDatabase for downloaded assets...";
                 HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar(WindowTitle, statusMessage, 0.95f);
@@ -1478,6 +1502,213 @@ namespace HoyoToon.Editor.Assets
                 HoyoToon.Editor.UI.Dialogs.HoyoToonProgress.DisplayProgressBar(WindowTitle, statusMessage, 1f);
                 Repaint();
             });
+        }
+
+        private static void CopyStagedDownloadsToAssets(
+            IReadOnlyList<AssetDownloadPreparedJob> preparedJobs,
+            CancellationToken cancellationToken)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            IReadOnlyList<string> touchedAssetPaths = BuildTouchedDownloadAssetPaths(preparedJobs);
+            if (touchedAssetPaths.Count <= 0)
+            {
+                return;
+            }
+
+            string backupRootPath = CreateDownloadBackupRoot();
+            using ManagedFileTransaction transaction = ManagedFileTransaction.Begin(
+                backupRootPath,
+                Application.dataPath,
+                touchedAssetPaths,
+                ResolveDownloadAssetPathOrThrow,
+                assetPath => ResolveDownloadBackupPath(backupRootPath, assetPath));
+
+            try
+            {
+                CopyStagedDownloadsToAssetsWithoutTransaction(preparedJobs, cancellationToken);
+                transaction.Commit();
+            }
+            catch (Exception exception)
+            {
+                try
+                {
+                    transaction.Rollback();
+                }
+                catch (Exception rollbackException)
+                {
+                    HoyoToonLogger.Error(HoyoToonLogCategory.Models, $"Asset download rollback failed. Backup preserved at: {transaction.BackupRootPath}");
+                    throw new IOException(
+                        $"Failed to finalize downloaded assets: {exception.Message}\n\n" +
+                        $"Rollback also failed: {rollbackException.Message}\n\n" +
+                        $"Backup preserved at: {transaction.BackupRootPath}",
+                        exception);
+                }
+
+                throw;
+            }
+        }
+
+        private static void CopyStagedDownloadsToAssetsWithoutTransaction(
+            IReadOnlyList<AssetDownloadPreparedJob> preparedJobs,
+            CancellationToken cancellationToken)
+        {
+            foreach (AssetDownloadPreparedJob preparedJob in preparedJobs ?? Array.Empty<AssetDownloadPreparedJob>())
+            {
+                foreach (AssetDownloadPreparedFile preparedFile in preparedJob?.FilesToDownload ?? Enumerable.Empty<AssetDownloadPreparedFile>())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+
+                    if (preparedFile == null)
+                    {
+                        continue;
+                    }
+
+                    if (string.IsNullOrWhiteSpace(preparedFile.StagedFilePath)
+                        || !File.Exists(preparedFile.StagedFilePath))
+                    {
+                        throw new FileNotFoundException("A staged download file was missing.", preparedFile.StagedFilePath);
+                    }
+
+                    if (string.IsNullOrWhiteSpace(preparedFile.LocalFilePath))
+                    {
+                        throw new InvalidOperationException("A downloaded asset target path was empty.");
+                    }
+
+                    string destinationPath = ResolveDownloadAssetPathOrThrow(GetPreparedFileAssetPath(preparedFile));
+                    string targetDirectory = Path.GetDirectoryName(destinationPath);
+                    if (!string.IsNullOrWhiteSpace(targetDirectory))
+                    {
+                        Directory.CreateDirectory(targetDirectory);
+                    }
+
+                    File.Copy(preparedFile.StagedFilePath, destinationPath, true);
+                }
+            }
+        }
+
+        private static IReadOnlyList<string> BuildTouchedDownloadAssetPaths(IReadOnlyList<AssetDownloadPreparedJob> preparedJobs)
+        {
+            var touchedAssetPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (AssetDownloadPreparedJob preparedJob in preparedJobs ?? Array.Empty<AssetDownloadPreparedJob>())
+            {
+                foreach (AssetDownloadPreparedFile preparedFile in preparedJob?.FilesToDownload ?? Enumerable.Empty<AssetDownloadPreparedFile>())
+                {
+                    if (preparedFile != null)
+                    {
+                        touchedAssetPaths.Add(GetPreparedFileAssetPath(preparedFile));
+                    }
+                }
+            }
+
+            return touchedAssetPaths.OrderBy(path => path, StringComparer.OrdinalIgnoreCase).ToArray();
+        }
+
+        private static string GetPreparedFileAssetPath(AssetDownloadPreparedFile preparedFile)
+        {
+            if (preparedFile == null)
+            {
+                throw new InvalidOperationException("A prepared download file was missing.");
+            }
+
+            string assetPath = preparedFile.ImportedAssetPath;
+            if (string.IsNullOrWhiteSpace(assetPath)
+                && (!AssetDownloadPathUtility.TryConvertAbsolutePathToAssetsPath(preparedFile.LocalFilePath, out assetPath)
+                    || string.IsNullOrWhiteSpace(assetPath)))
+            {
+                throw new InvalidOperationException($"Downloaded asset target path '{preparedFile.LocalFilePath}' resolved outside the Unity project's Assets folder.");
+            }
+
+            if (!AssetDownloadPathUtility.TryNormalizeAssetsPath(assetPath, out string normalizedAssetPath))
+            {
+                throw new InvalidOperationException($"Downloaded asset target path '{assetPath}' is not a valid project Assets path.");
+            }
+
+            return normalizedAssetPath;
+        }
+
+        private static string ResolveDownloadAssetPathOrThrow(string assetPath)
+        {
+            string absolutePath = AssetDownloadPathUtility.AbsoluteFromAssetsPath(assetPath);
+            if (string.IsNullOrWhiteSpace(absolutePath)
+                || !EditorPathUtility.IsPathWithinRoot(absolutePath, Application.dataPath))
+            {
+                throw new IOException($"Downloaded asset path '{assetPath}' resolved outside the Unity project's Assets folder.");
+            }
+
+            return absolutePath;
+        }
+
+        private static string CreateDownloadBackupRoot()
+        {
+            string backupBasePath = Path.Combine(GetDownloadStageRootBasePath(), "__backups");
+            string operationFolderName = DateTime.UtcNow.ToString("yyyyMMddHHmmssfff") + "-" + Guid.NewGuid().ToString("N");
+            string backupRootPath = Path.GetFullPath(Path.Combine(backupBasePath, operationFolderName));
+            if (!IsPathWithinRoot(backupRootPath, backupBasePath))
+            {
+                throw new InvalidOperationException("The download backup path resolved outside the HoyoToon download cache.");
+            }
+
+            return backupRootPath;
+        }
+
+        private static string ResolveDownloadBackupPath(string backupRootPath, string assetPath)
+        {
+            if (!AssetDownloadPathUtility.TryNormalizeAssetsPath(assetPath, out string normalizedAssetPath))
+            {
+                throw new IOException($"Downloaded asset backup path '{assetPath}' is not a valid project Assets path.");
+            }
+
+            return Path.Combine(backupRootPath, ResourceSyncStorage.ToPlatformPath(normalizedAssetPath));
+        }
+
+        private static void CleanupDownloadStage(string stageRootPath)
+        {
+            if (string.IsNullOrWhiteSpace(stageRootPath))
+            {
+                return;
+            }
+
+            string stageBasePath = GetDownloadStageRootBasePath();
+            if (!IsPathWithinRoot(stageRootPath, stageBasePath))
+            {
+                HoyoToonLogger.Warning(HoyoToonLogCategory.Models, $"Skipped cleanup for unexpected download stage path '{stageRootPath}'.");
+                return;
+            }
+
+            try
+            {
+                if (Directory.Exists(stageRootPath))
+                {
+                    Directory.Delete(stageRootPath, true);
+                }
+            }
+            catch (Exception exception)
+            {
+                HoyoToonLogger.Warning(HoyoToonLogCategory.Models, $"Failed to clean up download stage path '{stageRootPath}'.", exception);
+            }
+        }
+
+        private static string GetDownloadStageRootBasePath()
+        {
+            return Path.GetFullPath(Path.Combine(
+                ResourceSyncStorage.ProjectRootPath,
+                ResourceSyncStorage.ToPlatformPath(DownloadStageRootRelativePath)));
+        }
+
+        private static bool IsPathWithinRoot(string path, string root)
+        {
+            if (string.IsNullOrWhiteSpace(path) || string.IsNullOrWhiteSpace(root))
+            {
+                return false;
+            }
+
+            string normalizedPath = Path.GetFullPath(path)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            string normalizedRoot = Path.GetFullPath(root)
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            return normalizedPath.StartsWith(normalizedRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
+                || normalizedPath.StartsWith(normalizedRoot + Path.AltDirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
         }
 
         private async Task<List<AssetDownloadJob>> ResolveJobsAsync(
@@ -1857,7 +2088,7 @@ namespace HoyoToon.Editor.Assets
                 lastManagerDownloadedModelAssetPathsByCharacter[characterName] = paths;
             }
 
-            string normalizedPath = assetPath.Replace('\\', '/');
+            string normalizedPath = EditorPathUtility.NormalizeAssetPath(assetPath);
             if (!paths.Any(path => string.Equals(path, normalizedPath, StringComparison.OrdinalIgnoreCase)))
             {
                 paths.Add(normalizedPath);
@@ -2563,9 +2794,7 @@ namespace HoyoToon.Editor.Assets
 
             foreach (string assetPath in importedAssetPaths ?? Enumerable.Empty<string>())
             {
-                string normalizedAssetPath = string.IsNullOrWhiteSpace(assetPath)
-                    ? string.Empty
-                    : assetPath.Replace('\\', '/');
+                string normalizedAssetPath = EditorPathUtility.NormalizeAssetPath(assetPath);
                 if (string.IsNullOrWhiteSpace(normalizedAssetPath)
                     || !seenPaths.Add(normalizedAssetPath))
                 {

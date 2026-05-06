@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using HoyoToon.Runtime.Rendering.Utilities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -60,6 +61,13 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
             CameraType cameraType = renderingData.cameraData.cameraType;
             if (cameraType == CameraType.Preview || cameraType == CameraType.Reflection)
             {
+                return;
+            }
+
+            int cameraId = renderingData.cameraData.camera != null ? renderingData.cameraData.camera.GetInstanceID() : -1;
+            if (!ShouldEnqueueBloomPass())
+            {
+                MarkBloomTextureUnavailable(cameraId);
                 return;
             }
 
@@ -132,11 +140,29 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
             return GraphicsFormat.R8G8B8A8_UNorm;
         }
 
+        private static bool ShouldEnqueueBloomPass()
+        {
+            RPGUber uberSettings = VolumeManager.instance.stack.GetComponent<RPGUber>();
+            bool shouldUseUberControl = uberSettings != null
+                && uberSettings.UseUberControl.overrideState
+                && uberSettings.UseUberControl.value;
+            if (shouldUseUberControl && !uberSettings.EnableBloom.value)
+                return false;
+
+            RPGBloom settings = VolumeManager.instance.stack.GetComponent<RPGBloom>();
+            if (settings == null || !settings.IsActive())
+                return false;
+
+            List<RPGBloom.BloomStage> stageList = settings.AllBloomStages.value?.Stages;
+            return stageList != null && stageList.Count > 0;
+        }
+
         class RPGBloomRenderPass : ScriptableRenderPass
         {
             private const int BloomAtlasBlurCount = 4;
             private const int BloomMaxKernelSize = 32;
             private const int BloomAtlasPadding = 1;
+            private const int BloomPassSnapshotRingSize = 8;
 
             private static readonly Vector2Int[] FixedBloomMipSizes =
             {
@@ -209,8 +235,10 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
             private readonly Vector4[] _atlasUvTransforms = new Vector4[BloomAtlasBlurCount];
             private readonly float[] _gaussianWeightScratch = new float[BloomMaxKernelSize];
             private readonly TextureHandle[] _mipDownHandles = new TextureHandle[FixedBloomMipSizes.Length];
+            private readonly BloomPassSnapshot[] _passSnapshots = new BloomPassSnapshot[BloomPassSnapshotRingSize];
             private int _lastBloomKernelSourceHash;
             private int _lastGaussianKernelDataHash;
+            private int _nextPassSnapshotIndex;
             private bool _hasBloomKernelData;
             private bool _hasGaussianKernelData;
 
@@ -219,13 +247,17 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 internal Material material;
                 internal TextureHandle source;
                 internal TextureHandle bloomOutput;
-                internal TextureHandle[] mipDown;
+                internal TextureHandle mipDown0;
+                internal TextureHandle mipDown1;
+                internal TextureHandle mipDown2;
+                internal TextureHandle mipDown3;
+                internal TextureHandle mipDown4;
+                internal TextureHandle mipDown5;
+                internal int mipDownCount;
                 internal int blurStartIndex;
                 internal int blurStageCount;
                 internal TextureHandle atlas1;
                 internal TextureHandle atlas2;
-                internal Rect[] atlasViewports;
-                internal Vector4[] atlasUvMinMax;
                 internal int outputWidth;
                 internal int outputHeight;
 
@@ -255,19 +287,73 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 internal int atlasWidth;
                 internal int atlasHeight;
 
-                internal int[] kernelSizes;
-                internal float[][] kernels;
-                internal float[][] gaussWeightsHorizontal;
-                internal Vector4[][] gaussOffsetsHorizontal;
-                internal float[][] gaussWeightsVertical;
-                internal Vector4[][] gaussOffsetsVertical;
-                internal float[] layerIntensities;
-                internal Vector4[] atlasUvTransforms;
+                internal BloomPassSnapshot snapshot;
                 internal float bloomThreshold;
                 internal float bloomIntensity;
                 internal float bloomR;
                 internal float bloomG;
                 internal float bloomB;
+
+                internal TextureHandle GetMipDown(int index)
+                {
+                    switch (index)
+                    {
+                        case 0: return mipDown0;
+                        case 1: return mipDown1;
+                        case 2: return mipDown2;
+                        case 3: return mipDown3;
+                        case 4: return mipDown4;
+                        case 5: return mipDown5;
+                        default: return default;
+                    }
+                }
+
+                internal void SetMipDown(int index, TextureHandle handle)
+                {
+                    switch (index)
+                    {
+                        case 0:
+                            mipDown0 = handle;
+                            break;
+                        case 1:
+                            mipDown1 = handle;
+                            break;
+                        case 2:
+                            mipDown2 = handle;
+                            break;
+                        case 3:
+                            mipDown3 = handle;
+                            break;
+                        case 4:
+                            mipDown4 = handle;
+                            break;
+                        case 5:
+                            mipDown5 = handle;
+                            break;
+                    }
+                }
+            }
+
+            private sealed class BloomPassSnapshot
+            {
+                internal readonly int[] kernelSizes = new int[BloomAtlasBlurCount];
+                internal readonly float[][] kernels = CreateFloatJaggedBuffer();
+                internal readonly float[][] gaussWeightsHorizontal = CreateFloatJaggedBuffer();
+                internal readonly Vector4[][] gaussOffsetsHorizontal = CreateVectorJaggedBuffer();
+                internal readonly float[][] gaussWeightsVertical = CreateFloatJaggedBuffer();
+                internal readonly Vector4[][] gaussOffsetsVertical = CreateVectorJaggedBuffer();
+                internal readonly float[] layerIntensities = new float[BloomAtlasBlurCount];
+                internal readonly Rect[] atlasViewports = new Rect[BloomAtlasBlurCount];
+                internal readonly Vector4[] atlasUvMinMax = new Vector4[BloomAtlasBlurCount];
+                internal readonly Vector4[] atlasUvTransforms = new Vector4[BloomAtlasBlurCount];
+                internal int sourceHash;
+                internal bool hasData;
+            }
+
+            private sealed class ClearBloomTexturePassData
+            {
+                internal TextureHandle fallbackTexture;
+                internal int bloomTextureId;
             }
 
             public RPGBloomRenderPass()
@@ -283,6 +369,11 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                     _gaussOffsetsHorizontal[i] = new Vector4[BloomMaxKernelSize];
                     _gaussWeightsVertical[i] = new float[BloomMaxKernelSize];
                     _gaussOffsetsVertical[i] = new Vector4[BloomMaxKernelSize];
+                }
+
+                for (int i = 0; i < _passSnapshots.Length; ++i)
+                {
+                    _passSnapshots[i] = new BloomPassSnapshot();
                 }
             }
 
@@ -319,7 +410,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                     _passIndices.Remove(passName);
                 }
 
-                int passIndex = _material.FindPass(passName);
+                int passIndex = MaterialPassResolver.ResolveNamedPass(_material, passName);
                 if (passIndex < 0)
                 {
                     Debug.LogWarning($"{nameof(RPGBloomRenderer)}: shader pass '{passName}' was not found on '{ShaderName}'.");
@@ -600,17 +691,18 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 nativeCmd.SetGlobalFloat(data.bloomRId, data.bloomR);
                 nativeCmd.SetGlobalFloat(data.bloomGId, data.bloomG);
                 nativeCmd.SetGlobalFloat(data.bloomBId, data.bloomB);
-                nativeCmd.SetGlobalVectorArray(data.bloomUVMinMaxId, data.atlasUvMinMax);
+                BloomPassSnapshot snapshot = data.snapshot;
+                nativeCmd.SetGlobalVectorArray(data.bloomUVMinMaxId, snapshot.atlasUvMinMax);
 
                 // Prefilter pass.
-                cmd.SetRenderTarget(data.mipDown[0]);
+                cmd.SetRenderTarget(data.GetMipDown(0));
                 Blitter.BlitTexture(nativeCmd, data.source, FullscreenScaleBias, data.material, data.prefilterPass);
 
                 // Downsample chain.
-                for (int i = 1; i < data.mipDown.Length; i++)
+                for (int i = 1; i < data.mipDownCount; i++)
                 {
-                    cmd.SetRenderTarget(data.mipDown[i]);
-                    Blitter.BlitTexture(nativeCmd, data.mipDown[i - 1], FullscreenScaleBias, data.material, data.downsamplePass);
+                    cmd.SetRenderTarget(data.GetMipDown(i));
+                    Blitter.BlitTexture(nativeCmd, data.GetMipDown(i - 1), FullscreenScaleBias, data.material, data.downsamplePass);
                 }
 
                 int blurAtlasVerticalPass = data.gaussianPass;
@@ -624,16 +716,16 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 {
                     int sourceIndex = data.blurStartIndex + i;
                     nativeCmd.SetGlobalInt(data.bloomUVIndexId, i);
-                    nativeCmd.SetGlobalInt(data.bloomKernelSizeId, data.kernelSizes[i]);
-                    nativeCmd.SetGlobalFloatArray(data.bloomKernelId, data.kernels[i]);
-                    nativeCmd.SetGlobalFloat(data.bloomLayerIntensityId, data.layerIntensities[i]);
-                    nativeCmd.SetGlobalInt(data.gaussTapsId, data.kernelSizes[i]);
-                    nativeCmd.SetGlobalVectorArray(data.gaussOffsetId, data.gaussOffsetsHorizontal[i]);
-                    nativeCmd.SetGlobalFloatArray(data.gaussWeightsId, data.gaussWeightsHorizontal[i]);
+                    nativeCmd.SetGlobalInt(data.bloomKernelSizeId, snapshot.kernelSizes[i]);
+                    nativeCmd.SetGlobalFloatArray(data.bloomKernelId, snapshot.kernels[i]);
+                    nativeCmd.SetGlobalFloat(data.bloomLayerIntensityId, snapshot.layerIntensities[i]);
+                    nativeCmd.SetGlobalInt(data.gaussTapsId, snapshot.kernelSizes[i]);
+                    nativeCmd.SetGlobalVectorArray(data.gaussOffsetId, snapshot.gaussOffsetsHorizontal[i]);
+                    nativeCmd.SetGlobalFloatArray(data.gaussWeightsId, snapshot.gaussWeightsHorizontal[i]);
                     nativeCmd.SetGlobalVector(data.blurScaleId, new Vector4(1f, 0f, 0f, 0f));
 
-                    cmd.SetViewport(data.atlasViewports[i]);
-                    Blitter.BlitTexture(nativeCmd, data.mipDown[sourceIndex], FullscreenScaleBias, data.material, blurAtlasVerticalPass);
+                    cmd.SetViewport(snapshot.atlasViewports[i]);
+                    Blitter.BlitTexture(nativeCmd, data.GetMipDown(sourceIndex), FullscreenScaleBias, data.material, blurAtlasVerticalPass);
                 }
 
                 // Horizontal/second blur pass into Atlas2.
@@ -645,21 +737,16 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                     Vector4 horizontalBlurScale = new Vector4(0f, 1f, 0f, 0f);
 
                     nativeCmd.SetGlobalInt(data.bloomUVIndexId, i);
-                    nativeCmd.SetGlobalInt(data.bloomKernelSizeId, data.kernelSizes[i]);
-                    nativeCmd.SetGlobalFloatArray(data.bloomKernelId, data.kernels[i]);
-                    nativeCmd.SetGlobalFloat(data.bloomLayerIntensityId, data.layerIntensities[i]);
-                    nativeCmd.SetGlobalInt(data.gaussTapsId, data.kernelSizes[i]);
-                    nativeCmd.SetGlobalVectorArray(data.gaussOffsetId, data.gaussOffsetsVertical[i]);
-                    nativeCmd.SetGlobalFloatArray(data.gaussWeightsId, data.gaussWeightsVertical[i]);
+                    nativeCmd.SetGlobalInt(data.bloomKernelSizeId, snapshot.kernelSizes[i]);
+                    nativeCmd.SetGlobalFloatArray(data.bloomKernelId, snapshot.kernels[i]);
+                    nativeCmd.SetGlobalFloat(data.bloomLayerIntensityId, snapshot.layerIntensities[i]);
+                    nativeCmd.SetGlobalInt(data.gaussTapsId, snapshot.kernelSizes[i]);
+                    nativeCmd.SetGlobalVectorArray(data.gaussOffsetId, snapshot.gaussOffsetsVertical[i]);
+                    nativeCmd.SetGlobalFloatArray(data.gaussWeightsId, snapshot.gaussWeightsVertical[i]);
                     nativeCmd.SetGlobalVector(data.blurScaleId, horizontalBlurScale);
 
-                    Vector4 uvMinMax = data.atlasUvMinMax[i];
-                    Vector4 uvTransform = new Vector4(
-                        uvMinMax.z - uvMinMax.x,
-                        uvMinMax.w - uvMinMax.y,
-                        uvMinMax.x,
-                        uvMinMax.y);
-                    data.atlasUvTransforms[i] = uvTransform;
+                    Vector4 uvMinMax = snapshot.atlasUvMinMax[i];
+                    Vector4 uvTransform = snapshot.atlasUvTransforms[i];
 
                     float texelX = 1f / Mathf.Max(1, data.atlasWidth);
                     float texelY = 1f / Mathf.Max(1, data.atlasHeight);
@@ -677,16 +764,112 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                     nativeCmd.SetGlobalVector(data.gaussianUVTransformId, uvTransform);
                     nativeCmd.SetGlobalVector(data.gaussianUVClampId, uvClamp);
 
-                    cmd.SetViewport(data.atlasViewports[i]);
+                    cmd.SetViewport(snapshot.atlasViewports[i]);
                     Blitter.BlitTexture(nativeCmd, data.atlas1, FullscreenScaleBias, data.material, blurAtlasHorizontalPass);
                 }
 
                 // Final atlas combine back to camera-sized destination.
                 cmd.SetRenderTarget(data.bloomOutput);
                 cmd.SetViewport(new Rect(0f, 0f, data.outputWidth, data.outputHeight));
-                nativeCmd.SetGlobalVectorArray(data.bloomAtlasUVTransId, data.atlasUvTransforms);
+                nativeCmd.SetGlobalVectorArray(data.bloomAtlasUVTransId, snapshot.atlasUvTransforms);
                 Blitter.BlitTexture(nativeCmd, data.atlas2, FullscreenScaleBias, data.material, data.atlasCombinePass);
 
+            }
+
+            private static void ExecuteClearBloomTexturePass(ClearBloomTexturePassData data, RasterGraphContext context)
+            {
+                context.cmd.SetGlobalTexture(data.bloomTextureId, data.fallbackTexture);
+            }
+
+            private void RecordClearBloomTexturePass(RenderGraph renderGraph)
+            {
+                using (var builder = renderGraph.AddRasterRenderPass<ClearBloomTexturePassData>("RPG Bloom Globals", out var passData))
+                {
+                    passData.fallbackTexture = renderGraph.defaultResources.blackTexture;
+                    passData.bloomTextureId = _hsrBloomTexId;
+
+                    builder.UseTexture(passData.fallbackTexture, AccessFlags.Read);
+                    builder.AllowGlobalStateModification(true);
+                    builder.AllowPassCulling(false);
+                    builder.SetGlobalTextureAfterPass(passData.fallbackTexture, _hsrBloomTexId);
+                    builder.SetRenderFunc(static (ClearBloomTexturePassData data, RasterGraphContext context) => ExecuteClearBloomTexturePass(data, context));
+                }
+            }
+
+            private static float[][] CreateFloatJaggedBuffer()
+            {
+                float[][] buffer = new float[BloomAtlasBlurCount][];
+                for (int i = 0; i < buffer.Length; ++i)
+                    buffer[i] = new float[BloomMaxKernelSize];
+                return buffer;
+            }
+
+            private static Vector4[][] CreateVectorJaggedBuffer()
+            {
+                Vector4[][] buffer = new Vector4[BloomAtlasBlurCount][];
+                for (int i = 0; i < buffer.Length; ++i)
+                    buffer[i] = new Vector4[BloomMaxKernelSize];
+                return buffer;
+            }
+
+            private int ComputeBloomPassSnapshotHash(int blurStartIndex, int atlasWidth, int atlasHeight, int outputWidth, int outputHeight)
+            {
+                unchecked
+                {
+                    int hash = 17;
+                    hash = hash * 31 + _blurStageCount;
+                    hash = hash * 31 + _mipDownCount;
+                    hash = hash * 31 + blurStartIndex;
+                    hash = hash * 31 + atlasWidth;
+                    hash = hash * 31 + atlasHeight;
+                    hash = hash * 31 + outputWidth;
+                    hash = hash * 31 + outputHeight;
+                    hash = hash * 31 + _lastBloomKernelSourceHash;
+                    hash = hash * 31 + _lastGaussianKernelDataHash;
+                    for (int i = 0; i < _blurStageCount; ++i)
+                    {
+                        hash = hash * 31 + _layerIntensities[i].GetHashCode();
+                    }
+
+                    return hash;
+                }
+            }
+
+            private BloomPassSnapshot GetBloomPassSnapshot(int sourceHash)
+            {
+                for (int i = 0; i < _passSnapshots.Length; ++i)
+                {
+                    BloomPassSnapshot existingSnapshot = _passSnapshots[i];
+                    if (existingSnapshot.hasData && existingSnapshot.sourceHash == sourceHash)
+                        return existingSnapshot;
+                }
+
+                BloomPassSnapshot snapshot = _passSnapshots[_nextPassSnapshotIndex];
+                _nextPassSnapshotIndex = (_nextPassSnapshotIndex + 1) % _passSnapshots.Length;
+
+                CopyBloomPassSnapshot(snapshot, sourceHash);
+                return snapshot;
+            }
+
+            private void CopyBloomPassSnapshot(BloomPassSnapshot snapshot, int sourceHash)
+            {
+                snapshot.sourceHash = sourceHash;
+                snapshot.hasData = true;
+
+                Array.Copy(_kernelSizes, snapshot.kernelSizes, BloomAtlasBlurCount);
+                Array.Copy(_layerIntensities, snapshot.layerIntensities, BloomAtlasBlurCount);
+                Array.Copy(_atlasViewports, snapshot.atlasViewports, BloomAtlasBlurCount);
+                Array.Copy(_atlasUvMinMax, snapshot.atlasUvMinMax, BloomAtlasBlurCount);
+                Array.Copy(_atlasUvTransforms, snapshot.atlasUvTransforms, BloomAtlasBlurCount);
+
+                for (int i = 0; i < BloomAtlasBlurCount; ++i)
+                {
+                    Array.Copy(_kernels[i], snapshot.kernels[i], BloomMaxKernelSize);
+                    Array.Copy(_gaussWeightsHorizontal[i], snapshot.gaussWeightsHorizontal[i], BloomMaxKernelSize);
+                    Array.Copy(_gaussOffsetsHorizontal[i], snapshot.gaussOffsetsHorizontal[i], BloomMaxKernelSize);
+                    Array.Copy(_gaussWeightsVertical[i], snapshot.gaussWeightsVertical[i], BloomMaxKernelSize);
+                    Array.Copy(_gaussOffsetsVertical[i], snapshot.gaussOffsetsVertical[i], BloomMaxKernelSize);
+                }
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -698,7 +881,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 if (!TryApplyVolumeSettings())
                 {
                     MarkBloomTextureUnavailable(cameraId);
-                    Shader.SetGlobalTexture(_hsrBloomTexId, Texture2D.blackTexture);
+                    RecordClearBloomTexturePass(renderGraph);
                     return;
                 }
 
@@ -711,7 +894,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 if (prefilterPassIndex < 0 || downsamplePassIndex < 0 || gaussianPassIndex < 0 || atlasCombinePassIndex < 0)
                 {
                     MarkBloomTextureUnavailable(cameraId);
-                    Shader.SetGlobalTexture(_hsrBloomTexId, Texture2D.blackTexture);
+                    RecordClearBloomTexturePass(renderGraph);
                     return;
                 }
 
@@ -725,7 +908,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 if (!source.IsValid())
                 {
                     MarkBloomTextureUnavailable(cameraId);
-                    Shader.SetGlobalTexture(_hsrBloomTexId, Texture2D.blackTexture);
+                    RecordClearBloomTexturePass(renderGraph);
                     return;
                 }
 
@@ -781,19 +964,29 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                 bloomOutputDesc.width = BloomOutputWidth;
                 bloomOutputDesc.height = BloomOutputHeight;
                 TextureHandle bloomOutput = UniversalRenderer.CreateRenderGraphTexture(renderGraph, bloomOutputDesc, "RPG_BloomCombined", false, FilterMode.Bilinear);
+                int snapshotHash = ComputeBloomPassSnapshotHash(
+                    blurStartIndex,
+                    atlasDesc.width,
+                    atlasDesc.height,
+                    bloomOutputDesc.width,
+                    bloomOutputDesc.height);
+                BloomPassSnapshot snapshot = GetBloomPassSnapshot(snapshotHash);
 
                 using (IUnsafeRenderGraphBuilder builder = renderGraph.AddUnsafePass<BloomAtlasPassData>(RenderGraphName, out BloomAtlasPassData passData))
                 {
                     passData.material = _material;
                     passData.source = prefilterSource;
                     passData.bloomOutput = bloomOutput;
-                    passData.mipDown = _mipDownHandles;
+                    passData.mipDownCount = _mipDownCount;
+                    for (int i = 0; i < _mipDownCount; ++i)
+                    {
+                        passData.SetMipDown(i, _mipDownHandles[i]);
+                    }
+
                     passData.blurStartIndex = blurStartIndex;
                     passData.blurStageCount = _blurStageCount;
                     passData.atlas1 = atlas1;
                     passData.atlas2 = atlas2;
-                    passData.atlasViewports = _atlasViewports;
-                    passData.atlasUvMinMax = _atlasUvMinMax;
                     passData.outputWidth = bloomOutputDesc.width;
                     passData.outputHeight = bloomOutputDesc.height;
 
@@ -823,14 +1016,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                     passData.atlasWidth = atlasDesc.width;
                     passData.atlasHeight = atlasDesc.height;
 
-                    passData.kernelSizes = _kernelSizes;
-                    passData.kernels = _kernels;
-                    passData.gaussWeightsHorizontal = _gaussWeightsHorizontal;
-                    passData.gaussOffsetsHorizontal = _gaussOffsetsHorizontal;
-                    passData.gaussWeightsVertical = _gaussWeightsVertical;
-                    passData.gaussOffsetsVertical = _gaussOffsetsVertical;
-                    passData.layerIntensities = _layerIntensities;
-                    passData.atlasUvTransforms = _atlasUvTransforms;
+                    passData.snapshot = snapshot;
                     passData.bloomThreshold = _bloomThreshold;
                     passData.bloomIntensity = _bloomIntensity;
                     passData.bloomR = _bloomR;
@@ -838,15 +1024,16 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom
                     passData.bloomB = _bloomB;
 
                     builder.UseTexture(prefilterSource, AccessFlags.Read);
-                    for (int i = 0; i < _mipDownCount; i++)
+                    for (int i = 0; i < passData.mipDownCount; i++)
                     {
-                        builder.UseTexture(_mipDownHandles[i], AccessFlags.ReadWrite);
+                        builder.UseTexture(passData.GetMipDown(i), AccessFlags.ReadWrite);
                     }
 
                     builder.UseTexture(atlas1, AccessFlags.ReadWrite);
                     builder.UseTexture(atlas2, AccessFlags.ReadWrite);
                     builder.UseTexture(bloomOutput, AccessFlags.WriteAll);
                     builder.SetGlobalTextureAfterPass(bloomOutput, _hsrBloomTexId);
+                    builder.AllowGlobalStateModification(true);
                     builder.AllowPassCulling(false);
 
                     builder.SetRenderFunc(static (BloomAtlasPassData data, UnsafeGraphContext context) => ExecuteBloomAtlasPass(data, context));

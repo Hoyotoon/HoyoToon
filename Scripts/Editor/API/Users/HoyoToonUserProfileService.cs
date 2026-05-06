@@ -98,6 +98,10 @@ namespace HoyoToon.Editor.API.Users
                     return SaveApiUser(apiUser, localProfile);
                 }
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
             catch
             {
                 return SaveCachedUser(cachedProfile, localProfile);

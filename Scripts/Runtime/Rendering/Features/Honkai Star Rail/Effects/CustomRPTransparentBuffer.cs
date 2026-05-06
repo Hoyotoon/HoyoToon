@@ -4,10 +4,12 @@ using HoyoToon.Runtime.Rendering.HSR;
 using HoyoToon.Runtime.Rendering.Utilities;
 using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Scene.HSR;
+using HoyoToon.Runtime.Utilities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.RenderGraphModule;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 public class CustomRPTransparentBuffer : ScriptableRendererFeature
 {
@@ -59,12 +61,12 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
         readonly CustomRPTransparentBufferSettings settings;
         readonly List<HSRCharacterController> m_Controllers = new List<HSRCharacterController>();
         readonly List<DrawItem> m_DrawItems = new List<DrawItem>();
-        readonly HashSet<int> m_DrawItemKeys = new HashSet<int>();
+        readonly HashSet<DrawItemKey> m_DrawItemKeys = new HashSet<DrawItemKey>();
         readonly List<Material> m_SharedMaterialScratch = new List<Material>(8);
         DrawItem[] m_DrawItemSnapshot = Array.Empty<DrawItem>();
         int m_DrawItemSnapshotCount;
-        int m_LastDrawItemBuildFrame = -1;
-        int m_LastDrawItemSourceHash;
+        bool m_HasDrawItemSnapshot;
+        int m_LastDrawItemSourceVersion;
         static readonly ShaderTagId s_LightModeTag = new ShaderTagId("LightMode");
         const string RequiredLightModeTag = "CustomRPTransparent";
 
@@ -75,6 +77,48 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
             public Renderer Renderer;
             public Material Material;
             public int SubMeshIndex;
+            public int PassIndex;
+        }
+
+        readonly struct DrawItemKey : IEquatable<DrawItemKey>
+        {
+            public readonly int RendererId;
+            public readonly int MaterialId;
+            public readonly int SubmeshIndex;
+            public readonly int PassIndex;
+
+            public DrawItemKey(Renderer renderer, Material material, int submeshIndex, int passIndex)
+            {
+                RendererId = renderer != null ? renderer.GetInstanceID() : 0;
+                MaterialId = material != null ? material.GetInstanceID() : 0;
+                SubmeshIndex = submeshIndex;
+                PassIndex = passIndex;
+            }
+
+            public bool Equals(DrawItemKey other)
+            {
+                return RendererId == other.RendererId
+                    && MaterialId == other.MaterialId
+                    && SubmeshIndex == other.SubmeshIndex
+                    && PassIndex == other.PassIndex;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is DrawItemKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    int hash = RendererId;
+                    hash = (hash * 397) ^ MaterialId;
+                    hash = (hash * 397) ^ SubmeshIndex;
+                    hash = (hash * 397) ^ PassIndex;
+                    return hash;
+                }
+            }
         }
 
         public CustomRPTransparentBufferPass(CustomRPTransparentBufferSettings settings)
@@ -96,6 +140,8 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
         {
             public DrawItem[] drawItems;
             public int drawItemCount;
+            public HsrInheritedLightingGlobals.SceneGlobalState sceneGlobals;
+            public HsrInheritedLightingGlobals.SceneKeywordState sceneKeywords;
         }
 
         static bool HasRequiredLightModePass(Material material)
@@ -108,44 +154,33 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
             if (renderer == null)
                 return 0;
 
-            if (renderer is SkinnedMeshRenderer skinnedRenderer)
-            {
-                Mesh skinnedMesh = skinnedRenderer.sharedMesh;
-                if (skinnedMesh != null)
-                    return skinnedMesh.subMeshCount;
-            }
-
-            if (renderer is MeshRenderer)
-            {
-                MeshFilter meshFilter = renderer.GetComponent<MeshFilter>();
-                if (meshFilter != null && meshFilter.sharedMesh != null)
-                    return meshFilter.sharedMesh.subMeshCount;
-            }
-
-            return sharedMaterialCount;
+            int subMeshCount = RendererTraversalUtility.GetSubMeshCount(renderer);
+            return subMeshCount > 0 ? subMeshCount : sharedMaterialCount;
         }
 
-        bool EnsureDrawItemSnapshot()
+        bool EnsureDrawItemSnapshot(UnityScene scene)
         {
-            int sourceHash = CaptureDrawItemSourceHash();
-            if (m_LastDrawItemBuildFrame == Time.frameCount && sourceHash == m_LastDrawItemSourceHash)
+            int sourceVersion = CaptureDrawItemSourceVersion(scene);
+            if (m_HasDrawItemSnapshot && sourceVersion == m_LastDrawItemSourceVersion)
                 return m_DrawItemSnapshotCount > 0;
 
             RebuildDrawItemsFromControllers();
             m_DrawItemSnapshotCount = RendererSnapshotUtility.CopyToSnapshot(m_DrawItems, ref m_DrawItemSnapshot);
-            m_LastDrawItemBuildFrame = Time.frameCount;
-            m_LastDrawItemSourceHash = sourceHash;
+            m_HasDrawItemSnapshot = true;
+            m_LastDrawItemSourceVersion = sourceVersion;
             return m_DrawItemSnapshotCount > 0;
         }
 
-        int CaptureDrawItemSourceHash()
+        int CaptureDrawItemSourceVersion(UnityScene scene)
         {
-            HSRCharacterController.GetActiveControllers(m_Controllers, forceRefresh: false);
+            HSRCharacterController.GetRegisteredActiveControllersInScene(scene, m_Controllers);
 
             unchecked
             {
                 int hash = 17;
+                hash = hash * 31 + RenderSceneUtility.GetSceneHandleOrDefault(scene);
                 hash = hash * 31 + HSRCharacterController.RendererTopologyVersion;
+                hash = hash * 31 + HsrRendererMaterialQueryUtility.MaterialPassCacheVersion;
                 hash = hash * 31 + m_Controllers.Count;
                 for (int i = 0; i < m_Controllers.Count; ++i)
                 {
@@ -179,7 +214,7 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
                 for (int rendererIndex = 0; rendererIndex < scopedRenderers.Length; ++rendererIndex)
                 {
                     Renderer renderer = scopedRenderers[rendererIndex];
-                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    if (renderer == null)
                         continue;
 
                     if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, m_SharedMaterialScratch, out int slottedMaterialCount))
@@ -218,7 +253,7 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
                     for (int rendererIndex = 0; rendererIndex < scopedRenderers.Length; ++rendererIndex)
                     {
                         Renderer renderer = scopedRenderers[rendererIndex];
-                        if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                        if (renderer == null)
                             continue;
 
                         HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, m_SharedMaterialScratch, out int sharedMaterialCount);
@@ -242,7 +277,8 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
             if (renderer == null || material == null || subMeshIndex < 0)
                 return;
 
-            int key = BuildDrawItemKey(renderer, material, subMeshIndex);
+            int passIndex = -1;
+            DrawItemKey key = new DrawItemKey(renderer, material, subMeshIndex, passIndex);
             if (!m_DrawItemKeys.Add(key))
                 return;
 
@@ -250,40 +286,48 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
             {
                 Renderer = renderer,
                 Material = material,
-                SubMeshIndex = subMeshIndex
+                SubMeshIndex = subMeshIndex,
+                PassIndex = passIndex
             });
-        }
-
-        static int BuildDrawItemKey(Renderer renderer, Material material, int subMeshIndex)
-        {
-            unchecked
-            {
-                int hash = 17;
-                hash = hash * 31 + renderer.GetInstanceID();
-                hash = hash * 31 + material.GetInstanceID();
-                hash = hash * 31 + subMeshIndex;
-                return hash;
-            }
         }
 
         // This static method is passed as the RenderFunc delegate to the RenderGraph render pass.
         // It is used to execute draw commands.
         static void ExecutePass(PassData data, RasterGraphContext context)
         {
-            HsrInheritedLightingGlobals.Apply(HSRSceneController.instance, clearEnvironmentWhenMissing: false);
+            HsrInheritedLightingGlobals.ApplySceneGlobals(context.cmd, data.sceneGlobals);
+            HsrInheritedLightingGlobals.ApplySceneKeywords(context.cmd, data.sceneKeywords);
 
             DrawItem[] drawItems = data.drawItems;
             if (drawItems == null)
+            {
+                HsrInheritedLightingGlobals.ClearSceneKeywords(context.cmd);
                 return;
+            }
 
             for (int i = 0; i < data.drawItemCount; ++i)
             {
                 DrawItem drawItem = drawItems[i];
-                if (drawItem.Renderer == null || drawItem.Material == null)
+                if (!IsDrawItemRenderable(drawItem))
                     continue;
 
-                context.cmd.DrawRenderer(drawItem.Renderer, drawItem.Material, drawItem.SubMeshIndex);
+                if (drawItem.PassIndex >= 0)
+                    context.cmd.DrawRenderer(drawItem.Renderer, drawItem.Material, drawItem.SubMeshIndex, drawItem.PassIndex);
+                else
+                    context.cmd.DrawRenderer(drawItem.Renderer, drawItem.Material, drawItem.SubMeshIndex);
             }
+
+            HsrInheritedLightingGlobals.ClearSceneKeywords(context.cmd);
+        }
+
+        static bool IsDrawItemRenderable(DrawItem drawItem)
+        {
+            Renderer renderer = drawItem.Renderer;
+            return renderer != null
+                && drawItem.Material != null
+                && renderer.enabled
+                && renderer.gameObject != null
+                && renderer.gameObject.activeInHierarchy;
         }
 
         // RecordRenderGraph is where the RenderGraph handle can be accessed, through which render passes can be added to the graph.
@@ -296,7 +340,8 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
             if (!ShouldRenderForCamera(cameraData.cameraType, cameraData.isPreviewCamera))
                 return;
 
-            if (!EnsureDrawItemSnapshot())
+            UnityScene renderScene = ResolveRenderScene(cameraData.camera);
+            if (!EnsureDrawItemSnapshot(renderScene))
                 return;
 
             // This adds a raster render pass to the graph, specifying the name and the data type that will be passed to the ExecutePass function.
@@ -311,6 +356,9 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
                 UniversalResourceData resourceData = frameData.Get<UniversalResourceData>();
                 passData.drawItems = m_DrawItemSnapshot;
                 passData.drawItemCount = m_DrawItemSnapshotCount;
+                HSRSceneController sceneController = HSRSceneController.FindForScene(renderScene);
+                passData.sceneGlobals = HsrInheritedLightingGlobals.CaptureSceneGlobals(sceneController, clearEnvironmentWhenMissing: false, cameraData.camera);
+                passData.sceneKeywords = HsrInheritedLightingGlobals.CaptureSceneKeywords(sceneController);
 
                 // Setup pass inputs and outputs through the builder interface.
                 // Eg:
@@ -326,11 +374,20 @@ public class CustomRPTransparentBuffer : ScriptableRendererFeature
                     builder.SetGlobalTextureAfterPass(sharedAlphaMask, k_LightingAlphaMaskId);
                 }
                 builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture, AccessFlags.ReadWrite);
+                builder.AllowGlobalStateModification(true);
                 builder.AllowPassCulling(false);
 
                 // Assigns the ExecutePass function to the render pass delegate. This will be called by the render graph when executing the pass.
                 builder.SetRenderFunc((PassData data, RasterGraphContext context) => ExecutePass(data, context));
             }
         }
+
+        private static UnityScene ResolveRenderScene(Camera camera)
+        {
+            return RenderSceneUtility.ResolveRenderScene(
+                camera,
+                scene => HSRSceneController.FindForScene(scene) != null);
+        }
+
     }
 }

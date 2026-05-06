@@ -5,6 +5,7 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.UIElements;
 using HoyoToon.Editor.Onboarding;
+using HoyoToon.Editor.UI.Manager;
 using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Scene.Environment;
 using HoyoToon.Runtime.Scene.Placement;
@@ -590,6 +591,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             }
 
             action();
+            environmentManager.ApplyNow();
             EditorUtility.SetDirty(environmentManager);
             window?.RefreshManagerContext();
         }
@@ -942,6 +944,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
             Undo.RecordObject(controller, undoLabel);
             action();
+            controller.ApplyNow();
             EditorUtility.SetDirty(controller);
             window?.RefreshManagerContext();
         }
@@ -996,9 +999,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static VisualElement CreateDivider()
         {
-            VisualElement divider = new VisualElement();
-            divider.AddToClassList("ht-divider");
-            return divider;
+            return ManagerUiFactory.CreateDivider();
         }
 
         private static string GetDisplayValue(string value)

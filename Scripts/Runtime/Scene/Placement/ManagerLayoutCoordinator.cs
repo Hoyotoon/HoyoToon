@@ -191,7 +191,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private static bool TryResolveSceneReferences(UnityScene scene, out SceneReferences sceneReferences)
         {
             sceneReferences = null;
-            if (!scene.IsValid())
+            if (!RenderSceneUtility.IsSceneUsable(scene))
                 return false;
 
             SceneReferences resolved = new SceneReferences
@@ -267,7 +267,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         private static ManagerLayoutReferences FindLayoutReferences(UnityScene scene)
         {
-            if (!scene.IsValid())
+            if (!RenderSceneUtility.IsSceneUsable(scene))
                 return null;
 
             GameObject[] roots = scene.GetRootGameObjects();

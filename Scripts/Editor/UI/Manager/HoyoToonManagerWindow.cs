@@ -23,6 +23,7 @@ using HoyoToon.Runtime.Scene.Environment;
 using HoyoToon.Runtime.Scene.Placement;
 using UnityEditor;
 using UnityEditor.PackageManager;
+using UnityEditor.UIElements;
 using UnityEngine;
 using UnityEngine.Networking;
 using UnityEngine.UIElements;
@@ -43,7 +44,7 @@ namespace HoyoToon.Editor.UI.Manager
         private const string HeaderLogoAssetPath = "Packages/com.hoyotoon.hoyotoon/Resources/UI/hoyotoon.png";
         private const string LastCharacterSplashAssetPathSessionKey = "HoyoToon.Manager.LastCharacterSplashAssetPath";
         private const string LastCharacterSplashModelAssetPathSessionKey = "HoyoToon.Manager.LastCharacterSplashModelAssetPath";
-        private const double CharacterSplashPlayModeRefreshIntervalSeconds = 0.15d;
+        private const double CharacterSplashRefreshIntervalSeconds = 0.15d;
         private const string ConvertedAssetLabel = "HoyoToonConverted";
         private const string VersionUnavailableLabel = "Version unavailable";
         private const string WidthNarrowClass = "ht-width-narrow";
@@ -57,7 +58,10 @@ namespace HoyoToon.Editor.UI.Manager
         private const string VersionBadgeApplyingClass = "ht-version-badge--applying";
         private const string VersionBadgeErrorClass = "ht-version-badge--error";
         private const double RemoteAvatarRetryDelaySeconds = 30d;
+        private const double ValueInteractionRefreshQuietSeconds = 0.3d;
+        private const long ValueInteractionRefreshPollMilliseconds = 50L;
         private const int MaxRemoteAvatarPayloadBytes = 2 * 1024 * 1024;
+        private const int MaxRemoteAvatarTextureCacheEntries = 8;
 
         private static readonly Vector2 MinimumWindowSize = new Vector2(360f, 520f);
         private static readonly Dictionary<string, Texture2D> RemoteAvatarTextures =
@@ -65,6 +69,8 @@ namespace HoyoToon.Editor.UI.Manager
         private static readonly HashSet<string> RemoteAvatarLoads =
             new HashSet<string>(StringComparer.Ordinal);
         private static readonly Dictionary<string, double> FailedRemoteAvatarRetryTimes =
+            new Dictionary<string, double>(StringComparer.Ordinal);
+        private static readonly Dictionary<string, double> RemoteAvatarLastUsedTimes =
             new Dictionary<string, double>(StringComparer.Ordinal);
 
         private readonly Dictionary<string, Button> tabButtonsById = new Dictionary<string, Button>(StringComparer.Ordinal);
@@ -107,23 +113,37 @@ namespace HoyoToon.Editor.UI.Manager
         private Button regenerateMaterialsButton;
         private Button regenerateTangentsButton;
         private IVisualElementScheduledItem versionBadgeSchedule;
+        private IVisualElementScheduledItem managerValueInteractionRefreshSchedule;
         private bool userProfilePromptOpen;
         private bool userProfileRestoreRequested;
         private bool userProfileRestoreAttempted;
         private bool userProfileRefreshRequested;
         private bool userProfileRefreshAttempted;
         private bool managerRefreshQueued;
+        private bool managerValueInteractionActive;
+        private bool managerRefreshDeferredByValueInteraction;
+        private int managerValueInteractionPointerId = -1;
+        private double managerValueInteractionQuietUntil;
         private string lastCharacterSplashAssetPath = string.Empty;
         private string lastCharacterSplashModelAssetPath = string.Empty;
         private int lastCharacterSplashModelInstanceId;
-        private int observedPlayModePlacementControllerId;
-        private int observedPlayModeActiveModelId;
-        private int observedPlayModeActiveModelIndex = -1;
-        private int observedPlayModeInputSwitchVersion = -1;
-        private double nextCharacterSplashPlayModeRefreshTime;
+        private int observedCharacterSplashPlacementControllerId;
+        private int observedCharacterSplashActiveModelId;
+        private int observedCharacterSplashActiveModelIndex = -1;
+        private int observedCharacterSplashInputSwitchVersion = -1;
+        private double nextCharacterSplashRefreshTime;
 
         internal string ActiveModuleId => activeModule != null ? activeModule.Id : string.Empty;
         internal ModuleContext CurrentContext => currentContext;
+
+        [InitializeOnLoadMethod]
+        private static void RegisterRemoteAvatarCleanup()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload -= ClearAllRemoteAvatarTextures;
+            AssemblyReloadEvents.beforeAssemblyReload += ClearAllRemoteAvatarTextures;
+            EditorApplication.quitting -= ClearAllRemoteAvatarTextures;
+            EditorApplication.quitting += ClearAllRemoteAvatarTextures;
+        }
 
         [MenuItem(MenuPath, false, 20)]
         private static void OpenWindow()
@@ -167,28 +187,34 @@ namespace HoyoToon.Editor.UI.Manager
             EditorApplication.hierarchyChanged += HandleEditorContextChanged;
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
             EditorApplication.playModeStateChanged += HandlePlayModeStateChanged;
-            EditorApplication.update -= RefreshCharacterSplashArtworkDuringPlayMode;
-            EditorApplication.update += RefreshCharacterSplashArtworkDuringPlayMode;
+            EditorApplication.update -= RefreshCharacterSplashArtworkForPlacementChanges;
+            EditorApplication.update += RefreshCharacterSplashArtworkForPlacementChanges;
         }
 
         private void OnDisable()
         {
             versionBadgeSchedule?.Pause();
+            managerValueInteractionRefreshSchedule?.Pause();
             HoyoToonUserProfileStorage.ProfileChanged -= HandleUserProfileChanged;
             CharacterIconCacheUtility.CharacterIconsCached -= HandleCharacterIconsCached;
             Undo.undoRedoPerformed -= HandleUndoRedoPerformed;
             EditorApplication.hierarchyChanged -= HandleEditorContextChanged;
             EditorApplication.playModeStateChanged -= HandlePlayModeStateChanged;
-            EditorApplication.update -= RefreshCharacterSplashArtworkDuringPlayMode;
+            EditorApplication.update -= RefreshCharacterSplashArtworkForPlacementChanges;
             EditorApplication.delayCall -= RefreshManagerContextAfterEditorChange;
             managerRefreshQueued = false;
+            managerValueInteractionActive = false;
+            managerRefreshDeferredByValueInteraction = false;
+            managerValueInteractionPointerId = -1;
+            managerValueInteractionRefreshSchedule = null;
+            managerValueInteractionQuietUntil = 0d;
             activeModule?.OnDeselected(currentContext);
             OnboardingManager.NotifyManagerClosed(this);
         }
 
         private void OnFocus()
         {
-            RefreshManualContext();
+            RequestDeferredManagerRefresh();
             UpdateVersionBadge();
             RefreshUserProfileHeader();
         }
@@ -216,12 +242,19 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void HandlePlayModeStateChanged(PlayModeStateChange state)
         {
-            ResetObservedPlayModeCharacterSplashState();
+            ResetObservedCharacterSplashState();
             RequestDeferredManagerRefresh();
         }
 
         private void RequestDeferredManagerRefresh()
         {
+            if (IsManagerRefreshBlockedByValueInteraction())
+            {
+                TryRefreshCharacterSplashArtworkFromLivePlacement();
+                managerRefreshDeferredByValueInteraction = true;
+                return;
+            }
+
             if (managerRefreshQueued)
             {
                 return;
@@ -239,6 +272,13 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
+            if (IsManagerRefreshBlockedByValueInteraction())
+            {
+                TryRefreshCharacterSplashArtworkFromLivePlacement();
+                managerRefreshDeferredByValueInteraction = true;
+                return;
+            }
+
             RefreshManualContext();
             UpdateVersionBadge();
             RefreshUserProfileHeader();
@@ -246,10 +286,14 @@ namespace HoyoToon.Editor.UI.Manager
 
         public void CreateGUI()
         {
-            string activeModuleId = activeModule != null ? activeModule.Id : string.Empty;
+            IManagerModule previousActiveModule = activeModule;
+            string activeModuleId = previousActiveModule != null ? previousActiveModule.Id : string.Empty;
+            previousActiveModule?.OnDeselected(currentContext);
+
             modules = ModuleRegistry.CreateModules();
-            activeModule = modules.FirstOrDefault(module => string.Equals(module.Id, activeModuleId, StringComparison.Ordinal))
+            IManagerModule initialModule = modules.FirstOrDefault(module => string.Equals(module.Id, activeModuleId, StringComparison.Ordinal))
                 ?? modules.FirstOrDefault();
+            activeModule = null;
 
             packageVersionLabel = ResolvePackageVersionLabel();
             currentContext = BuildModuleContext();
@@ -271,7 +315,7 @@ namespace HoyoToon.Editor.UI.Manager
             RefreshUserProfileHeader();
             StartVersionBadgeSchedule();
             ApplyWidthClass(position.width);
-            SetActiveModule(activeModule != null ? activeModule.Id : string.Empty, true);
+            SetActiveModule(initialModule != null ? initialModule.Id : string.Empty, true);
             RegisterOnboardingTargets();
             OnboardingManager.AttachToManagerWindow(this, rootVisualElement);
         }
@@ -296,12 +340,27 @@ namespace HoyoToon.Editor.UI.Manager
             shellRoot.styleSheets.Add(layout);
             shellRoot.styleSheets.Add(components);
             shellRoot.RegisterCallback<GeometryChangedEvent>(HandleGeometryChanged);
+            shellRoot.RegisterCallback<PointerDownEvent>(HandleManagerValuePointerDown, TrickleDown.TrickleDown);
+            shellRoot.RegisterCallback<PointerUpEvent>(HandleManagerValuePointerUp, TrickleDown.TrickleDown);
+            shellRoot.RegisterCallback<PointerCancelEvent>(HandleManagerValuePointerCancel, TrickleDown.TrickleDown);
+            RegisterManagerValueChangeGuards(shellRoot);
 
             rootVisualElement.style.flexGrow = 1f;
             rootVisualElement.style.flexDirection = FlexDirection.Column;
             rootVisualElement.Add(shellRoot);
             shellRoot.StretchToParentSize();
             shellRoot.style.flexGrow = 1f;
+
+            ScrollView shellScrollView = shellRoot.Q<ScrollView>("ShellScrollView");
+            if (shellScrollView != null)
+            {
+                shellScrollView.mode = ScrollViewMode.Vertical;
+                shellScrollView.horizontalScrollerVisibility = ScrollerVisibility.Hidden;
+                shellScrollView.verticalScrollerVisibility = ScrollerVisibility.Auto;
+                shellScrollView.contentContainer.style.flexDirection = FlexDirection.Column;
+                shellScrollView.contentContainer.style.flexGrow = 1f;
+                shellScrollView.contentContainer.style.minHeight = 0f;
+            }
 
             ScrollView tabScrollView = shellRoot.Q<ScrollView>("TabScrollView");
             if (tabScrollView != null)
@@ -639,6 +698,7 @@ namespace HoyoToon.Editor.UI.Manager
             placementController.RemoveModel(model);
             EditorUtility.SetDirty(placementController);
             Undo.DestroyObjectImmediate(model);
+            placementController.ApplyNow();
             Undo.CollapseUndoOperations(undoGroup);
             RefreshManualContext();
         }
@@ -700,8 +760,15 @@ namespace HoyoToon.Editor.UI.Manager
                 Selection.activeObject = previousActiveObject;
             }
 
-            RefreshDetectionState();
-            RefreshManualContext();
+            if (ShouldClearQueuedModelsAfterAutoSetup(result))
+            {
+                ClearQueuedModelSelection();
+            }
+            else
+            {
+                RefreshDetectionState();
+                RefreshManualContext();
+            }
 
             if (result != null && result.Succeeded)
             {
@@ -714,6 +781,25 @@ namespace HoyoToon.Editor.UI.Manager
                     : "Auto Setup finished without reporting success.";
                 OnboardingSignals.RecordOperationFailure(OnboardingOperationKind.Setup, message);
             }
+        }
+
+        private void ClearQueuedModelSelection()
+        {
+            batchModelAssets.Clear();
+            selectedModelAsset = null;
+            selectedModelAssetPath = string.Empty;
+            selectedModelFolder = null;
+            selectedModelFolderPath = string.Empty;
+            validationMessage = string.Empty;
+            ClearDetectionState();
+            RefreshManualContext();
+        }
+
+        private static bool ShouldClearQueuedModelsAfterAutoSetup(AutoSetupResult result)
+        {
+            return result != null
+                && result.Succeeded
+                && result.ExecutedFeatures.Count > 0;
         }
 
         private void RefreshFooterActionStates()
@@ -1062,15 +1148,17 @@ namespace HoyoToon.Editor.UI.Manager
                 {
                     if (remoteTexture != null)
                     {
+                        TouchRemoteAvatarTexture(normalizedAvatar);
                         return remoteTexture;
                     }
 
                     RemoteAvatarTextures.Remove(normalizedAvatar);
+                    RemoteAvatarLastUsedTimes.Remove(normalizedAvatar);
                 }
 
                 if (TryLoadCachedRemoteAvatarTexture(normalizedAvatar, out Texture2D cachedTexture))
                 {
-                    RemoteAvatarTextures[normalizedAvatar] = cachedTexture;
+                    AddRemoteAvatarTexture(normalizedAvatar, cachedTexture);
                     return cachedTexture;
                 }
 
@@ -1130,7 +1218,7 @@ namespace HoyoToon.Editor.UI.Manager
                         if (TryCreateRemoteAvatarTexture(payload, out Texture2D texture))
                         {
                             ClearRemoteAvatarTextureOnly(avatarUrl);
-                            RemoteAvatarTextures[avatarUrl] = texture;
+                            AddRemoteAvatarTexture(avatarUrl, texture);
                             FailedRemoteAvatarRetryTimes.Remove(avatarUrl);
                             TrySaveRemoteAvatarCache(avatarUrl, payload);
                         }
@@ -1168,6 +1256,76 @@ namespace HoyoToon.Editor.UI.Manager
             DeleteRemoteAvatarCache(normalizedAvatar);
         }
 
+        private static void ClearAllRemoteAvatarTextures()
+        {
+            foreach (Texture2D texture in RemoteAvatarTextures.Values)
+            {
+                DestroyRemoteAvatarTexture(texture);
+            }
+
+            RemoteAvatarTextures.Clear();
+            RemoteAvatarLoads.Clear();
+            FailedRemoteAvatarRetryTimes.Clear();
+            RemoteAvatarLastUsedTimes.Clear();
+        }
+
+        private static void AddRemoteAvatarTexture(string avatarUrl, Texture2D texture)
+        {
+            if (string.IsNullOrWhiteSpace(avatarUrl) || texture == null)
+            {
+                DestroyRemoteAvatarTexture(texture);
+                return;
+            }
+
+            string normalizedAvatar = avatarUrl.Trim().Replace('\\', '/');
+            if (RemoteAvatarTextures.TryGetValue(normalizedAvatar, out Texture2D existingTexture)
+                && existingTexture != texture)
+            {
+                DestroyRemoteAvatarTexture(existingTexture);
+            }
+
+            RemoteAvatarTextures[normalizedAvatar] = texture;
+            TouchRemoteAvatarTexture(normalizedAvatar);
+            EnforceRemoteAvatarTextureCacheLimit();
+        }
+
+        private static void TouchRemoteAvatarTexture(string avatarUrl)
+        {
+            if (string.IsNullOrWhiteSpace(avatarUrl))
+            {
+                return;
+            }
+
+            RemoteAvatarLastUsedTimes[avatarUrl.Trim().Replace('\\', '/')] = EditorApplication.timeSinceStartup;
+        }
+
+        private static void EnforceRemoteAvatarTextureCacheLimit()
+        {
+            while (RemoteAvatarTextures.Count > MaxRemoteAvatarTextureCacheEntries)
+            {
+                string oldestAvatar = null;
+                double oldestUsedTime = double.MaxValue;
+                foreach (string avatarUrl in RemoteAvatarTextures.Keys)
+                {
+                    double usedTime = RemoteAvatarLastUsedTimes.TryGetValue(avatarUrl, out double recordedTime)
+                        ? recordedTime
+                        : 0d;
+                    if (oldestAvatar == null || usedTime < oldestUsedTime)
+                    {
+                        oldestAvatar = avatarUrl;
+                        oldestUsedTime = usedTime;
+                    }
+                }
+
+                if (string.IsNullOrWhiteSpace(oldestAvatar))
+                {
+                    return;
+                }
+
+                ClearRemoteAvatarTextureOnly(oldestAvatar);
+            }
+        }
+
         private static void ClearRemoteAvatarTextureOnly(string avatarUrl)
         {
             if (string.IsNullOrWhiteSpace(avatarUrl))
@@ -1182,6 +1340,7 @@ namespace HoyoToon.Editor.UI.Manager
             }
 
             RemoteAvatarTextures.Remove(normalizedAvatar);
+            RemoteAvatarLastUsedTimes.Remove(normalizedAvatar);
         }
 
         private static void MarkRemoteAvatarLoadFailed(string avatarUrl)
@@ -1753,21 +1912,25 @@ namespace HoyoToon.Editor.UI.Manager
             return currentContext?.PlacementController ?? CharacterPlacementController.GetPrimaryCachedOrFind();
         }
 
-        private void RefreshCharacterSplashArtworkDuringPlayMode()
+        private void RefreshCharacterSplashArtworkForPlacementChanges()
         {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                ResetObservedPlayModeCharacterSplashState();
-                return;
-            }
-
-            if (EditorApplication.timeSinceStartup < nextCharacterSplashPlayModeRefreshTime)
+            if (EditorApplication.timeSinceStartup < nextCharacterSplashRefreshTime)
             {
                 return;
             }
 
-            nextCharacterSplashPlayModeRefreshTime =
-                EditorApplication.timeSinceStartup + CharacterSplashPlayModeRefreshIntervalSeconds;
+            nextCharacterSplashRefreshTime =
+                EditorApplication.timeSinceStartup + CharacterSplashRefreshIntervalSeconds;
+
+            TryRefreshCharacterSplashArtworkFromLivePlacement();
+        }
+
+        private bool TryRefreshCharacterSplashArtworkFromLivePlacement()
+        {
+            if (characterSplashImage == null)
+            {
+                return false;
+            }
 
             CharacterPlacementController placementController = ResolveLivePlacementController();
             GameObject activeModel = placementController != null ? placementController.ActiveModel : null;
@@ -1776,29 +1939,31 @@ namespace HoyoToon.Editor.UI.Manager
             int activeModelIndex = placementController != null ? placementController.ActiveModelIndex : -1;
             int inputSwitchVersion = placementController != null ? placementController.InputSwitchVersion : -1;
 
-            if (observedPlayModePlacementControllerId == placementControllerId
-                && observedPlayModeActiveModelId == activeModelId
-                && observedPlayModeActiveModelIndex == activeModelIndex
-                && observedPlayModeInputSwitchVersion == inputSwitchVersion)
+            if (observedCharacterSplashPlacementControllerId == placementControllerId
+                && observedCharacterSplashActiveModelId == activeModelId
+                && observedCharacterSplashActiveModelIndex == activeModelIndex
+                && observedCharacterSplashInputSwitchVersion == inputSwitchVersion)
             {
-                return;
+                return false;
             }
 
-            observedPlayModePlacementControllerId = placementControllerId;
-            observedPlayModeActiveModelId = activeModelId;
-            observedPlayModeActiveModelIndex = activeModelIndex;
-            observedPlayModeInputSwitchVersion = inputSwitchVersion;
+            observedCharacterSplashPlacementControllerId = placementControllerId;
+            observedCharacterSplashActiveModelId = activeModelId;
+            observedCharacterSplashActiveModelIndex = activeModelIndex;
+            observedCharacterSplashInputSwitchVersion = inputSwitchVersion;
             currentContext = BuildModuleContext();
             ApplyActiveCharacterSplashArtwork();
+            Repaint();
+            return true;
         }
 
-        private void ResetObservedPlayModeCharacterSplashState()
+        private void ResetObservedCharacterSplashState()
         {
-            observedPlayModePlacementControllerId = 0;
-            observedPlayModeActiveModelId = 0;
-            observedPlayModeActiveModelIndex = -1;
-            observedPlayModeInputSwitchVersion = -1;
-            nextCharacterSplashPlayModeRefreshTime = 0d;
+            observedCharacterSplashPlacementControllerId = 0;
+            observedCharacterSplashActiveModelId = 0;
+            observedCharacterSplashActiveModelIndex = -1;
+            observedCharacterSplashInputSwitchVersion = -1;
+            nextCharacterSplashRefreshTime = 0d;
         }
 
         private void StartVersionBadgeSchedule()
@@ -1888,6 +2053,13 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void RefreshManualContext()
         {
+            if (IsManagerRefreshBlockedByValueInteraction())
+            {
+                TryRefreshCharacterSplashArtworkFromLivePlacement();
+                managerRefreshDeferredByValueInteraction = true;
+                return;
+            }
+
             currentContext = BuildModuleContext();
             RefreshGlobalContext();
             RefreshFooterActionStates();
@@ -1909,8 +2081,187 @@ namespace HoyoToon.Editor.UI.Manager
 
         internal void RefreshManagerContext()
         {
+            if (IsManagerRefreshBlockedByValueInteraction())
+            {
+                TryRefreshCharacterSplashArtworkFromLivePlacement();
+                managerRefreshDeferredByValueInteraction = true;
+                return;
+            }
+
             RefreshManualContext();
             RegisterOnboardingTargets();
+        }
+
+        private void RegisterManagerValueChangeGuards(VisualElement root)
+        {
+            if (root == null)
+            {
+                return;
+            }
+
+            root.RegisterCallback<ChangeEvent<bool>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<int>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<float>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<string>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<Color>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<Vector3>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<Object>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+            root.RegisterCallback<ChangeEvent<Enum>>(evt => HandleManagerValueChanged(evt), TrickleDown.TrickleDown);
+        }
+
+        private void HandleManagerValueChanged<T>(ChangeEvent<T> evt)
+        {
+            if (evt == null || !IsManagerEditableValueTarget(evt.target as VisualElement))
+            {
+                return;
+            }
+
+            managerValueInteractionQuietUntil = EditorApplication.timeSinceStartup + ValueInteractionRefreshQuietSeconds;
+            EnsureManagerValueInteractionRefreshSchedule();
+        }
+
+        private bool IsManagerRefreshBlockedByValueInteraction()
+        {
+            if (managerValueInteractionActive)
+            {
+                return true;
+            }
+
+            if (EditorApplication.timeSinceStartup < managerValueInteractionQuietUntil)
+            {
+                EnsureManagerValueInteractionRefreshSchedule();
+                return true;
+            }
+
+            return false;
+        }
+
+        private void EnsureManagerValueInteractionRefreshSchedule()
+        {
+            if (shellRoot == null || managerValueInteractionRefreshSchedule != null)
+            {
+                return;
+            }
+
+            managerValueInteractionRefreshSchedule = shellRoot.schedule
+                .Execute(FlushDeferredManagerRefreshAfterValueInteraction)
+                .Every(ValueInteractionRefreshPollMilliseconds);
+        }
+
+        private void FlushDeferredManagerRefreshAfterValueInteraction()
+        {
+            if (managerValueInteractionActive || EditorApplication.timeSinceStartup < managerValueInteractionQuietUntil)
+            {
+                return;
+            }
+
+            managerValueInteractionRefreshSchedule?.Pause();
+            managerValueInteractionRefreshSchedule = null;
+
+            if (!managerRefreshDeferredByValueInteraction)
+            {
+                return;
+            }
+
+            managerRefreshDeferredByValueInteraction = false;
+            RequestDeferredManagerRefresh();
+        }
+
+        private void HandleManagerValuePointerDown(PointerDownEvent evt)
+        {
+            if (evt == null || evt.button != 0 || managerValueInteractionActive)
+            {
+                return;
+            }
+
+            if (!IsSliderInteractionTarget(evt.target as VisualElement))
+            {
+                return;
+            }
+
+            managerValueInteractionActive = true;
+            managerValueInteractionPointerId = evt.pointerId;
+        }
+
+        private void HandleManagerValuePointerUp(PointerUpEvent evt)
+        {
+            if (!managerValueInteractionActive)
+            {
+                return;
+            }
+
+            if (evt != null && managerValueInteractionPointerId >= 0 && evt.pointerId != managerValueInteractionPointerId)
+            {
+                return;
+            }
+
+            EndManagerValueInteraction();
+        }
+
+        private void HandleManagerValuePointerCancel(PointerCancelEvent evt)
+        {
+            if (!managerValueInteractionActive)
+            {
+                return;
+            }
+
+            if (evt != null && managerValueInteractionPointerId >= 0 && evt.pointerId != managerValueInteractionPointerId)
+            {
+                return;
+            }
+
+            EndManagerValueInteraction();
+        }
+
+        private void EndManagerValueInteraction()
+        {
+            managerValueInteractionActive = false;
+            managerValueInteractionPointerId = -1;
+
+            if (!managerRefreshDeferredByValueInteraction)
+            {
+                return;
+            }
+
+            managerRefreshDeferredByValueInteraction = false;
+            RequestDeferredManagerRefresh();
+        }
+
+        private static bool IsSliderInteractionTarget(VisualElement element)
+        {
+            for (VisualElement current = element; current != null; current = current.parent)
+            {
+                if (current is Slider || current is SliderInt || current is MinMaxSlider)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsManagerEditableValueTarget(VisualElement element)
+        {
+            for (VisualElement current = element; current != null; current = current.parent)
+            {
+                if (current is Slider
+                    || current is SliderInt
+                    || current is MinMaxSlider
+                    || current is Toggle
+                    || current is TextField
+                    || current is IntegerField
+                    || current is FloatField
+                    || current is EnumField
+                    || current is DropdownField
+                    || current is ObjectField
+                    || current is ColorField
+                    || current is Vector3Field)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         internal void SelectModuleForOnboarding(string moduleId)

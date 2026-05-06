@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using HoyoToon.Editor.Assets;
 using HoyoToon.Editor.Onboarding;
+using HoyoToon.Editor.UI.Manager;
 using UnityEngine.UIElements;
 
 namespace HoyoToon.Editor.UI.Manager.Modules
@@ -567,9 +568,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static VisualElement CreateDivider()
         {
-            VisualElement divider = new VisualElement();
-            divider.AddToClassList("ht-divider");
-            return divider;
+            return ManagerUiFactory.CreateDivider();
         }
 
         private static Button CreateSelectionChip(string text, bool isSelected, Action onClick)

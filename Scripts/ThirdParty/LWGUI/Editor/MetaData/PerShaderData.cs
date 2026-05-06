@@ -367,8 +367,6 @@ namespace LWGUI
 
 			// Build Display Mode Data
 			{
-				PropertyStaticData lastPropData = null;
-				PropertyStaticData lastHeaderPropData = null;
 				for (int i = 0; i < props.Length; i++)
 				{
 					var prop = props[i];
@@ -385,8 +383,6 @@ namespace LWGUI
 					  && (propStaticData.parent.isAdvanced
 					   || (propStaticData.parent.parent != null && propStaticData.parent.parent.isAdvanced))))
 						displayModeData.advancedCount++;
-
-					lastPropData = propStaticData;
 				}
 			}
 		}

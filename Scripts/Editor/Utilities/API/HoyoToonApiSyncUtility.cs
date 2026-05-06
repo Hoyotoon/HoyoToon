@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using HoyoToon.Editor.Utilities.Editor;
@@ -26,8 +27,9 @@ namespace HoyoToon.Editor.Utilities.API
 
         internal static bool IsRefreshDue(string lastCheckTicksKey, TimeSpan pollInterval)
         {
-            long lastTicks = Convert.ToInt64(EditorPrefs.GetString(PrefsKey(lastCheckTicksKey), "0"));
-            if (lastTicks <= 0)
+            string rawTicks = EditorPrefs.GetString(PrefsKey(lastCheckTicksKey), "0");
+            if (!long.TryParse(rawTicks, NumberStyles.Integer, CultureInfo.InvariantCulture, out long lastTicks)
+                || lastTicks <= 0)
             {
                 return true;
             }

@@ -124,6 +124,7 @@ namespace HoyoToon.Editor.Onboarding
             missingTargets = Array.Empty<string>();
             overlay?.SetStep(null);
             inputBlocker?.SetStep(null);
+            DisposeInputBlocker();
             DialogController.Close();
             UnsubscribeUpdate();
 
@@ -156,7 +157,7 @@ namespace HoyoToon.Editor.Onboarding
                 root.Add(overlay);
             }
 
-            inputBlocker = new OnboardingInputBlocker(root);
+            ReplaceInputBlocker(root);
             ApplyVisualState();
         }
 
@@ -170,7 +171,7 @@ namespace HoyoToon.Editor.Onboarding
             managerWindow = null;
             managerRoot = null;
             overlay = null;
-            inputBlocker = null;
+            DisposeInputBlocker();
         }
 
         public static void RefreshDialog()
@@ -590,6 +591,11 @@ namespace HoyoToon.Editor.Onboarding
 
         private static void ApplyVisualState()
         {
+            if (isRunning && managerRoot != null && inputBlocker == null)
+            {
+                inputBlocker = new OnboardingInputBlocker(managerRoot);
+            }
+
             if (overlay != null)
             {
                 overlay.DimmingEnabled = OverlayDimmingEnabled;
@@ -602,6 +608,18 @@ namespace HoyoToon.Editor.Onboarding
                 inputBlocker.BlockingEnabled = InputBlockingEnabled;
                 inputBlocker.SetStep(isRunning ? CurrentStep : null);
             }
+        }
+
+        private static void ReplaceInputBlocker(VisualElement root)
+        {
+            DisposeInputBlocker();
+            inputBlocker = root != null ? new OnboardingInputBlocker(root) : null;
+        }
+
+        private static void DisposeInputBlocker()
+        {
+            inputBlocker?.Dispose();
+            inputBlocker = null;
         }
 
         private static void FocusCurrentTargets(bool force)

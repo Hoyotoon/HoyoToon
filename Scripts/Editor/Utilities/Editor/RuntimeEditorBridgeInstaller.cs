@@ -20,6 +20,9 @@ namespace HoyoToon.Editor.Utilities.Editor
         {
             RuntimeEditorBridge.MarkDirtyHandler = EditorUtility.SetDirty;
             RuntimeEditorBridge.DestroyHandler = target => UnityEngine.Object.DestroyImmediate(target);
+            RuntimeEditorBridge.InstantiatePrefabHandler = (prefab, parent) =>
+                PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
+            RuntimeEditorBridge.RegisterCreatedObjectUndoHandler = Undo.RegisterCreatedObjectUndo;
             RuntimeEditorBridge.IsGameViewFocusedHandler = IsGameViewFocused;
             RuntimeEditorBridge.RequestPlayerLoopUpdateHandler = EditorApplication.QueuePlayerLoopUpdate;
             RuntimeEditorBridge.RegisterHierarchyChangedHandler = handler => EditorApplication.hierarchyChanged += handler;
@@ -27,6 +30,7 @@ namespace HoyoToon.Editor.Utilities.Editor
             RuntimeEditorBridge.ScheduleDelayedEditModeActionHandler = ScheduleDelayedEditModeAction;
             RuntimeEditorBridge.CancelDelayedEditModeActionHandler = CancelDelayedEditModeAction;
             RuntimeEditorBridge.RegisterEditModeCleanupHandler = RegisterEditModeCleanup;
+            RuntimeEditorBridge.UnregisterEditModeCleanupHandler = UnregisterEditModeCleanup;
         }
 
         private static void ScheduleDelayedEditModeAction(Action action)
@@ -70,11 +74,26 @@ namespace HoyoToon.Editor.Utilities.Editor
                 return;
             }
 
+            UnregisterEditModeCleanup(cleanup);
             AssemblyReloadEvents.AssemblyReloadCallback reloadCallback = GetOrCreateAssemblyReloadCallback(cleanup);
-            AssemblyReloadEvents.beforeAssemblyReload -= reloadCallback;
             AssemblyReloadEvents.beforeAssemblyReload += reloadCallback;
-            EditorApplication.quitting -= cleanup;
             EditorApplication.quitting += cleanup;
+        }
+
+        private static void UnregisterEditModeCleanup(Action cleanup)
+        {
+            if (cleanup == null)
+            {
+                return;
+            }
+
+            if (s_AssemblyReloadCallbacks.TryGetValue(cleanup, out AssemblyReloadEvents.AssemblyReloadCallback reloadCallback))
+            {
+                AssemblyReloadEvents.beforeAssemblyReload -= reloadCallback;
+                s_AssemblyReloadCallbacks.Remove(cleanup);
+            }
+
+            EditorApplication.quitting -= cleanup;
         }
 
         private static AssemblyReloadEvents.AssemblyReloadCallback GetOrCreateAssemblyReloadCallback(Action action)

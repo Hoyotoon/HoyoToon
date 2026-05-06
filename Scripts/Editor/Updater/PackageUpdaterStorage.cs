@@ -4,9 +4,9 @@ using System.IO;
 using HoyoToon.Editor.API;
 using HoyoToon.Editor.Utilities.Editor;
 using HoyoToon.Editor.Utilities.IO;
+using HoyoToon.Editor.Utilities.Serialization;
 using Utf8Json;
 using UnityEditor;
-using UnityEngine;
 
 namespace HoyoToon.Editor.Updater
 {
@@ -32,7 +32,7 @@ namespace HoyoToon.Editor.Updater
 
         internal static string BetaBranchName => BetaBranch;
 
-        internal static string ProjectRootPath => Path.GetFullPath(Path.Combine(Application.dataPath, ".."));
+        internal static string ProjectRootPath => EditorPathUtility.ProjectRootPath;
 
         internal static string PackageRootPath => GetAbsolutePath(HoyoToonApi.PackageRootAssetPath);
 
@@ -311,32 +311,12 @@ namespace HoyoToon.Editor.Updater
 
         private static T ReadJsonFile<T>(string filePath) where T : class
         {
-            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-            {
-                return null;
-            }
-
-            try
-            {
-                string json = File.ReadAllText(filePath);
-                return JsonUtility.FromJson<T>(json);
-            }
-            catch
-            {
-                return null;
-            }
+            return EditorJsonFileStore.TryRead(filePath, out T value) ? value : null;
         }
 
         private static void WriteJsonFile<T>(string filePath, T value) where T : class
         {
-            string directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            string json = JsonUtility.ToJson(value, true);
-            File.WriteAllText(filePath, json);
+            EditorJsonFileStore.WriteAtomic(filePath, value);
         }
 
         private static string NormalizeStoredReference(string reference)

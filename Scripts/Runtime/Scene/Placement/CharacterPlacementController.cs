@@ -1,43 +1,16 @@
 using System.Collections.Generic;
 using HoyoToon.Runtime.Character.HSR;
-using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Utilities;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Scene.Placement
 {
-    public enum ManagerPlacementMode
-    {
-        Single,
-        Team,
-        Grid
-    }
-
-    public enum HoyoToonTeamGame
-    {
-        GenshinImpact,
-        HonkaiStarRail,
-        ZenlessZoneZero,
-        HonkaiImpact3rd
-    }
-
-    public enum GridCameraMode
-    {
-        Single,
-        Team
-    }
-
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [AddComponentMenu("HoyoToon/Scene/Character Placement Controller")]
     public sealed class CharacterPlacementController : MonoBehaviour
     {
-        private const string HoyoToonInputAssetPath = "Input/HoyoToon";
-        private const string HoyoToonSimulatorActionMap = "Simulator";
-        private const string PreviousCharacterActionName = "PreviousCharacter";
-        private const string NextCharacterActionName = "NextCharacter";
         private const int MaxTeamMembers = 4;
 
         private static readonly List<CharacterPlacementController> s_ActivePlacementControllers = new List<CharacterPlacementController>();
@@ -66,11 +39,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private GridCameraMode gridCamera = GridCameraMode.Single;
 
         [SerializeField]
-        [Tooltip("Optional HoyoToon input asset used for character switching shortcuts (Q/E).")]
-        private InputActionAsset inputActions;
-
-        [SerializeField]
-        [Tooltip("Models enabled in Team mode. Maximum of four.")] 
+        [Tooltip("Models enabled in Team mode. Maximum of four.")]
         private List<GameObject> teamActiveModels = new List<GameObject>();
 
         [SerializeField]
@@ -90,6 +59,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private bool useGridSingleCameraWorldPosition = true;
 
         private readonly List<GameObject> m_DiscoveredModelsScratch = new List<GameObject>();
+        private readonly HashSet<GameObject> m_ModelValidationScratch = new HashSet<GameObject>();
         private bool m_HasAppliedLayout;
         private int m_LastAppliedLayoutHash;
         private bool m_HasSyncedCameraTargets;
@@ -100,9 +70,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private bool m_HasPendingPlacementRequest;
         private bool m_HasPendingForcedPlacementRequest;
         private bool m_ManagedModelDiscoveryDirty = true;
-        private bool m_HasScheduledEditModePlacementRequest;
-        private InputAction m_PreviousModelAction;
-        private InputAction m_NextModelAction;
+        private bool m_RosterConsistencyDirty = true;
         private int m_InputSwitchVersion;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -220,13 +188,10 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         public int ActiveModelIndex
         {
-            get
-            {
-                EnsureRosterConsistency();
-                return activeModelIndex;
-            }
+            get => activeModelIndex;
             set
             {
+                EnsureRosterConsistency();
                 int clampedIndex = managedModels.Count == 0
                     ? -1
                     : Mathf.Clamp(value, -1, managedModels.Count - 1);
@@ -241,11 +206,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         public GameObject ActiveModel
         {
-            get
-            {
-                EnsureRosterConsistency();
-                return ResolveActiveModel();
-            }
+            get => ResolveActiveModel();
         }
 
         public GameObject FocusedModel => ActiveModel;
@@ -339,8 +300,13 @@ namespace HoyoToon.Runtime.Scene.Placement
                 return null;
 
             CharacterPlacementController placementController = FindForScene(scene);
-            if (placementController != null && placementController.ActiveCharacterController != null)
-                return placementController.ActiveCharacterController;
+            if (placementController != null)
+            {
+                placementController.EnsureRosterConsistency();
+                HSRCharacterController activeController = placementController.ActiveCharacterController;
+                if (activeController != null)
+                    return activeController;
+            }
 
             s_DiscoveredControllerScratch.Clear();
             DiscoverSceneCharacterControllers(scene, s_DiscoveredControllerScratch, includeInactive: false);
@@ -352,10 +318,6 @@ namespace HoyoToon.Runtime.Scene.Placement
             Register(this);
             HSRCharacterController.ActiveControllerRegistryChanged -= HandleCharacterRegistryChanged;
             HSRCharacterController.ActiveControllerRegistryChanged += HandleCharacterRegistryChanged;
-            RuntimeEditorBridge.UnregisterHierarchyChanged(HandleEditModeHierarchyChanged);
-            RuntimeEditorBridge.RegisterHierarchyChanged(HandleEditModeHierarchyChanged);
-            BindInputActions();
-            SetInputActionsEnabled(true);
             CameraTargetUtility.ClearCachedBaselines();
             MarkManagedModelDiscoveryDirty();
             RequestPlacement(force: true);
@@ -364,42 +326,32 @@ namespace HoyoToon.Runtime.Scene.Placement
         private void OnDisable()
         {
             HSRCharacterController.ActiveControllerRegistryChanged -= HandleCharacterRegistryChanged;
-            RuntimeEditorBridge.UnregisterHierarchyChanged(HandleEditModeHierarchyChanged);
-            SetInputActionsEnabled(false);
-            CancelScheduledEditModePlacementRequest();
+            ClearPendingPlacementRequest();
             Unregister(this);
             ResetCameraTargetSyncState();
             m_HasAppliedLayout = false;
             m_LastAppliedLayoutHash = 0;
-            m_HasPendingPlacementRequest = false;
-            m_HasPendingForcedPlacementRequest = false;
         }
 
         private void OnDestroy()
         {
             HSRCharacterController.ActiveControllerRegistryChanged -= HandleCharacterRegistryChanged;
-            RuntimeEditorBridge.UnregisterHierarchyChanged(HandleEditModeHierarchyChanged);
-            SetInputActionsEnabled(false);
-            CancelScheduledEditModePlacementRequest();
+            ClearPendingPlacementRequest();
             Unregister(this);
         }
 
         private void OnValidate()
         {
-            if (isActiveAndEnabled)
-            {
-                BindInputActions();
-                SetInputActionsEnabled(true);
-            }
-
             MarkManagedModelDiscoveryDirty();
-            QueuePlacementRequest(force: true);
+            if (Application.isPlaying)
+                QueuePlacementRequest(force: true);
         }
 
         private void OnTransformChildrenChanged()
         {
             MarkManagedModelDiscoveryDirty();
-            QueuePlacementRequest(force: true);
+            if (Application.isPlaying)
+                QueuePlacementRequest(force: true);
         }
 
         private void Update()
@@ -409,12 +361,17 @@ namespace HoyoToon.Runtime.Scene.Placement
                 ApplyPlacement(force);
             }
 
-            ProcessModelInput();
         }
 
         public void ApplyLayout()
         {
-            RequestPlacement(force: true);
+            ApplyNow();
+        }
+
+        public void ApplyNow()
+        {
+            ClearPendingPlacementRequest();
+            ApplyPlacement(force: true);
         }
 
         public void RefreshManagedModels()
@@ -435,7 +392,10 @@ namespace HoyoToon.Runtime.Scene.Placement
                 return;
 
             if (!managedModels.Contains(model))
+            {
                 managedModels.Add(model);
+                MarkRosterConsistencyDirty();
+            }
 
             if (activeModelIndex < 0)
                 activeModelIndex = managedModels.IndexOf(model);
@@ -454,6 +414,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
             managedModels.RemoveAt(removedIndex);
             teamActiveModels.Remove(model);
+            MarkRosterConsistencyDirty();
 
             if (managedModels.Count == 0)
             {
@@ -479,23 +440,47 @@ namespace HoyoToon.Runtime.Scene.Placement
             if (!IsSceneModelValid(model))
                 return false;
 
+            bool rosterChanged = false;
             if (!managedModels.Contains(model))
+            {
                 managedModels.Add(model);
+                rosterChanged = true;
+            }
 
             if (isActive)
             {
                 if (teamActiveModels.Contains(model))
+                {
+                    if (rosterChanged)
+                    {
+                        MarkRosterConsistencyDirty();
+                        RequestPlacement(force: true);
+                    }
+
                     return true;
+                }
 
                 if (teamActiveModels.Count >= MaxTeamMembers)
+                {
+                    if (rosterChanged)
+                    {
+                        MarkRosterConsistencyDirty();
+                        RequestPlacement(force: true);
+                    }
+
                     return false;
+                }
 
                 teamActiveModels.Add(model);
+                MarkRosterConsistencyDirty();
                 RequestPlacement(force: true);
                 return true;
             }
 
             bool removed = teamActiveModels.Remove(model);
+            if (removed || rosterChanged)
+                MarkRosterConsistencyDirty();
+
             RequestPlacement(force: true);
             return removed;
         }
@@ -513,6 +498,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             if (index < 0 && IsSceneModelValid(model))
             {
                 managedModels.Add(model);
+                MarkRosterConsistencyDirty();
                 index = managedModels.Count - 1;
             }
 
@@ -525,6 +511,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         public bool IsModelActiveInCurrentMode(GameObject model)
         {
+            EnsureRosterConsistency();
             if (!IsSceneModelValid(model) || !managedModels.Contains(model))
                 return false;
 
@@ -543,15 +530,20 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         public void EnsureRosterConsistency()
         {
+            bool discoveryRan = false;
             if (autoDiscoverManagedModels && m_ManagedModelDiscoveryDirty)
             {
                 RefreshManagedModelsFromScene();
                 m_ManagedModelDiscoveryDirty = false;
+                discoveryRan = true;
             }
+
+            if (!discoveryRan && !m_RosterConsistencyDirty)
+                return;
 
             RemoveInvalidModels(managedModels);
             RemoveInvalidModels(teamActiveModels);
-            teamActiveModels.RemoveAll(model => !managedModels.Contains(model));
+            RemoveTeamModelsNotInManagedRoster();
 
             if (teamActiveModels.Count > MaxTeamMembers)
                 teamActiveModels.RemoveRange(MaxTeamMembers, teamActiveModels.Count - MaxTeamMembers);
@@ -560,6 +552,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             {
                 activeModelIndex = -1;
                 teamActiveModels.Clear();
+                m_RosterConsistencyDirty = false;
                 return;
             }
 
@@ -578,6 +571,8 @@ namespace HoyoToon.Runtime.Scene.Placement
                         activeModelIndex = managedModels.IndexOf(teamActiveModels[0]);
                 }
             }
+
+            m_RosterConsistencyDirty = false;
         }
 
         private void SeedDefaultTeamActiveModels(GameObject preferredModel)
@@ -640,38 +635,28 @@ namespace HoyoToon.Runtime.Scene.Placement
                 return;
             }
 
-            QueuePlacementRequest(force);
+            m_HasPendingPlacementRequest = true;
+            m_HasPendingForcedPlacementRequest |= force;
         }
 
-        private void ProcessModelInput()
+        public void SwitchToNextModel()
         {
-            if (!CanConsumeModelInput())
+            int nextIndex = GetWrappedNextActiveModelIndex();
+            if (nextIndex < 0)
                 return;
 
-            if (m_PreviousModelAction != null && m_PreviousModelAction.WasPressedThisFrame())
-            {
-                m_InputSwitchVersion++;
-                ActiveModelIndex = GetWrappedPreviousActiveModelIndex();
-            }
-            else if (m_NextModelAction != null && m_NextModelAction.WasPressedThisFrame())
-            {
-                m_InputSwitchVersion++;
-                ActiveModelIndex = GetWrappedNextActiveModelIndex();
-            }
+            m_InputSwitchVersion++;
+            ActiveModelIndex = nextIndex;
         }
 
-        private bool CanConsumeModelInput()
+        public void SwitchToPreviousModel()
         {
-            if (!isActiveAndEnabled)
-                return false;
+            int previousIndex = GetWrappedPreviousActiveModelIndex();
+            if (previousIndex < 0)
+                return;
 
-            if (!Application.isFocused)
-                return false;
-
-            if (!Application.isEditor)
-                return true;
-
-            return RuntimeEditorBridge.IsGameViewFocused();
+            m_InputSwitchVersion++;
+            ActiveModelIndex = previousIndex;
         }
 
         private int GetWrappedNextActiveModelIndex()
@@ -700,41 +685,6 @@ namespace HoyoToon.Runtime.Scene.Placement
             return (currentIndex - 1 + managedModels.Count) % managedModels.Count;
         }
 
-        private void BindInputActions()
-        {
-            SetInputActionsEnabled(false);
-
-            m_PreviousModelAction = null;
-            m_NextModelAction = null;
-
-            InputActionAsset resolvedInputActions = inputActions;
-            if (resolvedInputActions == null)
-                resolvedInputActions = Resources.Load<InputActionAsset>(HoyoToonInputAssetPath);
-
-            if (resolvedInputActions == null)
-                return;
-
-            InputActionMap map = resolvedInputActions.FindActionMap(HoyoToonSimulatorActionMap);
-            if (map == null)
-                return;
-
-            m_PreviousModelAction = map.FindAction(PreviousCharacterActionName);
-            m_NextModelAction = map.FindAction(NextCharacterActionName);
-        }
-
-        private void SetInputActionsEnabled(bool enabled)
-        {
-            if (enabled)
-            {
-                m_PreviousModelAction?.Enable();
-                m_NextModelAction?.Enable();
-                return;
-            }
-
-            m_PreviousModelAction?.Disable();
-            m_NextModelAction?.Disable();
-        }
-
         private void QueuePlacementRequest(bool force)
         {
             if (!isActiveAndEnabled)
@@ -742,10 +692,6 @@ namespace HoyoToon.Runtime.Scene.Placement
 
             m_HasPendingPlacementRequest = true;
             m_HasPendingForcedPlacementRequest |= force;
-            if (!Application.isPlaying)
-            {
-                ScheduleEditModePlacementRequest();
-            }
         }
 
         private bool TryConsumePendingPlacementRequest(out bool force)
@@ -760,54 +706,27 @@ namespace HoyoToon.Runtime.Scene.Placement
             return true;
         }
 
+        private void ClearPendingPlacementRequest()
+        {
+            m_HasPendingPlacementRequest = false;
+            m_HasPendingForcedPlacementRequest = false;
+        }
+
         private void HandleCharacterRegistryChanged()
         {
             MarkManagedModelDiscoveryDirty();
             RequestPlacement(force: true);
         }
 
-        private void HandleEditModeHierarchyChanged()
-        {
-            if (!isActiveAndEnabled || Application.isPlaying)
-                return;
-
-            MarkManagedModelDiscoveryDirty();
-            QueuePlacementRequest(force: true);
-        }
-
-        private void ScheduleEditModePlacementRequest()
-        {
-            if (m_HasScheduledEditModePlacementRequest)
-                return;
-
-            m_HasScheduledEditModePlacementRequest = true;
-            RuntimeEditorBridge.ScheduleDelayedEditModeAction(ApplyPendingEditModePlacementRequest);
-            RuntimeEditorBridge.RequestPlayerLoopUpdate();
-        }
-
-        private void CancelScheduledEditModePlacementRequest()
-        {
-            if (!m_HasScheduledEditModePlacementRequest)
-                return;
-
-            RuntimeEditorBridge.CancelDelayedEditModeAction(ApplyPendingEditModePlacementRequest);
-            m_HasScheduledEditModePlacementRequest = false;
-        }
-
-        private void ApplyPendingEditModePlacementRequest()
-        {
-            m_HasScheduledEditModePlacementRequest = false;
-
-            if (this == null || Application.isPlaying || !isActiveAndEnabled)
-                return;
-
-            if (TryConsumePendingPlacementRequest(out bool force))
-                ApplyPlacement(force);
-        }
-
         private void MarkManagedModelDiscoveryDirty()
         {
             m_ManagedModelDiscoveryDirty = true;
+            MarkRosterConsistencyDirty();
+        }
+
+        private void MarkRosterConsistencyDirty()
+        {
+            m_RosterConsistencyDirty = true;
         }
 
         private void EnsureCameraTargetsSynced(bool force)
@@ -888,6 +807,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
             managedModels.Clear();
             managedModels.AddRange(m_DiscoveredModelsScratch);
+            MarkRosterConsistencyDirty();
 
             if (previousActiveModel != null)
                 activeModelIndex = managedModels.IndexOf(previousActiveModel);
@@ -1044,13 +964,34 @@ namespace HoyoToon.Runtime.Scene.Placement
             if (models == null)
                 return;
 
-            HashSet<GameObject> seen = new HashSet<GameObject>();
+            m_ModelValidationScratch.Clear();
             for (int i = models.Count - 1; i >= 0; --i)
             {
                 GameObject model = models[i];
-                if (!IsSceneModelValid(model) || !seen.Add(model))
+                if (!IsSceneModelValid(model) || !m_ModelValidationScratch.Add(model))
                     models.RemoveAt(i);
             }
+
+            m_ModelValidationScratch.Clear();
+        }
+
+        private void RemoveTeamModelsNotInManagedRoster()
+        {
+            m_ModelValidationScratch.Clear();
+            for (int i = 0; i < managedModels.Count; ++i)
+            {
+                GameObject model = managedModels[i];
+                if (model != null)
+                    m_ModelValidationScratch.Add(model);
+            }
+
+            for (int i = teamActiveModels.Count - 1; i >= 0; --i)
+            {
+                if (!m_ModelValidationScratch.Contains(teamActiveModels[i]))
+                    teamActiveModels.RemoveAt(i);
+            }
+
+            m_ModelValidationScratch.Clear();
         }
 
         private bool IsSceneModelValid(GameObject model)

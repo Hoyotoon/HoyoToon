@@ -2,9 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using HoyoToon.Runtime.Core;
-using HoyoToon.Runtime.Scene.HSR;
 using HoyoToon.Runtime.Utilities;
 using UnityEngine;
+using UnityEngine.Rendering;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Character.HSR
 {
@@ -35,12 +36,16 @@ namespace HoyoToon.Runtime.Character.HSR
         private const string CharacterLayerName = "Honkai Star Rail";
         private const string HairTag = "Honkai Star Rail Hair";
         private const string HairToken = "Hair";
+        private const string PlanarReflectionParticipantTypeName = "HoyoToonPlanarReflectionParticipant";
         private static readonly string[] s_HeadBoneCandidateNames = { "Head", "Head_M" };
         private static readonly List<HSRCharacterController> s_ActiveControllers = new List<HSRCharacterController>();
         private static readonly HashSet<Renderer> s_TrackedRenderers = new HashSet<Renderer>();
         private static readonly HashSet<Renderer> s_CurrentTrackedRenderers = new HashSet<Renderer>();
         private static readonly List<Renderer> s_StaleRenderers = new List<Renderer>();
+        private static readonly List<GameObject> s_SceneRootScratch = new List<GameObject>(16);
+        private static readonly List<HSRCharacterController> s_ControllerDiscoveryScratch = new List<HSRCharacterController>(8);
         private static readonly Dictionary<int, Light> s_SceneLightBySceneHandle = new Dictionary<int, Light>();
+        private static readonly Dictionary<int, float> s_NextSlowRegistryDiscoveryTimeBySceneHandle = new Dictionary<int, float>();
         private static float s_NextSlowRegistryDiscoveryTime;
         private static bool s_TopologyDirty = true;
         private static int s_RendererTopologyVersion;
@@ -96,7 +101,6 @@ namespace HoyoToon.Runtime.Character.HSR
         private sealed class RendererConstantBufferState
         {
             public readonly MaterialPropertyBlock propertyBlock = new MaterialPropertyBlock();
-            public readonly ComputeBuffer constantBuffer = new ComputeBuffer(1, s_CrpPerDrawExSize, ComputeBufferType.Constant);
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -131,17 +135,14 @@ namespace HoyoToon.Runtime.Character.HSR
         {
             public SkinnedMeshRenderer renderer;
             public Mesh mesh;
+            public Transform rootBone;
             public Transform[] bones;
             public Matrix4x4[] bindPoses;
+            public BoneWeight[] boneWeights;
             public int vertexOffset;
             public int vertexCount;
             public int matrixOffset;
             public int matrixCount;
-            public bool usesBlendShapeBake;
-            public Mesh bakedMesh;
-            public SkinData[] bakedUpload;
-            public Vector4[] uv7;
-            public Vector4[] uv8;
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -154,6 +155,9 @@ namespace HoyoToon.Runtime.Character.HSR
             ReleaseGlobalFallbackSkinnedVerticesBuffer();
             EnsureGlobalFallbackSkinnedVerticesBufferBound();
             s_NextSlowRegistryDiscoveryTime = 0f;
+            s_NextSlowRegistryDiscoveryTimeBySceneHandle.Clear();
+            s_SceneRootScratch.Clear();
+            s_ControllerDiscoveryScratch.Clear();
             s_TopologyDirty = true;
             s_RendererTopologyVersion = 0;
             s_SceneLightBySceneHandle.Clear();
@@ -258,6 +262,14 @@ namespace HoyoToon.Runtime.Character.HSR
         private int m_LastSyncedStateHash;
         private Vector3 m_LastPosition;
         private readonly Dictionary<Renderer, RendererConstantBufferState> m_RendererConstantBufferStates = new Dictionary<Renderer, RendererConstantBufferState>();
+        private readonly List<Renderer> m_RendererCandidateScratch = new List<Renderer>(32);
+        private readonly List<Renderer> m_RendererScopeScratch = new List<Renderer>(32);
+        private readonly List<Renderer> m_StaleRendererScratch = new List<Renderer>(8);
+        private readonly List<Renderer> m_RendererConstantBufferReleaseScratch = new List<Renderer>(8);
+        private readonly HashSet<Renderer> m_ActiveRendererScratch = new HashSet<Renderer>();
+        private readonly List<Transform> m_TransformScratch = new List<Transform>(64);
+        private readonly List<MonoBehaviour> m_BehaviourScratch = new List<MonoBehaviour>(32);
+        private ComputeBuffer m_RendererConstantBuffer;
         private readonly CrpPerDrawExData[] m_CrpPerDrawExUpload = new CrpPerDrawExData[1];
         private Vector4 m_CharacterSelfShadowAtlasRect = Vector4.zero;
         private float m_CharacterSelfShadowSliceIndex;
@@ -277,7 +289,17 @@ namespace HoyoToon.Runtime.Character.HSR
         private bool m_HasEligibleComputeSkinningRenderers;
         private bool m_HasComputeInputsHash;
         private int m_LastComputeInputsHash;
+        private bool m_HasComputeInputSnapshot;
+        private int m_LastComputeInputSnapshotHash;
+        private int m_LastComputeInputRendererScopeVersion = -1;
         private bool m_HasComputeDispatchSegments;
+        private bool m_ComputeSkinningHasDispatchedPose;
+        private bool m_HasPlanarReflectionParticipantForComputeSkinning;
+        private readonly List<Vector3> m_ComputeVertexScratch = new List<Vector3>();
+        private readonly List<Vector3> m_ComputeNormalScratch = new List<Vector3>();
+        private readonly List<Vector4> m_ComputeTangentScratch = new List<Vector4>();
+        private readonly List<Vector4> m_ComputeUv7Scratch = new List<Vector4>();
+        private readonly List<Vector4> m_ComputeUv8Scratch = new List<Vector4>();
         private int m_RendererScopeVersion;
         private int m_EffectMaterialsVersion;
         private int m_LastEffectMaterialsHash;
@@ -319,7 +341,7 @@ namespace HoyoToon.Runtime.Character.HSR
             if (blendShapeRendererNames == null || blendShapeRendererNames.Count == 0)
                 return false;
 
-            warningMessage = $"Compute skinning skips blendshape renderers and leaves them on built-in skinning to avoid per-frame BakeMesh CPU overhead: {string.Join(", ", blendShapeRendererNames)}.";
+            warningMessage = $"Compute skinning skips blendshape renderers and leaves them on built-in skinning to avoid per-frame CPU mesh baking overhead: {string.Join(", ", blendShapeRendererNames)}.";
             return true;
         }
 
@@ -327,36 +349,64 @@ namespace HoyoToon.Runtime.Character.HSR
         {
             ApplyRuntimeLayer();
 
-            var scoped = new List<Renderer>();
-            var candidates = GetComponentsInChildren<Renderer>(includeInactive: true);
-            for (int i = 0; i < candidates.Length; ++i)
+            m_RendererScopeScratch.Clear();
+            m_RendererCandidateScratch.Clear();
+            GetComponentsInChildren<Renderer>(true, m_RendererCandidateScratch);
+            for (int i = 0; i < m_RendererCandidateScratch.Count; ++i)
             {
-                var renderer = candidates[i];
+                var renderer = m_RendererCandidateScratch[i];
                 if (renderer == null)
                     continue;
 
                 if (renderer.GetComponentInParent<HSRCharacterController>() != this)
                     continue;
 
-                scoped.Add(renderer);
+                m_RendererScopeScratch.Add(renderer);
             }
 
-            Renderer[] nextRenderers = scoped.ToArray();
-            bool rendererScopeChanged = !AreRendererArraysEqual(renderers, nextRenderers);
-            renderers = nextRenderers;
+            bool rendererScopeChanged = renderers == null || !AreRendererArrayAndListEqual(renderers, m_RendererScopeScratch);
+            if (rendererScopeChanged)
+                renderers = m_RendererScopeScratch.Count > 0 ? m_RendererScopeScratch.ToArray() : Array.Empty<Renderer>();
+
+            m_RendererCandidateScratch.Clear();
+            m_RendererScopeScratch.Clear();
+            m_HasPlanarReflectionParticipantForComputeSkinning = HasPlanarReflectionParticipantInHierarchy();
             PruneRendererConstantBuffers();
             SyncCharacterLightCullingMasks();
             ApplyRuntimeTags();
+            ApplyCharacterSelfShadowCastingMode();
             m_RendererScopeDirty = false;
             m_HasSyncedState = false;
-            m_ComputeSkinningDirty = true;
-            s_TopologyDirty = true;
 
             if (rendererScopeChanged)
             {
                 m_RendererScopeVersion++;
+                MarkComputeSkinningDirty();
+                s_TopologyDirty = true;
                 NotifyRendererTopologyChanged();
             }
+        }
+
+        private bool HasPlanarReflectionParticipantInHierarchy()
+        {
+            m_BehaviourScratch.Clear();
+            GetComponentsInChildren<MonoBehaviour>(true, m_BehaviourScratch);
+            for (int i = 0; i < m_BehaviourScratch.Count; ++i)
+            {
+                MonoBehaviour behaviour = m_BehaviourScratch[i];
+                if (behaviour == null)
+                    continue;
+
+                Type behaviourType = behaviour.GetType();
+                if (behaviourType != null && behaviourType.Name == PlanarReflectionParticipantTypeName)
+                {
+                    m_BehaviourScratch.Clear();
+                    return true;
+                }
+            }
+
+            m_BehaviourScratch.Clear();
+            return false;
         }
 
         private void ApplyRuntimeLayer()
@@ -365,15 +415,18 @@ namespace HoyoToon.Runtime.Character.HSR
             if (layer < 0)
                 return;
 
-            Transform[] transforms = GetComponentsInChildren<Transform>(includeInactive: true);
-            for (int i = 0; i < transforms.Length; ++i)
+            m_TransformScratch.Clear();
+            GetComponentsInChildren<Transform>(true, m_TransformScratch);
+            for (int i = 0; i < m_TransformScratch.Count; ++i)
             {
-                Transform child = transforms[i];
+                Transform child = m_TransformScratch[i];
                 if (child == null || child.gameObject.layer == layer)
                     continue;
 
                 child.gameObject.layer = layer;
             }
+
+            m_TransformScratch.Clear();
         }
 
         private void PruneRendererConstantBuffers()
@@ -381,25 +434,28 @@ namespace HoyoToon.Runtime.Character.HSR
             if (m_RendererConstantBufferStates.Count == 0)
                 return;
 
-            HashSet<Renderer> activeRenderers = new HashSet<Renderer>();
+            m_ActiveRendererScratch.Clear();
             if (renderers != null)
             {
                 for (int i = 0; i < renderers.Length; ++i)
                 {
                     if (renderers[i] != null)
-                        activeRenderers.Add(renderers[i]);
+                        m_ActiveRendererScratch.Add(renderers[i]);
                 }
             }
 
-            List<Renderer> staleRenderers = new List<Renderer>();
+            m_StaleRendererScratch.Clear();
             foreach (var kvp in m_RendererConstantBufferStates)
             {
-                if (!activeRenderers.Contains(kvp.Key))
-                    staleRenderers.Add(kvp.Key);
+                if (!m_ActiveRendererScratch.Contains(kvp.Key))
+                    m_StaleRendererScratch.Add(kvp.Key);
             }
 
-            for (int i = 0; i < staleRenderers.Count; ++i)
-                ReleaseRendererConstantBuffer(staleRenderers[i]);
+            for (int i = 0; i < m_StaleRendererScratch.Count; ++i)
+                ReleaseRendererConstantBuffer(m_StaleRendererScratch[i]);
+
+            m_ActiveRendererScratch.Clear();
+            m_StaleRendererScratch.Clear();
         }
 
         private void ApplyRuntimeTags()
@@ -422,6 +478,27 @@ namespace HoyoToon.Runtime.Character.HSR
                     continue;
 
                 UnityTagUtility.TryAssignTag(renderer.gameObject, HairTag);
+            }
+        }
+
+        private void ApplyCharacterSelfShadowCastingMode()
+        {
+            var rendererArray = renderers;
+            if (rendererArray == null)
+                return;
+
+            ShadowCastingMode targetMode = EnableCharacterSelfShadow
+                ? ShadowCastingMode.Off
+                : ShadowCastingMode.On;
+
+            for (int i = 0; i < rendererArray.Length; ++i)
+            {
+                Renderer renderer = rendererArray[i];
+                if (renderer == null || renderer.shadowCastingMode == targetMode)
+                    continue;
+
+                renderer.shadowCastingMode = targetMode;
+                RuntimeEditorBridge.MarkDirty(renderer);
             }
         }
 
@@ -525,7 +602,11 @@ namespace HoyoToon.Runtime.Character.HSR
 
         private Light ResolveSceneLightReference()
         {
-            int sceneHandle = gameObject.scene.handle;
+            UnityScene scene = gameObject.scene;
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+                return null;
+
+            int sceneHandle = RenderSceneUtility.GetSceneHandleOrDefault(scene);
             if (sceneHandle != 0 && s_SceneLightBySceneHandle.TryGetValue(sceneHandle, out var cachedLight))
             {
                 if (IsCachedSceneLightValid(cachedLight, sceneHandle))
@@ -536,7 +617,19 @@ namespace HoyoToon.Runtime.Character.HSR
                 s_SceneLightBySceneHandle.Remove(sceneHandle);
             }
 
-            Light resolved = HsrSceneLightQueryUtility.FindLowestInstanceIdNamedLight(SceneLightName);
+            Light registered = HsrSceneLightQueryUtility.FindRegisteredNamedLightInScene(scene, SceneLightName);
+            if (registered != null)
+            {
+                if (sceneHandle != 0)
+                    s_SceneLightBySceneHandle[sceneHandle] = registered;
+
+                return registered;
+            }
+
+            if (Application.isPlaying)
+                return null;
+
+            Light resolved = HsrSceneLightQueryUtility.FindNamedLightInScene(scene, SceneLightName);
 
             if (sceneHandle != 0)
             {
@@ -664,6 +757,62 @@ namespace HoyoToon.Runtime.Character.HSR
             s_NextSlowRegistryDiscoveryTime = Time.realtimeSinceStartup + RegistrySlowDiscoveryInterval;
         }
 
+        private static void EnsureSceneRegistryWithSlowPath(UnityScene scene, bool force)
+        {
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+                return;
+
+            PruneNullControllers();
+
+            if (!force && HasActiveControllerInScene(scene))
+                return;
+
+            int sceneHandle = scene.handle;
+            if (!force
+                && s_NextSlowRegistryDiscoveryTimeBySceneHandle.TryGetValue(sceneHandle, out float nextDiscoveryTime)
+                && Time.realtimeSinceStartup < nextDiscoveryTime)
+            {
+                return;
+            }
+
+            s_SceneRootScratch.Clear();
+            scene.GetRootGameObjects(s_SceneRootScratch);
+            for (int rootIndex = 0; rootIndex < s_SceneRootScratch.Count; ++rootIndex)
+            {
+                GameObject root = s_SceneRootScratch[rootIndex];
+                if (root == null)
+                    continue;
+
+                s_ControllerDiscoveryScratch.Clear();
+                root.GetComponentsInChildren(true, s_ControllerDiscoveryScratch);
+                for (int i = 0; i < s_ControllerDiscoveryScratch.Count; ++i)
+                    Register(s_ControllerDiscoveryScratch[i]);
+            }
+
+            s_ControllerDiscoveryScratch.Clear();
+            s_SceneRootScratch.Clear();
+            s_NextSlowRegistryDiscoveryTimeBySceneHandle[sceneHandle] = Time.realtimeSinceStartup + RegistrySlowDiscoveryInterval;
+        }
+
+        private static bool HasActiveControllerInScene(UnityScene scene)
+        {
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+                return false;
+
+            for (int i = 0; i < s_ActiveControllers.Count; ++i)
+            {
+                HSRCharacterController controller = s_ActiveControllers[i];
+                if (controller != null
+                    && controller.isActiveAndEnabled
+                    && controller.gameObject.scene == scene)
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
         public static HSRCharacterController GetPrimaryCachedOrFind()
         {
             PruneNullControllers();
@@ -700,6 +849,56 @@ namespace HoyoToon.Runtime.Character.HSR
                 var controller = s_ActiveControllers[i];
                 if (controller != null && controller.isActiveAndEnabled)
                     results.Add(controller);
+            }
+
+            return results.Count;
+        }
+
+        public static int GetActiveControllersInScene(UnityScene scene, List<HSRCharacterController> results, bool forceRefresh = false)
+        {
+            if (results == null)
+                return 0;
+
+            results.Clear();
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+                return 0;
+
+            EnsureSceneRegistryWithSlowPath(scene, forceRefresh);
+            PruneNullControllers();
+
+            for (int i = 0; i < s_ActiveControllers.Count; ++i)
+            {
+                var controller = s_ActiveControllers[i];
+                if (controller != null
+                    && controller.isActiveAndEnabled
+                    && controller.gameObject.scene == scene)
+                {
+                    results.Add(controller);
+                }
+            }
+
+            return results.Count;
+        }
+
+        public static int GetRegisteredActiveControllersInScene(UnityScene scene, List<HSRCharacterController> results)
+        {
+            if (results == null)
+                return 0;
+
+            results.Clear();
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+                return 0;
+
+            PruneNullControllers();
+            for (int i = 0; i < s_ActiveControllers.Count; ++i)
+            {
+                var controller = s_ActiveControllers[i];
+                if (controller != null
+                    && controller.isActiveAndEnabled
+                    && controller.gameObject.scene == scene)
+                {
+                    results.Add(controller);
+                }
             }
 
             return results.Count;
@@ -848,9 +1047,9 @@ namespace HoyoToon.Runtime.Character.HSR
             EnsureGlobalFallbackSkinnedVerticesBufferBound();
             RefreshLightReferences();
             RefreshScopedRenderers();
-            m_ComputeSkinningDirty = true;
+            MarkComputeSkinningDirty();
             Register(this);
-            NotifySceneControllerCharacterLightRegistration(CharacterLight, register: true);
+            NotifyCharacterLightRegistration(CharacterLight, register: true);
             DetermineStencilEyeValueFromName();
             SyncToRenderer();
         }
@@ -860,6 +1059,7 @@ namespace HoyoToon.Runtime.Character.HSR
             RefreshLightReferences();
             m_RendererScopeDirty = true;
             RefreshScopedRenderers();
+            MarkComputeSkinningDirty();
             SyncToRenderer();
         }
 
@@ -868,7 +1068,7 @@ namespace HoyoToon.Runtime.Character.HSR
             TeardownComputeSkinning();
             ReleaseAllRendererConstantBuffers();
             Unregister(this);
-            NotifySceneControllerCharacterLightRegistration(CharacterLight, register: false);
+            NotifyCharacterLightRegistration(CharacterLight, register: false);
         }
 
         private void OnDestroy()
@@ -876,18 +1076,18 @@ namespace HoyoToon.Runtime.Character.HSR
             TeardownComputeSkinning();
             ReleaseAllRendererConstantBuffers();
             Unregister(this);
-            NotifySceneControllerCharacterLightRegistration(CharacterLight, register: false);
+            NotifyCharacterLightRegistration(CharacterLight, register: false);
         }
 
-        private static void NotifySceneControllerCharacterLightRegistration(Light light, bool register)
+        private static void NotifyCharacterLightRegistration(Light light, bool register)
         {
             if (light == null)
                 return;
 
             if (register)
-                HSRSceneController.RegisterCharacterLight(light);
+                HsrCharacterLightRegistry.Register(light);
             else
-                HSRSceneController.UnregisterCharacterLight(light);
+                HsrCharacterLightRegistry.Unregister(light);
         }
 
         private void OnValidate()
@@ -899,7 +1099,7 @@ namespace HoyoToon.Runtime.Character.HSR
             SceneLight = ResolveSceneLightReference();
             SyncCharacterLightCullingMasks();
             m_HasSyncedState = false;
-            m_ComputeSkinningDirty = true;
+            MarkComputeSkinningDirty();
             s_TopologyDirty = true;
 
             if (isActiveAndEnabled)
@@ -976,6 +1176,8 @@ namespace HoyoToon.Runtime.Character.HSR
             if (renderers == null)
                 return;
 
+            ApplyCharacterSelfShadowCastingMode();
+
             ComputeBuffer skinnedVerticesBuffer = GetSkinnedVerticesBufferForBinding();
             if (skinnedVerticesBuffer == null)
                 return;
@@ -1001,6 +1203,11 @@ namespace HoyoToon.Runtime.Character.HSR
             };
 
             m_CrpPerDrawExUpload[0] = perDrawExData;
+            ComputeBuffer rendererConstantBuffer = GetOrCreateRendererConstantBuffer();
+            if (rendererConstantBuffer == null)
+                return;
+
+            rendererConstantBuffer.SetData(m_CrpPerDrawExUpload);
 
             foreach (var ren in renderers)
             {
@@ -1008,10 +1215,9 @@ namespace HoyoToon.Runtime.Character.HSR
                     continue;
 
                 RendererConstantBufferState state = GetOrCreateRendererConstantBufferState(ren);
-                state.constantBuffer.SetData(m_CrpPerDrawExUpload);
 
                 ren.GetPropertyBlock(state.propertyBlock);
-                state.propertyBlock.SetConstantBuffer(s_CrpPerDrawExId, state.constantBuffer, 0, s_CrpPerDrawExSize);
+                state.propertyBlock.SetConstantBuffer(s_CrpPerDrawExId, rendererConstantBuffer, 0, s_CrpPerDrawExSize);
                 state.propertyBlock.SetFloat(s_StencilEyeId, _StencilEyeValue);
                 state.propertyBlock.SetVector(s_CharacterSelfShadowAtlasRectId, m_CharacterSelfShadowAtlasRect);
                 state.propertyBlock.SetFloat(s_CharacterSelfShadowSliceIndexId, m_CharacterSelfShadowSliceIndex);
@@ -1025,6 +1231,14 @@ namespace HoyoToon.Runtime.Character.HSR
 
                 ren.SetPropertyBlock(state.propertyBlock);
             }
+        }
+
+        private ComputeBuffer GetOrCreateRendererConstantBuffer()
+        {
+            if (m_RendererConstantBuffer == null)
+                m_RendererConstantBuffer = new ComputeBuffer(1, s_CrpPerDrawExSize, ComputeBufferType.Constant);
+
+            return m_RendererConstantBuffer;
         }
 
         private ComputeBuffer GetSkinnedVerticesBufferForBinding()
@@ -1064,18 +1278,21 @@ namespace HoyoToon.Runtime.Character.HSR
 
             state.propertyBlock.Clear();
             renderer.SetPropertyBlock(state.propertyBlock);
-            state.constantBuffer.Release();
             m_RendererConstantBufferStates.Remove(renderer);
         }
 
         private void ReleaseAllRendererConstantBuffers()
         {
-            if (m_RendererConstantBufferStates.Count == 0)
-                return;
+            m_RendererConstantBufferReleaseScratch.Clear();
+            foreach (Renderer renderer in m_RendererConstantBufferStates.Keys)
+                m_RendererConstantBufferReleaseScratch.Add(renderer);
 
-            List<Renderer> renderersToRelease = new List<Renderer>(m_RendererConstantBufferStates.Keys);
-            for (int i = 0; i < renderersToRelease.Count; ++i)
-                ReleaseRendererConstantBuffer(renderersToRelease[i]);
+            for (int i = 0; i < m_RendererConstantBufferReleaseScratch.Count; ++i)
+                ReleaseRendererConstantBuffer(m_RendererConstantBufferReleaseScratch[i]);
+
+            m_RendererConstantBufferReleaseScratch.Clear();
+
+            ReleaseComputeBuffer(ref m_RendererConstantBuffer);
         }
 
         private int ComputeSyncStateHash()
@@ -1100,6 +1317,7 @@ namespace HoyoToon.Runtime.Character.HSR
                 hash = hash * 31 + m_CharacterSelfShadowAtlasRect.GetHashCode();
                 hash = hash * 31 + m_CharacterSelfShadowSliceIndex.GetHashCode();
                 hash = hash * 31 + m_CharacterSelfShadowValid.GetHashCode();
+                hash = hash * 31 + EnableCharacterSelfShadow.GetHashCode();
 
                 int rendererCount = renderers != null ? renderers.Length : 0;
                 hash = hash * 31 + rendererCount;
@@ -1132,13 +1350,10 @@ namespace HoyoToon.Runtime.Character.HSR
             }
         }
 
-        private static bool AreRendererArraysEqual(Renderer[] left, Renderer[] right)
+        private static bool AreRendererArrayAndListEqual(Renderer[] left, List<Renderer> right)
         {
-            if (ReferenceEquals(left, right))
-                return true;
-
             int leftLength = left != null ? left.Length : 0;
-            int rightLength = right != null ? right.Length : 0;
+            int rightLength = right != null ? right.Count : 0;
             if (leftLength != rightLength)
                 return false;
 
@@ -1242,24 +1457,106 @@ namespace HoyoToon.Runtime.Character.HSR
         {
             if (!IsComputeSkinningRequested())
             {
-                m_HasComputeInputsHash = false;
+                InvalidateComputeSkinningInputCache();
                 return;
             }
 
-            int currentHash = ComputeSkinningInputsHash();
+            if (m_ComputeSkinningDirty || !m_ComputeSkinningInitialized)
+                return;
+
+            if (m_RendererScopeDirty || renderers == null)
+            {
+                MarkComputeSkinningDirty();
+                m_HasSyncedState = false;
+                return;
+            }
+
+            int currentSnapshotHash = ComputeSkinningInputSnapshotHash();
+            if (m_HasComputeInputSnapshot
+                && m_LastComputeInputRendererScopeVersion == m_RendererScopeVersion
+                && currentSnapshotHash == m_LastComputeInputSnapshotHash)
+            {
+                return;
+            }
+
+            int currentDeepHash = ComputeSkinningInputsHash();
+            m_LastComputeInputSnapshotHash = currentSnapshotHash;
+            m_LastComputeInputRendererScopeVersion = m_RendererScopeVersion;
+            m_HasComputeInputSnapshot = true;
+
             if (!m_HasComputeInputsHash)
             {
-                m_LastComputeInputsHash = currentHash;
+                m_LastComputeInputsHash = currentDeepHash;
                 m_HasComputeInputsHash = true;
                 return;
             }
 
-            if (currentHash == m_LastComputeInputsHash)
+            if (currentDeepHash == m_LastComputeInputsHash)
                 return;
 
-            m_LastComputeInputsHash = currentHash;
-            m_ComputeSkinningDirty = true;
+            m_LastComputeInputsHash = currentDeepHash;
+            MarkComputeSkinningDirty();
             m_HasSyncedState = false;
+        }
+
+        private void MarkComputeSkinningDirty()
+        {
+            m_ComputeSkinningDirty = true;
+            InvalidateComputeSkinningInputCache();
+        }
+
+        private void InvalidateComputeSkinningInputCache()
+        {
+            m_HasComputeInputsHash = false;
+            m_HasComputeInputSnapshot = false;
+            m_LastComputeInputRendererScopeVersion = -1;
+        }
+
+        private void UpdateComputeSkinningInputCache()
+        {
+            m_LastComputeInputSnapshotHash = ComputeSkinningInputSnapshotHash();
+            m_LastComputeInputRendererScopeVersion = m_RendererScopeVersion;
+            m_HasComputeInputSnapshot = true;
+            m_LastComputeInputsHash = ComputeSkinningInputsHash();
+            m_HasComputeInputsHash = true;
+        }
+
+        private int ComputeSkinningInputSnapshotHash()
+        {
+            unchecked
+            {
+                int hash = 17;
+                hash = hash * 31 + (int)SkinningMode;
+                hash = hash * 31 + (CustomSkinningCompute != null ? CustomSkinningCompute.GetInstanceID() : 0);
+                hash = hash * 31 + m_RendererScopeVersion;
+
+                int rendererCount = renderers != null ? renderers.Length : 0;
+                hash = hash * 31 + rendererCount;
+                for (int i = 0; i < rendererCount; ++i)
+                {
+                    Renderer renderer = renderers[i];
+                    hash = hash * 31 + (renderer != null ? renderer.GetInstanceID() : 0);
+
+                    SkinnedMeshRenderer skinnedRenderer = renderer as SkinnedMeshRenderer;
+                    if (skinnedRenderer == null)
+                    {
+                        hash = hash * 31;
+                        continue;
+                    }
+
+                    Mesh mesh = skinnedRenderer.sharedMesh;
+                    hash = hash * 31 + (mesh != null ? mesh.GetInstanceID() : 0);
+                    hash = hash * 31 + (mesh != null ? mesh.vertexCount : 0);
+                    hash = hash * 31 + (mesh != null ? mesh.blendShapeCount : 0);
+                    hash = hash * 31 + (mesh != null ? mesh.bindposeCount : 0);
+                    hash = hash * 31 + (mesh != null && mesh.isReadable ? 1 : 0);
+
+                    Transform rootBone = skinnedRenderer.rootBone;
+                    hash = hash * 31 + (rootBone != null ? rootBone.GetInstanceID() : 0);
+                }
+
+                return hash;
+            }
         }
 
         private int ComputeSkinningInputsHash()
@@ -1317,20 +1614,28 @@ namespace HoyoToon.Runtime.Character.HSR
 
         private bool IsComputeSkinningRequested()
         {
-            TryAssignDefaultComputeSkinningShader();
-            return SkinningMode == CharacterSkinningMode.Compute && CustomSkinningCompute != null;
+            if (SkinningMode != CharacterSkinningMode.Compute)
+                return false;
+
+            if (CustomSkinningCompute == null)
+            {
+                LogComputeSkinningErrorOnce("HSRCharacterController: Compute skinning requested but no compute shader is assigned. Assign SkinningUVCoords.compute during setup before building the player.");
+                return false;
+            }
+
+            return true;
         }
 
         private void TryAssignDefaultComputeSkinningShader()
         {
-            if (CustomSkinningCompute != null)
+            if (CustomSkinningCompute != null || Application.isPlaying)
                 return;
 
             CustomSkinningCompute = HSRCharacterEditorHooks.ResolveDefaultComputeShader();
             if (CustomSkinningCompute != null)
             {
                 RuntimeEditorBridge.MarkDirty(this);
-                m_ComputeSkinningDirty = true;
+                MarkComputeSkinningDirty();
             }
         }
 
@@ -1374,32 +1679,146 @@ namespace HoyoToon.Runtime.Character.HSR
 
             if (missingRequiredBuffers)
             {
-                m_ComputeSkinningDirty = true;
+                MarkComputeSkinningDirty();
                 RebuildComputeSkinning();
                 m_HasSyncedState = false;
                 if (!m_ComputeSkinningInitialized)
                     return;
             }
 
+            if (!ShouldDispatchComputeSkinningThisFrame())
+                return;
+
             UploadComputeBoneMatrices();
             DispatchComputeSkinning();
-            UploadBlendShapeBakedVertices();
+            m_ComputeSkinningHasDispatchedPose = true;
+            ClearComputeSkinningPoseChangeFlags();
+        }
+
+        private bool ShouldDispatchComputeSkinningThisFrame()
+        {
+            if (!m_ComputeSkinningInitialized || !m_HasComputeDispatchSegments)
+                return false;
+
+            if (!HasActiveComputeSkinningConsumer())
+                return false;
+
+            return !m_ComputeSkinningHasDispatchedPose || HasComputeSkinningPoseChanged();
+        }
+
+        private bool HasActiveComputeSkinningConsumer()
+        {
+            for (int i = 0; i < m_ComputeSkinSegments.Count; ++i)
+            {
+                ComputeSkinSegment segment = m_ComputeSkinSegments[i];
+                Renderer renderer = segment != null ? segment.renderer : null;
+                if (!IsActiveRendererForComputeSkinning(renderer))
+                    continue;
+
+                if (renderer.isVisible || IsForcedOffscreenComputeSkinningConsumer(renderer))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool IsForcedOffscreenComputeSkinningConsumer(Renderer renderer)
+        {
+            if (renderer == null)
+                return false;
+
+            if (EnableCharacterSelfShadow)
+                return true;
+
+            if (m_HasPlanarReflectionParticipantForComputeSkinning)
+                return true;
+
+            ShadowCastingMode shadowMode = renderer.shadowCastingMode;
+            return shadowMode != ShadowCastingMode.Off;
+        }
+
+        private static bool IsActiveRendererForComputeSkinning(Renderer renderer)
+        {
+            return renderer != null
+                && renderer.enabled
+                && !renderer.forceRenderingOff
+                && renderer.gameObject != null
+                && renderer.gameObject.activeInHierarchy;
+        }
+
+        private bool HasComputeSkinningPoseChanged()
+        {
+            if (transform.hasChanged)
+                return true;
+
+            for (int i = 0; i < m_ComputeSkinSegments.Count; ++i)
+            {
+                ComputeSkinSegment segment = m_ComputeSkinSegments[i];
+                if (segment == null || segment.renderer == null)
+                    continue;
+
+                if (segment.renderer.transform.hasChanged)
+                    return true;
+
+                Transform rootBone = segment.rootBone != null ? segment.rootBone : segment.renderer.transform;
+                if (rootBone != null && rootBone.hasChanged)
+                    return true;
+
+                Transform[] bones = segment.bones;
+                int boneCount = bones != null ? bones.Length : 0;
+                for (int b = 0; b < boneCount; ++b)
+                {
+                    Transform bone = bones[b];
+                    if (bone != null && bone.hasChanged)
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        private void ClearComputeSkinningPoseChangeFlags()
+        {
+            transform.hasChanged = false;
+
+            for (int i = 0; i < m_ComputeSkinSegments.Count; ++i)
+            {
+                ComputeSkinSegment segment = m_ComputeSkinSegments[i];
+                if (segment == null || segment.renderer == null)
+                    continue;
+
+                segment.renderer.transform.hasChanged = false;
+
+                Transform rootBone = segment.rootBone != null ? segment.rootBone : segment.renderer.transform;
+                if (rootBone != null)
+                    rootBone.hasChanged = false;
+
+                Transform[] bones = segment.bones;
+                int boneCount = bones != null ? bones.Length : 0;
+                for (int b = 0; b < boneCount; ++b)
+                {
+                    Transform bone = bones[b];
+                    if (bone != null)
+                        bone.hasChanged = false;
+                }
+            }
         }
 
         private void RebuildComputeSkinning()
         {
             TeardownComputeSkinning();
-            m_ComputeSkinningDirty = false;
-            m_LastComputeInputsHash = ComputeSkinningInputsHash();
-            m_HasComputeInputsHash = true;
 
             if (renderers == null || m_RendererScopeDirty)
                 RefreshScopedRenderers();
+
+            m_ComputeSkinningDirty = false;
+            UpdateComputeSkinningInputCache();
 
             m_ComputeSkinSegments.Clear();
             m_ComputeVertexOffsets.Clear();
             m_HasEligibleComputeSkinningRenderers = false;
             m_HasComputeDispatchSegments = false;
+            m_ComputeSkinningHasDispatchedPose = false;
 
             int totalVertexCount = 0;
             int totalMatrixCount = 0;
@@ -1422,23 +1841,25 @@ namespace HoyoToon.Runtime.Character.HSR
                         continue;
                     }
 
-                    Vector3[] vertices = mesh.vertices;
-                    if (vertices == null || vertices.Length == 0)
+                    int vertexCount = mesh.vertexCount;
+                    if (vertexCount <= 0)
                         continue;
 
                     BoneWeight[] boneWeights = mesh.boneWeights;
                     Matrix4x4[] bindPoses = mesh.bindposes;
-                    if (boneWeights == null || boneWeights.Length != vertices.Length || bindPoses == null || bindPoses.Length == 0)
+                    if (boneWeights == null || boneWeights.Length != vertexCount || bindPoses == null || bindPoses.Length == 0)
                         continue;
 
                     var segment = new ComputeSkinSegment
                     {
                         renderer = skinnedRenderer,
                         mesh = mesh,
+                        rootBone = skinnedRenderer.rootBone,
                         bones = skinnedRenderer.bones,
                         bindPoses = bindPoses,
+                        boneWeights = boneWeights,
                         vertexOffset = totalVertexCount,
-                        vertexCount = vertices.Length,
+                        vertexCount = vertexCount,
                         matrixOffset = totalMatrixCount,
                         matrixCount = bindPoses.Length
                     };
@@ -1481,19 +1902,30 @@ namespace HoyoToon.Runtime.Character.HSR
             {
                 ComputeSkinSegment segment = m_ComputeSkinSegments[s];
                 Mesh mesh = segment.mesh;
-                Vector3[] vertices = mesh.vertices;
-                BoneWeight[] boneWeights = mesh.boneWeights;
-                Vector3[] computeNormals = mesh.normals;
-                Vector4[] computeTangents = mesh.tangents;
-                List<Vector4> uv7 = new List<Vector4>(segment.vertexCount);
-                List<Vector4> uv8 = new List<Vector4>(segment.vertexCount);
-                mesh.GetUVs(6, uv7);
-                mesh.GetUVs(7, uv8);
+                BoneWeight[] boneWeights = segment.boneWeights;
+                m_ComputeVertexScratch.Clear();
+                m_ComputeNormalScratch.Clear();
+                m_ComputeTangentScratch.Clear();
+                m_ComputeUv7Scratch.Clear();
+                m_ComputeUv8Scratch.Clear();
+                mesh.GetVertices(m_ComputeVertexScratch);
+                mesh.GetNormals(m_ComputeNormalScratch);
+                mesh.GetTangents(m_ComputeTangentScratch);
+                mesh.GetUVs(6, m_ComputeUv7Scratch);
+                mesh.GetUVs(7, m_ComputeUv8Scratch);
 
-                bool hasComputeNormals = computeNormals != null && computeNormals.Length == segment.vertexCount;
-                bool hasComputeTangents = computeTangents != null && computeTangents.Length == segment.vertexCount;
-                bool hasUv7 = uv7.Count == segment.vertexCount;
-                bool hasUv8 = uv8.Count == segment.vertexCount;
+                if (m_ComputeVertexScratch.Count != segment.vertexCount)
+                {
+                    LogComputeSkinningErrorOnce($"HSRCharacterController: Mesh '{mesh.name}' vertex data changed while rebuilding compute skinning.");
+                    TeardownComputeSkinning();
+                    MarkComputeSkinningDirty();
+                    return;
+                }
+
+                bool hasComputeNormals = m_ComputeNormalScratch.Count == segment.vertexCount;
+                bool hasComputeTangents = m_ComputeTangentScratch.Count == segment.vertexCount;
+                bool hasUv7 = m_ComputeUv7Scratch.Count == segment.vertexCount;
+                bool hasUv8 = m_ComputeUv8Scratch.Count == segment.vertexCount;
 
                 for (int i = 0; i < segment.vertexCount; ++i)
                 {
@@ -1502,21 +1934,27 @@ namespace HoyoToon.Runtime.Character.HSR
 
                     baseVertices[globalVertexIndex] = new SkinData
                     {
-                        pos = vertices[i],
+                        pos = m_ComputeVertexScratch[i],
                         pad0 = 0f,
-                        norm = hasComputeNormals ? computeNormals[i] : Vector3.up,
+                        norm = hasComputeNormals ? m_ComputeNormalScratch[i] : Vector3.up,
                         pad1 = 0f,
-                        tangent = hasComputeTangents ? computeTangents[i] : new Vector4(1f, 0f, 0f, 1f),
+                        tangent = hasComputeTangents ? m_ComputeTangentScratch[i] : new Vector4(1f, 0f, 0f, 1f),
                         tangent1 = new Vector4(
-                            hasUv7 ? uv7[i].x : 0f,
-                            hasUv7 ? uv7[i].y : 0f,
-                            hasUv8 ? uv8[i].x : 0f,
-                            hasUv8 ? uv8[i].y : 1f)
+                            hasUv7 ? m_ComputeUv7Scratch[i].x : 0f,
+                            hasUv7 ? m_ComputeUv7Scratch[i].y : 0f,
+                            hasUv8 ? m_ComputeUv8Scratch[i].x : 0f,
+                            hasUv8 ? m_ComputeUv8Scratch[i].y : 1f)
                     };
 
                     weights[globalVertexIndex] = new Vector4(bw.weight0, bw.weight1, bw.weight2, bw.weight3);
                     indices[globalVertexIndex] = new UInt4((uint)bw.boneIndex0, (uint)bw.boneIndex1, (uint)bw.boneIndex2, (uint)bw.boneIndex3);
                 }
+
+                m_ComputeVertexScratch.Clear();
+                m_ComputeNormalScratch.Clear();
+                m_ComputeTangentScratch.Clear();
+                m_ComputeUv7Scratch.Clear();
+                m_ComputeUv8Scratch.Clear();
             }
 
             m_ComputeOutputBuffer = new ComputeBuffer(totalVertexCount, Marshal.SizeOf<SkinData>());
@@ -1548,97 +1986,6 @@ namespace HoyoToon.Runtime.Character.HSR
             m_HasLoggedComputeSkinningError = false;
         }
 
-        private static void CacheRendererPackedUvData(Mesh mesh, int vertexCount, out Vector4[] uv7Out, out Vector4[] uv8Out)
-        {
-            uv7Out = null;
-            uv8Out = null;
-
-            if (mesh == null || vertexCount <= 0)
-                return;
-
-            List<Vector4> uv7List = new List<Vector4>(vertexCount);
-            List<Vector4> uv8List = new List<Vector4>(vertexCount);
-            mesh.GetUVs(6, uv7List);
-            mesh.GetUVs(7, uv8List);
-
-            if (uv7List.Count == vertexCount)
-                uv7Out = uv7List.ToArray();
-
-            if (uv8List.Count == vertexCount)
-                uv8Out = uv8List.ToArray();
-        }
-
-        private void UploadBlendShapeBakedVertices()
-        {
-            if (!m_ComputeSkinningInitialized || m_ComputeOutputBuffer == null)
-                return;
-
-            for (int s = 0; s < m_ComputeSkinSegments.Count; ++s)
-            {
-                ComputeSkinSegment segment = m_ComputeSkinSegments[s];
-                if (segment == null || !segment.usesBlendShapeBake || segment.renderer == null || segment.vertexCount <= 0)
-                    continue;
-
-                if (segment.bakedMesh == null)
-                {
-                    segment.bakedMesh = new Mesh
-                    {
-                        name = $"{segment.renderer.name}_ComputeBlendshapeBake",
-                        hideFlags = HideFlags.HideAndDontSave
-                    };
-                }
-
-                segment.renderer.BakeMesh(segment.bakedMesh);
-
-                Vector3[] bakedVertices = segment.bakedMesh.vertices;
-                if (bakedVertices == null || bakedVertices.Length != segment.vertexCount)
-                    continue;
-
-                Vector3[] bakedNormals = segment.bakedMesh.normals;
-                Vector4[] bakedTangents = segment.bakedMesh.tangents;
-                bool hasNormals = bakedNormals != null && bakedNormals.Length == segment.vertexCount;
-                bool hasTangents = bakedTangents != null && bakedTangents.Length == segment.vertexCount;
-
-                Transform skinRoot = segment.renderer.rootBone != null ? segment.renderer.rootBone : segment.renderer.transform;
-                Matrix4x4 rendererToSkinRoot = skinRoot.worldToLocalMatrix * segment.renderer.transform.localToWorldMatrix;
-                bool needsSpaceConversion = skinRoot != null && skinRoot != segment.renderer.transform;
-
-                if (segment.bakedUpload == null || segment.bakedUpload.Length != segment.vertexCount)
-                    segment.bakedUpload = new SkinData[segment.vertexCount];
-
-                for (int i = 0; i < segment.vertexCount; ++i)
-                {
-                    Vector3 bakedPos = bakedVertices[i];
-                    Vector3 bakedNorm = hasNormals ? bakedNormals[i] : Vector3.up;
-                    Vector3 bakedTan3 = hasTangents ? new Vector3(bakedTangents[i].x, bakedTangents[i].y, bakedTangents[i].z) : Vector3.right;
-                    float tangentW = hasTangents ? bakedTangents[i].w : 1f;
-
-                    if (needsSpaceConversion)
-                    {
-                        bakedPos = rendererToSkinRoot.MultiplyPoint3x4(bakedPos);
-                        bakedNorm = rendererToSkinRoot.MultiplyVector(bakedNorm).normalized;
-                        bakedTan3 = rendererToSkinRoot.MultiplyVector(bakedTan3).normalized;
-                    }
-
-                    segment.bakedUpload[i] = new SkinData
-                    {
-                        pos = bakedPos,
-                        pad0 = 0f,
-                        norm = bakedNorm,
-                        pad1 = 0f,
-                        tangent = new Vector4(bakedTan3.x, bakedTan3.y, bakedTan3.z, tangentW),
-                        tangent1 = new Vector4(
-                            segment.uv7 != null ? segment.uv7[i].x : 0f,
-                            segment.uv7 != null ? segment.uv7[i].y : 0f,
-                            segment.uv8 != null ? segment.uv8[i].x : 0f,
-                            segment.uv8 != null ? segment.uv8[i].y : 1f)
-                    };
-                }
-
-                m_ComputeOutputBuffer.SetData(segment.bakedUpload, 0, segment.vertexOffset, segment.vertexCount);
-            }
-        }
-
         private void UploadComputeBoneMatrices()
         {
             if (!m_ComputeSkinningInitialized || !m_HasComputeDispatchSegments || m_ComputeBoneMatricesUpload == null)
@@ -1647,13 +1994,14 @@ namespace HoyoToon.Runtime.Character.HSR
             for (int s = 0; s < m_ComputeSkinSegments.Count; ++s)
             {
                 ComputeSkinSegment segment = m_ComputeSkinSegments[s];
-                if (segment.renderer == null || segment.usesBlendShapeBake)
+                if (segment.renderer == null)
                     continue;
 
-                Transform skinRoot = segment.renderer.rootBone != null ? segment.renderer.rootBone : segment.renderer.transform;
+                Transform skinRoot = segment.rootBone != null ? segment.rootBone : segment.renderer.transform;
                 Matrix4x4 rootWorldToLocal = skinRoot.worldToLocalMatrix;
                 Matrix4x4 fallbackLocalToWorld = skinRoot.localToWorldMatrix;
                 Transform[] bones = segment.bones;
+                Matrix4x4[] bindPoses = segment.bindPoses;
 
                 for (int i = 0; i < segment.matrixCount; ++i)
                 {
@@ -1662,7 +2010,7 @@ namespace HoyoToon.Runtime.Character.HSR
                         boneLocalToWorld = bones[i].localToWorldMatrix;
 
                     int matrixIndex = segment.matrixOffset + i;
-                    m_ComputeBoneMatricesUpload[matrixIndex] = rootWorldToLocal * boneLocalToWorld * segment.bindPoses[i];
+                    m_ComputeBoneMatricesUpload[matrixIndex] = rootWorldToLocal * boneLocalToWorld * bindPoses[i];
                 }
             }
 
@@ -1684,7 +2032,7 @@ namespace HoyoToon.Runtime.Character.HSR
             for (int s = 0; s < m_ComputeSkinSegments.Count; ++s)
             {
                 ComputeSkinSegment segment = m_ComputeSkinSegments[s];
-                if (segment.renderer == null || segment.usesBlendShapeBake)
+                if (segment.renderer == null)
                     continue;
 
                 CustomSkinningCompute.SetInt("_VertexCount", segment.vertexCount);
@@ -1701,33 +2049,24 @@ namespace HoyoToon.Runtime.Character.HSR
             m_ComputeSkinningInitialized = false;
             m_ComputeSkinningDirty = false;
             m_ComputeKernel = -1;
-            ReleaseBlendShapeBakeMeshes();
             m_ComputeSkinSegments.Clear();
             m_ComputeVertexOffsets.Clear();
             m_ComputeBoneMatricesUpload = null;
+            m_ComputeVertexScratch.Clear();
+            m_ComputeNormalScratch.Clear();
+            m_ComputeTangentScratch.Clear();
+            m_ComputeUv7Scratch.Clear();
+            m_ComputeUv8Scratch.Clear();
             m_HasEligibleComputeSkinningRenderers = false;
-            m_HasComputeInputsHash = false;
+            InvalidateComputeSkinningInputCache();
             m_HasComputeDispatchSegments = false;
+            m_ComputeSkinningHasDispatchedPose = false;
 
             ReleaseComputeBuffer(ref m_ComputeBaseVerticesBuffer);
             ReleaseComputeBuffer(ref m_ComputeBoneWeightsBuffer);
             ReleaseComputeBuffer(ref m_ComputeBoneIndicesBuffer);
             ReleaseComputeBuffer(ref m_ComputeBoneMatricesBuffer);
             ReleaseComputeBuffer(ref m_ComputeOutputBuffer);
-        }
-
-        private void ReleaseBlendShapeBakeMeshes()
-        {
-            for (int i = 0; i < m_ComputeSkinSegments.Count; ++i)
-            {
-                ComputeSkinSegment segment = m_ComputeSkinSegments[i];
-                if (segment == null || segment.bakedMesh == null)
-                    continue;
-
-                RuntimeEditorBridge.DestroyObject(segment.bakedMesh);
-                segment.bakedMesh = null;
-                segment.bakedUpload = null;
-            }
         }
 
         private static void ReleaseComputeBuffer(ref ComputeBuffer buffer)

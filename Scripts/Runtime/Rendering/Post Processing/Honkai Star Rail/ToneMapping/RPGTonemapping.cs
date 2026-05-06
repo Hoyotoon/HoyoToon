@@ -55,9 +55,73 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
         public TrackBallParameter ColorSaturationHighlight = new(new Vector4(1f, 1f, 1f, 1f));
         public TrackBallParameter ColorContrastHighlight = new(new Vector4(1f, 1f, 1f, 1f));
         public TrackBallParameter ColorGainHighlight = new(new Vector4(1f, 1f, 1f, 1f));
-        
+        public bool IsActive()
+        {
+            return active
+                && tonemapping == TonemappingMethod.GenerateLUTTexture
+                && AnyPropertiesIsOverridden()
+                && HasMeaningfulOverride();
+        }
 
-        public bool IsActive() => true;
+        private bool HasMeaningfulOverride()
+        {
+            return IsOverriddenPositive(BlueCorrection)
+                || IsOverriddenPositive(ExpandGamut)
+                || IsOverriddenTrue(ForceDisableToneMapping)
+                || IsOverriddenPositive(ToneCurveToeStrength)
+                || IsOverriddenPositive(ToneCurveToeLength)
+                || IsOverriddenPositive(ToneCurveShoulderStrength)
+                || IsOverriddenPositive(ToneCurveShoulderLength)
+                || IsOverriddenPositive(ToneCurveShoulderAngle)
+                || IsOverriddenPositive(ToneCurveGamma)
+                || IsOverriddenPositive(ColorCorrectionShadowMax)
+                || IsOverriddenPositive(ColorCorrectionHighlightMin)
+                || IsOverriddenNonZero(LevelHighLightTone)
+                || IsOverriddenNonZero(LevelShadowTone)
+                || IsOverriddenNonBlack(LevelColor)
+                || IsOverriddenNonZero(ColorSaturationGlobal)
+                || IsOverriddenNonZero(ColorContrastGlobal)
+                || IsOverriddenNonZero(ColorGainGlobal)
+                || IsOverriddenNonZero(ColorSaturationShadow)
+                || IsOverriddenNonZero(ColorContrastShadow)
+                || IsOverriddenNonZero(ColorGainShadow)
+                || IsOverriddenNonZero(ColorSaturationMidtone)
+                || IsOverriddenNonZero(ColorContrastMidtone)
+                || IsOverriddenNonZero(ColorGainMidtone)
+                || IsOverriddenNonZero(ColorSaturationHighlight)
+                || IsOverriddenNonZero(ColorContrastHighlight)
+                || IsOverriddenNonZero(ColorGainHighlight);
+        }
+
+        private static bool IsOverriddenPositive(FloatParameter parameter)
+        {
+            return parameter.overrideState && parameter.value > 0f;
+        }
+
+        private static bool IsOverriddenNonZero(FloatParameter parameter)
+        {
+            return parameter.overrideState && !Mathf.Approximately(parameter.value, 0f);
+        }
+
+        private static bool IsOverriddenTrue(BoolParameter parameter)
+        {
+            return parameter.overrideState && parameter.value;
+        }
+
+        private static bool IsOverriddenNonBlack(ColorParameter parameter)
+        {
+            Color value = parameter.value;
+            return parameter.overrideState
+                && (!Mathf.Approximately(value.r, 0f)
+                    || !Mathf.Approximately(value.g, 0f)
+                    || !Mathf.Approximately(value.b, 0f));
+        }
+
+        private static bool IsOverriddenNonZero(TrackBallParameter parameter)
+        {
+            return parameter.overrideState && parameter.value.sqrMagnitude > 0f;
+        }
+
         public bool IsTileCompatible() => false;
     }
 }

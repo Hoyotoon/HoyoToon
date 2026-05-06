@@ -1,11 +1,14 @@
 using System;
 using System.Collections.Generic;
 using HoyoToon.Runtime.Character.HSR;
+using HoyoToon.Runtime.Rendering.Utilities;
+using HoyoToon.Runtime.Utilities;
 using UnityEngine;
 using UnityEngine.Experimental.Rendering;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.Universal;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.HSR
 {
@@ -30,12 +33,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
             if (!supportedCamera)
                 return;
-
-            if (!m_Pass.HasSceneReceiverPass())
-            {
-                m_Pass.ApplyDisabledGlobals();
-                return;
-            }
 
             renderer.EnqueuePass(m_Pass);
         }
@@ -80,9 +77,11 @@ namespace HoyoToon.Runtime.Rendering.HSR
             const string k_BindGlobalsPassName = "Character Manikin Shadow Globals";
 
             const int k_MaxSlots = 12;
+            const int k_GlobalSnapshotRingSize = 8;
             const int k_PassMissing = -1;
             const int k_PassExcluded = -2;
-            const int k_ReceiverPassCheckInterval = 30;
+            const int k_MaterialPassResolverId = 2;
+            const int k_LegacyReceiverMissCheckInterval = 30;
 
             static readonly int k_ManikinRawShadowAtlasId = Shader.PropertyToID("_ManikinRawShadowAtlas");
             static readonly int k_ManikinDepthId = Shader.PropertyToID("_ManikinDepth");
@@ -149,18 +148,24 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 Vector4.zero, Vector4.zero, Vector4.zero,
             };
 
+            static readonly GlobalArraySnapshot[] k_GlobalSnapshotRing = CreateGlobalSnapshotRing();
             static readonly List<HSRCharacterController> k_ControllerScratch = new List<HSRCharacterController>(8);
             static readonly List<Material> k_MaterialScratch = new List<Material>(8);
             static readonly List<int> k_PassIndexScratch = new List<int>(8);
             static readonly List<CullingCandidate> k_CandidateScratch = new List<CullingCandidate>(16);
-            static readonly List<Renderer> k_AllRendererScratch = new List<Renderer>(256);
+            static readonly List<GameObject> k_RootScratch = new List<GameObject>(16);
+            static readonly List<Renderer> k_RendererScratch = new List<Renderer>(128);
             static readonly List<ShaderTagId> k_ReceiverPassTagList = new List<ShaderTagId> { k_ManikinReceiverTag };
             static readonly List<ShaderTagId> k_DepthPassTagList = new List<ShaderTagId> { k_ManikinDepthTag };
+            static readonly Dictionary<HsrRendererMaterialQueryUtility.MaterialPassCacheKey, int> k_MaterialPassIndexCache =
+                new Dictionary<HsrRendererMaterialQueryUtility.MaterialPassCacheKey, int>(128);
+            static int k_ObservedMaterialPassCacheVersion;
+            static int k_NextGlobalSnapshotIndex;
 
             readonly CharacterManikinAreaFloorShadowSettings m_Settings;
-
-            bool m_HasCachedReceiverPass;
-            int m_LastReceiverPassCheckFrame = -1;
+            bool m_CachedLegacyHasReceiverPass;
+            int m_LastLegacyReceiverPassCheckFrame = -k_LegacyReceiverMissCheckInterval;
+            int m_LastLegacyReceiverPassSceneHandle;
 
             struct SlotData
             {
@@ -198,6 +203,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 public RendererListHandle rendererList;
                 public TextureHandle rawAtlas;
                 public TextureHandle floorDepth;
+                public TextureHandle fallbackTexture;
             }
 
             class BindGlobalsPassData
@@ -205,6 +211,27 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 public TextureHandle rawAtlas;
                 public TextureHandle floorDepth;
                 public TextureHandle receiverShadow;
+                public TextureHandle fallbackTexture;
+                public GlobalArraySnapshot globalsSnapshot;
+                public int slotCount;
+                public Vector4 rawShadowAtlasTexelSize;
+                public float shadowStrength;
+                public float pcssSearchRadius;
+                public float pcssMinFilterRadius;
+                public float pcssMaxFilterRadius;
+                public float radialBlurStart;
+                public float radialBlurEnd;
+                public float radialBlurStrength;
+                public float radialFadeStart;
+                public float radialFadeEnd;
+                public float floorDepthThreshold;
+            }
+
+            sealed class GlobalArraySnapshot
+            {
+                public readonly Matrix4x4[] worldToShadowArray = new Matrix4x4[k_MaxSlots];
+                public readonly Vector4[] shadowAtlasRectArray = new Vector4[k_MaxSlots];
+                public readonly Vector4[] shadowOriginArray = new Vector4[k_MaxSlots];
             }
 
             public CharacterManikinAreaFloorShadowPass(CharacterManikinAreaFloorShadowSettings settings)
@@ -212,59 +239,91 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 m_Settings = settings;
             }
 
-            public bool HasSceneReceiverPass()
+            internal static UnityScene ResolveRenderScene(Camera camera)
             {
-                int frame = Time.frameCount;
-                if (m_LastReceiverPassCheckFrame >= 0 && frame - m_LastReceiverPassCheckFrame < k_ReceiverPassCheckInterval)
-                    return m_HasCachedReceiverPass;
+                return RenderSceneUtility.ResolveRenderScene(camera);
+            }
 
-                m_LastReceiverPassCheckFrame = frame;
-                m_HasCachedReceiverPass = false;
+            public bool HasSceneReceiverPass(UnityScene scene)
+            {
+                if (HoyoToonRenderParticipantRegistry.HasManikinShadowReceiver(scene))
+                    return true;
 
-                k_AllRendererScratch.Clear();
-                Renderer[] renderers = UnityEngine.Object.FindObjectsByType<Renderer>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
-                if (renderers == null || renderers.Length == 0)
-                    return false;
+                return HasLegacySceneReceiverPass(scene);
+            }
 
-                k_AllRendererScratch.AddRange(renderers);
-                for (int r = 0; r < k_AllRendererScratch.Count; ++r)
+            bool HasLegacySceneReceiverPass(UnityScene scene)
+            {
+                int sceneHandle = RenderSceneUtility.GetSceneHandleOrDefault(scene);
+                if (m_LastLegacyReceiverPassSceneHandle == sceneHandle)
                 {
-                    Renderer renderer = k_AllRendererScratch[r];
-                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
-                        continue;
-
-                    if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
-                        continue;
-
-                    try
+                    if (m_CachedLegacyHasReceiverPass
+                        || Time.frameCount - m_LastLegacyReceiverPassCheckFrame < k_LegacyReceiverMissCheckInterval)
                     {
-                        for (int m = 0; m < materialCount; ++m)
-                        {
-                            Material material = k_MaterialScratch[m];
-                            if (!HsrRendererMaterialQueryUtility.HasMaterialTagOrShaderPassOrNamedPass(
-                                    material,
-                                    k_LightModeTagName,
-                                    k_LightModeTag,
-                                    k_ReceiverLightModeName,
-                                    StringComparison.OrdinalIgnoreCase))
-                            {
-                                continue;
-                            }
-
-                            m_HasCachedReceiverPass = true;
-                            return true;
-                        }
-                    }
-                    finally
-                    {
-                        k_MaterialScratch.Clear();
+                        return m_CachedLegacyHasReceiverPass;
                     }
                 }
 
+                m_LastLegacyReceiverPassSceneHandle = sceneHandle;
+                m_LastLegacyReceiverPassCheckFrame = Time.frameCount;
+                m_CachedLegacyHasReceiverPass = false;
+                k_RootScratch.Clear();
+
+                if (!RenderSceneUtility.IsSceneUsable(scene))
+                    return false;
+
+                scene.GetRootGameObjects(k_RootScratch);
+                for (int rootIndex = 0; rootIndex < k_RootScratch.Count; ++rootIndex)
+                {
+                    GameObject root = k_RootScratch[rootIndex];
+                    if (root == null)
+                        continue;
+
+                    k_RendererScratch.Clear();
+                    root.GetComponentsInChildren(true, k_RendererScratch);
+                    for (int rendererIndex = 0; rendererIndex < k_RendererScratch.Count; ++rendererIndex)
+                    {
+                        Renderer renderer = k_RendererScratch[rendererIndex];
+                        if (!HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderer))
+                            continue;
+
+                        if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
+                            continue;
+
+                        try
+                        {
+                            for (int m = 0; m < materialCount; ++m)
+                            {
+                                Material material = k_MaterialScratch[m];
+                                if (!HsrRendererMaterialQueryUtility.HasMaterialTagOrShaderPassOrNamedPass(
+                                        material,
+                                        k_LightModeTagName,
+                                        k_LightModeTag,
+                                        k_ReceiverLightModeName,
+                                        StringComparison.OrdinalIgnoreCase))
+                                {
+                                    continue;
+                                }
+
+                                m_CachedLegacyHasReceiverPass = true;
+                                k_RootScratch.Clear();
+                                k_RendererScratch.Clear();
+                                return true;
+                            }
+                        }
+                        finally
+                        {
+                            k_MaterialScratch.Clear();
+                        }
+                    }
+                }
+
+                k_RootScratch.Clear();
+                k_RendererScratch.Clear();
                 return false;
             }
 
-            public void ApplyDisabledGlobals()
+            static void ResetGlobalArrays()
             {
                 for (int i = 0; i < k_MaxSlots; ++i)
                 {
@@ -272,43 +331,64 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     k_ShadowAtlasRectArray[i] = Vector4.zero;
                     k_ShadowOriginArray[i] = Vector4.zero;
                 }
+            }
 
-                Shader.SetGlobalTexture(k_ManikinRawShadowAtlasId, Texture2D.blackTexture);
-                Shader.SetGlobalTexture(k_ManikinDepthId, Texture2D.blackTexture);
-                Shader.SetGlobalTexture(k_ManikinShadowId, Texture2D.blackTexture);
-                Shader.SetGlobalMatrixArray(k_ManikinWorldToShadowArrId, k_WorldToShadowArray);
-                Shader.SetGlobalVectorArray(k_ManikinShadowAtlasRectArrId, k_ShadowAtlasRectArray);
-                Shader.SetGlobalVectorArray(k_ManikinShadowOriginArrId, k_ShadowOriginArray);
-                Shader.SetGlobalFloat(k_ManikinSlotCountId, 0f);
-                Shader.SetGlobalVector(k_ManikinRawShadowAtlasTexelSizeId, new Vector4(1f, 1f, 1f, 1f));
-                Shader.SetGlobalFloat(k_ManikinShadowStrengthId, m_Settings.shadowStrength);
-                Shader.SetGlobalFloat(k_ManikinPcssSearchRadiusId, m_Settings.pcssSearchRadius);
-                Shader.SetGlobalFloat(k_ManikinPcssMinFilterRadiusId, m_Settings.pcssMinFilterRadius);
-                Shader.SetGlobalFloat(k_ManikinPcssMaxFilterRadiusId, m_Settings.pcssMaxFilterRadius);
-                Shader.SetGlobalFloat(k_ManikinRadialBlurStartId, m_Settings.radialBlurStart);
-                Shader.SetGlobalFloat(k_ManikinRadialBlurEndId, m_Settings.radialBlurEnd);
-                Shader.SetGlobalFloat(k_ManikinRadialBlurStrengthId, m_Settings.radialBlurStrength);
-                Shader.SetGlobalFloat(k_ManikinRadialFadeStartId, m_Settings.radialFadeStart);
-                Shader.SetGlobalFloat(k_ManikinRadialFadeEndId, m_Settings.radialFadeEnd);
-                Shader.SetGlobalFloat(k_ManikinFloorDepthThresholdId, m_Settings.floorDepthThreshold);
+            static GlobalArraySnapshot[] CreateGlobalSnapshotRing()
+            {
+                var ring = new GlobalArraySnapshot[k_GlobalSnapshotRingSize];
+                for (int i = 0; i < ring.Length; ++i)
+                    ring[i] = new GlobalArraySnapshot();
+
+                return ring;
+            }
+
+            static GlobalArraySnapshot CaptureGlobalArraySnapshot()
+            {
+                GlobalArraySnapshot snapshot = k_GlobalSnapshotRing[k_NextGlobalSnapshotIndex];
+                k_NextGlobalSnapshotIndex = (k_NextGlobalSnapshotIndex + 1) % k_GlobalSnapshotRing.Length;
+
+                Array.Copy(k_WorldToShadowArray, snapshot.worldToShadowArray, k_MaxSlots);
+                Array.Copy(k_ShadowAtlasRectArray, snapshot.shadowAtlasRectArray, k_MaxSlots);
+                Array.Copy(k_ShadowOriginArray, snapshot.shadowOriginArray, k_MaxSlots);
+                return snapshot;
             }
 
             static int GetSubMeshCount(Renderer renderer)
             {
-                if (renderer is SkinnedMeshRenderer skinnedRenderer && skinnedRenderer.sharedMesh != null)
-                    return Mathf.Max(1, skinnedRenderer.sharedMesh.subMeshCount);
-
-                if (renderer is MeshRenderer meshRenderer)
-                {
-                    MeshFilter meshFilter = meshRenderer.GetComponent<MeshFilter>();
-                    if (meshFilter != null && meshFilter.sharedMesh != null)
-                        return Mathf.Max(1, meshFilter.sharedMesh.subMeshCount);
-                }
-
-                return 1;
+                return Mathf.Max(1, RendererTraversalUtility.GetSubMeshCount(renderer));
             }
 
             static int FindCasterPassIndex(Material material, string preferredPassName)
+            {
+                if (material == null)
+                    return k_PassMissing;
+
+                SyncMaterialPassCacheVersion();
+                int excludedStateVersion = GetMaterialPassExcludedStateVersion(material);
+                if (HsrRendererMaterialQueryUtility.TryGetCachedMaterialPassIndex(
+                        k_MaterialPassIndexCache,
+                        material,
+                        preferredPassName,
+                        k_MaterialPassResolverId,
+                        excludedStateVersion,
+                        out int cachedPassIndex))
+                {
+                    return cachedPassIndex;
+                }
+
+                int passIndex = ResolveCasterPassIndexUncached(material, preferredPassName);
+                HsrRendererMaterialQueryUtility.StoreCachedMaterialPassIndex(
+                    k_MaterialPassIndexCache,
+                    material,
+                    preferredPassName,
+                    k_MaterialPassResolverId,
+                    excludedStateVersion,
+                    passIndex);
+
+                return passIndex;
+            }
+
+            static int ResolveCasterPassIndexUncached(Material material, string preferredPassName)
             {
                 if (material == null)
                     return k_PassMissing;
@@ -322,7 +402,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
                 if (!string.IsNullOrEmpty(preferredPassName))
                 {
-                    int preferredPassIndex = material.FindPass(preferredPassName);
+                    int preferredPassIndex = MaterialPassResolver.ResolveNamedPass(material, preferredPassName);
                     if (preferredPassIndex >= 0)
                         return preferredPassIndex;
                 }
@@ -331,7 +411,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (hsrPassByTag >= 0)
                     return hsrPassByTag;
 
-                int hsrPass = material.FindPass("HSRPerObjectShadowCaster");
+                int hsrPass = MaterialPassResolver.ResolveNamedPass(material, "HSRPerObjectShadowCaster");
                 if (hsrPass >= 0)
                     return hsrPass;
 
@@ -339,7 +419,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (shadowCasterByTag >= 0)
                     return shadowCasterByTag;
 
-                int shadowCasterPass = material.FindPass("ShadowCaster");
+                int shadowCasterPass = MaterialPassResolver.ResolveNamedPass(material, "ShadowCaster");
                 if (shadowCasterPass >= 0)
                     return shadowCasterPass;
 
@@ -349,12 +429,27 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
                 for (int i = 0; i < k_FallbackCasterPassNames.Length; ++i)
                 {
-                    int passIndex = material.FindPass(k_FallbackCasterPassNames[i]);
+                    int passIndex = MaterialPassResolver.ResolveNamedPass(material, k_FallbackCasterPassNames[i]);
                     if (passIndex >= 0)
                         return passIndex;
                 }
 
                 return k_PassMissing;
+            }
+
+            static int GetMaterialPassExcludedStateVersion(Material material)
+            {
+                return material != null ? material.renderQueue : 0;
+            }
+
+            static void SyncMaterialPassCacheVersion()
+            {
+                int cacheVersion = HsrRendererMaterialQueryUtility.MaterialPassCacheVersion;
+                if (k_ObservedMaterialPassCacheVersion == cacheVersion)
+                    return;
+
+                k_MaterialPassIndexCache.Clear();
+                k_ObservedMaterialPassCacheVersion = cacheVersion;
             }
 
             static bool HasCaster(Renderer[] renderers, string preferredPassName)
@@ -365,7 +460,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 for (int r = 0; r < renderers.Length; ++r)
                 {
                     Renderer renderer = renderers[r];
-                    if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                    if (!RendererTraversalUtility.IsRendererActive(renderer))
                         continue;
 
                     if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
@@ -466,7 +561,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     for (int r = 0; r < renderers.Length; ++r)
                     {
                         Renderer renderer = renderers[r];
-                        if (renderer == null || !renderer.enabled || !renderer.gameObject.activeInHierarchy)
+                        if (!RendererTraversalUtility.IsRendererActive(renderer))
                             continue;
 
                         if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
@@ -530,12 +625,12 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (data.rawAtlas.IsValid())
                     context.cmd.SetGlobalTexture(k_ManikinRawShadowAtlasId, data.rawAtlas, RenderTextureSubElement.Depth);
                 else
-                    Shader.SetGlobalTexture(k_ManikinRawShadowAtlasId, Texture2D.blackTexture);
+                    context.cmd.SetGlobalTexture(k_ManikinRawShadowAtlasId, data.fallbackTexture);
 
                 if (data.floorDepth.IsValid())
                     context.cmd.SetGlobalTexture(k_ManikinDepthId, data.floorDepth);
                 else
-                    Shader.SetGlobalTexture(k_ManikinDepthId, Texture2D.blackTexture);
+                    context.cmd.SetGlobalTexture(k_ManikinDepthId, data.fallbackTexture);
 
                 context.cmd.DrawRendererList(data.rendererList);
             }
@@ -545,17 +640,120 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (data.rawAtlas.IsValid())
                     context.cmd.SetGlobalTexture(k_ManikinRawShadowAtlasId, data.rawAtlas, RenderTextureSubElement.Depth);
                 else
-                    Shader.SetGlobalTexture(k_ManikinRawShadowAtlasId, Texture2D.blackTexture);
+                    context.cmd.SetGlobalTexture(k_ManikinRawShadowAtlasId, data.fallbackTexture);
 
                 if (data.floorDepth.IsValid())
                     context.cmd.SetGlobalTexture(k_ManikinDepthId, data.floorDepth);
                 else
-                    Shader.SetGlobalTexture(k_ManikinDepthId, Texture2D.blackTexture);
+                    context.cmd.SetGlobalTexture(k_ManikinDepthId, data.fallbackTexture);
 
                 if (data.receiverShadow.IsValid())
                     context.cmd.SetGlobalTexture(k_ManikinShadowId, data.receiverShadow);
                 else
-                    Shader.SetGlobalTexture(k_ManikinShadowId, Texture2D.blackTexture);
+                    context.cmd.SetGlobalTexture(k_ManikinShadowId, data.fallbackTexture);
+
+                GlobalArraySnapshot snapshot = data.globalsSnapshot;
+                context.cmd.SetGlobalMatrixArray(k_ManikinWorldToShadowArrId, snapshot.worldToShadowArray);
+                context.cmd.SetGlobalVectorArray(k_ManikinShadowAtlasRectArrId, snapshot.shadowAtlasRectArray);
+                context.cmd.SetGlobalVectorArray(k_ManikinShadowOriginArrId, snapshot.shadowOriginArray);
+                context.cmd.SetGlobalFloat(k_ManikinSlotCountId, data.slotCount);
+                context.cmd.SetGlobalVector(k_ManikinRawShadowAtlasTexelSizeId, data.rawShadowAtlasTexelSize);
+                context.cmd.SetGlobalFloat(k_ManikinShadowStrengthId, data.shadowStrength);
+                context.cmd.SetGlobalFloat(k_ManikinPcssSearchRadiusId, data.pcssSearchRadius);
+                context.cmd.SetGlobalFloat(k_ManikinPcssMinFilterRadiusId, data.pcssMinFilterRadius);
+                context.cmd.SetGlobalFloat(k_ManikinPcssMaxFilterRadiusId, data.pcssMaxFilterRadius);
+                context.cmd.SetGlobalFloat(k_ManikinRadialBlurStartId, data.radialBlurStart);
+                context.cmd.SetGlobalFloat(k_ManikinRadialBlurEndId, data.radialBlurEnd);
+                context.cmd.SetGlobalFloat(k_ManikinRadialBlurStrengthId, data.radialBlurStrength);
+                context.cmd.SetGlobalFloat(k_ManikinRadialFadeStartId, data.radialFadeStart);
+                context.cmd.SetGlobalFloat(k_ManikinRadialFadeEndId, data.radialFadeEnd);
+                context.cmd.SetGlobalFloat(k_ManikinFloorDepthThresholdId, data.floorDepthThreshold);
+            }
+
+            void PopulateGlobalsPassData(
+                BindGlobalsPassData passData,
+                RenderGraph renderGraph,
+                TextureHandle rawAtlas,
+                TextureHandle floorDepth,
+                TextureHandle receiverShadow,
+                GlobalArraySnapshot globalsSnapshot,
+                int slotCount,
+                Vector4 rawShadowAtlasTexelSize)
+            {
+                passData.rawAtlas = rawAtlas;
+                passData.floorDepth = floorDepth;
+                passData.receiverShadow = receiverShadow;
+                passData.fallbackTexture = renderGraph.defaultResources.blackTexture;
+                passData.globalsSnapshot = globalsSnapshot;
+                passData.slotCount = slotCount;
+                passData.rawShadowAtlasTexelSize = rawShadowAtlasTexelSize;
+                passData.shadowStrength = m_Settings.shadowStrength;
+                passData.pcssSearchRadius = m_Settings.pcssSearchRadius;
+                passData.pcssMinFilterRadius = m_Settings.pcssMinFilterRadius;
+                passData.pcssMaxFilterRadius = m_Settings.pcssMaxFilterRadius;
+                passData.radialBlurStart = m_Settings.radialBlurStart;
+                passData.radialBlurEnd = m_Settings.radialBlurEnd;
+                passData.radialBlurStrength = m_Settings.radialBlurStrength;
+                passData.radialFadeStart = m_Settings.radialFadeStart;
+                passData.radialFadeEnd = m_Settings.radialFadeEnd;
+                passData.floorDepthThreshold = m_Settings.floorDepthThreshold;
+            }
+
+            void RecordBindGlobalsPass(
+                RenderGraph renderGraph,
+                TextureHandle rawAtlas,
+                TextureHandle floorDepth,
+                TextureHandle receiverShadow,
+                GlobalArraySnapshot globalsSnapshot,
+                int slotCount,
+                Vector4 rawShadowAtlasTexelSize)
+            {
+                using (var builder = renderGraph.AddRasterRenderPass<BindGlobalsPassData>(k_BindGlobalsPassName, out var passData))
+                {
+                    PopulateGlobalsPassData(
+                        passData,
+                        renderGraph,
+                        rawAtlas,
+                        floorDepth,
+                        receiverShadow,
+                        globalsSnapshot,
+                        slotCount,
+                        rawShadowAtlasTexelSize);
+
+                    if (rawAtlas.IsValid())
+                        builder.UseTexture(rawAtlas, AccessFlags.Read);
+                    if (floorDepth.IsValid())
+                        builder.UseTexture(floorDepth, AccessFlags.Read);
+                    if (receiverShadow.IsValid())
+                        builder.UseTexture(receiverShadow, AccessFlags.Read);
+                    builder.UseTexture(passData.fallbackTexture, AccessFlags.Read);
+
+                    builder.AllowGlobalStateModification(true);
+                    builder.AllowPassCulling(false);
+                    builder.SetGlobalTextureAfterPass(
+                        rawAtlas.IsValid() ? rawAtlas : passData.fallbackTexture,
+                        k_ManikinRawShadowAtlasId);
+                    builder.SetGlobalTextureAfterPass(
+                        floorDepth.IsValid() ? floorDepth : passData.fallbackTexture,
+                        k_ManikinDepthId);
+                    builder.SetGlobalTextureAfterPass(
+                        receiverShadow.IsValid() ? receiverShadow : passData.fallbackTexture,
+                        k_ManikinShadowId);
+                    builder.SetRenderFunc((BindGlobalsPassData data, RasterGraphContext context) => ExecuteBindGlobalsPass(data, context));
+                }
+            }
+
+            void RecordDisabledGlobalsPass(RenderGraph renderGraph)
+            {
+                ResetGlobalArrays();
+                RecordBindGlobalsPass(
+                    renderGraph,
+                    TextureHandle.nullHandle,
+                    TextureHandle.nullHandle,
+                    TextureHandle.nullHandle,
+                    CaptureGlobalArraySnapshot(),
+                    0,
+                    new Vector4(1f, 1f, 1f, 1f));
             }
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
@@ -569,14 +767,15 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 CameraType cameraType = cameraData.cameraType;
                 bool supportedCamera = !cameraData.isPreviewCamera
                     && (cameraType == CameraType.Game || cameraType == CameraType.SceneView);
+                UnityScene renderScene = ResolveRenderScene(camera);
 
-                if (camera == null || !supportedCamera || !HasSceneReceiverPass())
+                if (camera == null || !supportedCamera || !HasSceneReceiverPass(renderScene))
                 {
-                    ApplyDisabledGlobals();
+                    RecordDisabledGlobalsPass(renderGraph);
                     return;
                 }
 
-                HSRCharacterController.GetActiveControllers(k_ControllerScratch, forceRefresh: false);
+                HSRCharacterController.GetRegisteredActiveControllersInScene(renderScene, k_ControllerScratch);
                 k_CandidateScratch.Clear();
 
                 for (int i = 0; i < k_ControllerScratch.Count; ++i)
@@ -712,27 +911,12 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 }
 
                 int activeSlotCount = slotWriteIndex;
-                Shader.SetGlobalMatrixArray(k_ManikinWorldToShadowArrId, k_WorldToShadowArray);
-                Shader.SetGlobalVectorArray(k_ManikinShadowAtlasRectArrId, k_ShadowAtlasRectArray);
-                Shader.SetGlobalVectorArray(k_ManikinShadowOriginArrId, k_ShadowOriginArray);
-                Shader.SetGlobalFloat(k_ManikinSlotCountId, activeSlotCount);
-                Shader.SetGlobalVector(
-                    k_ManikinRawShadowAtlasTexelSizeId,
-                    new Vector4(
-                        1f / Mathf.Max(1, atlasWidth),
-                        1f / Mathf.Max(1, atlasHeight),
-                        atlasWidth,
-                        atlasHeight));
-                Shader.SetGlobalFloat(k_ManikinShadowStrengthId, m_Settings.shadowStrength);
-                Shader.SetGlobalFloat(k_ManikinPcssSearchRadiusId, m_Settings.pcssSearchRadius);
-                Shader.SetGlobalFloat(k_ManikinPcssMinFilterRadiusId, m_Settings.pcssMinFilterRadius);
-                Shader.SetGlobalFloat(k_ManikinPcssMaxFilterRadiusId, m_Settings.pcssMaxFilterRadius);
-                Shader.SetGlobalFloat(k_ManikinRadialBlurStartId, m_Settings.radialBlurStart);
-                Shader.SetGlobalFloat(k_ManikinRadialBlurEndId, m_Settings.radialBlurEnd);
-                Shader.SetGlobalFloat(k_ManikinRadialBlurStrengthId, m_Settings.radialBlurStrength);
-                Shader.SetGlobalFloat(k_ManikinRadialFadeStartId, m_Settings.radialFadeStart);
-                Shader.SetGlobalFloat(k_ManikinRadialFadeEndId, m_Settings.radialFadeEnd);
-                Shader.SetGlobalFloat(k_ManikinFloorDepthThresholdId, m_Settings.floorDepthThreshold);
+                GlobalArraySnapshot globalsSnapshot = CaptureGlobalArraySnapshot();
+                Vector4 rawShadowAtlasTexelSize = new Vector4(
+                    1f / Mathf.Max(1, atlasWidth),
+                    1f / Mathf.Max(1, atlasHeight),
+                    atlasWidth,
+                    atlasHeight);
 
                 RenderTextureDescriptor rawAtlasDescriptor = cameraData.cameraTargetDescriptor;
                 rawAtlasDescriptor.width = Mathf.Max(1, atlasWidth);
@@ -825,11 +1009,13 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     passData.rendererList = receiverRendererList;
                     passData.rawAtlas = rawAtlasTexture;
                     passData.floorDepth = floorDepthTexture;
+                    passData.fallbackTexture = renderGraph.defaultResources.blackTexture;
 
                     builder.UseRendererList(receiverRendererList);
                     if (rawAtlasTexture.IsValid())
                         builder.UseTexture(rawAtlasTexture, AccessFlags.Read);
                     builder.UseTexture(floorDepthTexture, AccessFlags.Read);
+                    builder.UseTexture(passData.fallbackTexture, AccessFlags.Read);
                     builder.SetRenderAttachment(receiverShadowTexture, 0, AccessFlags.ReadWrite);
                     builder.SetRenderAttachmentDepth(resourceData.activeDepthTexture, AccessFlags.Read);
                     builder.SetGlobalTextureAfterPass(receiverShadowTexture, k_ManikinShadowId);
@@ -838,21 +1024,14 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     builder.SetRenderFunc((ReceiverPassData data, RasterGraphContext context) => ExecuteReceiverPass(data, context));
                 }
 
-                using (var builder = renderGraph.AddRasterRenderPass<BindGlobalsPassData>(k_BindGlobalsPassName, out var passData))
-                {
-                    passData.rawAtlas = rawAtlasTexture;
-                    passData.floorDepth = floorDepthTexture;
-                    passData.receiverShadow = receiverShadowTexture;
-
-                    if (rawAtlasTexture.IsValid())
-                        builder.UseTexture(rawAtlasTexture, AccessFlags.Read);
-                    builder.UseTexture(floorDepthTexture, AccessFlags.Read);
-                    builder.UseTexture(receiverShadowTexture, AccessFlags.Read);
-
-                    builder.AllowGlobalStateModification(true);
-                    builder.AllowPassCulling(false);
-                    builder.SetRenderFunc((BindGlobalsPassData data, RasterGraphContext context) => ExecuteBindGlobalsPass(data, context));
-                }
+                RecordBindGlobalsPass(
+                    renderGraph,
+                    rawAtlasTexture,
+                    floorDepthTexture,
+                    receiverShadowTexture,
+                    globalsSnapshot,
+                    activeSlotCount,
+                    rawShadowAtlasTexelSize);
             }
         }
     }

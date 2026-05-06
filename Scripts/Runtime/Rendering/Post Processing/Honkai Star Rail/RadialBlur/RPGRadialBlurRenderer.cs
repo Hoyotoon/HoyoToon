@@ -16,6 +16,16 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.RadialBlur
             return new RPGRadialBlurRenderPass();
         }
 
+        protected override bool ShouldEnqueuePass(ref RenderingData renderingData, RPGRadialBlurRenderPass renderPass)
+        {
+            RPGUber uberSettings = VolumeManager.instance.stack.GetComponent<RPGUber>();
+            if (uberSettings != null && uberSettings.UseUberControl.value && !uberSettings.EnableRadialBlur.value)
+                return false;
+
+            RPGRadialBlur settings = VolumeManager.instance.stack.GetComponent<RPGRadialBlur>();
+            return settings != null && settings.IsActive();
+        }
+
         public sealed class RPGRadialBlurRenderPass : HsrFullscreenMaterialRenderPass
         {
             private const string ShaderName = "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess";
@@ -111,11 +121,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.RadialBlur
                         _loggedMissingSettings = true;
                     }
 
-                    // Defaults keep the pass valid while producing no visible blur.
-                    PassMaterial.SetVector(radialParamId, new Vector4(0f, 1f, 0.5f, 0.5f));
-                    _blurMode = BlurMode.Radial;
-                    
-                    return true;
+                    return false;
                 }
 
                 if (!settings.IsActive())
@@ -147,7 +153,10 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.RadialBlur
 
                 RPGChromaticAberration chromaticSettings = VolumeManager.instance.stack.GetComponent<RPGChromaticAberration>();
                 bool chromaticAllowedByUber = uberSettings == null || !uberSettings.UseUberControl.value || uberSettings.EnableChromaticAberration.value;
-                bool useCombinedPass = chromaticAllowedByUber && chromaticSettings != null && chromaticSettings.CombineWithRadialBlur.value;
+                bool useCombinedPass = chromaticAllowedByUber
+                    && chromaticSettings != null
+                    && chromaticSettings.IsActive()
+                    && chromaticSettings.CombineWithRadialBlur.value;
                 _blurMode = useCombinedPass ? BlurMode.Combined : BlurMode.Radial;
                 if (useCombinedPass)
                 {

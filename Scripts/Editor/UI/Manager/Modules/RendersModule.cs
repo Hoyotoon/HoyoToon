@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.IO;
 using HoyoToon.Editor.Onboarding;
 using HoyoToon.Editor.Renders;
+using HoyoToon.Editor.UI.Manager;
+using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Editor.Utilities.Editor;
 using HoyoToon.Editor.Utilities.Renders;
 using HoyoToon.Runtime.Character.HSR;
@@ -97,6 +99,15 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         public override int Order => 4;
 
         protected override string Description => "Renders";
+
+        [InitializeOnLoadMethod]
+        private static void RegisterGeneratedDefaultTurnaroundBackgroundCleanup()
+        {
+            AssemblyReloadEvents.beforeAssemblyReload -= ReleaseGeneratedDefaultTurnaroundBackground;
+            AssemblyReloadEvents.beforeAssemblyReload += ReleaseGeneratedDefaultTurnaroundBackground;
+            EditorApplication.quitting -= ReleaseGeneratedDefaultTurnaroundBackground;
+            EditorApplication.quitting += ReleaseGeneratedDefaultTurnaroundBackground;
+        }
 
         public override void OnSelected(ModuleContext context)
         {
@@ -530,9 +541,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static VisualElement CreateActionRow()
         {
-            VisualElement row = new VisualElement();
-            row.AddToClassList("ht-row");
-            row.AddToClassList("ht-gap-8");
+            VisualElement row = ManagerUiFactory.CreateActionRow();
             row.style.flexWrap = Wrap.Wrap;
             return row;
         }
@@ -556,9 +565,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static VisualElement CreateDivider()
         {
-            VisualElement divider = new VisualElement();
-            divider.AddToClassList("ht-divider");
-            return divider;
+            return ManagerUiFactory.CreateDivider();
         }
 
         private static int ParseScaleValue(string value, int fallback)
@@ -792,17 +799,23 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 return s_DefaultTurnaroundBackground;
             }
 
-            s_DefaultTurnaroundBackground = new Texture2D(4, 4, TextureFormat.RGBA32, false);
-            Color32 fill = new Color32(18, 20, 27, 255);
-            Color32[] pixels = new Color32[16];
-            for (int index = 0; index < pixels.Length; index++)
+            s_DefaultTurnaroundBackground = EditorGeneratedTextureCache.GetSolidTexture(new Color32(18, 20, 27, 255));
+            return s_DefaultTurnaroundBackground;
+        }
+
+        private static void ReleaseGeneratedDefaultTurnaroundBackground()
+        {
+            if (s_DefaultTurnaroundBackground == null)
             {
-                pixels[index] = fill;
+                return;
             }
 
-            s_DefaultTurnaroundBackground.SetPixels32(pixels);
-            s_DefaultTurnaroundBackground.Apply(false);
-            return s_DefaultTurnaroundBackground;
+            if ((s_DefaultTurnaroundBackground.hideFlags & HideFlags.HideAndDontSave) != 0)
+            {
+                EditorGeneratedTextureCache.Release(s_DefaultTurnaroundBackground);
+            }
+
+            s_DefaultTurnaroundBackground = null;
         }
 
         private bool TryCaptureScreenshot(ModuleContext context)

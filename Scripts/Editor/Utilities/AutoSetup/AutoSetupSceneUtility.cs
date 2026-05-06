@@ -2,10 +2,14 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using HoyoToon.Editor.Rendering.Character;
 using HoyoToon.Editor.Setup;
+using HoyoToon.Editor.Utilities.IO;
 using HoyoToon.Runtime.Character.HSR;
+using HoyoToon.Runtime.Rendering.Utilities;
 using HoyoToon.Runtime.Scene.HSR;
 using HoyoToon.Runtime.Scene.Placement;
+using HoyoToon.Runtime.Utilities;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -91,16 +95,28 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
         public static T EnsureSceneComponent<T>(string objectName)
             where T : Component
         {
-            T existingComponent = UnityEngine.Object.FindFirstObjectByType<T>();
+            return EnsureSceneComponent<T>(EditorSceneManager.GetActiveScene(), objectName);
+        }
+
+        public static T EnsureSceneComponent<T>(UnityScene scene, string objectName)
+            where T : Component
+        {
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+            {
+                return null;
+            }
+
+            T existingComponent = FindSceneComponent<T>(scene);
             if (existingComponent != null)
             {
                 return existingComponent;
             }
 
-            GameObject target = GameObject.Find(objectName);
+            GameObject target = FindRootObjectInScene(scene, objectName);
             if (target == null)
             {
                 target = new GameObject(objectName);
+                UnityEngine.SceneManagement.SceneManager.MoveGameObjectToScene(target, scene);
                 Undo.RegisterCreatedObjectUndo(target, $"HoyoToon Auto Setup Add {typeof(T).Name}");
             }
 
@@ -136,8 +152,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 return;
             }
 
-            EnsureSceneComponent<HSRSceneController>(HsrSceneControllerObjectName);
-
+            var preparedSceneHandles = new HashSet<int>();
             for (int i = 0; i < context.InstantiatedModels.Count; i++)
             {
                 GameObject instantiatedModel = context.InstantiatedModels[i];
@@ -146,13 +161,26 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                     continue;
                 }
 
-                Component[] components = EnsureComponents(instantiatedModel, typeof(HSRCharacterController));
+                UnityScene modelScene = instantiatedModel.scene;
+                if (modelScene.IsValid() && modelScene.isLoaded && preparedSceneHandles.Add(modelScene.handle))
+                {
+                    EnsureSceneComponent<HSRSceneController>(modelScene, HsrSceneControllerObjectName);
+                }
+
+                Component[] components = EnsureComponents(
+                    instantiatedModel,
+                    typeof(HSRCharacterController),
+                    typeof(HoyoToonPlanarReflectionParticipant));
                 if (components.Length <= 0 || components[0] is not HSRCharacterController characterController)
                 {
                     result.RecordWarning($"Auto setup failed to add an HSRCharacterController to '{instantiatedModel.name}'.");
                     continue;
                 }
 
+                if (instantiatedModel.GetComponent<HoyoToonPlanarReflectionParticipant>() is HoyoToonPlanarReflectionParticipant reflectionParticipant)
+                    reflectionParticipant.RefreshRenderers();
+
+                HSRCharacterEditorService.TryAssignDefaultComputeShader(characterController);
                 characterController.SyncToRenderer();
             }
         }
@@ -204,6 +232,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 placementController.RegisterModel(model);
             }
 
+            placementController.ApplyNow();
             EditorUtility.SetDirty(placementController);
             EditorSceneManager.MarkSceneDirty(placementController.gameObject.scene);
         }
@@ -216,7 +245,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
 
             return sourcePaths
                 .Where(path => !string.IsNullOrWhiteSpace(path))
-                .Select(path => path.Replace('\\', '/'))
+                .Select(EditorPathUtility.NormalizeAssetPath)
                 .Where(path => AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
@@ -232,7 +261,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
             }
 
             UnityScene activeScene = EditorSceneManager.GetActiveScene();
-            if (!activeScene.IsValid())
+            if (!activeScene.IsValid() || !activeScene.isLoaded)
             {
                 return null;
             }
@@ -252,16 +281,71 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 }
             }
 
-            HSRCharacterController[] characterControllers = UnityEngine.Object.FindObjectsByType<HSRCharacterController>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-            for (int i = 0; i < characterControllers.Length; i++)
+            GameObject[] roots = activeScene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
             {
-                HSRCharacterController characterController = characterControllers[i];
-                GameObject model = characterController != null ? characterController.gameObject : null;
-                if (IsSetupModelForAssetPath(model, normalizedAssetPath, activeScene))
+                GameObject root = roots[rootIndex];
+                if (root == null)
                 {
-                    return model;
+                    continue;
+                }
+
+                HSRCharacterController[] characterControllers = root.GetComponentsInChildren<HSRCharacterController>(true);
+                for (int i = 0; i < characterControllers.Length; i++)
+                {
+                    HSRCharacterController characterController = characterControllers[i];
+                    GameObject model = characterController != null ? characterController.gameObject : null;
+                    if (IsSetupModelForAssetPath(model, normalizedAssetPath, activeScene))
+                    {
+                        return model;
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        private static T FindSceneComponent<T>(UnityScene scene)
+            where T : Component
+        {
+            if (!RenderSceneUtility.IsSceneUsable(scene))
+            {
+                return null;
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int rootIndex = 0; rootIndex < roots.Length; rootIndex++)
+            {
+                GameObject root = roots[rootIndex];
+                if (root == null)
+                {
+                    continue;
+                }
+
+                T component = root.GetComponentInChildren<T>(true);
+                if (component != null)
+                {
+                    return component;
+                }
+            }
+
+            return null;
+        }
+
+        private static GameObject FindRootObjectInScene(UnityScene scene, string objectName)
+        {
+            if (!RenderSceneUtility.IsSceneUsable(scene) || string.IsNullOrWhiteSpace(objectName))
+            {
+                return null;
+            }
+
+            GameObject[] roots = scene.GetRootGameObjects();
+            for (int i = 0; i < roots.Length; i++)
+            {
+                GameObject root = roots[i];
+                if (root != null && string.Equals(root.name, objectName, StringComparison.Ordinal))
+                {
+                    return root;
                 }
             }
 
@@ -292,9 +376,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
 
         private static string NormalizeAssetPath(string assetPath)
         {
-            return string.IsNullOrWhiteSpace(assetPath)
-                ? null
-                : assetPath.Replace('\\', '/');
+            return string.IsNullOrWhiteSpace(assetPath) ? null : EditorPathUtility.NormalizeAssetPath(assetPath);
         }
     }
 }

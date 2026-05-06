@@ -11,6 +11,7 @@ using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Editor.Utilities.Debugging;
 using HoyoToon.Editor.Utilities.IO;
 using HoyoToon.Runtime.ScriptableObjects.Games;
+using HoyoToon.Runtime.Utilities;
 using UnityEditor;
 using UnityEngine;
 
@@ -188,6 +189,7 @@ namespace HoyoToon.Editor.AssetPipeline.Materials
             material.shader = shader;
 
             ApplyMaterialJson(game, material, jsonPath, materialJson, result.Applied);
+            HsrRendererMaterialQueryUtility.InvalidateMaterialPassCaches();
             EditorUtility.SetDirty(material);
             HoyoToonLogger.Verbose(
                 HoyoToonLogCategory.Materials,

@@ -61,9 +61,7 @@ namespace HoyoToon.Editor.API.Resources
                 HoyoToonLogCategory.Api,
                 $"Synchronizing generated resource assets for {syncResources.Count} record(s) and removing {staleGeneratedResourceFolders.Count} stale folder(s).");
 
-            AssetDatabase.StartAssetEditing();
-
-            try
+            using (AssetDatabaseEditingScope.Begin(disallowAutoRefresh: false))
             {
                 CleanupStaleGeneratedResourceFolders(staleGeneratedResourceFolders);
 
@@ -77,10 +75,6 @@ namespace HoyoToon.Editor.API.Resources
                     HoyoToonResourcesSO asset = GeneratedAssetSyncUtility.LoadOrCreateAsset<HoyoToonResourcesSO>(assetPath);
                     GeneratedAssetSyncUtility.OverwriteAsset(asset, BuildPayload(resource));
                 }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
             }
 
             AssetDatabase.SaveAssets();

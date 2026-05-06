@@ -213,13 +213,59 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 value = resolvedExpanded
             };
             foldout.AddToClassList("ht-foldout");
+            foldout.contentContainer?.RegisterCallback<ChangeEvent<bool>>(StopNestedFoldoutBooleanChangePropagation);
 
             if (!string.IsNullOrWhiteSpace(stateKey))
             {
-                foldout.RegisterValueChangedCallback(evt => SessionState.SetBool(stateKey, evt.newValue));
+                foldout.RegisterValueChangedCallback(evt =>
+                {
+                    if (!IsFoldoutStateChange(foldout, evt.target))
+                        return;
+
+                    SessionState.SetBool(stateKey, evt.newValue);
+                });
             }
 
             return foldout;
+        }
+
+        private static void StopNestedFoldoutBooleanChangePropagation(ChangeEvent<bool> evt)
+        {
+            evt?.StopPropagation();
+        }
+
+        private static bool IsFoldoutStateChange(Foldout foldout, object target)
+        {
+            if (foldout == null)
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(target, foldout))
+            {
+                return true;
+            }
+
+            VisualElement targetElement = target as VisualElement;
+            if (targetElement == null)
+            {
+                return false;
+            }
+
+            for (VisualElement current = targetElement; current != null; current = current.parent)
+            {
+                if (ReferenceEquals(current, foldout.contentContainer))
+                {
+                    return false;
+                }
+
+                if (ReferenceEquals(current, foldout))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private string BuildFoldoutStateKey(string title)

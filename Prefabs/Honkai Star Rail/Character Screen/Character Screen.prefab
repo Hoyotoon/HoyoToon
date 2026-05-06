@@ -267,10 +267,31 @@ PrefabInstance:
     - {fileID: 5332809968238436118, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 6903649147886469883, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1999608814129332185}
     - targetCorrespondingSourceObject: {fileID: 2553321520150751029, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
       insertIndex: -1
       addedObject: {fileID: 2042682603026954843}
   m_SourcePrefab: {fileID: 100100000, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+--- !u!1 &2101393989040242234 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 6903649147886469883, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}
+  m_PrefabInstance: {fileID: 4820847084436585665}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1999608814129332185
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2101393989040242234}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a17ddefbdfaf2f44ab02d07b2d26b96e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime.scene::HoyoToon.Runtime.Scene.HSR.Rotatable
+  targetCamera: {fileID: 0}
 --- !u!1 &7027918368848206836 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2553321520150751029, guid: 1ea2a79350a177242827aab5c55dc4a5, type: 3}

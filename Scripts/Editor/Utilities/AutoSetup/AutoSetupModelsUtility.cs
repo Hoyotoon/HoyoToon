@@ -6,6 +6,7 @@ using HoyoToon.Editor.AssetPipeline.Models;
 using HoyoToon.Editor.Detection.Character;
 using HoyoToon.Editor.Setup;
 using HoyoToon.Editor.Utilities.Assets;
+using HoyoToon.Editor.Utilities.IO;
 using UnityEditor;
 using UnityEngine;
 
@@ -87,7 +88,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
         {
             return string.IsNullOrWhiteSpace(assetPath)
                 ? null
-                : assetPath.Replace('\\', '/');
+                : EditorPathUtility.NormalizeAssetPath(assetPath);
         }
 
         public static void ConvertSelectedModels(AutoSetupContext context, AutoSetupResult result)

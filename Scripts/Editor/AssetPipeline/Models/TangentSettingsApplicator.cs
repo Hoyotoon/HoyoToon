@@ -549,8 +549,7 @@ namespace HoyoToon.Editor.AssetPipeline.Models
                 HoyoToonLogger.Info(HoyoToonLogCategory.Models, $"Tangent rules: Created mesh asset '{newPath}'.");
             }
 
-            AssetDatabase.StartAssetEditing();
-            try
+            using (AssetDatabaseEditingScope.Begin(disallowAutoRefresh: false))
             {
                 meshProcessStopwatch.Start();
                 foreach (MeshFilter meshFilter in model.GetComponentsInChildren<MeshFilter>(processAllChildren))
@@ -588,10 +587,6 @@ namespace HoyoToon.Editor.AssetPipeline.Models
                 }
 
                 meshProcessStopwatch.Stop();
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
             }
 
             if (changed)

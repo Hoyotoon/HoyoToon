@@ -1,11 +1,11 @@
 {
-    "name": "com.hoyotoon.hoyotoon.editor",
-    "rootNamespace": "HoyoToon.Editor",
+    "name": "com.hoyotoon.hoyotoon.runtime.rendering.urp",
+    "rootNamespace": "HoyoToon.Runtime.Rendering",
     "references": [
         "com.hoyotoon.hoyotoon.runtime",
+        "com.hoyotoon.hoyotoon.runtime.scene",
         "Unity.RenderPipelines.Core.Runtime",
-        "Unity.RenderPipelines.Core.Editor",
-        "Unity.RenderPipelines.Universal.Editor"
+        "Unity.RenderPipelines.Universal.Runtime"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

@@ -16,6 +16,24 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ChromaticAberration
             return new RPGChromaticAberrationRenderPass();
         }
 
+        protected override bool ShouldEnqueuePass(ref RenderingData renderingData, RPGChromaticAberrationRenderPass renderPass)
+        {
+            RPGUber uberSettings = VolumeManager.instance.stack.GetComponent<RPGUber>();
+            if (uberSettings != null && uberSettings.UseUberControl.value && !uberSettings.EnableChromaticAberration.value)
+                return false;
+
+            RPGChromaticAberration settings = VolumeManager.instance.stack.GetComponent<RPGChromaticAberration>();
+            if (settings == null || !settings.IsActive())
+                return false;
+
+            if (!settings.CombineWithRadialBlur.value)
+                return true;
+
+            bool radialAllowedByUber = uberSettings == null || !uberSettings.UseUberControl.value || uberSettings.EnableRadialBlur.value;
+            RPGRadialBlur radialSettings = VolumeManager.instance.stack.GetComponent<RPGRadialBlur>();
+            return !radialAllowedByUber || radialSettings == null || !radialSettings.IsActive();
+        }
+
         public sealed class RPGChromaticAberrationRenderPass : HsrFullscreenMaterialRenderPass
         {
             private const string ShaderName = "HoyoToon/Honkai Star Rail/Post Processing/Uber/UberPostProcess";
@@ -78,7 +96,8 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ChromaticAberration
                 if (settings.CombineWithRadialBlur.value)
                 {
                     bool radialAllowedByUber = uberSettings == null || !uberSettings.UseUberControl.value || uberSettings.EnableRadialBlur.value;
-                    if (radialAllowedByUber)
+                    RPGRadialBlur radialSettings = VolumeManager.instance.stack.GetComponent<RPGRadialBlur>();
+                    if (radialAllowedByUber && radialSettings != null && radialSettings.IsActive())
                     {
                         return false;
                     }

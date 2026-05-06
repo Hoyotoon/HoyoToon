@@ -109,5 +109,107 @@ namespace HoyoToon.Editor.Utilities.IO
             }
         }
     }
+
+    internal sealed class ManagedFileTransaction : IDisposable
+    {
+        private readonly string m_BackupRootPath;
+        private readonly string m_RollbackCleanupRootPath;
+        private readonly IReadOnlyList<string> m_TouchedRelativePaths;
+        private readonly Func<string, string> m_DestinationPathResolver;
+        private readonly Func<string, string> m_BackupPathResolver;
+        private bool m_Completed;
+
+        private ManagedFileTransaction(
+            string backupRootPath,
+            string rollbackCleanupRootPath,
+            IReadOnlyList<string> touchedRelativePaths,
+            Func<string, string> destinationPathResolver,
+            Func<string, string> backupPathResolver)
+        {
+            m_BackupRootPath = backupRootPath;
+            m_RollbackCleanupRootPath = rollbackCleanupRootPath;
+            m_TouchedRelativePaths = touchedRelativePaths ?? Array.Empty<string>();
+            m_DestinationPathResolver = destinationPathResolver;
+            m_BackupPathResolver = backupPathResolver;
+        }
+
+        internal string BackupRootPath => m_BackupRootPath;
+
+        internal static ManagedFileTransaction Begin(
+            string backupRootPath,
+            string rollbackCleanupRootPath,
+            IReadOnlyList<string> touchedRelativePaths,
+            Func<string, string> destinationPathResolver,
+            Func<string, string> backupPathResolver)
+        {
+            if (string.IsNullOrWhiteSpace(backupRootPath))
+                throw new ArgumentException("A backup root path is required.", nameof(backupRootPath));
+
+            if (string.IsNullOrWhiteSpace(rollbackCleanupRootPath))
+                throw new ArgumentException("A rollback cleanup root path is required.", nameof(rollbackCleanupRootPath));
+
+            if (destinationPathResolver == null)
+                throw new ArgumentNullException(nameof(destinationPathResolver));
+
+            if (backupPathResolver == null)
+                throw new ArgumentNullException(nameof(backupPathResolver));
+
+            try
+            {
+                ManagedFileTransactionUtility.PrepareDirectory(backupRootPath);
+                ManagedFileTransactionUtility.BackupTouchedPaths(
+                    touchedRelativePaths,
+                    destinationPathResolver,
+                    backupPathResolver);
+            }
+            catch
+            {
+                ManagedFileTransactionUtility.DeleteDirectoryIfExists(backupRootPath);
+                throw;
+            }
+
+            return new ManagedFileTransaction(
+                backupRootPath,
+                rollbackCleanupRootPath,
+                touchedRelativePaths,
+                destinationPathResolver,
+                backupPathResolver);
+        }
+
+        internal void Commit()
+        {
+            if (m_Completed)
+                return;
+
+            ManagedFileTransactionUtility.DeleteDirectoryIfExists(m_BackupRootPath);
+            m_Completed = true;
+        }
+
+        internal void Rollback()
+        {
+            if (m_Completed)
+                return;
+
+            try
+            {
+                ManagedFileTransactionUtility.RollbackTouchedPaths(
+                    m_RollbackCleanupRootPath,
+                    m_TouchedRelativePaths,
+                    m_DestinationPathResolver,
+                    m_BackupPathResolver);
+            }
+            catch
+            {
+                throw;
+            }
+
+            m_Completed = true;
+            ManagedFileTransactionUtility.DeleteDirectoryIfExists(m_BackupRootPath);
+        }
+
+        public void Dispose()
+        {
+        }
+    }
 }
 #endif

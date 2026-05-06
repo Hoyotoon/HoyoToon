@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
@@ -10,9 +11,48 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
 {
     public class RPGTonemappingRenderer : HsrPostProcessRendererFeature<RPGTonemappingRenderer.RPGTonemappingPass>
     {
-        private static int s_LastGeneratedLutFrame = -1;
+        private struct CameraFrameKey : IEquatable<CameraFrameKey>
+        {
+            public int Frame;
+            public int CameraId;
 
-        internal static bool HasGeneratedLutThisFrame => s_LastGeneratedLutFrame == Time.frameCount;
+            public bool Equals(CameraFrameKey other)
+            {
+                return Frame == other.Frame && CameraId == other.CameraId;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is CameraFrameKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (Frame * 397) ^ CameraId;
+                }
+            }
+        }
+
+        private static CameraFrameKey s_LastGeneratedLutKey;
+        private static bool s_HasGeneratedLutKey;
+
+        internal static bool HasGeneratedLutForCamera(Camera camera)
+        {
+            return camera != null
+                && s_HasGeneratedLutKey
+                && s_LastGeneratedLutKey.Equals(CreateCameraFrameKey(camera));
+        }
+
+        private static CameraFrameKey CreateCameraFrameKey(Camera camera)
+        {
+            return new CameraFrameKey
+            {
+                Frame = Time.frameCount,
+                CameraId = camera != null ? camera.GetInstanceID() : 0,
+            };
+        }
 
         private enum TonemappingTextureFormat
         {
@@ -28,6 +68,12 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
         {
             GraphicsFormat cameraFormat = renderingData.cameraData.cameraTargetDescriptor.graphicsFormat;
             renderPass.SetLutFormat(ResolveTonemappingGraphicsFormat(_tonemappingTextureFormat, cameraFormat));
+        }
+
+        protected override bool ShouldEnqueuePass(ref RenderingData renderingData, RPGTonemappingPass renderPass)
+        {
+            RPGTonemapping settings = VolumeManager.instance.stack.GetComponent<RPGTonemapping>();
+            return settings != null && settings.IsActive();
         }
 
         protected override RPGTonemappingPass CreateRenderPass()
@@ -302,6 +348,9 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
 
             public override void RecordRenderGraph(RenderGraph renderGraph, ContextContainer frameData)
             {
+                UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
+                Camera camera = cameraData.camera;
+
                 if (!TryApplyVolumeSettings())
                 {
                     return;
@@ -327,7 +376,8 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
 
                 TextureHandle generatedLut = renderGraph.CreateTexture(lutDesc);
 
-                s_LastGeneratedLutFrame = Time.frameCount;
+                s_LastGeneratedLutKey = CreateCameraFrameKey(camera);
+                s_HasGeneratedLutKey = true;
 
                 using (IBaseRenderGraphBuilder builder = renderGraph.AddBlitPass(
                            CreateBlitParameters(source, generatedLut, passIndex),

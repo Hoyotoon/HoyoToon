@@ -25,7 +25,14 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ChromaticAberration
         public ColorParameter FilterC = new ColorParameter(Color.blue);
         public BoolParameter CombineWithRadialBlur = new BoolParameter(false);
         public ClampedFloatParameter intensity = new ClampedFloatParameter(0f, 0f, 1f);
-        public bool IsActive() => true;
+
+        public bool IsActive()
+        {
+            return active
+                && intensity.overrideState
+                && intensity.value > 0f;
+        }
+
         public bool IsTileCompatible() => true;
     }
 }

@@ -5,10 +5,6 @@ using UnityEngine;
 using UnityScene = UnityEngine.SceneManagement.Scene;
 using Object = UnityEngine.Object;
 
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
-
 namespace HoyoToon.Runtime.Scene.Environment
 {
     [ExecuteAlways]
@@ -53,23 +49,8 @@ namespace HoyoToon.Runtime.Scene.Environment
                     return null;
 
                 Transform parent = parentOverride != null ? parentOverride : fallbackParent;
-                GameObject createdObject;
-#if UNITY_EDITOR
-                if (!Application.isPlaying)
-                {
-                    createdObject = PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
-                    if (createdObject != null)
-                    {
-                        Undo.RegisterCreatedObjectUndo(createdObject, "HoyoToon Instantiate Environment");
-                    }
-                }
-                else
-#endif
-                {
-                    createdObject = parent != null
-                        ? Object.Instantiate(prefab, parent)
-                        : Object.Instantiate(prefab);
-                }
+                GameObject createdObject = RuntimeEditorBridge.InstantiatePrefabOrClone(prefab, parent);
+                RuntimeEditorBridge.RegisterCreatedObjectUndo(createdObject, "HoyoToon Instantiate Environment");
 
                 if (createdObject == null)
                     return null;
@@ -240,7 +221,7 @@ namespace HoyoToon.Runtime.Scene.Environment
                 return;
 
             activeGameIndex = clampedIndex;
-            ApplyEnvironment();
+            RequestEnvironmentApply();
         }
 
         public void SetActiveEnvironmentIndex(int index)
@@ -254,7 +235,7 @@ namespace HoyoToon.Runtime.Scene.Environment
                 return;
 
             activeGameSet.ActiveEnvironmentIndex = clampedIndex;
-            ApplyEnvironment();
+            RequestEnvironmentApply();
         }
 
         public int GetActiveEnvironmentIndex(int gameIndex)
@@ -323,6 +304,12 @@ namespace HoyoToon.Runtime.Scene.Environment
             RuntimeEditorBridge.MarkDirty(this);
         }
 
+        public void ApplyNow()
+        {
+            CancelScheduledEditModeApply();
+            ApplyEnvironment();
+        }
+
         public void CollectManagedObjects(List<Object> results)
         {
             if (results == null)
@@ -368,7 +355,7 @@ namespace HoyoToon.Runtime.Scene.Environment
         {
             Register(this);
             EnsureGameEntriesFromDiscoveryRoot();
-            if (autoApplyOnEnable)
+            if (autoApplyOnEnable && Application.isPlaying)
                 QueueApplyEnvironment();
         }
 
@@ -388,13 +375,13 @@ namespace HoyoToon.Runtime.Scene.Environment
         {
             EnsureGameEntriesFromDiscoveryRoot();
             EnsureSelectionIndices();
-            if (isActiveAndEnabled)
+            if (isActiveAndEnabled && Application.isPlaying)
                 QueueApplyEnvironment();
         }
 
         private void OnTransformChildrenChanged()
         {
-            if (isActiveAndEnabled && useRootChildrenWhenNoEntries)
+            if (isActiveAndEnabled && useRootChildrenWhenNoEntries && Application.isPlaying)
                 QueueApplyEnvironment();
         }
 
@@ -459,6 +446,14 @@ namespace HoyoToon.Runtime.Scene.Environment
             m_HasScheduledEditModeApply = true;
             RuntimeEditorBridge.ScheduleDelayedEditModeAction(ApplyScheduledEditModeEnvironment);
             RuntimeEditorBridge.RequestPlayerLoopUpdate();
+        }
+
+        private void RequestEnvironmentApply()
+        {
+            if (Application.isPlaying)
+                QueueApplyEnvironment();
+            else
+                RuntimeEditorBridge.MarkDirty(this);
         }
 
         private void ApplyScheduledEditModeEnvironment()

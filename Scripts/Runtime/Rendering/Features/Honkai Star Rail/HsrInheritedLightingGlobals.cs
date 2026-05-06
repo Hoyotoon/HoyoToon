@@ -1,5 +1,8 @@
+using System;
+using System.Collections.Generic;
 using HoyoToon.Runtime.Scene;
 using UnityEngine;
+using UnityEngine.Rendering;
 using HoyoToon.Runtime.Scene.HSR;
 
 namespace HoyoToon.Runtime.Rendering.HSR
@@ -17,14 +20,141 @@ namespace HoyoToon.Runtime.Rendering.HSR
         static readonly int k_MainLightWorldToShadowId = Shader.PropertyToID("_MainLightWorldToShadow");
         static readonly int k_MainLightWorldToShadowArrId = Shader.PropertyToID("_MainLightWorldToShadowArr");
         static readonly int k_EsGlobalRotMatrixId = Shader.PropertyToID("_ES_GlobalRotMatrix");
+        static readonly int k_GlobalOneMinusAvatarIntensityId = Shader.PropertyToID("_GlobalOneMinusAvatarIntensity");
+        static readonly int k_XPad0Id = Shader.PropertyToID("_XPad0");
+        static readonly int k_EsMonsterLightDirId = Shader.PropertyToID("_ES_MonsterLightDir");
+        static readonly int k_EsIndoorId = Shader.PropertyToID("_ES_Indoor");
+        static readonly int k_EsTransitionRateId = Shader.PropertyToID("_ES_TransitionRate");
+        static readonly int k_EsSelfShadowLerpHairId = Shader.PropertyToID("_ES_SelfShadowLerpHair");
+        static readonly int k_EsLevelAdjustOnId = Shader.PropertyToID("_ES_LEVEL_ADJUST_ON");
+        static readonly int k_XPad1Id = Shader.PropertyToID("_XPad1");
+        static readonly int k_EsCharacterToonRampModeId = Shader.PropertyToID("_ES_CharacterToonRampMode");
+        static readonly int k_EsCharacterDisableLocalMainLightId = Shader.PropertyToID("_ES_CharacterDisableLocalMainLight");
+        static readonly int k_XPad2Id = Shader.PropertyToID("_XPad2");
+        static readonly int k_EsAddColorId = Shader.PropertyToID("_ES_AddColor");
+        static readonly int k_EsSpColorId = Shader.PropertyToID("_ES_SPColor");
+        static readonly int k_EsSpIntensityId = Shader.PropertyToID("_ES_SPIntensity");
+        static readonly int k_XPad3Id = Shader.PropertyToID("_XPad3");
+        static readonly int k_EsRimShadowColorId = Shader.PropertyToID("_ES_RimShadowColor");
+        static readonly int k_EsRimShadowIntensityId = Shader.PropertyToID("_ES_RimShadowIntensity");
+        static readonly int k_EsCharacterShadowFactorId = Shader.PropertyToID("_ES_CharacterShadowFactor");
+        static readonly int k_EsOutlineDarkenValId = Shader.PropertyToID("_ES_OutLineDarkenVal");
+        static readonly int k_EsOutlineLightedValId = Shader.PropertyToID("_ES_OutLineLightedVal");
+        static readonly int k_EsOutlineDisableDistanceScaleId = Shader.PropertyToID("_ES_OutlineDisableDistanceScale");
+        static readonly int k_EsOutlineFallbackScaleId = Shader.PropertyToID("_ES_OutlineFallbackScale");
+        static readonly int k_EsHeightLerpTopId = Shader.PropertyToID("_ES_HeightLerpTop");
+        static readonly int k_EsHeightLerpBottomId = Shader.PropertyToID("_ES_HeightLerpBottom");
+        static readonly int k_EsHeightLerpTopColorId = Shader.PropertyToID("_ES_HeightLerpTopColor");
+        static readonly int k_EsHeightLerpMiddleColorId = Shader.PropertyToID("_ES_HeightLerpMiddleColor");
+        static readonly int k_EsHeightLerpBottomColorId = Shader.PropertyToID("_ES_HeightLerpBottomColor");
+        static readonly int k_EsRimLightOffsetId = Shader.PropertyToID("_ES_RimLightOffset");
+        static readonly int k_EsRimLightWidthId = Shader.PropertyToID("_ES_RimLightWidth");
+        static readonly int k_EsRimLightIntensityId = Shader.PropertyToID("_ES_RimLightIntensity");
+        static readonly int k_EsRimLightAddModeId = Shader.PropertyToID("_ES_RimLightAddMode");
+        static readonly int k_EsRimLightModeId = Shader.PropertyToID("_ES_RimLightMode");
+        static readonly int k_XPad4Id = Shader.PropertyToID("_XPad4");
+        static readonly int k_EsRimLightColorId = Shader.PropertyToID("_ES_RimLightColor");
+        static readonly int k_EsLevelSkinLightColorId = Shader.PropertyToID("_ES_LevelSkinLightColor");
+        static readonly int k_EsLevelSkinShadowColorId = Shader.PropertyToID("_ES_LevelSkinShadowColor");
+        static readonly int k_EsLevelHighLightColorId = Shader.PropertyToID("_ES_LevelHighLightColor");
+        static readonly int k_EsLevelShadowColorId = Shader.PropertyToID("_ES_LevelShadowColor");
+        static readonly int k_EsLevelShadowId = Shader.PropertyToID("_ES_LevelShadow");
+        static readonly int k_EsLevelMidId = Shader.PropertyToID("_ES_LevelMid");
+        static readonly int k_EsLevelHighLightId = Shader.PropertyToID("_ES_LevelHighLight");
+        static readonly int k_EsLevelEyeShadowIntensityId = Shader.PropertyToID("_ES_LevelEyeShadowIntensity");
+        static readonly int k_EsIndoorCharShadowAsCookieId = Shader.PropertyToID("_ES_IndoorCharShadowAsCookie");
+        static readonly int k_EsFogColorId = Shader.PropertyToID("_ES_FogColor");
+        static readonly int k_EsFogDensityId = Shader.PropertyToID("_ES_FogDensity");
+        static readonly int k_EsFogNearId = Shader.PropertyToID("_ES_FogNear");
+        static readonly int k_EsFogFarId = Shader.PropertyToID("_ES_FogFar");
+        static readonly int k_EsHeightFogColorId = Shader.PropertyToID("_ES_HeightFogColor");
+        static readonly int k_EsHeightFogBaseHeightId = Shader.PropertyToID("_ES_HeightFogBaseHeight");
+        static readonly int k_EsHeightFogRangeId = Shader.PropertyToID("_ES_HeightFogRange");
+        static readonly int k_EsHeightFogDensityId = Shader.PropertyToID("_ES_HeightFogDensity");
+        static readonly int k_EsHeightFogFogNearId = Shader.PropertyToID("_ES_HeightFogFogNear");
+        static readonly int k_EsHeightFogFogFarId = Shader.PropertyToID("_ES_HeightFogFogFar");
+        static readonly int k_EsFogCharacterNearFactorId = Shader.PropertyToID("_ES_FogCharacterNearFactor");
+        static readonly int k_EsHeightFogAddAjustId = Shader.PropertyToID("_ES_HeightFogAddAjust");
+        static readonly int k_EsDisableFogTransitionId = Shader.PropertyToID("_ES_DisableFogTransition");
+        static readonly int k_XPad5Id = Shader.PropertyToID("_XPad5");
+        static readonly int k_EsEffCustomLightPositionId = Shader.PropertyToID("_ES_EffCustomLightPosition");
+        static readonly int k_OutlineScaleId = Shader.PropertyToID("_OutlineScale");
+        const string k_HeightLerpKeyword = "_HEIGHTLERP";
+        const string k_FogKeyword = "_ENABLE_FOG";
 
         static readonly Matrix4x4[] k_MainLightWorldToShadowScratch = new Matrix4x4[5];
+        static readonly List<Matrix4x4> k_MainLightWorldToShadowCaptureScratch = new List<Matrix4x4>(5);
         static readonly Vector4[] k_EsGlobalRotMatrixScratch = new Vector4[4];
-        static int s_LastAppliedFrame = -1;
-        static int s_LastAppliedEnvironmentId;
-        static bool s_LastAppliedClearEnvironmentWhenMissing;
+        static readonly Dictionary<CameraFrameKey, ShadowState> s_ShadowStateByCameraFrame =
+            new Dictionary<CameraFrameKey, ShadowState>();
+        static readonly List<CameraFrameKey> s_StaleShadowStateKeys = new List<CameraFrameKey>(4);
+        static int s_LastShadowStatePruneFrame = -1;
 
-        struct ShadowState
+        internal readonly struct CameraFrameKey : IEquatable<CameraFrameKey>
+        {
+            public CameraFrameKey(int frame, int cameraId)
+            {
+                Frame = frame;
+                CameraId = cameraId;
+            }
+
+            public int Frame { get; }
+            public int CameraId { get; }
+
+            public bool Equals(CameraFrameKey other)
+            {
+                return Frame == other.Frame && CameraId == other.CameraId;
+            }
+
+            public override bool Equals(object obj)
+            {
+                return obj is CameraFrameKey other && Equals(other);
+            }
+
+            public override int GetHashCode()
+            {
+                unchecked
+                {
+                    return (Frame * 397) ^ CameraId;
+                }
+            }
+        }
+
+        internal readonly struct SceneKeywordState
+        {
+            public SceneKeywordState(bool heightLerpEnabled, bool fogEnabled)
+            {
+                HeightLerpEnabled = heightLerpEnabled;
+                FogEnabled = fogEnabled;
+            }
+
+            public bool HeightLerpEnabled { get; }
+            public bool FogEnabled { get; }
+        }
+
+        internal readonly struct SceneGlobalState
+        {
+            readonly ShadowState m_ShadowState;
+            readonly EnvironmentState m_EnvironmentState;
+
+            internal SceneGlobalState(CameraFrameKey cameraFrameKey, in ShadowState shadowState, in EnvironmentState environmentState, bool applyEnvironmentState)
+            {
+                CameraFrameKey = cameraFrameKey;
+                m_ShadowState = shadowState;
+                m_EnvironmentState = environmentState;
+                ApplyEnvironmentState = applyEnvironmentState;
+            }
+
+            public CameraFrameKey CameraFrameKey { get; }
+            public int Frame => CameraFrameKey.Frame;
+            public int CameraId => CameraFrameKey.CameraId;
+            public bool ApplyEnvironmentState { get; }
+
+            internal ShadowState ShadowState => m_ShadowState;
+            internal EnvironmentState EnvironmentState => m_EnvironmentState;
+        }
+
+        internal struct ShadowState
         {
             public Vector4 CascadeShadowSplitSpheres0;
             public Vector4 CascadeShadowSplitSpheres1;
@@ -41,7 +171,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
             public Matrix4x4 MainLightWorldToShadow4;
         }
 
-        struct EnvironmentState
+        internal struct EnvironmentState
         {
             public float GlobalOneMinusAvatarIntensity;
             public Vector3 MonsterLightDir;
@@ -99,55 +229,123 @@ namespace HoyoToon.Runtime.Rendering.HSR
             public float OutlineScale;
         }
 
-        internal static void Apply(HSRSceneController env, bool clearEnvironmentWhenMissing)
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetCachedState()
         {
-            int frame = Time.frameCount;
-            int environmentId = env != null ? env.GetInstanceID() : 0;
-            bool clearEnvironmentKey = env == null && clearEnvironmentWhenMissing;
-            if (s_LastAppliedFrame == frame
-                && s_LastAppliedEnvironmentId == environmentId
-                && s_LastAppliedClearEnvironmentWhenMissing == clearEnvironmentKey)
-            {
+            s_ShadowStateByCameraFrame.Clear();
+            s_StaleShadowStateKeys.Clear();
+            k_MainLightWorldToShadowCaptureScratch.Clear();
+            s_LastShadowStatePruneFrame = -1;
+        }
+
+        internal static SceneGlobalState CaptureSceneGlobals(HSRSceneController env, bool clearEnvironmentWhenMissing, Camera camera)
+        {
+            bool applyEnvironmentState = env != null || clearEnvironmentWhenMissing;
+            CameraFrameKey cameraFrameKey = CreateCameraFrameKey(camera);
+            return new SceneGlobalState(
+                cameraFrameKey,
+                GetOrCaptureShadowState(cameraFrameKey),
+                applyEnvironmentState ? CaptureEnvironmentState(env) : default,
+                applyEnvironmentState);
+        }
+
+        static CameraFrameKey CreateCameraFrameKey(Camera camera)
+        {
+            return new CameraFrameKey(Time.frameCount, camera != null ? camera.GetInstanceID() : 0);
+        }
+
+        internal static void ApplySceneGlobals(RasterCommandBuffer cmd, in SceneGlobalState globals)
+        {
+            if (cmd == null)
                 return;
+
+            ApplyShadowState(cmd, globals.ShadowState);
+
+            if (globals.ApplyEnvironmentState)
+                ApplyEnvironmentState(cmd, globals.EnvironmentState);
+        }
+
+        internal static SceneKeywordState CaptureSceneKeywords(HSRSceneController env)
+        {
+            return env != null
+                ? new SceneKeywordState(env.HeightLerpEnable, env.SceneFogEnabled)
+                : default;
+        }
+
+        internal static void ApplySceneKeywords(RasterCommandBuffer cmd, in SceneKeywordState keywords)
+        {
+            if (cmd == null)
+                return;
+
+            CoreUtils.SetKeyword(cmd, k_HeightLerpKeyword, keywords.HeightLerpEnabled);
+            CoreUtils.SetKeyword(cmd, k_FogKeyword, keywords.FogEnabled);
+        }
+
+        internal static void ClearSceneKeywords(RasterCommandBuffer cmd)
+        {
+            if (cmd == null)
+                return;
+
+            CoreUtils.SetKeyword(cmd, k_HeightLerpKeyword, false);
+            CoreUtils.SetKeyword(cmd, k_FogKeyword, false);
+        }
+
+        static ShadowState GetOrCaptureShadowState(CameraFrameKey cameraFrameKey)
+        {
+            PruneShadowStateCache(cameraFrameKey.Frame);
+
+            if (s_ShadowStateByCameraFrame.TryGetValue(cameraFrameKey, out ShadowState shadowState))
+                return shadowState;
+
+            shadowState = CaptureShadowState();
+            s_ShadowStateByCameraFrame[cameraFrameKey] = shadowState;
+            return shadowState;
+        }
+
+        static void PruneShadowStateCache(int frame)
+        {
+            if (s_LastShadowStatePruneFrame == frame)
+                return;
+
+            s_LastShadowStatePruneFrame = frame;
+            s_StaleShadowStateKeys.Clear();
+
+            foreach (CameraFrameKey cachedKey in s_ShadowStateByCameraFrame.Keys)
+            {
+                if (cachedKey.Frame != frame)
+                    s_StaleShadowStateKeys.Add(cachedKey);
             }
 
-            s_LastAppliedFrame = frame;
-            s_LastAppliedEnvironmentId = environmentId;
-            s_LastAppliedClearEnvironmentWhenMissing = clearEnvironmentKey;
-
-            ApplyShadowState(CaptureShadowState());
-
-            if (env == null)
+            for (int i = 0; i < s_StaleShadowStateKeys.Count; ++i)
             {
-                if (clearEnvironmentWhenMissing)
-                    ApplyEnvironmentState(default);
-
-                return;
+                s_ShadowStateByCameraFrame.Remove(s_StaleShadowStateKeys[i]);
             }
 
-            ApplyEnvironmentState(CaptureEnvironmentState(env));
+            s_StaleShadowStateKeys.Clear();
         }
 
         static ShadowState CaptureShadowState()
         {
             float cascadeCount = Shader.GetGlobalFloat(k_MainLightShadowCascadeCountId);
-            Matrix4x4[] sourceShadowMatrices = Shader.GetGlobalMatrixArray(k_MainLightWorldToShadowId);
+            k_MainLightWorldToShadowCaptureScratch.Clear();
+            Shader.GetGlobalMatrixArray(k_MainLightWorldToShadowId, k_MainLightWorldToShadowCaptureScratch);
             Matrix4x4 shadow0 = Matrix4x4.identity;
             Matrix4x4 shadow1 = Matrix4x4.identity;
             Matrix4x4 shadow2 = Matrix4x4.identity;
             Matrix4x4 shadow3 = Matrix4x4.identity;
             Matrix4x4 shadow4 = Matrix4x4.identity;
 
-            if (sourceShadowMatrices != null && sourceShadowMatrices.Length > 0)
+            int shadowMatrixCount = k_MainLightWorldToShadowCaptureScratch.Count;
+            if (shadowMatrixCount > 0)
             {
-                if (sourceShadowMatrices.Length > 0) shadow0 = sourceShadowMatrices[0];
-                if (sourceShadowMatrices.Length > 1) shadow1 = sourceShadowMatrices[1];
-                if (sourceShadowMatrices.Length > 2) shadow2 = sourceShadowMatrices[2];
-                if (sourceShadowMatrices.Length > 3) shadow3 = sourceShadowMatrices[3];
-                if (sourceShadowMatrices.Length > 4) shadow4 = sourceShadowMatrices[4];
+                if (shadowMatrixCount > 0) shadow0 = k_MainLightWorldToShadowCaptureScratch[0];
+                if (shadowMatrixCount > 1) shadow1 = k_MainLightWorldToShadowCaptureScratch[1];
+                if (shadowMatrixCount > 2) shadow2 = k_MainLightWorldToShadowCaptureScratch[2];
+                if (shadowMatrixCount > 3) shadow3 = k_MainLightWorldToShadowCaptureScratch[3];
+                if (shadowMatrixCount > 4) shadow4 = k_MainLightWorldToShadowCaptureScratch[4];
 
                 if (cascadeCount <= 0f)
-                    cascadeCount = Mathf.Min(4, sourceShadowMatrices.Length);
+                    cascadeCount = Mathf.Min(4, shadowMatrixCount);
             }
             else if (cascadeCount <= 0f)
             {
@@ -172,7 +370,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
             };
         }
 
-        static void ApplyShadowState(in ShadowState shadowState)
+        static void ApplyShadowState(RasterCommandBuffer cmd, in ShadowState shadowState)
         {
             k_MainLightWorldToShadowScratch[0] = shadowState.MainLightWorldToShadow0;
             k_MainLightWorldToShadowScratch[1] = shadowState.MainLightWorldToShadow1;
@@ -180,15 +378,15 @@ namespace HoyoToon.Runtime.Rendering.HSR
             k_MainLightWorldToShadowScratch[3] = shadowState.MainLightWorldToShadow3;
             k_MainLightWorldToShadowScratch[4] = shadowState.MainLightWorldToShadow4;
 
-            Shader.SetGlobalVector(k_CascadeShadowSplitSpheres0Id, shadowState.CascadeShadowSplitSpheres0);
-            Shader.SetGlobalVector(k_CascadeShadowSplitSpheres1Id, shadowState.CascadeShadowSplitSpheres1);
-            Shader.SetGlobalVector(k_CascadeShadowSplitSpheres2Id, shadowState.CascadeShadowSplitSpheres2);
-            Shader.SetGlobalVector(k_CascadeShadowSplitSpheres3Id, shadowState.CascadeShadowSplitSpheres3);
-            Shader.SetGlobalVector(k_CascadeShadowSplitSphereRadiiId, shadowState.CascadeShadowSplitSphereRadii);
-            Shader.SetGlobalVector(k_MainLightShadowParamsId, shadowState.MainLightShadowParams);
-            Shader.SetGlobalVector(k_MainLightShadowmapSizeId, shadowState.MainLightShadowmapSize);
-            Shader.SetGlobalFloat(k_MainLightShadowCascadeCountId, shadowState.MainLightShadowCascadeCount);
-            Shader.SetGlobalMatrixArray(k_MainLightWorldToShadowArrId, k_MainLightWorldToShadowScratch);
+            cmd.SetGlobalVector(k_CascadeShadowSplitSpheres0Id, shadowState.CascadeShadowSplitSpheres0);
+            cmd.SetGlobalVector(k_CascadeShadowSplitSpheres1Id, shadowState.CascadeShadowSplitSpheres1);
+            cmd.SetGlobalVector(k_CascadeShadowSplitSpheres2Id, shadowState.CascadeShadowSplitSpheres2);
+            cmd.SetGlobalVector(k_CascadeShadowSplitSpheres3Id, shadowState.CascadeShadowSplitSpheres3);
+            cmd.SetGlobalVector(k_CascadeShadowSplitSphereRadiiId, shadowState.CascadeShadowSplitSphereRadii);
+            cmd.SetGlobalVector(k_MainLightShadowParamsId, shadowState.MainLightShadowParams);
+            cmd.SetGlobalVector(k_MainLightShadowmapSizeId, shadowState.MainLightShadowmapSize);
+            cmd.SetGlobalFloat(k_MainLightShadowCascadeCountId, shadowState.MainLightShadowCascadeCount);
+            cmd.SetGlobalMatrixArray(k_MainLightWorldToShadowArrId, k_MainLightWorldToShadowScratch);
         }
 
         static EnvironmentState CaptureEnvironmentState(HSRSceneController env)
@@ -255,7 +453,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
             };
         }
 
-        static void ApplyEnvironmentState(in EnvironmentState environmentState)
+        static void ApplyEnvironmentState(RasterCommandBuffer cmd, in EnvironmentState environmentState)
         {
             Matrix4x4 globalRotMatrix = environmentState.GlobalRotMatrix;
             k_EsGlobalRotMatrixScratch[0] = globalRotMatrix.GetRow(0);
@@ -263,66 +461,72 @@ namespace HoyoToon.Runtime.Rendering.HSR
             k_EsGlobalRotMatrixScratch[2] = globalRotMatrix.GetRow(2);
             k_EsGlobalRotMatrixScratch[3] = globalRotMatrix.GetRow(3);
 
-            Shader.SetGlobalFloat("_GlobalOneMinusAvatarIntensity", environmentState.GlobalOneMinusAvatarIntensity);
-            Shader.SetGlobalVector("_XPad0", Vector3.zero);
-            Shader.SetGlobalVector("_ES_MonsterLightDir", environmentState.MonsterLightDir);
-            Shader.SetGlobalFloat("_ES_Indoor", environmentState.Indoor);
-            Shader.SetGlobalFloat("_ES_TransitionRate", environmentState.TransitionRate);
-            Shader.SetGlobalFloat("_ES_SelfShadowLerpHair", environmentState.SelfShadowLerpHair);
-            Shader.SetGlobalFloat("_ES_LEVEL_ADJUST_ON", environmentState.LevelAdjustOn);
-            Shader.SetGlobalFloat("_XPad1", 0f);
-            Shader.SetGlobalVectorArray(k_EsGlobalRotMatrixId, k_EsGlobalRotMatrixScratch);
-            Shader.SetGlobalFloat("_ES_CharacterToonRampMode", environmentState.CharacterToonRampMode);
-            Shader.SetGlobalFloat("_ES_CharacterDisableLocalMainLight", environmentState.CharacterDisableLocalMainLight);
-            Shader.SetGlobalVector("_XPad2", Vector2.zero);
-            Shader.SetGlobalVector("_ES_AddColor", environmentState.AddColor);
-            Shader.SetGlobalVector("_ES_SPColor", environmentState.SpColor);
-            Shader.SetGlobalFloat("_ES_SPIntensity", environmentState.SpIntensity);
-            Shader.SetGlobalVector("_XPad3", Vector3.zero);
-            Shader.SetGlobalVector("_ES_RimShadowColor", environmentState.RimShadowColor);
-            Shader.SetGlobalFloat("_ES_RimShadowIntensity", environmentState.RimShadowIntensity);
-            Shader.SetGlobalFloat("_ES_CharacterShadowFactor", environmentState.CharacterShadowFactor);
-            Shader.SetGlobalFloat("_ES_OutLineDarkenVal", environmentState.OutlineDarkenVal);
-            Shader.SetGlobalFloat("_ES_OutLineLightedVal", environmentState.OutlineLightedVal);
-            Shader.SetGlobalFloat("_ES_OutlineDisableDistanceScale", environmentState.OutlineDisableDistanceScale);
-            Shader.SetGlobalFloat("_ES_OutlineFallbackScale", environmentState.OutlineFallbackScale);
-            Shader.SetGlobalFloat("_ES_HeightLerpTop", environmentState.HeightLerpTop);
-            Shader.SetGlobalFloat("_ES_HeightLerpBottom", environmentState.HeightLerpBottom);
-            Shader.SetGlobalVector("_ES_HeightLerpTopColor", environmentState.HeightLerpTopColor);
-            Shader.SetGlobalVector("_ES_HeightLerpMiddleColor", environmentState.HeightLerpMiddleColor);
-            Shader.SetGlobalVector("_ES_HeightLerpBottomColor", environmentState.HeightLerpBottomColor);
-            Shader.SetGlobalVector("_ES_RimLightOffset", environmentState.RimLightOffset);
-            Shader.SetGlobalFloat("_ES_RimLightWidth", environmentState.RimLightWidth);
-            Shader.SetGlobalFloat("_ES_RimLightIntensity", environmentState.RimLightIntensity);
-            Shader.SetGlobalFloat("_ES_RimLightAddMode", environmentState.RimLightAddMode);
-            Shader.SetGlobalFloat("_ES_RimLightMode", environmentState.RimLightMode);
-            Shader.SetGlobalVector("_XPad4", Vector2.zero);
-            Shader.SetGlobalVector("_ES_RimLightColor", environmentState.RimLightColor);
-            Shader.SetGlobalVector("_ES_LevelSkinLightColor", environmentState.LevelSkinLightColor);
-            Shader.SetGlobalVector("_ES_LevelSkinShadowColor", environmentState.LevelSkinShadowColor);
-            Shader.SetGlobalVector("_ES_LevelHighLightColor", environmentState.LevelHighLightColor);
-            Shader.SetGlobalVector("_ES_LevelShadowColor", environmentState.LevelShadowColor);
-            Shader.SetGlobalFloat("_ES_LevelShadow", environmentState.LevelShadow);
-            Shader.SetGlobalFloat("_ES_LevelMid", environmentState.LevelMid);
-            Shader.SetGlobalFloat("_ES_LevelHighLight", environmentState.LevelHighLight);
-            Shader.SetGlobalFloat("_ES_LevelEyeShadowIntensity", environmentState.LevelEyeShadowIntensity);
-            Shader.SetGlobalFloat("_ES_IndoorCharShadowAsCookie", environmentState.IndoorCharShadowAsCookie);
-            Shader.SetGlobalFloat("_ES_FogColor", environmentState.FogColor);
-            Shader.SetGlobalFloat("_ES_FogDensity", environmentState.FogDensity);
-            Shader.SetGlobalFloat("_ES_FogNear", environmentState.FogNear);
-            Shader.SetGlobalFloat("_ES_FogFar", environmentState.FogFar);
-            Shader.SetGlobalFloat("_ES_HeightFogColor", environmentState.HeightFogColor);
-            Shader.SetGlobalFloat("_ES_HeightFogBaseHeight", environmentState.HeightFogBaseHeight);
-            Shader.SetGlobalFloat("_ES_HeightFogRange", environmentState.HeightFogRange);
-            Shader.SetGlobalFloat("_ES_HeightFogDensity", environmentState.HeightFogDensity);
-            Shader.SetGlobalFloat("_ES_HeightFogFogNear", environmentState.HeightFogFogNear);
-            Shader.SetGlobalFloat("_ES_HeightFogFogFar", environmentState.HeightFogFogFar);
-            Shader.SetGlobalFloat("_ES_FogCharacterNearFactor", environmentState.FogCharacterNearFactor);
-            Shader.SetGlobalFloat("_ES_HeightFogAddAjust", environmentState.HeightFogAddAjust);
-            Shader.SetGlobalFloat("_ES_DisableFogTransition", environmentState.DisableFogTransition);
-            Shader.SetGlobalVector("_XPad5", Vector2.zero);
-            Shader.SetGlobalVector("_ES_EffCustomLightPosition", environmentState.EffCustomLightPosition);
-            Shader.SetGlobalFloat("_OutlineScale", environmentState.OutlineScale);
+            cmd.SetGlobalFloat(k_GlobalOneMinusAvatarIntensityId, environmentState.GlobalOneMinusAvatarIntensity);
+            cmd.SetGlobalVector(k_XPad0Id, Vector4.zero);
+            cmd.SetGlobalVector(
+                k_EsMonsterLightDirId,
+                new Vector4(
+                    environmentState.MonsterLightDir.x,
+                    environmentState.MonsterLightDir.y,
+                    environmentState.MonsterLightDir.z,
+                    0f));
+            cmd.SetGlobalFloat(k_EsIndoorId, environmentState.Indoor);
+            cmd.SetGlobalFloat(k_EsTransitionRateId, environmentState.TransitionRate);
+            cmd.SetGlobalFloat(k_EsSelfShadowLerpHairId, environmentState.SelfShadowLerpHair);
+            cmd.SetGlobalFloat(k_EsLevelAdjustOnId, environmentState.LevelAdjustOn);
+            cmd.SetGlobalFloat(k_XPad1Id, 0f);
+            cmd.SetGlobalVectorArray(k_EsGlobalRotMatrixId, k_EsGlobalRotMatrixScratch);
+            cmd.SetGlobalFloat(k_EsCharacterToonRampModeId, environmentState.CharacterToonRampMode);
+            cmd.SetGlobalFloat(k_EsCharacterDisableLocalMainLightId, environmentState.CharacterDisableLocalMainLight);
+            cmd.SetGlobalVector(k_XPad2Id, Vector4.zero);
+            cmd.SetGlobalVector(k_EsAddColorId, environmentState.AddColor);
+            cmd.SetGlobalVector(k_EsSpColorId, environmentState.SpColor);
+            cmd.SetGlobalFloat(k_EsSpIntensityId, environmentState.SpIntensity);
+            cmd.SetGlobalVector(k_XPad3Id, Vector4.zero);
+            cmd.SetGlobalVector(k_EsRimShadowColorId, environmentState.RimShadowColor);
+            cmd.SetGlobalFloat(k_EsRimShadowIntensityId, environmentState.RimShadowIntensity);
+            cmd.SetGlobalFloat(k_EsCharacterShadowFactorId, environmentState.CharacterShadowFactor);
+            cmd.SetGlobalFloat(k_EsOutlineDarkenValId, environmentState.OutlineDarkenVal);
+            cmd.SetGlobalFloat(k_EsOutlineLightedValId, environmentState.OutlineLightedVal);
+            cmd.SetGlobalFloat(k_EsOutlineDisableDistanceScaleId, environmentState.OutlineDisableDistanceScale);
+            cmd.SetGlobalFloat(k_EsOutlineFallbackScaleId, environmentState.OutlineFallbackScale);
+            cmd.SetGlobalFloat(k_EsHeightLerpTopId, environmentState.HeightLerpTop);
+            cmd.SetGlobalFloat(k_EsHeightLerpBottomId, environmentState.HeightLerpBottom);
+            cmd.SetGlobalVector(k_EsHeightLerpTopColorId, environmentState.HeightLerpTopColor);
+            cmd.SetGlobalVector(k_EsHeightLerpMiddleColorId, environmentState.HeightLerpMiddleColor);
+            cmd.SetGlobalVector(k_EsHeightLerpBottomColorId, environmentState.HeightLerpBottomColor);
+            cmd.SetGlobalVector(k_EsRimLightOffsetId, new Vector4(environmentState.RimLightOffset.x, environmentState.RimLightOffset.y, 0f, 0f));
+            cmd.SetGlobalFloat(k_EsRimLightWidthId, environmentState.RimLightWidth);
+            cmd.SetGlobalFloat(k_EsRimLightIntensityId, environmentState.RimLightIntensity);
+            cmd.SetGlobalFloat(k_EsRimLightAddModeId, environmentState.RimLightAddMode);
+            cmd.SetGlobalFloat(k_EsRimLightModeId, environmentState.RimLightMode);
+            cmd.SetGlobalVector(k_XPad4Id, Vector4.zero);
+            cmd.SetGlobalVector(k_EsRimLightColorId, environmentState.RimLightColor);
+            cmd.SetGlobalVector(k_EsLevelSkinLightColorId, environmentState.LevelSkinLightColor);
+            cmd.SetGlobalVector(k_EsLevelSkinShadowColorId, environmentState.LevelSkinShadowColor);
+            cmd.SetGlobalVector(k_EsLevelHighLightColorId, environmentState.LevelHighLightColor);
+            cmd.SetGlobalVector(k_EsLevelShadowColorId, environmentState.LevelShadowColor);
+            cmd.SetGlobalFloat(k_EsLevelShadowId, environmentState.LevelShadow);
+            cmd.SetGlobalFloat(k_EsLevelMidId, environmentState.LevelMid);
+            cmd.SetGlobalFloat(k_EsLevelHighLightId, environmentState.LevelHighLight);
+            cmd.SetGlobalFloat(k_EsLevelEyeShadowIntensityId, environmentState.LevelEyeShadowIntensity);
+            cmd.SetGlobalFloat(k_EsIndoorCharShadowAsCookieId, environmentState.IndoorCharShadowAsCookie);
+            cmd.SetGlobalFloat(k_EsFogColorId, environmentState.FogColor);
+            cmd.SetGlobalFloat(k_EsFogDensityId, environmentState.FogDensity);
+            cmd.SetGlobalFloat(k_EsFogNearId, environmentState.FogNear);
+            cmd.SetGlobalFloat(k_EsFogFarId, environmentState.FogFar);
+            cmd.SetGlobalFloat(k_EsHeightFogColorId, environmentState.HeightFogColor);
+            cmd.SetGlobalFloat(k_EsHeightFogBaseHeightId, environmentState.HeightFogBaseHeight);
+            cmd.SetGlobalFloat(k_EsHeightFogRangeId, environmentState.HeightFogRange);
+            cmd.SetGlobalFloat(k_EsHeightFogDensityId, environmentState.HeightFogDensity);
+            cmd.SetGlobalFloat(k_EsHeightFogFogNearId, environmentState.HeightFogFogNear);
+            cmd.SetGlobalFloat(k_EsHeightFogFogFarId, environmentState.HeightFogFogFar);
+            cmd.SetGlobalFloat(k_EsFogCharacterNearFactorId, environmentState.FogCharacterNearFactor);
+            cmd.SetGlobalFloat(k_EsHeightFogAddAjustId, environmentState.HeightFogAddAjust);
+            cmd.SetGlobalFloat(k_EsDisableFogTransitionId, environmentState.DisableFogTransition);
+            cmd.SetGlobalVector(k_XPad5Id, Vector4.zero);
+            cmd.SetGlobalVector(k_EsEffCustomLightPositionId, environmentState.EffCustomLightPosition);
+            cmd.SetGlobalFloat(k_OutlineScaleId, environmentState.OutlineScale);
         }
 
         static float ToShaderBool(bool value)
@@ -330,12 +534,5 @@ namespace HoyoToon.Runtime.Rendering.HSR
             return value ? 1f : 0f;
         }
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        static void ResetFrameCache()
-        {
-            s_LastAppliedFrame = -1;
-            s_LastAppliedEnvironmentId = 0;
-            s_LastAppliedClearEnvironmentWhenMissing = false;
-        }
     }
 }

@@ -1,12 +1,15 @@
 using System;
 using System.Collections.Generic;
+using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Scene.HSR;
+using HoyoToon.Runtime.Utilities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Rendering.RenderGraphModule;
 using UnityEngine.Rendering.RenderGraphModule.Util;
 using UnityEngine.Experimental.Rendering;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.HSR
 {
@@ -60,6 +63,9 @@ namespace HoyoToon.Runtime.Rendering.HSR
             SharedAlphaMaskHandle = default;
 
             if (!ShouldRenderForCamera(renderingData.cameraData.cameraType, renderingData.cameraData.isPreviewCamera))
+                return;
+
+            if (!LightingGBufferPass.HasSceneLightingWork(renderingData.cameraData.camera))
                 return;
 
             if (!m_HasWarnedForwardOrder && settings.forwardRenderPassEvent < settings.renderPassEvent)
@@ -118,6 +124,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
             static readonly ShaderTagId k_UniversalForwardTag = new ShaderTagId("UniversalForward");
             static readonly ShaderTagId k_UniversalForwardOnlyTag = new ShaderTagId("UniversalForwardOnly");
             static readonly ShaderTagId k_SrpDefaultUnlitTag = new ShaderTagId("SRPDefaultUnlit");
+            static readonly ShaderTagId k_LightModeTag = new ShaderTagId("LightMode");
             static readonly List<ShaderTagId> k_GBufferPassTag = new List<ShaderTagId>
         {
             k_LightingGBufferTag,
@@ -172,13 +179,182 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 SortingCriteria.RenderQueue |
                 SortingCriteria.CanvasOrder |
                 SortingCriteria.OptimizeStateChanges;
+            static readonly ShaderTagId[] k_LightingActivityTags =
+            {
+                k_LightingGBufferTag,
+                k_LightingGBufferEyeHairTag,
+                k_LightingForwardTag,
+                k_ForwardEmissionTag,
+                k_CustomForwardTag,
+                k_CustomForward2Tag,
+                k_CustomForwardOpaqueTag,
+                k_CustomForwardOpaque2Tag,
+                k_CustomRpTransparentTag,
+                k_RpgOutlineTag
+            };
+            static readonly List<HSRCharacterController> k_ActivityControllers = new List<HSRCharacterController>(8);
+            static readonly List<Material> k_ActivityMaterials = new List<Material>(16);
+            static readonly Dictionary<int, SceneActivityCache> k_SceneActivityCache =
+                new Dictionary<int, SceneActivityCache>();
             static Material s_AlphaMaskOverrideMaterial;
             static readonly Color k_TransparentClearColor = new Color(0f, 0f, 0f, 0f);
+
+            struct SceneActivityCache
+            {
+                public int RendererTopologyVersion;
+                public int MaterialPassCacheVersion;
+                public int ControllerSignature;
+                public bool HasLightingWork;
+            }
 
             public LightingGBufferPass(LightingGBuffer owner, StageType stageType)
             {
                 m_Owner = owner;
                 m_StageType = stageType;
+            }
+
+            [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+            static void ResetSceneActivityCache()
+            {
+                k_ActivityControllers.Clear();
+                k_ActivityMaterials.Clear();
+                k_SceneActivityCache.Clear();
+            }
+
+            internal static bool HasSceneLightingWork(Camera camera)
+            {
+                UnityScene scene = ResolveRenderScene(camera);
+                if (!RenderSceneUtility.IsSceneUsable(scene))
+                    return false;
+
+                int sceneHandle = scene.handle;
+                int controllerCount = HSRCharacterController.GetRegisteredActiveControllersInScene(scene, k_ActivityControllers);
+                int controllerSignature = BuildControllerSignature(controllerCount);
+                int rendererTopologyVersion = HSRCharacterController.RendererTopologyVersion;
+                int materialPassCacheVersion = HsrRendererMaterialQueryUtility.MaterialPassCacheVersion;
+
+                if (k_SceneActivityCache.TryGetValue(sceneHandle, out SceneActivityCache cache)
+                    && cache.RendererTopologyVersion == rendererTopologyVersion
+                    && cache.MaterialPassCacheVersion == materialPassCacheVersion
+                    && cache.ControllerSignature == controllerSignature)
+                {
+                    k_ActivityControllers.Clear();
+                    return cache.HasLightingWork;
+                }
+
+                bool hasLightingWork = false;
+                for (int i = 0; i < controllerCount && !hasLightingWork; ++i)
+                {
+                    HSRCharacterController controller = k_ActivityControllers[i];
+                    if (controller == null)
+                        continue;
+
+                    hasLightingWork = ControllerHasLightingWork(controller);
+                }
+
+                k_ActivityControllers.Clear();
+                k_SceneActivityCache[sceneHandle] = new SceneActivityCache
+                {
+                    RendererTopologyVersion = rendererTopologyVersion,
+                    MaterialPassCacheVersion = materialPassCacheVersion,
+                    ControllerSignature = controllerSignature,
+                    HasLightingWork = hasLightingWork
+                };
+
+                return hasLightingWork;
+            }
+
+            static UnityScene ResolveRenderScene(Camera camera)
+            {
+                return RenderSceneUtility.ResolveRenderScene(camera);
+            }
+
+            static int BuildControllerSignature(int controllerCount)
+            {
+                unchecked
+                {
+                    int hash = controllerCount;
+                    for (int i = 0; i < controllerCount; ++i)
+                    {
+                        HSRCharacterController controller = k_ActivityControllers[i];
+                        hash = (hash * 397) ^ (controller != null ? controller.GetInstanceID() : 0);
+                        hash = (hash * 397) ^ (controller != null ? controller.RendererScopeVersion : 0);
+                        hash = (hash * 397) ^ (controller != null ? controller.EffectMaterialsVersion : 0);
+                    }
+
+                    return hash;
+                }
+            }
+
+            static bool ControllerHasLightingWork(HSRCharacterController controller)
+            {
+                Renderer[] scopedRenderers = controller.GetScopedRenderers();
+                if (scopedRenderers != null)
+                {
+                    for (int i = 0; i < scopedRenderers.Length; ++i)
+                    {
+                        if (RendererHasLightingWork(scopedRenderers[i]))
+                            return true;
+                    }
+                }
+
+                List<HSRCharacterController.EffectMaterialEntry> effectMaterials = controller.EffectMaterials;
+                if (effectMaterials == null)
+                    return false;
+
+                for (int i = 0; i < effectMaterials.Count; ++i)
+                {
+                    if (MaterialHasLightingWork(effectMaterials[i].Material))
+                        return true;
+                }
+
+                return false;
+            }
+
+            static bool RendererHasLightingWork(Renderer renderer)
+            {
+                if (renderer == null)
+                    return false;
+
+                if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_ActivityMaterials, out int materialCount))
+                    return false;
+
+                try
+                {
+                    for (int i = 0; i < materialCount; ++i)
+                    {
+                        if (MaterialHasLightingWork(k_ActivityMaterials[i]))
+                            return true;
+                    }
+                }
+                finally
+                {
+                    k_ActivityMaterials.Clear();
+                }
+
+                return false;
+            }
+
+            static bool MaterialHasLightingWork(Material material)
+            {
+                if (material == null)
+                    return false;
+
+                for (int i = 0; i < k_LightingActivityTags.Length; ++i)
+                {
+                    string lightModeName = k_LightingActivityTags[i].name;
+                    if (HsrRendererMaterialQueryUtility.HasMaterialTagOrShaderPassOrNamedPass(
+                            material,
+                            "LightMode",
+                            k_LightModeTag,
+                            lightModeName,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+
+                return false;
             }
 
             // This class stores the data needed by the RenderGraph pass.
@@ -187,6 +363,8 @@ namespace HoyoToon.Runtime.Rendering.HSR
             {
                 public RendererListHandle lightingGBuffer;
                 public RendererListHandle rpgOutline;
+                public HsrInheritedLightingGlobals.SceneGlobalState sceneGlobals;
+                public HsrInheritedLightingGlobals.SceneKeywordState sceneKeywords;
             }
 
             private class ForwardPassData
@@ -199,6 +377,8 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 public TextureHandle gBufferA;
                 public TextureHandle depthBufferOrCopy;
                 public TextureHandle alphaMask;
+                public HsrInheritedLightingGlobals.SceneGlobalState sceneGlobals;
+                public HsrInheritedLightingGlobals.SceneKeywordState sceneKeywords;
             }
 
             private class DepthRebuildPassData
@@ -233,14 +413,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 return descriptor;
             }
 
-            static RenderTextureDescriptor BuildSingleSampleColorDescriptor(RenderTextureDescriptor baseDescriptor, GraphicsFormat format)
-            {
-                RenderTextureDescriptor descriptor = BuildColorDescriptor(baseDescriptor, format);
-                descriptor.msaaSamples = 1;
-                descriptor.bindMS = false;
-                return descriptor;
-            }
-
             static RenderTextureDescriptor BuildDepthCopyDescriptor(RenderTextureDescriptor baseDescriptor)
             {
                 RenderTextureDescriptor descriptor = baseDescriptor;
@@ -262,14 +434,19 @@ namespace HoyoToon.Runtime.Rendering.HSR
             // It is used to execute draw commands.
             static void ExecuteGBufferPass(GBufferPassData data, RasterGraphContext context)
             {
+                HsrInheritedLightingGlobals.ApplySceneGlobals(context.cmd, data.sceneGlobals);
+                HsrInheritedLightingGlobals.ApplySceneKeywords(context.cmd, data.sceneKeywords);
                 context.cmd.DrawRendererList(data.lightingGBuffer);
 
                 // Outline must run as the final step of Lighting GBuffer.
                 context.cmd.DrawRendererList(data.rpgOutline);
+                HsrInheritedLightingGlobals.ClearSceneKeywords(context.cmd);
             }
 
             static void ExecuteForwardPass(ForwardPassData data, RasterGraphContext context)
             {
+                HsrInheritedLightingGlobals.ApplySceneGlobals(context.cmd, data.sceneGlobals);
+                HsrInheritedLightingGlobals.ApplySceneKeywords(context.cmd, data.sceneKeywords);
                 context.cmd.SetGlobalTexture(k_GBufferAId, data.gBufferA);
                 context.cmd.SetGlobalTexture(k_DepthBufferOrCopyId, data.depthBufferOrCopy, RenderTextureSubElement.Depth);
 
@@ -279,6 +456,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 context.cmd.DrawRendererList(data.customForwardOpaque2);
                 context.cmd.DrawRendererList(data.customForward);
                 context.cmd.DrawRendererList(data.customForward2);
+                HsrInheritedLightingGlobals.ClearSceneKeywords(context.cmd);
             }
 
             static void ExecuteDepthRebuildPass(DepthRebuildPassData data, RasterGraphContext context)
@@ -301,6 +479,12 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 if (!ShouldRenderForCamera(cameraData.cameraType, cameraData.isPreviewCamera))
                     return;
 
+                HSRSceneController sceneController = ResolveSceneController(cameraData.camera);
+                HsrInheritedLightingGlobals.SceneGlobalState sceneGlobals =
+                    HsrInheritedLightingGlobals.CaptureSceneGlobals(sceneController, clearEnvironmentWhenMissing: true, cameraData.camera);
+                HsrInheritedLightingGlobals.SceneKeywordState sceneKeywords =
+                    HsrInheritedLightingGlobals.CaptureSceneKeywords(sceneController);
+
                 RendererListHandle CreateRendererList(List<ShaderTagId> shaderTagIds, RenderQueueRange renderQueueRange, SortingCriteria sortingCriteria, Material overrideMaterial = null)
                 {
                     DrawingSettings drawingSettings = CreateDrawingSettings(shaderTagIds, renderingData, cameraData, lightData, sortingCriteria);
@@ -319,7 +503,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     const string gBufferPassName = "Lighting GBuffer";
                     const string gBufferACopyPassName = "Lighting GBufferA Copy";
                     const string gBufferDepthRebuildPassName = "Lighting GBuffer Depth Rebuild";
-                    HsrInheritedLightingGlobals.Apply(HSRSceneController.instance, clearEnvironmentWhenMissing: true);
 
                     GraphicsFormat gBufferAFormat = GetSupportedColorFormat(GraphicsFormat.R8G8B8A8_UNorm, cameraData.cameraTargetDescriptor.graphicsFormat);
                     GraphicsFormat gBufferBFormat = GetSupportedColorFormat(GraphicsFormat.R16G16B16A16_SFloat, GraphicsFormat.R16G16B16A16_UNorm);
@@ -330,9 +513,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     RenderTextureDescriptor gBufferBDescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, gBufferBFormat);
                     RenderTextureDescriptor gBufferCDescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, gBufferCFormat);
                     RenderTextureDescriptor alphaMaskDescriptor = BuildColorDescriptor(cameraData.cameraTargetDescriptor, alphaMaskFormat);
-                    RenderTextureDescriptor depthRebuildDummyADescriptor = BuildSingleSampleColorDescriptor(cameraData.cameraTargetDescriptor, gBufferAFormat);
-                    RenderTextureDescriptor depthRebuildDummyBDescriptor = BuildSingleSampleColorDescriptor(cameraData.cameraTargetDescriptor, gBufferBFormat);
-                    RenderTextureDescriptor depthRebuildDummyCDescriptor = BuildSingleSampleColorDescriptor(cameraData.cameraTargetDescriptor, gBufferCFormat);
                     RenderTextureDescriptor depthCopyDescriptor = BuildDepthCopyDescriptor(cameraData.cameraTargetDescriptor);
 
                     TextureHandle gBufferA = UniversalRenderer.CreateRenderGraphTexture(renderGraph, gBufferADescriptor, "_GBufferA", false);
@@ -340,9 +520,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     TextureHandle gBufferC = UniversalRenderer.CreateRenderGraphTexture(renderGraph, gBufferCDescriptor, "_GBufferC", false);
                     TextureHandle alphaMask = UniversalRenderer.CreateRenderGraphTexture(renderGraph, alphaMaskDescriptor, "_LightingAlphaMask", false);
                     TextureHandle depthBufferOrCopy = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthCopyDescriptor, "_DepthBufferOrCopy", false);
-                    TextureHandle depthRebuildDummyA = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthRebuildDummyADescriptor, "_LightingGBufferDepthDummyA", false);
-                    TextureHandle depthRebuildDummyB = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthRebuildDummyBDescriptor, "_LightingGBufferDepthDummyB", false);
-                    TextureHandle depthRebuildDummyC = UniversalRenderer.CreateRenderGraphTexture(renderGraph, depthRebuildDummyCDescriptor, "_LightingGBufferDepthDummyC", false);
 
                     RendererListHandle lightingGBuffer = CreateRendererList(k_GBufferPassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
                     RendererListHandle lightingGBufferDepthOnly = CreateRendererList(k_GBufferDepthRebuildTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
@@ -361,6 +538,8 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     {
                         passData.lightingGBuffer = lightingGBuffer;
                         passData.rpgOutline = rpgOutline;
+                        passData.sceneGlobals = sceneGlobals;
+                        passData.sceneKeywords = sceneKeywords;
 
                         builder.UseRendererList(passData.lightingGBuffer);
                         builder.UseRendererList(passData.rpgOutline);
@@ -374,6 +553,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                         builder.SetGlobalTextureAfterPass(gBufferB, k_GBufferBId);
                         builder.SetGlobalTextureAfterPass(gBufferC, k_GBufferCId);
                         builder.SetGlobalTextureAfterPass(alphaMask, k_LightingAlphaMaskId);
+                        builder.AllowGlobalStateModification(true);
                         builder.AllowPassCulling(false);
 
                         builder.SetRenderFunc((GBufferPassData data, RasterGraphContext context) => ExecuteGBufferPass(data, context));
@@ -391,9 +571,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
                         passData.lightingGBufferDepthOnly = lightingGBufferDepthOnly;
 
                         builder.UseRendererList(passData.lightingGBufferDepthOnly);
-                        builder.SetRenderAttachment(depthRebuildDummyA, 0);
-                        builder.SetRenderAttachment(depthRebuildDummyB, 1);
-                        builder.SetRenderAttachment(depthRebuildDummyC, 2);
                         builder.SetRenderAttachmentDepth(depthBufferOrCopy, AccessFlags.ReadWrite);
                         builder.SetGlobalTextureAfterPass(depthBufferOrCopy, k_DepthBufferOrCopyId);
                         builder.AllowPassCulling(false);
@@ -410,7 +587,6 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 }
 
                 const string forwardPassName = "Lighting Forward Group";
-                HsrInheritedLightingGlobals.Apply(HSRSceneController.instance, clearEnvironmentWhenMissing: true);
                 RendererListHandle forwardEmission = CreateRendererList(k_ForwardEmissionPassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
                 RendererListHandle customForward = CreateRendererList(k_CustomForwardPassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
                 RendererListHandle customForward2 = CreateRendererList(k_CustomForward2PassTag, RenderQueueRange.all, k_QueueDrivenSortFlags);
@@ -428,6 +604,8 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     passData.gBufferA = m_Owner.m_SharedGBufferA;
                     passData.depthBufferOrCopy = m_Owner.m_SharedDepthBufferOrCopy;
                     passData.alphaMask = m_Owner.m_SharedAlphaMask;
+                    passData.sceneGlobals = sceneGlobals;
+                    passData.sceneKeywords = sceneKeywords;
 
                     builder.UseRendererList(passData.forwardEmission);
                     builder.UseRendererList(passData.customForwardOpaque);
@@ -447,6 +625,13 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
                     builder.SetRenderFunc((ForwardPassData data, RasterGraphContext context) => ExecuteForwardPass(data, context));
                 }
+            }
+
+            private static HSRSceneController ResolveSceneController(Camera camera)
+            {
+                return camera != null
+                    ? HSRSceneController.FindForSceneOrActiveScene(camera.gameObject.scene)
+                    : HSRSceneController.FindForSceneOrActiveScene(default);
             }
         }
     }

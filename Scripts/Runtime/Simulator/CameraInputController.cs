@@ -10,8 +10,6 @@ namespace HoyoToon.Runtime.Simulator.Camera
     [RequireComponent(typeof(CinemachineFreeLook))]
     public class CameraInputController : MonoBehaviour
     {
-        private const string HoyoToonInputAssetPath = "Input/HoyoToon";
-        private const string HoyoToonSimulatorActionMap = "Simulator";
         private const string LookActionName = "Look";
         private const string ZoomActionName = "Zoom";
         private const string AutoRotateActionName = "AutoRotate";
@@ -102,11 +100,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
             zoomAction = null;
             autoRotateAction = null;
 
-            InputActionAsset resolvedInputActions = inputActions;
-            if (resolvedInputActions == null)
-            {
-                resolvedInputActions = Resources.Load<InputActionAsset>(HoyoToonInputAssetPath);
-            }
+            InputActionAsset resolvedInputActions = SimulatorInputActions.Resolve(inputActions);
 
             if (resolvedInputActions == null)
             {
@@ -114,7 +108,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
             }
 
             inputActions = resolvedInputActions;
-            InputActionMap map = resolvedInputActions.FindActionMap(HoyoToonSimulatorActionMap);
+            InputActionMap map = resolvedInputActions.FindActionMap(SimulatorInputActions.ActionMapName);
             if (map == null)
             {
                 return;

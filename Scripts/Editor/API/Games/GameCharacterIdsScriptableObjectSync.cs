@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Editor.Utilities.Debugging;
+using HoyoToon.Editor.Utilities.IO;
 using HoyoToon.Runtime.ScriptableObjects.Games;
 using UnityEditor;
 using static HoyoToon.Editor.Utilities.Assets.GeneratedAssetSyncUtility;
@@ -51,9 +52,7 @@ namespace HoyoToon.Editor.API.Games
                 HoyoToonLogCategory.Api,
                 $"Synchronizing generated character ID assets for {groupedRecords.Count} game(s) and removing {staleAssetPaths.Count} stale asset(s).");
 
-            AssetDatabase.StartAssetEditing();
-
-            try
+            using (AssetDatabaseEditingScope.Begin(disallowAutoRefresh: false))
             {
                 CleanupStaleAssets(staleAssetPaths);
 
@@ -67,10 +66,6 @@ namespace HoyoToon.Editor.API.Games
                     GeneratedAssetSyncUtility.OverwriteAsset(asset, BuildPayload(pair.Key, pair.Value));
                     HoyoToonLogger.Verbose(HoyoToonLogCategory.Api, $"Updated generated character ID asset for '{pair.Key}'.");
                 }
-            }
-            finally
-            {
-                AssetDatabase.StopAssetEditing();
             }
 
             AssetDatabase.SaveAssets();
@@ -192,7 +187,7 @@ namespace HoyoToon.Editor.API.Games
 
         private static string GetGameKeyFromAssetPath(string assetPath)
         {
-            string normalizedPath = assetPath?.Replace('\\', '/');
+            string normalizedPath = EditorPathUtility.NormalizeAssetPath(assetPath);
             if (string.IsNullOrWhiteSpace(normalizedPath))
             {
                 return string.Empty;

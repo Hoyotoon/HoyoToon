@@ -120,12 +120,14 @@ namespace HoyoToon.Editor.Assets
             AssetDownloadJob job,
             RemoteResourceEntry remoteFile,
             string localFilePath,
-            string importedAssetPath)
+            string importedAssetPath,
+            string stagedFilePath)
         {
             Job = job;
             RemoteFile = remoteFile;
             LocalFilePath = localFilePath ?? string.Empty;
             ImportedAssetPath = importedAssetPath ?? string.Empty;
+            StagedFilePath = stagedFilePath ?? string.Empty;
         }
 
         internal AssetDownloadJob Job { get; }
@@ -135,6 +137,8 @@ namespace HoyoToon.Editor.Assets
         internal string LocalFilePath { get; }
 
         internal string ImportedAssetPath { get; }
+
+        internal string StagedFilePath { get; }
     }
 
     internal sealed class AssetDownloadPreparedJob

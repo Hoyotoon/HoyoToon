@@ -1,4 +1,5 @@
 using System;
+using HoyoToon.Runtime.Rendering.Utilities;
 using UnityEngine;
 using UnityEngine.Rendering;
 using UnityEngine.Rendering.RenderGraphModule;
@@ -15,6 +16,11 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR
         public sealed override void AddRenderPasses(ScriptableRenderer renderer, ref RenderingData renderingData)
         {
             if (_renderPass == null || ShouldSkipCamera(renderingData.cameraData.cameraType))
+            {
+                return;
+            }
+
+            if (!ShouldEnqueuePass(ref renderingData, _renderPass))
             {
                 return;
             }
@@ -38,6 +44,11 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR
 
         protected virtual void ConfigurePass(ref RenderingData renderingData, TPass renderPass)
         {
+        }
+
+        protected virtual bool ShouldEnqueuePass(ref RenderingData renderingData, TPass renderPass)
+        {
+            return true;
         }
 
         protected abstract TPass CreateRenderPass();
@@ -86,7 +97,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR
                 return cachedPassIndex;
             }
 
-            cachedPassIndex = PassMaterial != null ? PassMaterial.FindPass(shaderPassName) : -1;
+            cachedPassIndex = MaterialPassResolver.ResolveNamedPass(PassMaterial, shaderPassName);
             if (cachedPassIndex < 0)
             {
                 if (logLevel == MissingShaderPassLogLevel.Warning)

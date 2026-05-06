@@ -3,10 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using HoyoToon.Editor.API;
 using HoyoToon.Editor.Utilities.IO;
-using UnityEngine;
+using HoyoToon.Editor.Utilities.Serialization;
 
 namespace HoyoToon.Editor.Resources
 {
@@ -91,6 +90,23 @@ namespace HoyoToon.Editor.Resources
             else
             {
                 destinationAssetPath = HoyoToonApi.PackageRootAssetPath + "/" + normalized;
+            }
+
+            if (string.Equals(destinationAssetPath, HoyoToonApi.PackageRootAssetPath, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Resource sync destination cannot be the package root.";
+                destinationAssetPath = string.Empty;
+                destinationAbsolutePath = string.Empty;
+                return false;
+            }
+
+            const string AllowedResourceRoot = HoyoToonApi.PackageRootAssetPath + "/Resources/";
+            if (!destinationAssetPath.StartsWith(AllowedResourceRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                error = "Resource sync destination must be under the package Resources folder.";
+                destinationAssetPath = string.Empty;
+                destinationAbsolutePath = string.Empty;
+                return false;
             }
 
             string packageRootPath = GetAbsolutePath(HoyoToonApi.PackageRootAssetPath);
@@ -305,20 +321,7 @@ namespace HoyoToon.Editor.Resources
 
         private static T ReadJson<T>(string filePath) where T : class
         {
-            if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
-            {
-                return null;
-            }
-
-            try
-            {
-                string json = File.ReadAllText(filePath, Encoding.UTF8);
-                return JsonUtility.FromJson<T>(json);
-            }
-            catch
-            {
-                return null;
-            }
+            return EditorJsonFileStore.TryRead(filePath, out T value) ? value : null;
         }
 
         private static void WriteJson<T>(string filePath, T value)
@@ -328,14 +331,7 @@ namespace HoyoToon.Editor.Resources
                 return;
             }
 
-            string directory = Path.GetDirectoryName(filePath);
-            if (!string.IsNullOrWhiteSpace(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            string json = JsonUtility.ToJson(value, true);
-            File.WriteAllText(filePath, json, new UTF8Encoding(false));
+            EditorJsonFileStore.WriteAtomic(filePath, value);
         }
 
         private static string SanitizeFolderName(string value)

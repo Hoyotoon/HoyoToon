@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Editor.Utilities.Debugging;
 using HoyoToon.Editor.Utilities.IO;
 using UnityEditor;
@@ -667,20 +668,24 @@ namespace HoyoToon.Editor.Updater
             }
 
             string applyBackupRootPath = GetApplyBackupRootPath();
+            ManagedFileTransaction transaction;
             try
             {
-                ManagedFileTransactionUtility.PrepareDirectory(applyBackupRootPath);
-                BackupTouchedPaths(applyBackupRootPath, touchedRelativePaths);
+                transaction = ManagedFileTransaction.Begin(
+                    applyBackupRootPath,
+                    PackageUpdaterStorage.PackageRootPath,
+                    touchedRelativePaths,
+                    ResolvePackagePathOrEmpty,
+                    relativePath => ResolveBackupPathOrEmpty(applyBackupRootPath, relativePath));
             }
             catch (Exception exception)
             {
-                ManagedFileTransactionUtility.DeleteDirectoryIfExists(applyBackupRootPath);
                 error = $"Failed to prepare the staged update for application: {exception.Message}";
                 return false;
             }
 
-            AssetDatabase.DisallowAutoRefresh();
-            AssetDatabase.StartAssetEditing();
+            AssetDatabaseEditingScope editingScope = AssetDatabaseEditingScope.Begin();
+            bool rollbackFailed = false;
             try
             {
                 foreach (string relativePath in pendingState.filesToCopy ?? new List<string>())
@@ -713,12 +718,14 @@ namespace HoyoToon.Editor.Updater
 
                     DeletePackageFileForUpdater(relativePath, destinationPath);
                 }
+
+                transaction.Commit();
             }
             catch (Exception exception)
             {
                 try
                 {
-                    RollbackTouchedPaths(applyBackupRootPath, touchedRelativePaths);
+                    transaction.Rollback();
                     error =
                         $"Failed to apply staged update: {exception.Message}\n\n" +
                         "Any partial file changes were rolled back. The staged update was preserved so you can retry it.";
@@ -728,17 +735,21 @@ namespace HoyoToon.Editor.Updater
                     error =
                         $"Failed to apply staged update: {exception.Message}\n\n" +
                         $"Rollback also failed: {rollbackException.Message}\n\n" +
-                        "The staged update was preserved so you can retry or inspect it manually.";
+                        "The staged update was preserved so you can retry or inspect it manually.\n\n" +
+                        $"Rollback backup preserved at: {transaction.BackupRootPath}";
+                    rollbackFailed = true;
                 }
 
                 return false;
             }
             finally
             {
-                AssetDatabase.StopAssetEditing();
-                AssetDatabase.AllowAutoRefresh();
+                editingScope.Dispose();
                 AssetDatabase.Refresh(ImportAssetOptions.ForceSynchronousImport);
-                ManagedFileTransactionUtility.DeleteDirectoryIfExists(applyBackupRootPath);
+                if (rollbackFailed)
+                {
+                    HoyoToonLogger.Error(HoyoToonLogCategory.General, $"Updater rollback failed. Backup preserved at: {transaction.BackupRootPath}");
+                }
             }
 
             PackageUpdaterStorage.ClearPendingArtifacts();
@@ -868,23 +879,6 @@ namespace HoyoToon.Editor.Updater
         private static string GetApplyBackupRootPath()
         {
             return Path.Combine(PackageUpdaterStorage.UpdaterStoragePath, ApplyBackupFolderName);
-        }
-
-        private static void BackupTouchedPaths(string backupRootPath, IReadOnlyList<string> touchedRelativePaths)
-        {
-            ManagedFileTransactionUtility.BackupTouchedPaths(
-                touchedRelativePaths,
-                ResolvePackagePathOrEmpty,
-                relativePath => ResolveBackupPathOrEmpty(backupRootPath, relativePath));
-        }
-
-        private static void RollbackTouchedPaths(string backupRootPath, IReadOnlyList<string> touchedRelativePaths)
-        {
-            ManagedFileTransactionUtility.RollbackTouchedPaths(
-                PackageUpdaterStorage.PackageRootPath,
-                touchedRelativePaths,
-                ResolvePackagePathOrEmpty,
-                relativePath => ResolveBackupPathOrEmpty(backupRootPath, relativePath));
         }
 
         private static string ResolvePackagePathOrEmpty(string relativePath)

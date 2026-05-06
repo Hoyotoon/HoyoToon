@@ -1,34 +1,25 @@
 using UnityEngine;
 using UnityEngine.Rendering;
 using System.Collections.Generic;
-using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Core;
-using HoyoToon.Runtime.Rendering.HSR;
+using HoyoToon.Runtime.Utilities;
+using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Scene.HSR
 {
 [ExecuteAlways]
 public class HSRSceneController : MonoBehaviour
 {
-    private const float CharacterLightSlowDiscoveryInterval = 2.0f;
-    private const float MaterialKeywordSlowSyncInterval = 2.0f;
     private const float MinColorTemperature = 1000f;
     private const float MaxColorTemperature = 20000f;
     private const float DefaultDirectionalYaw = 180f;
     private const float DefaultAutoRotateSpeed = 50f;
     private const string CharacterLightName = "CharacterLight";
     private const string SceneLightName = "HoyoToon Scene Light";
-    private const string HsrShaderNameToken = "Honkai Star Rail";
-    private const string HeightLerpKeyword = "_HEIGHTLERP";
-    private const string FogKeyword = "_ENABLE_FOG";
-    private static readonly List<Light> s_CharacterLightRegistry = new List<Light>();
-    private static readonly List<HSRCharacterController> s_CharacterControllers = new List<HSRCharacterController>();
-    private static readonly List<Material> s_RuntimeMaterials = new List<Material>();
-    private static readonly HashSet<Material> s_UniqueCharacterMaterials = new HashSet<Material>();
+    private static readonly Light[] s_EmptyCharacterLights = new Light[0];
     private static readonly List<Light> s_DiscoveredCharacterLights = new List<Light>();
-    private static bool s_CharacterLightRegistryDirty = true;
-    private static float s_NextSlowCharacterLightDiscoveryTime;
-    private static float s_NextSlowMaterialKeywordSyncTime;
+    private static readonly Dictionary<int, List<HSRSceneController>> s_ControllersByScene =
+        new Dictionary<int, List<HSRSceneController>>();
 
     public enum AutoRotateDirection
     {
@@ -113,13 +104,12 @@ public class HSRSceneController : MonoBehaviour
     [HideInInspector] public Matrix4x4 _ES_GlobalRotMatrix { get; private set; }
     private Vector3 _cachedGlobalRotationEuler;
     private bool _isGlobalRotMatrixDirty = true;
-    private bool _hasAppliedSceneMaterialKeywords;
-    private int _lastSceneMaterialKeywordStateHash;
     private int _lastMainLightSettingsHash;
     private bool _mainLightAutoRotateActive;
     private float _lastMainLightAutoRotateTime;
     private TransformSnapshot _mainLightAutoRotateSnapshot;
     private bool _hasMainLightAutoRotateSnapshot;
+    private Light _registeredMainLight;
     [SerializeField, HideInInspector] private bool _mainLightSettingsInitialized;
 
 
@@ -246,23 +236,81 @@ public class HSRSceneController : MonoBehaviour
     private static HSRSceneController _instance;
     public static HSRSceneController instance {
         get {
-            if (_instance == null) _instance = FindFirstObjectByType<HSRSceneController>();
+            UnityScene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+            if (_instance == null
+                || !_instance.isActiveAndEnabled
+                || (activeScene.IsValid() && activeScene.isLoaded && _instance.gameObject.scene != activeScene))
+            {
+                _instance = FindForScene(activeScene);
+            }
+
             return _instance;
         }
+    }
+
+    public static HSRSceneController FindForScene(UnityScene scene)
+    {
+        return FindForScene(scene, null);
+    }
+
+    public static HSRSceneController FindForSceneOrActiveScene(UnityScene scene)
+    {
+        HSRSceneController controller = FindForScene(scene);
+        if (controller != null)
+            return controller;
+
+        UnityScene activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
+        return activeScene.IsValid() && activeScene.isLoaded && activeScene != scene
+            ? FindForScene(activeScene)
+            : null;
     }
 
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     private static void ResetRegistryOnSubsystemRegistration()
     {
-        s_CharacterLightRegistry.Clear();
-        s_CharacterControllers.Clear();
-        s_RuntimeMaterials.Clear();
-        s_UniqueCharacterMaterials.Clear();
+        HsrCharacterLightRegistry.Reset();
+        HsrSceneLightQueryUtility.Reset();
         s_DiscoveredCharacterLights.Clear();
-        s_CharacterLightRegistryDirty = true;
-        s_NextSlowCharacterLightDiscoveryTime = 0f;
-        s_NextSlowMaterialKeywordSyncTime = 0f;
+        s_ControllersByScene.Clear();
         _instance = null;
+    }
+
+    private static void RegisterSceneController(HSRSceneController controller)
+    {
+        if (controller == null || controller.gameObject == null)
+            return;
+
+        UnityScene scene = controller.gameObject.scene;
+        if (!scene.IsValid())
+            return;
+
+        int sceneHandle = scene.handle;
+        if (!s_ControllersByScene.TryGetValue(sceneHandle, out List<HSRSceneController> controllers))
+        {
+            controllers = new List<HSRSceneController>();
+            s_ControllersByScene.Add(sceneHandle, controllers);
+        }
+
+        if (!controllers.Contains(controller))
+            controllers.Add(controller);
+    }
+
+    private static void UnregisterSceneController(HSRSceneController controller)
+    {
+        if (controller == null || controller.gameObject == null)
+            return;
+
+        UnityScene scene = controller.gameObject.scene;
+        if (!scene.IsValid())
+            return;
+
+        int sceneHandle = scene.handle;
+        if (!s_ControllersByScene.TryGetValue(sceneHandle, out List<HSRSceneController> controllers))
+            return;
+
+        controllers.Remove(controller);
+        if (controllers.Count == 0)
+            s_ControllersByScene.Remove(sceneHandle);
     }
 
     public static void RegisterCharacterLight(Light characterLight)
@@ -270,12 +318,7 @@ public class HSRSceneController : MonoBehaviour
         if (characterLight == null)
             return;
 
-        PruneNullCharacterLights();
-        if (!s_CharacterLightRegistry.Contains(characterLight))
-        {
-            s_CharacterLightRegistry.Add(characterLight);
-            s_CharacterLightRegistryDirty = true;
-        }
+        HsrCharacterLightRegistry.Register(characterLight);
     }
 
     public static void UnregisterCharacterLight(Light characterLight)
@@ -283,137 +326,191 @@ public class HSRSceneController : MonoBehaviour
         if (characterLight == null)
             return;
 
-        if (s_CharacterLightRegistry.Remove(characterLight))
-            s_CharacterLightRegistryDirty = true;
+        HsrCharacterLightRegistry.Unregister(characterLight);
     }
 
-    private static void PruneNullCharacterLights()
+    private void RegisterMainLightReference()
     {
-        for (int i = s_CharacterLightRegistry.Count - 1; i >= 0; --i)
+        if (_registeredMainLight != null && _registeredMainLight != main_light)
         {
-            if (s_CharacterLightRegistry[i] == null)
-            {
-                s_CharacterLightRegistry.RemoveAt(i);
-                s_CharacterLightRegistryDirty = true;
-            }
+            HsrSceneLightQueryUtility.UnregisterSceneLight(_registeredMainLight);
+            _registeredMainLight = null;
+        }
+
+        if (!HsrSceneLightQueryUtility.IsNamedLight(main_light, SceneLightName))
+            return;
+
+        HsrSceneLightQueryUtility.RegisterSceneLight(main_light);
+        _registeredMainLight = main_light;
+    }
+
+    private void UnregisterMainLightReference()
+    {
+        if (_registeredMainLight == null)
+            return;
+
+        HsrSceneLightQueryUtility.UnregisterSceneLight(_registeredMainLight);
+        _registeredMainLight = null;
+    }
+
+    private void SetMainLightReference(Light sceneLight)
+    {
+        if (main_light == sceneLight)
+        {
+            RegisterMainLightReference();
+            return;
+        }
+
+        UnregisterMainLightReference();
+        main_light = sceneLight;
+        RegisterMainLightReference();
+    }
+
+    private void ResolveMainLightReference(bool allowSceneScan)
+    {
+        Light registeredSceneLight = HsrSceneLightQueryUtility.FindRegisteredNamedLightInScene(gameObject.scene, SceneLightName);
+        if (registeredSceneLight != null)
+        {
+            SetMainLightReference(registeredSceneLight);
+            return;
+        }
+
+        if (HsrSceneLightQueryUtility.IsNamedLight(main_light, SceneLightName))
+        {
+            RegisterMainLightReference();
+            return;
+        }
+
+        if (!allowSceneScan)
+            return;
+
+        SetMainLightReference(HsrSceneLightQueryUtility.FindNamedLightInScene(gameObject.scene, SceneLightName));
+    }
+
+    private static bool MatchesCharacterLightList(IReadOnlyList<Light> source, Light[] target)
+    {
+        if (source == null || target == null || source.Count != target.Length)
+            return false;
+
+        for (int i = 0; i < source.Count; ++i)
+        {
+            if (source[i] != target[i])
+                return false;
+        }
+
+        return true;
+    }
+
+    private void AssignCharacterLightsFromScratch()
+    {
+        if (MatchesCharacterLightList(s_DiscoveredCharacterLights, CharacterLights))
+            return;
+
+        int lightCount = s_DiscoveredCharacterLights.Count;
+        if (lightCount == 0)
+        {
+            CharacterLights = s_EmptyCharacterLights;
+            return;
+        }
+
+        if (CharacterLights == null || CharacterLights.Length != lightCount)
+            CharacterLights = new Light[lightCount];
+
+        for (int i = 0; i < lightCount; ++i)
+        {
+            CharacterLights[i] = s_DiscoveredCharacterLights[i];
         }
     }
 
-    private void ResolveMainLightReference()
+    private void RefreshCharacterLightsFromRegistry()
     {
-        main_light = HsrSceneLightQueryUtility.FindLowestInstanceIdNamedLight(SceneLightName);
+        HsrCharacterLightRegistry.CopySceneLights(gameObject.scene, s_DiscoveredCharacterLights);
+        HsrCharacterLightRegistry.MarkCleanForScene(gameObject.scene);
+        AssignCharacterLightsFromScratch();
+        ResolveMainLightReference(allowSceneScan: false);
     }
 
     private void RebuildCharacterLightsFromScene()
     {
         Light resolvedSceneLight = HsrSceneLightQueryUtility.RebuildCharacterLightsAndResolveSceneMain(
+            gameObject.scene,
             CharacterLightName,
             SceneLightName,
             s_DiscoveredCharacterLights);
 
-        s_CharacterLightRegistry.Clear();
-        s_CharacterLightRegistry.AddRange(s_DiscoveredCharacterLights);
-        CharacterLights = s_DiscoveredCharacterLights.ToArray();
-        main_light = resolvedSceneLight;
-        s_CharacterLightRegistryDirty = false;
+        HsrCharacterLightRegistry.MarkCleanForScene(gameObject.scene);
+        AssignCharacterLightsFromScratch();
+        SetMainLightReference(resolvedSceneLight);
     }
 
-    private void SyncCharacterLightsFromRegistry()
+    private void RefreshCharacterLightsIfNeeded(bool forceRepairScan)
     {
-        PruneNullCharacterLights();
-        if (CharacterLights != null && CharacterLights.Length == s_CharacterLightRegistry.Count)
+        if (forceRepairScan)
         {
-            bool same = true;
-            for (int i = 0; i < CharacterLights.Length; i++)
-            {
-                if (CharacterLights[i] != s_CharacterLightRegistry[i])
-                {
-                    same = false;
-                    break;
-                }
-            }
-
-            if (same)
-            {
-                s_CharacterLightRegistryDirty = false;
-                return;
-            }
-        }
-
-        CharacterLights = s_CharacterLightRegistry.ToArray();
-        s_CharacterLightRegistryDirty = false;
-    }
-
-    private void RefreshCharacterLightsIfNeeded(bool forceSlowPath)
-    {
-        if (forceSlowPath)
-        {
-            RebuildCharacterLightsFromScene();
-            s_NextSlowCharacterLightDiscoveryTime = Time.realtimeSinceStartup + CharacterLightSlowDiscoveryInterval;
-            return;
-        }
-
-        if (s_CharacterLightRegistryDirty || CharacterLights == null)
-        {
-            if (s_CharacterLightRegistry.Count > 0)
-            {
-                SyncCharacterLightsFromRegistry();
-            }
+            if (Application.isPlaying)
+                RefreshCharacterLightsFromRegistry();
             else
-            {
                 RebuildCharacterLightsFromScene();
-                s_NextSlowCharacterLightDiscoveryTime = Time.realtimeSinceStartup + CharacterLightSlowDiscoveryInterval;
-                return;
-            }
-        }
 
-        if (!HsrSceneLightQueryUtility.IsNamedLight(main_light, SceneLightName) && Time.realtimeSinceStartup >= s_NextSlowCharacterLightDiscoveryTime)
-        {
-            ResolveMainLightReference();
-            s_NextSlowCharacterLightDiscoveryTime = Time.realtimeSinceStartup + CharacterLightSlowDiscoveryInterval;
-        }
-
-        if (Time.realtimeSinceStartup < s_NextSlowCharacterLightDiscoveryTime)
             return;
+        }
 
-        RebuildCharacterLightsFromScene();
+        if (HsrCharacterLightRegistry.IsDirtyForScene(gameObject.scene) || CharacterLights == null)
+        {
+            RefreshCharacterLightsFromRegistry();
+            return;
+        }
 
-        s_NextSlowCharacterLightDiscoveryTime = Time.realtimeSinceStartup + CharacterLightSlowDiscoveryInterval;
+        if (HsrSceneLightQueryUtility.IsNamedLight(main_light, SceneLightName))
+            RegisterMainLightReference();
+        else
+            ResolveMainLightReference(allowSceneScan: false);
     }
 
     private void OnEnable()
     {
-        if (_instance == null || _instance == this)
+        RegisterSceneController(this);
+
+        HSRSceneController existingSceneController = FindForScene(gameObject.scene, this);
+        if (existingSceneController != null)
         {
-            _instance = this;
-        }
-        else
-        {
-            Debug.LogWarning("[HoyoToon] Multiple HSRSceneController instances detected. Keeping the first active instance.", this);
+            Debug.LogWarning("[HoyoToon] Multiple HSRSceneController instances detected in the same scene. The lowest instance ID active controller will be used.", this);
         }
 
-        RefreshCharacterLightsIfNeeded(forceSlowPath: true);
+        HSRSceneController sceneController = FindForScene(gameObject.scene);
+        if (_instance == null
+            || _instance == this
+            || !_instance.isActiveAndEnabled
+            || _instance.gameObject.scene == gameObject.scene)
+        {
+            _instance = sceneController ?? this;
+        }
+
+        RefreshCharacterLightsIfNeeded(forceRepairScan: true);
         SyncMainLightIfNeeded(forceApply: true);
         InvalidateGlobalRotMatrixCache();
-        InvalidateSceneMaterialKeywordSync();
-        SyncSceneMaterialKeywordsIfNeeded(forceSlowPath: true);
     }
 
     private void OnDisable()
     {
+        UnregisterSceneController(this);
+        UnregisterMainLightReference();
         EndMainLightAutoRotateSession();
 
         if (_instance == this)
         {
-            ApplySceneMaterialKeywords(clearOnly: true);
-            _hasAppliedSceneMaterialKeywords = false;
             _instance = FindActiveReplacement(this);
             if (_instance != null)
             {
-                _instance.InvalidateSceneMaterialKeywordSync();
-                _instance.SyncSceneMaterialKeywordsIfNeeded(forceSlowPath: true);
+                _instance.InvalidateGlobalRotMatrixCache();
             }
         }
+    }
+
+    private void OnDestroy()
+    {
+        UnregisterSceneController(this);
+        UnregisterMainLightReference();
     }
 
     private void OnValidate()
@@ -421,29 +518,60 @@ public class HSRSceneController : MonoBehaviour
         SanitizeMainLightSettings();
         SanitizeSceneSettings();
         InvalidateGlobalRotMatrixCache();
-        InvalidateSceneMaterialKeywordSync();
         if (isActiveAndEnabled)
         {
-            RefreshCharacterLightsIfNeeded(forceSlowPath: true);
+            RefreshCharacterLightsIfNeeded(forceRepairScan: true);
             SyncMainLightIfNeeded(forceApply: true);
-            SyncSceneMaterialKeywordsIfNeeded(forceSlowPath: true);
         }
     }
 
     private static HSRSceneController FindActiveReplacement(HSRSceneController current)
     {
-        HSRSceneController[] controllers = FindObjectsByType<HSRSceneController>(
-            FindObjectsInactive.Exclude,
-            FindObjectsSortMode.None);
+        if (current == null)
+            return FindForScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene());
 
-        for (int i = 0; i < controllers.Length; ++i)
+        HSRSceneController replacement = FindForScene(current.gameObject.scene, current);
+        if (replacement != null)
+            return replacement;
+
+        return FindForScene(UnityEngine.SceneManagement.SceneManager.GetActiveScene(), current);
+    }
+
+    private static HSRSceneController FindForScene(UnityScene scene, HSRSceneController excluded)
+    {
+        if (!RenderSceneUtility.IsSceneUsable(scene))
+            return null;
+
+        if (!s_ControllersByScene.TryGetValue(scene.handle, out List<HSRSceneController> controllers))
+            return null;
+
+        HSRSceneController best = null;
+        int bestInstanceId = int.MaxValue;
+
+        for (int i = controllers.Count - 1; i >= 0; --i)
         {
             HSRSceneController controller = controllers[i];
-            if (controller != null && controller != current && controller.isActiveAndEnabled)
-                return controller;
+            if (controller == null || controller.gameObject == null || controller.gameObject.scene != scene)
+            {
+                controllers.RemoveAt(i);
+                continue;
+            }
+
+            if (controller == excluded || !controller.isActiveAndEnabled)
+                continue;
+
+            int instanceId = controller.GetInstanceID();
+            if (instanceId >= bestInstanceId)
+                continue;
+
+            best = controller;
+            bestInstanceId = instanceId;
         }
 
-        return null;
+        if (controllers.Count == 0)
+            s_ControllersByScene.Remove(scene.handle);
+
+        return best;
     }
 
     private void SyncMainLightIfNeeded(bool forceApply)
@@ -740,35 +868,7 @@ public class HSRSceneController : MonoBehaviour
         _isGlobalRotMatrixDirty = true;
     }
 
-    private void InvalidateSceneMaterialKeywordSync()
-    {
-        _hasAppliedSceneMaterialKeywords = false;
-        s_NextSlowMaterialKeywordSyncTime = 0f;
-    }
-
-    private void SyncSceneMaterialKeywordsIfNeeded(bool forceSlowPath)
-    {
-        int stateHash = ComputeSceneMaterialKeywordStateHash();
-        bool slowSyncDue = Time.realtimeSinceStartup >= s_NextSlowMaterialKeywordSyncTime;
-        if (!forceSlowPath && !slowSyncDue && _hasAppliedSceneMaterialKeywords && stateHash == _lastSceneMaterialKeywordStateHash)
-            return;
-
-        ApplySceneMaterialKeywords(clearOnly: false);
-        _lastSceneMaterialKeywordStateHash = stateHash;
-        _hasAppliedSceneMaterialKeywords = true;
-        s_NextSlowMaterialKeywordSyncTime = Time.realtimeSinceStartup + MaterialKeywordSlowSyncInterval;
-    }
-
-    private int ComputeSceneMaterialKeywordStateHash()
-    {
-        unchecked
-        {
-            int hash = 17;
-            hash = hash * 31 + HeightLerpEnable.GetHashCode();
-            hash = hash * 31 + IsFogEnabled().GetHashCode();
-            return hash;
-        }
-    }
+    public bool SceneFogEnabled => IsFogEnabled();
 
     private bool IsFogEnabled()
     {
@@ -777,83 +877,12 @@ public class HSRSceneController : MonoBehaviour
         return standardFogEnabled || heightFogEnabled;
     }
 
-    private void ApplySceneMaterialKeywords(bool clearOnly)
-    {
-        s_UniqueCharacterMaterials.Clear();
-
-        HSRCharacterController.GetActiveControllers(s_CharacterControllers, forceRefresh: false);
-        for (int i = 0; i < s_CharacterControllers.Count; ++i)
-        {
-            var controller = s_CharacterControllers[i];
-            Renderer[] controllerRenderers = controller != null ? controller.GetScopedRenderers() : null;
-            if (controllerRenderers == null)
-                continue;
-
-            for (int j = 0; j < controllerRenderers.Length; ++j)
-                HsrRendererMaterialQueryUtility.AddSharedMaterials(controllerRenderers[j], s_RuntimeMaterials, s_UniqueCharacterMaterials);
-        }
-
-        foreach (var material in s_UniqueCharacterMaterials)
-        {
-            if (!UsesSceneMaterialKeywords(material))
-                continue;
-
-            ApplySceneMaterialKeywords(material, clearOnly);
-        }
-
-        s_UniqueCharacterMaterials.Clear();
-        s_CharacterControllers.Clear();
-    }
-
-    private static bool UsesSceneMaterialKeywords(Material material)
-    {
-        return material != null
-            && material.shader != null
-            && material.shader.name != null
-            && material.shader.name.IndexOf(HsrShaderNameToken, System.StringComparison.OrdinalIgnoreCase) >= 0;
-    }
-
-    private void ApplySceneMaterialKeywords(Material material, bool clearOnly)
-    {
-        if (material == null)
-            return;
-
-        SetMaterialKeyword(material, HeightLerpKeyword, !clearOnly && HeightLerpEnable);
-        SetMaterialKeyword(material, FogKeyword, !clearOnly && IsFogEnabled());
-    }
-
-    private static void SetMaterialKeyword(Material material, string keyword, bool enabled)
-    {
-        if (material == null || string.IsNullOrEmpty(keyword))
-            return;
-
-        bool isEnabled = material.IsKeywordEnabled(keyword);
-        bool changed = false;
-        if (enabled)
-        {
-            if (!isEnabled)
-            {
-                material.EnableKeyword(keyword);
-                changed = true;
-            }
-        }
-        else if (isEnabled)
-        {
-            material.DisableKeyword(keyword);
-            changed = true;
-        }
-
-        if (changed)
-            RuntimeEditorBridge.MarkDirty(material);
-    }
-
     
 
     private void Update() {
         SanitizeSceneSettings();
-        RefreshCharacterLightsIfNeeded(forceSlowPath: false);
+        RefreshCharacterLightsIfNeeded(forceRepairScan: false);
         SyncMainLightIfNeeded(forceApply: false);
-        SyncSceneMaterialKeywordsIfNeeded(forceSlowPath: false);
 
         // Optional: Auto-sync monster light dir to main light if not manually overridden
         if (main_light != null && _ES_MonsterLightDir == Vector3.zero) {

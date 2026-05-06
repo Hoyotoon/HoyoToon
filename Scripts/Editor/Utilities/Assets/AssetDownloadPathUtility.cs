@@ -3,8 +3,8 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using HoyoToon.Editor.Resources;
+using HoyoToon.Editor.Utilities.IO;
 using HoyoToon.Editor.Utilities.Parsing;
 using UnityEngine;
 using HoyoToon.Editor.Assets;
@@ -174,15 +174,37 @@ namespace HoyoToon.Editor.Utilities.Assets
 
         internal static string EnsureProjectAssetsRoot(string assetsPath)
         {
-            if (string.IsNullOrWhiteSpace(assetsPath))
-            {
-                return null;
-            }
-
-            string normalized = NormalizeRelativePath(assetsPath).TrimEnd('/');
-            return normalized.StartsWith("Assets", StringComparison.OrdinalIgnoreCase)
+            return TryNormalizeAssetsPath(assetsPath, out string normalized)
                 ? normalized
                 : null;
+        }
+
+        internal static bool TryNormalizeAssetsPath(string path, out string normalized)
+        {
+            normalized = string.Empty;
+            if (string.IsNullOrWhiteSpace(path))
+            {
+                return false;
+            }
+
+            string candidate = EditorPathUtility.NormalizeRelativePath(path).TrimEnd('/');
+            if (!string.Equals(candidate, "Assets", StringComparison.OrdinalIgnoreCase)
+                && !candidate.StartsWith("Assets/", StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            string[] segments = candidate.Split('/');
+            foreach (string segment in segments)
+            {
+                if (IsUnsafePathSegment(segment))
+                {
+                    return false;
+                }
+            }
+
+            normalized = string.Join("/", segments);
+            return true;
         }
 
         internal static string AbsoluteFromAssetsPath(string assetsPath)
@@ -193,10 +215,10 @@ namespace HoyoToon.Editor.Utilities.Assets
                 return null;
             }
 
-            string relativeFromAssets = normalized.Length > "Assets".Length
-                ? normalized.Substring("Assets".Length).TrimStart('/')
-                : string.Empty;
-            return Path.GetFullPath(Path.Combine(Application.dataPath, relativeFromAssets));
+            string absolutePath = EditorPathUtility.AbsoluteFromAssetPath(normalized);
+            return EditorPathUtility.IsPathWithinRoot(absolutePath, Application.dataPath)
+                ? absolutePath
+                : null;
         }
 
         internal static bool TryConvertAbsolutePathToAssetsPath(string absolutePath, out string assetsPath)
@@ -207,36 +229,35 @@ namespace HoyoToon.Editor.Utilities.Assets
                 return false;
             }
 
-            string fullPath = Path.GetFullPath(absolutePath)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            string assetsRoot = Path.GetFullPath(Application.dataPath)
-                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-
-            if (string.Equals(fullPath, assetsRoot, StringComparison.OrdinalIgnoreCase))
-            {
-                assetsPath = "Assets";
-                return true;
-            }
-
-            if (!fullPath.StartsWith(assetsRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+            if (!EditorPathUtility.TryAssetPathFromAbsolute(absolutePath, out string candidateAssetPath)
+                || !TryNormalizeAssetsPath(candidateAssetPath, out assetsPath))
             {
                 return false;
             }
 
-            string relativePath = fullPath.Substring(assetsRoot.Length)
-                .TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                .Replace(Path.DirectorySeparatorChar, '/')
-                .Replace(Path.AltDirectorySeparatorChar, '/');
-            assetsPath = string.IsNullOrWhiteSpace(relativePath)
-                ? "Assets"
-                : $"Assets/{relativePath}";
             return true;
         }
 
         internal static string GetLocalFilePath(string absoluteTargetRoot, string remoteRelativePath)
         {
-            string safeRelativePath = ResourceSyncStorage.ToPlatformPath(remoteRelativePath);
-            return Path.Combine(absoluteTargetRoot, safeRelativePath);
+            if (string.IsNullOrWhiteSpace(absoluteTargetRoot))
+            {
+                throw new InvalidOperationException("The download target root was empty.");
+            }
+
+            if (!ResourceSyncStorage.TryNormalizeManagedRelativePath(remoteRelativePath, out string normalizedRelativePath, out string error))
+            {
+                throw new InvalidOperationException($"Unsafe remote download path '{remoteRelativePath}': {error}");
+            }
+
+            string targetRoot = Path.GetFullPath(absoluteTargetRoot);
+            string localFilePath = Path.GetFullPath(Path.Combine(targetRoot, ResourceSyncStorage.ToPlatformPath(normalizedRelativePath)));
+            if (!EditorPathUtility.IsPathWithinRoot(localFilePath, targetRoot))
+            {
+                throw new InvalidOperationException($"Download path '{remoteRelativePath}' resolved outside the target root.");
+            }
+
+            return localFilePath;
         }
 
         internal static bool IsRootLevelFile(RemoteResourceEntry remoteFile)
@@ -254,20 +275,7 @@ namespace HoyoToon.Editor.Utilities.Assets
 
         internal static string SanitizeFolderName(string value)
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                return "Unknown";
-            }
-
-            char[] invalidCharacters = Path.GetInvalidFileNameChars();
-            var builder = new StringBuilder(value.Length);
-            for (int index = 0; index < value.Length; index++)
-            {
-                char character = value[index];
-                builder.Append(Array.IndexOf(invalidCharacters, character) >= 0 ? '_' : character);
-            }
-
-            return builder.ToString().Trim();
+            return EditorPathUtility.SanitizeFileName(value, "Unknown");
         }
 
         private static List<string> ExtractTokens(string value)
@@ -275,11 +283,11 @@ namespace HoyoToon.Editor.Utilities.Assets
             return StringTokenUtility.ExtractAlphanumericTokens(value);
         }
 
-        private static string NormalizeRelativePath(string path)
+        private static bool IsUnsafePathSegment(string segment)
         {
-            return string.IsNullOrWhiteSpace(path)
-                ? string.Empty
-                : path.Replace('\\', '/').Trim();
+            return string.IsNullOrWhiteSpace(segment)
+                || string.Equals(segment, ".", StringComparison.Ordinal)
+                || string.Equals(segment, "..", StringComparison.Ordinal);
         }
 
         private static bool ContainsStarRailKey(string value)
