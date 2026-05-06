@@ -1,8 +1,8 @@
 {
-  "version": "0.2.9",
+  "version": "0.3.0",
   "files": {
     ".gitignore": "c81828dfd1a4663869cdac6e58690bfe84ab6b6b",
-    "HoyoToon.unity": "630e07704219959ac3856732298b19c763cb7c7d",
+    "HoyoToon.unity": "27223a1ce1611fdf77062d1d236eb4e50cf253e8",
     "HoyoToon.unity.meta": "2352059316a63978e26ada59d50c3f1708cfaedb",
     "LICENSE": "31a3d460bb3c7d98845187c716a30db81c44b615",
     "Plugins.meta": "55897274651327a5c083bd0217e2a849dbe7969e",
@@ -15,7 +15,7 @@
     "Plugins/HoyoConverter.exe.meta": "268372acc999029e17a7a4277b078462b381b673",
     "Prefabs.meta": "18804c8e777a6e581d06f21f2eb8ac6aa4f73cff",
     "Prefabs/Honkai Star Rail.meta": "65ba62a1df3835259aa9c1deb496d15f42e927b2",
-    "Prefabs/Honkai Star Rail/Character Screen.meta": "2f4412257ae7aa9d56e4f162f7b895d6692c8d3f",
+    "Prefabs/Honkai Star Rail/Character Screen.meta": "803425c9270447d177820502cf29a709381da4a1",
     "Prefabs/Honkai Star Rail/Character Screen/Character Screen.prefab": "1c766fc48d102fb7e5f4f5cae770bab6e7b4a0d6",
     "Prefabs/Honkai Star Rail/Character Screen/Character Screen.prefab.meta": "cb9bc153507c51d8b7af184d6dbad2594a1f3e60",
     "Prefabs/Honkai Star Rail/Character Screen/Manikin_Area_01.fbx": "366427bbdaf52cf09a64dbbd6c1520597b62e3d1",
@@ -1040,9 +1040,9 @@
     "Shaders/Utility/Hidden.meta": "d7bbee34d569b460ad3d0cb835434e28d2a51e1a",
     "Shaders/Utility/Unlit.shader": "3e09dad71e48790288c296203efe742ac47f9124",
     "Shaders/Utility/Unlit.shader.meta": "77a3688e2fc0419a84a4855d8e0b7ab8e3efa526",
-    "changelog.md": "75ce8f579c06813ece1c2e50ab2fa2ef8a6454c0",
+    "changelog.md": "2d9ea4919b77d282c314b0b14c92f91a711e0c2d",
     "changelog.md.meta": "36426f0925fec2f0c1de6cf66824683a92246155",
-    "package.json": "2722b7e00f7605e04a28b98a80f16f7d7afb04dc",
+    "package.json": "c5c8fff7f0be2f87c71eff17753004d07bd63a2a",
     "package.json.meta": "ff7d2d027a015209a82f7d9eae6e830964569b2e"
   }
 }
