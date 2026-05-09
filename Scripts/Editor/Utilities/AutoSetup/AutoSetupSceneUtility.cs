@@ -4,11 +4,14 @@ using System.Collections.Generic;
 using System.Linq;
 using HoyoToon.Editor.Rendering.Character;
 using HoyoToon.Editor.Setup;
+using HoyoToon.Editor.Utilities.Assets;
 using HoyoToon.Editor.Utilities.IO;
+using HoyoToon.Runtime.Character;
 using HoyoToon.Runtime.Character.HSR;
 using HoyoToon.Runtime.Rendering.Utilities;
 using HoyoToon.Runtime.Scene.HSR;
 using HoyoToon.Runtime.Scene.Placement;
+using HoyoToon.Runtime.ScriptableObjects.Games;
 using HoyoToon.Runtime.Utilities;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -20,6 +23,8 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
     internal static class AutoSetupSceneUtility
     {
         private const string HsrSceneControllerObjectName = "HSR Scene Controller";
+        private const string EmojiControllerProfileAssetSuffix = "/Config/EmojiControllerProfile.asset";
+        private const string LookAtControllerProfileAssetSuffix = "/Config/LookAtControllerProfile.asset";
 
         public static GameObject InstantiateModel(string modelAssetPath)
         {
@@ -185,6 +190,81 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
             }
         }
 
+        public static void AddEmojiController(AutoSetupContext context, AutoSetupResult result)
+        {
+            if (context == null || result == null || context.InstantiatedModels.Count <= 0)
+            {
+                return;
+            }
+
+            EmojiControllerProfileSO profile = ResolveEmojiControllerProfile(context, result);
+            if (profile == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < context.InstantiatedModels.Count; i++)
+            {
+                GameObject instantiatedModel = context.InstantiatedModels[i];
+                if (instantiatedModel == null)
+                {
+                    continue;
+                }
+
+                EmojiController emojiController = EnsureComponent<EmojiController>(instantiatedModel);
+                if (emojiController == null)
+                {
+                    result.RecordWarning($"Auto setup failed to add an EmojiController to '{instantiatedModel.name}'.");
+                    continue;
+                }
+
+                SkinnedMeshRenderer faceRenderer = FindEmojiFaceRenderer(instantiatedModel, profile);
+                Undo.RecordObject(emojiController, "HoyoToon Auto Setup Configure Emoji Controller");
+                emojiController.ConfigureProfile(profile, faceRenderer);
+                EditorUtility.SetDirty(emojiController);
+
+                if (faceRenderer == null)
+                {
+                    result.RecordWarning(
+                        $"Auto setup added an EmojiController to '{instantiatedModel.name}', but no matching face renderer was found.");
+                }
+            }
+        }
+
+        public static void AddLookAtController(AutoSetupContext context, AutoSetupResult result)
+        {
+            if (context == null || result == null || context.InstantiatedModels.Count <= 0)
+            {
+                return;
+            }
+
+            LookAtControllerProfileSO profile = ResolveLookAtControllerProfile(context, result);
+            if (profile == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < context.InstantiatedModels.Count; i++)
+            {
+                GameObject instantiatedModel = context.InstantiatedModels[i];
+                if (instantiatedModel == null)
+                {
+                    continue;
+                }
+
+                LookAtController lookAtController = EnsureComponent<LookAtController>(instantiatedModel);
+                if (lookAtController == null)
+                {
+                    result.RecordWarning($"Auto setup failed to add a LookAtController to '{instantiatedModel.name}'.");
+                    continue;
+                }
+
+                Undo.RecordObject(lookAtController, "HoyoToon Auto Setup Configure Look At Controller");
+                lookAtController.ConfigureProfile(profile);
+                EditorUtility.SetDirty(lookAtController);
+            }
+        }
+
         public static void UpdatePlacement(AutoSetupContext context, AutoSetupResult result)
         {
             if (context == null || context.InstantiatedModels.Count <= 0)
@@ -250,6 +330,115 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        private static SkinnedMeshRenderer FindEmojiFaceRenderer(GameObject model, EmojiControllerProfileSO profile)
+        {
+            if (model == null || profile == null)
+            {
+                return null;
+            }
+
+            SkinnedMeshRenderer[] renderers = model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
+            SkinnedMeshRenderer firstRendererWithConfiguredShape = null;
+            SkinnedMeshRenderer firstProfileMatchedRenderer = null;
+            for (int i = 0; i < renderers.Length; i++)
+            {
+                SkinnedMeshRenderer candidate = renderers[i];
+                Mesh mesh = candidate != null ? candidate.sharedMesh : null;
+                if (mesh == null || mesh.blendShapeCount <= 0)
+                {
+                    continue;
+                }
+
+                bool matchesProfile = profile.MatchesFaceRenderer(candidate);
+                bool hasConfiguredBlendShape = profile.HasConfiguredBlendShape(mesh);
+                if (matchesProfile && hasConfiguredBlendShape)
+                {
+                    return candidate;
+                }
+
+                if (firstRendererWithConfiguredShape == null && hasConfiguredBlendShape)
+                {
+                    firstRendererWithConfiguredShape = candidate;
+                }
+
+                if (firstProfileMatchedRenderer == null && matchesProfile)
+                {
+                    firstProfileMatchedRenderer = candidate;
+                }
+            }
+
+            return firstRendererWithConfiguredShape != null ? firstRendererWithConfiguredShape : firstProfileMatchedRenderer;
+        }
+
+        private static EmojiControllerProfileSO ResolveEmojiControllerProfile(
+            AutoSetupContext context,
+            AutoSetupResult result)
+        {
+            string gameKey = ResolveEmojiProfileGameKey(context, result);
+            if (string.IsNullOrWhiteSpace(gameKey))
+            {
+                result?.RecordWarning("Auto setup skipped the EmojiController because no game was detected.");
+                return null;
+            }
+
+            EmojiControllerProfileSO profile = GeneratedAssetQueryUtility
+                .LoadGeneratedAssets<EmojiControllerProfileSO>("t:EmojiControllerProfileSO", EmojiControllerProfileAssetSuffix)
+                .Where(candidate => candidate != null
+                    && string.Equals(candidate.GameKey, gameKey, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(candidate => AssetDatabase.GetAssetPath(candidate), StringComparer.OrdinalIgnoreCase)
+                .LastOrDefault();
+
+            if (profile == null)
+            {
+                result?.RecordWarning(
+                    $"Auto setup skipped the EmojiController because no emoji controller profile was found for '{gameKey}'.");
+            }
+
+            return profile;
+        }
+
+        private static LookAtControllerProfileSO ResolveLookAtControllerProfile(
+            AutoSetupContext context,
+            AutoSetupResult result)
+        {
+            string gameKey = ResolveProfileGameKey(context, result);
+            if (string.IsNullOrWhiteSpace(gameKey))
+            {
+                result?.RecordWarning("Auto setup skipped the LookAtController because no game was detected.");
+                return null;
+            }
+
+            LookAtControllerProfileSO profile = GeneratedAssetQueryUtility
+                .LoadGeneratedAssets<LookAtControllerProfileSO>("t:LookAtControllerProfileSO", LookAtControllerProfileAssetSuffix)
+                .Where(candidate => candidate != null
+                    && string.Equals(candidate.GameKey, gameKey, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(candidate => AssetDatabase.GetAssetPath(candidate), StringComparer.OrdinalIgnoreCase)
+                .LastOrDefault();
+
+            if (profile == null)
+            {
+                result?.RecordWarning(
+                    $"Auto setup skipped the LookAtController because no look-at controller profile was found for '{gameKey}'.");
+            }
+
+            return profile;
+        }
+
+        private static string ResolveEmojiProfileGameKey(AutoSetupContext context, AutoSetupResult result)
+        {
+            return ResolveProfileGameKey(context, result);
+        }
+
+        private static string ResolveProfileGameKey(AutoSetupContext context, AutoSetupResult result)
+        {
+            if (!string.IsNullOrWhiteSpace(context?.DetectedGameKey))
+            {
+                return context.DetectedGameKey;
+            }
+
+            return !string.IsNullOrWhiteSpace(result?.ProfileKey) ? result.ProfileKey : null;
         }
 
         private static GameObject FindExistingSetupModel(string modelAssetPath)

@@ -1,0 +1,287 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc6e271a4c3f4f43a8833ae335892df4, type: 3}
+  m_Name: LookAtControllerProfile
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime.data::HoyoToon.Runtime.ScriptableObjects.Games.LookAtControllerProfileSO
+  gameKey: Honkai Star Rail
+  displayName: Honkai Star Rail
+  lookAtStates: []
+  lookWaitTime: 0
+  idleShowWaitTime: 0
+  upWeight: 0
+  forwardWeight: 0
+  rightWeight: 0
+  outOfConstraintTimer: 0.2
+  disableWhenOutOfConstraint: 1
+  constraintReentryMargin: 50
+  constraint:
+    drawConstraint: 0
+    pitchUp: 30
+    pitchDown: 30
+    yawLeft: 50
+    yawRight: 50
+  anotherConstraint:
+    drawConstraint: 0
+    pitchUp: 0
+    pitchDown: 30
+    yawLeft: 50
+    yawRight: 50
+  useAnotherConstraintAtCloseRange: 1
+  closeConstraintDistance: 1.25
+  closeConstraintBlendRange: 0.75
+  constraintSpeed: 1
+  constraintCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  outConstraintSpeed: 1
+  outConstraintCurve:
+    serializedVersion: 2
+    m_Curve:
+    - serializedVersion: 3
+      time: 0
+      value: 0
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    - serializedVersion: 3
+      time: 1
+      value: 1
+      inSlope: 1
+      outSlope: 1
+      tangentMode: 0
+      weightedMode: 0
+      inWeight: 0.33333334
+      outWeight: 0.33333334
+    m_PreInfinity: 2
+    m_PostInfinity: 2
+    m_RotationOrder: 4
+  lookAt:
+    fadeInTime: 0.6
+    fadeOutTime: 0.7
+    speed: 1.6
+    stopSpeed: 0.05
+    upDownFilterIntensity: 0.5
+    leftRightFilterIntensity: 0.06
+    stopLookAtIkUpdate: 0
+    minSpringHairAngle: 0.07
+    overrideMinSpringHairAngle: 0.6
+  solver:
+    useNoAnimatorMode: 0
+    normalizeTarget: 0
+    useNewRotationEvaluateMode: 0
+    headBoneNames:
+    - Head_M
+    - Head
+    rootBoneNames:
+    - Root_M
+    - Root
+    spineNum: 4
+    bodyWeight: 0.4
+    headWeight: 1
+    bodyRotMax: 180
+    headRotMax: 180
+    bodyPitchUpFactor: 0.25
+    bodyPitchDownFactor: 1
+    headPitchFactor: 1
+    bodyDefaultFwdWeight: 0.5
+    headDefaultFwdWeight: 1
+    autoDetectLocalForwardAxis: 1
+    localForwardAxis: {x: 0, y: 0, z: 1}
+    localUpAxis: {x: 0, y: 1, z: 0}
+    uprightConstraintCurve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      - serializedVersion: 3
+        time: 1
+        value: 0.5
+        inSlope: 0
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0
+        outWeight: 0
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  eyeFollow:
+    enabled: 1
+    rotateEyeBones: 1
+    driveBlendShapes: 1
+    weight: 1
+    speed: 8
+    yawLeft: 18
+    yawRight: 18
+    pitchUp: 12
+    pitchDown: 10
+    leftEyeBoneNames:
+    - Eye_L
+    - Eye_L_M
+    - L_Eye
+    - L_Eye_M
+    - LeftEye
+    - Left_Eye
+    rightEyeBoneNames:
+    - Eye_R
+    - Eye_R_M
+    - R_Eye
+    - R_Eye_M
+    - RightEye
+    - Right_Eye
+    autoDetectLocalForwardAxis: 1
+    localForwardAxis: {x: 0, y: 0, z: 1}
+    localUpAxis: {x: 0, y: 1, z: 0}
+    blendShapes:
+    - blendShapeName: 00_Left01_Eye
+      axis: 0
+      direction: 0
+      maxValue: 100
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    - blendShapeName: 00_Right01_Eye
+      axis: 0
+      direction: 1
+      maxValue: 100
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    - blendShapeName: 00_Up01_Eye
+      axis: 1
+      direction: 1
+      maxValue: 100
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4
+    - blendShapeName: 00_Down01_Eye
+      axis: 1
+      direction: 0
+      maxValue: 100
+      curve:
+        serializedVersion: 2
+        m_Curve:
+        - serializedVersion: 3
+          time: 0
+          value: 0
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        - serializedVersion: 3
+          time: 1
+          value: 1
+          inSlope: 1
+          outSlope: 1
+          tangentMode: 0
+          weightedMode: 0
+          inWeight: 0.33333334
+          outWeight: 0.33333334
+        m_PreInfinity: 2
+        m_PostInfinity: 2
+        m_RotationOrder: 4

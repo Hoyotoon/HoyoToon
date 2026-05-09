@@ -63,6 +63,7 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/StarCloud"
         Name "CustomForward"
         Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Geometry-40" "RenderType" = "Opaque" }
         Offset 20, 20
+        
         HLSLINCLUDE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"

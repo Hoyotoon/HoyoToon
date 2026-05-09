@@ -18,6 +18,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private const string GridRootName = "Grid";
         private const string SingleCameraName = "HSRSingleFreelook";
         private const string TeamCameraName = "HSRTeamLook";
+        private const int MaxDeferredLayoutPasses = 8;
 
         private static readonly Dictionary<HoyoToonTeamGame, string> s_TeamRootNames = new Dictionary<HoyoToonTeamGame, string>
         {
@@ -38,11 +39,47 @@ namespace HoyoToon.Runtime.Scene.Placement
             public readonly Dictionary<HoyoToonTeamGame, Transform> TeamGameRoots = new Dictionary<HoyoToonTeamGame, Transform>();
         }
 
-        internal static void ApplyLayout(CharacterPlacementController controller)
+        private static readonly List<CharacterPlacementController> s_DeferredLayoutControllers = new List<CharacterPlacementController>();
+        private static bool s_IsApplyingLayout;
+
+        internal static bool ApplyLayout(CharacterPlacementController controller)
         {
             if (controller == null)
-                return;
+                return false;
 
+            // HSR controllers unregister during SetActive, so nested layout work must wait until Unity leaves the activation callback.
+            if (s_IsApplyingLayout)
+            {
+                QueueDeferredLayout(controller);
+                return false;
+            }
+
+            bool applied = false;
+            s_IsApplyingLayout = true;
+
+            try
+            {
+                CharacterPlacementController currentController = controller;
+                int remainingPasses = MaxDeferredLayoutPasses;
+
+                while (currentController != null && remainingPasses-- > 0)
+                {
+                    ApplyLayoutPass(currentController);
+                    applied = true;
+                    currentController = DequeueDeferredLayout();
+                }
+            }
+            finally
+            {
+                s_DeferredLayoutControllers.Clear();
+                s_IsApplyingLayout = false;
+            }
+
+            return applied;
+        }
+
+        private static void ApplyLayoutPass(CharacterPlacementController controller)
+        {
             controller.EnsureRosterConsistency();
             if (!TryResolveSceneReferences(controller.gameObject.scene, out SceneReferences sceneReferences))
                 return;
@@ -75,6 +112,28 @@ namespace HoyoToon.Runtime.Scene.Placement
 
             if (changed)
                 RuntimeEditorBridge.MarkDirty(controller);
+        }
+
+        private static void QueueDeferredLayout(CharacterPlacementController controller)
+        {
+            if (controller == null || s_DeferredLayoutControllers.Contains(controller))
+                return;
+
+            s_DeferredLayoutControllers.Add(controller);
+        }
+
+        private static CharacterPlacementController DequeueDeferredLayout()
+        {
+            while (s_DeferredLayoutControllers.Count > 0)
+            {
+                CharacterPlacementController controller = s_DeferredLayoutControllers[0];
+                s_DeferredLayoutControllers.RemoveAt(0);
+
+                if (controller != null && controller.isActiveAndEnabled)
+                    return controller;
+            }
+
+            return null;
         }
 
         private static bool ApplySingleLayout(CharacterPlacementController controller, Transform singleRoot)

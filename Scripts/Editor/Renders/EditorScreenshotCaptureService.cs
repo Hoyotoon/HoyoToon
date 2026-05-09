@@ -401,13 +401,22 @@ namespace HoyoToon.Editor.Renders
 
                         int destinationIndex = destinationRow + x;
                         Color32 destination = destinationPixels[destinationIndex];
-                        float alpha = source.a * InverseByte;
-                        float inverseAlpha = 1f - alpha;
+                        float sourceAlpha = source.a * InverseByte;
+                        float destinationAlpha = destination.a * InverseByte;
+                        float inverseSourceAlpha = 1f - sourceAlpha;
+                        float destinationContribution = destinationAlpha * inverseSourceAlpha;
+                        float outputAlpha = sourceAlpha + destinationContribution;
+                        if (outputAlpha <= 0f)
+                        {
+                            destinationPixels[destinationIndex] = new Color32(0, 0, 0, 0);
+                            continue;
+                        }
+
                         destinationPixels[destinationIndex] = new Color32(
-                            (byte)(source.r * alpha + destination.r * inverseAlpha),
-                            (byte)(source.g * alpha + destination.g * inverseAlpha),
-                            (byte)(source.b * alpha + destination.b * inverseAlpha),
-                            (byte)Mathf.Min(source.a + destination.a * inverseAlpha, 255f));
+                            BlendStraightAlphaChannel(source.r, destination.r, sourceAlpha, destinationContribution, outputAlpha),
+                            BlendStraightAlphaChannel(source.g, destination.g, sourceAlpha, destinationContribution, outputAlpha),
+                            BlendStraightAlphaChannel(source.b, destination.b, sourceAlpha, destinationContribution, outputAlpha),
+                            (byte)Mathf.Clamp(Mathf.RoundToInt(outputAlpha * 255f), 0, 255));
                     }
                 }
 
@@ -421,6 +430,17 @@ namespace HoyoToon.Editor.Renders
                     UnityEngine.Object.DestroyImmediate(readableWatermark);
                 }
             }
+        }
+
+        private static byte BlendStraightAlphaChannel(
+            byte source,
+            byte destination,
+            float sourceAlpha,
+            float destinationContribution,
+            float outputAlpha)
+        {
+            float channel = ((source * sourceAlpha) + (destination * destinationContribution)) / outputAlpha;
+            return (byte)Mathf.Clamp(Mathf.RoundToInt(channel), 0, 255);
         }
 
         private static Texture2D GetReadableTexture(Texture2D texture)
@@ -445,7 +465,7 @@ namespace HoyoToon.Editor.Renders
                     texture.height,
                     0,
                     RenderTextureFormat.ARGB32,
-                    RenderTextureReadWrite.Linear);
+                    RenderTextureReadWrite.sRGB);
                 Graphics.Blit(texture, renderTexture);
                 previousActive = RenderTexture.active;
                 RenderTexture.active = renderTexture;

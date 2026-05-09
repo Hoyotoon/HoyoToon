@@ -1,7 +1,10 @@
 {
     "name": "com.hoyotoon.hoyotoon.runtime",
     "rootNamespace": "HoyoToon.Runtime",
-    "references": [],
+    "references": [
+        "com.hoyotoon.hoyotoon.runtime.data",
+        "Unity.InputSystem"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

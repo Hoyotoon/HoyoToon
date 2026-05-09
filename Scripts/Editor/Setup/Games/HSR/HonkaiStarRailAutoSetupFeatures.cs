@@ -50,6 +50,16 @@ namespace HoyoToon.Editor.Setup.Games.HSR
                     AutoSetupSceneUtility.AddHsrComponents,
                     context => context.InstantiatedModels.Count > 0),
                 new AutoSetupFeature(
+                    "hsr-emoji-controller",
+                    "Add emoji controller",
+                    AutoSetupSceneUtility.AddEmojiController,
+                    context => context.InstantiatedModels.Count > 0),
+                new AutoSetupFeature(
+                    "hsr-look-at-controller",
+                    "Add look-at controller",
+                    AutoSetupSceneUtility.AddLookAtController,
+                    context => context.InstantiatedModels.Count > 0),
+                new AutoSetupFeature(
                     "tangents",
                     "Apply tangent settings",
                     AutoSetupModelsUtility.ApplyTangents,

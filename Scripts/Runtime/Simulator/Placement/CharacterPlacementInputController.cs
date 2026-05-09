@@ -1,7 +1,7 @@
-using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Scene.Placement;
+using HoyoToon.Runtime.Input;
 using UnityEngine;
-using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 
 namespace HoyoToon.Runtime.Simulator.Placement
 {
@@ -9,17 +9,11 @@ namespace HoyoToon.Runtime.Simulator.Placement
     [AddComponentMenu("HoyoToon/Simulator/Character Placement Input Controller")]
     public sealed class CharacterPlacementInputController : MonoBehaviour
     {
-        private const string PreviousCharacterActionName = "PreviousCharacter";
-        private const string NextCharacterActionName = "NextCharacter";
-
         [SerializeField]
         private CharacterPlacementController placementController;
 
-        [SerializeField]
-        private InputActionAsset inputActions;
-
-        private InputAction m_PreviousModelAction;
-        private InputAction m_NextModelAction;
+        private HoyoToonInputManager m_InputManager;
+        private static bool s_SceneLoadedHandlerRegistered;
 
         public CharacterPlacementController PlacementController
         {
@@ -27,43 +21,41 @@ namespace HoyoToon.Runtime.Simulator.Placement
             set => placementController = value;
         }
 
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetBootstrap()
+        {
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            s_SceneLoadedHandlerRegistered = false;
+        }
+
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+        private static void BootstrapPrimaryPlacementInput()
+        {
+            RegisterSceneLoadedHandler();
+            EnsurePrimaryPlacementInputController();
+        }
+
         private void Awake()
         {
             ResolvePlacementController();
-            BindInputActions();
+            BindInputManager();
         }
 
         private void OnEnable()
         {
             ResolvePlacementController();
-            BindInputActions();
-            SetInputActionsEnabled(true);
+            BindInputManager();
         }
 
         private void OnDisable()
         {
-            SetInputActionsEnabled(false);
+            UnbindInputManager();
         }
 
         private void OnValidate()
         {
             if (placementController == null)
                 placementController = GetComponent<CharacterPlacementController>();
-        }
-
-        private void Update()
-        {
-            if (!CanConsumeModelInput())
-                return;
-
-            if (m_PreviousModelAction != null && m_PreviousModelAction.WasPressedThisFrame())
-            {
-                placementController.SwitchToPreviousModel();
-            }
-            else if (m_NextModelAction != null && m_NextModelAction.WasPressedThisFrame())
-            {
-                placementController.SwitchToNextModel();
-            }
         }
 
         private CharacterPlacementController ResolvePlacementController()
@@ -74,54 +66,78 @@ namespace HoyoToon.Runtime.Simulator.Placement
             if (placementController == null)
                 placementController = GetComponentInParent<CharacterPlacementController>();
 
+            if (placementController == null)
+                placementController = CharacterPlacementController.GetPrimaryCachedOrFind();
+
             return placementController;
         }
 
-        private void BindInputActions()
+        private static void RegisterSceneLoadedHandler()
         {
-            SetInputActionsEnabled(false);
-
-            m_PreviousModelAction = null;
-            m_NextModelAction = null;
-
-            InputActionAsset resolvedInputActions = SimulatorInputActions.Resolve(inputActions);
-            if (resolvedInputActions == null)
+            if (s_SceneLoadedHandlerRegistered)
                 return;
 
-            inputActions = resolvedInputActions;
-            InputActionMap map = resolvedInputActions.FindActionMap(SimulatorInputActions.ActionMapName);
-            if (map == null)
-                return;
-
-            m_PreviousModelAction = map.FindAction(PreviousCharacterActionName);
-            m_NextModelAction = map.FindAction(NextCharacterActionName);
+            SceneManager.sceneLoaded -= HandleSceneLoaded;
+            SceneManager.sceneLoaded += HandleSceneLoaded;
+            s_SceneLoadedHandlerRegistered = true;
         }
 
-        private void SetInputActionsEnabled(bool enabled)
+        private static void HandleSceneLoaded(UnityEngine.SceneManagement.Scene scene, LoadSceneMode mode)
         {
-            if (enabled)
-            {
-                m_PreviousModelAction?.Enable();
-                m_NextModelAction?.Enable();
-                return;
-            }
-
-            m_PreviousModelAction?.Disable();
-            m_NextModelAction?.Disable();
+            EnsurePrimaryPlacementInputController();
         }
 
-        private bool CanConsumeModelInput()
+        private static void EnsurePrimaryPlacementInputController()
+        {
+            CharacterPlacementInputController[] existingControllers =
+                FindObjectsByType<CharacterPlacementInputController>(FindObjectsSortMode.None);
+            if (existingControllers.Length > 0)
+                return;
+
+            CharacterPlacementController placementController = CharacterPlacementController.GetPrimaryCachedOrFind();
+            if (placementController == null)
+                return;
+
+            CharacterPlacementInputController inputController =
+                placementController.GetComponent<CharacterPlacementInputController>();
+            if (inputController == null)
+                inputController = placementController.gameObject.AddComponent<CharacterPlacementInputController>();
+
+            inputController.PlacementController = placementController;
+        }
+
+        private void BindInputManager()
+        {
+            UnbindInputManager();
+            m_InputManager = HoyoToonInputManager.Instance;
+            m_InputManager.PreviousCharacterPressed += HandlePreviousCharacterPressed;
+            m_InputManager.NextCharacterPressed += HandleNextCharacterPressed;
+        }
+
+        private void UnbindInputManager()
+        {
+            if (m_InputManager == null)
+                return;
+
+            m_InputManager.PreviousCharacterPressed -= HandlePreviousCharacterPressed;
+            m_InputManager.NextCharacterPressed -= HandleNextCharacterPressed;
+            m_InputManager = null;
+        }
+
+        private void HandlePreviousCharacterPressed()
         {
             if (!isActiveAndEnabled || ResolvePlacementController() == null)
-                return false;
+                return;
 
-            if (!Application.isFocused)
-                return false;
+            placementController.SwitchToPreviousModel();
+        }
 
-            if (!Application.isEditor)
-                return true;
+        private void HandleNextCharacterPressed()
+        {
+            if (!isActiveAndEnabled || ResolvePlacementController() == null)
+                return;
 
-            return RuntimeEditorBridge.IsGameViewFocused();
+            placementController.SwitchToNextModel();
         }
     }
 }

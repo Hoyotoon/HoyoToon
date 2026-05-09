@@ -72,7 +72,7 @@ MonoBehaviour:
   m_Name: RPGTonemappingRenderer
   m_EditorClassIdentifier: com.hoyotoon.HoyoToon.Runtime.Rendering::HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping.RPGTonemappingRenderer
   m_Active: 1
-  _tonemappingTextureFormat: 0
+  _tonemappingTextureFormat: 1
 --- !u!114 &-2213273429454721063
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -193,7 +193,7 @@ MonoBehaviour:
   m_Name: RPGBloomRenderer
   m_EditorClassIdentifier: com.hoyotoon.HoyoToon.Runtime.Rendering::HoyoToon.Runtime.Rendering.PostProcessing.HSR.Bloom.RPGBloomRenderer
   m_Active: 1
-  _bloomStageTextureFormat: 2
+  _bloomStageTextureFormat: 0
 --- !u!114 &4190297477508948689
 MonoBehaviour:
   m_ObjectHideFlags: 0

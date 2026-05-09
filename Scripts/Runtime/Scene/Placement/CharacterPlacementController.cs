@@ -616,7 +616,12 @@ namespace HoyoToon.Runtime.Scene.Placement
             bool layoutChanged = force || !m_HasAppliedLayout || layoutHash != m_LastAppliedLayoutHash;
             if (layoutChanged)
             {
-                ManagerLayoutCoordinator.ApplyLayout(this);
+                if (!ManagerLayoutCoordinator.ApplyLayout(this))
+                {
+                    QueuePlacementRequest(force);
+                    return;
+                }
+
                 m_HasAppliedLayout = true;
                 m_LastAppliedLayoutHash = BuildPlacementStateHash();
             }

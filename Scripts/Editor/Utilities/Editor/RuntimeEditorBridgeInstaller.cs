@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using HoyoToon.Runtime.Core;
 using UnityEditor;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 namespace HoyoToon.Editor.Utilities.Editor
 {
@@ -24,6 +25,7 @@ namespace HoyoToon.Editor.Utilities.Editor
                 PrefabUtility.InstantiatePrefab(prefab, parent) as GameObject;
             RuntimeEditorBridge.RegisterCreatedObjectUndoHandler = Undo.RegisterCreatedObjectUndo;
             RuntimeEditorBridge.IsGameViewFocusedHandler = IsGameViewFocused;
+            RuntimeEditorBridge.CanConsumePlayModeKeyboardShortcutHandler = CanConsumePlayModeKeyboardShortcut;
             RuntimeEditorBridge.RequestPlayerLoopUpdateHandler = EditorApplication.QueuePlayerLoopUpdate;
             RuntimeEditorBridge.RegisterHierarchyChangedHandler = handler => EditorApplication.hierarchyChanged += handler;
             RuntimeEditorBridge.UnregisterHierarchyChangedHandler = handler => EditorApplication.hierarchyChanged -= handler;
@@ -117,10 +119,54 @@ namespace HoyoToon.Editor.Utilities.Editor
             return IsGameView(EditorWindow.focusedWindow) || IsGameView(EditorWindow.mouseOverWindow);
         }
 
+        private static bool CanConsumePlayModeKeyboardShortcut()
+        {
+            if (!Application.isFocused || IsEditorTextEditing())
+            {
+                return false;
+            }
+
+            return IsGameView(EditorWindow.focusedWindow)
+                || IsGameView(EditorWindow.mouseOverWindow)
+                || IsHoyoToonManagerWindow(EditorWindow.focusedWindow)
+                || IsHoyoToonManagerWindow(EditorWindow.mouseOverWindow);
+        }
+
         private static bool IsGameView(EditorWindow window)
         {
             return window != null
                 && string.Equals(window.GetType().Name, "GameView", StringComparison.Ordinal);
+        }
+
+        private static bool IsHoyoToonManagerWindow(EditorWindow window)
+        {
+            return window != null
+                && string.Equals(window.GetType().Name, "HoyoToonManagerWindow", StringComparison.Ordinal);
+        }
+
+        private static bool IsEditorTextEditing()
+        {
+            if (EditorGUIUtility.editingTextField)
+            {
+                return true;
+            }
+
+            EditorWindow focusedWindow = EditorWindow.focusedWindow;
+            FocusController focusController = focusedWindow != null && focusedWindow.rootVisualElement.panel != null
+                ? focusedWindow.rootVisualElement.panel.focusController
+                : null;
+            VisualElement focusedElement = focusController != null ? focusController.focusedElement as VisualElement : null;
+            for (VisualElement current = focusedElement; current != null; current = current.parent)
+            {
+                if (current is TextField
+                    || current.ClassListContains("unity-text-field")
+                    || current.ClassListContains("unity-base-text-field"))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 }

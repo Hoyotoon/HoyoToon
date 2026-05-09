@@ -1,8 +1,8 @@
 using Cinemachine;
 using HoyoToon.Runtime.Core;
+using HoyoToon.Runtime.Input;
 using HoyoToon.Runtime.Utilities;
 using UnityEngine;
-using UnityEngine.InputSystem;
 using UnityEngine.Serialization;
 
 namespace HoyoToon.Runtime.Simulator.Camera
@@ -10,10 +10,6 @@ namespace HoyoToon.Runtime.Simulator.Camera
     [RequireComponent(typeof(CinemachineFreeLook))]
     public class CameraInputController : MonoBehaviour
     {
-        private const string LookActionName = "Look";
-        private const string ZoomActionName = "Zoom";
-        private const string AutoRotateActionName = "AutoRotate";
-
         [System.Serializable]
         private struct ZoomOrbitSettings
         {
@@ -21,7 +17,6 @@ namespace HoyoToon.Runtime.Simulator.Camera
             public float radius;
         }
 
-        [SerializeField] private InputActionAsset inputActions;
         [SerializeField] private float lookSensitivity = 0.5f;
         [SerializeField] private float zoomSensitivity = 0.11f;
         [SerializeField] private bool autoRotateEnabled;
@@ -43,9 +38,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
         [SerializeField] private float middleRigLookAtBlendSmoothTime = 0.5f;
 
         private CinemachineFreeLook freeLook;
-        private InputAction lookAction;
-        private InputAction zoomAction;
-        private InputAction autoRotateAction;
+        private HoyoToonInputManager inputManager;
         private float targetZoomRadius;
         private float zoomRadiusVelocity;
         private Transform cachedMiddleRigDefaultLookAtTarget;
@@ -67,24 +60,25 @@ namespace HoyoToon.Runtime.Simulator.Camera
         private void Awake()
         {
             freeLook = GetComponent<CinemachineFreeLook>();
-            BindInputActions();
+            BindInputManager();
             SyncZoomState();
         }
 
         private void OnEnable()
         {
-            SetInputActionsEnabled(true);
+            BindInputManager();
             SyncZoomState();
         }
 
         private void OnDisable()
         {
-            SetInputActionsEnabled(false);
+            UnbindInputManager();
             RestoreMiddleRigLookAtTarget();
         }
 
         private void OnDestroy()
         {
+            UnbindInputManager();
             if (middleRigLookAtBlendTarget == null)
             {
                 return;
@@ -94,44 +88,26 @@ namespace HoyoToon.Runtime.Simulator.Camera
             middleRigLookAtBlendTarget = null;
         }
 
-        private void BindInputActions()
+        private void BindInputManager()
         {
-            lookAction = null;
-            zoomAction = null;
-            autoRotateAction = null;
-
-            InputActionAsset resolvedInputActions = SimulatorInputActions.Resolve(inputActions);
-
-            if (resolvedInputActions == null)
-            {
-                return;
-            }
-
-            inputActions = resolvedInputActions;
-            InputActionMap map = resolvedInputActions.FindActionMap(SimulatorInputActions.ActionMapName);
-            if (map == null)
-            {
-                return;
-            }
-
-            lookAction = map.FindAction(LookActionName);
-            zoomAction = map.FindAction(ZoomActionName);
-            autoRotateAction = map.FindAction(AutoRotateActionName);
+            UnbindInputManager();
+            inputManager = HoyoToonInputManager.Instance;
+            inputManager.AutoRotatePressed += HandleAutoRotatePressed;
         }
 
-        private void SetInputActionsEnabled(bool enabled)
+        private void UnbindInputManager()
         {
-            if (enabled)
-            {
-                lookAction?.Enable();
-                zoomAction?.Enable();
-                autoRotateAction?.Enable();
+            if (inputManager == null)
                 return;
-            }
 
-            lookAction?.Disable();
-            zoomAction?.Disable();
-            autoRotateAction?.Disable();
+            inputManager.AutoRotatePressed -= HandleAutoRotatePressed;
+            inputManager = null;
+        }
+
+        private void HandleAutoRotatePressed()
+        {
+            if (isActiveAndEnabled)
+                autoRotateEnabled = !autoRotateEnabled;
         }
 
         private bool HasValidZoomOrbitIndex()
@@ -177,21 +153,6 @@ namespace HoyoToon.Runtime.Simulator.Camera
         private float GetMaximumZoomRadius()
         {
             return Mathf.Max(reallyCloseZoom.radius, Mathf.Max(closeZoom.radius, farZoom.radius));
-        }
-
-        private bool CanConsumeScrollInput()
-        {
-            if (!Application.isFocused)
-            {
-                return false;
-            }
-
-            if (!Application.isEditor)
-            {
-                return true;
-            }
-
-            return RuntimeEditorBridge.IsGameViewFocused();
         }
 
         private Transform ResolveDefaultSceneLookAtTarget()
@@ -373,12 +334,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
                 return;
             }
 
-            if (autoRotateAction != null && autoRotateAction.WasPressedThisFrame())
-            {
-                autoRotateEnabled = !autoRotateEnabled;
-            }
-
-            Vector2 lookInput = lookAction != null ? lookAction.ReadValue<Vector2>() : Vector2.zero;
+            Vector2 lookInput = inputManager != null ? inputManager.ReadLookDelta() : Vector2.zero;
             freeLook.m_XAxis.m_InputAxisValue = lookInput.x * lookSensitivity;
 
             if (autoRotateEnabled)
@@ -386,7 +342,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
                 freeLook.m_XAxis.Value += autoRotateSpeed * Time.deltaTime;
             }
 
-            float scroll = CanConsumeScrollInput() && zoomAction != null ? zoomAction.ReadValue<float>() : 0f;
+            float scroll = inputManager != null ? inputManager.ReadZoomDelta() : 0f;
             CinemachineFreeLook.Orbit orbit = freeLook.m_Orbits[zoomOrbitIndex];
             float minRadius = GetMinimumZoomRadius();
             float maxRadius = GetMaximumZoomRadius();

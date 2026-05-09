@@ -40,7 +40,7 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/Glow"
             Name "CustomForward" 
             Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Geometry+30" "RenderType" = "Opaque" }
             ZWrite [_ZWriteMode]
-            Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
+            Blend SrcAlpha OneMinusSrcAlpha, Zero One
             HLSLPROGRAM
                 #include "Common/Declarations.hlsl"
                 #pragma vertex vert

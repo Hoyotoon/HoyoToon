@@ -1,11 +1,12 @@
 using UnityEngine;
 using UnityEngine.InputSystem;
 
-namespace HoyoToon.Runtime.Simulator
+namespace HoyoToon.Runtime.Input
 {
-    internal static class SimulatorInputActions
+    internal static class HoyoToonInputActions
     {
-        internal const string ActionMapName = "Simulator";
+        internal const string DefaultActionMapName = "HoyoToon";
+        internal const string LegacyActionMapName = "Simulator";
 
         private const string HoyoToonInputAssetPath = "Input/HoyoToon";
 

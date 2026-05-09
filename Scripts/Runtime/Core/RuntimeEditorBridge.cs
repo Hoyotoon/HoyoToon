@@ -10,6 +10,7 @@ namespace HoyoToon.Runtime.Core
         internal static Func<GameObject, Transform, GameObject> InstantiatePrefabHandler;
         internal static Action<UnityEngine.Object, string> RegisterCreatedObjectUndoHandler;
         internal static Func<bool> IsGameViewFocusedHandler;
+        internal static Func<bool> CanConsumePlayModeKeyboardShortcutHandler;
         internal static Action RequestPlayerLoopUpdateHandler;
         internal static Action<Action> RegisterHierarchyChangedHandler;
         internal static Action<Action> UnregisterHierarchyChangedHandler;
@@ -78,6 +79,23 @@ namespace HoyoToon.Runtime.Core
         internal static bool IsGameViewFocused()
         {
             return IsGameViewFocusedHandler != null && IsGameViewFocusedHandler.Invoke();
+        }
+
+        internal static bool CanConsumePlayModeKeyboardShortcut()
+        {
+            if (!Application.isFocused)
+            {
+                return false;
+            }
+
+            if (!Application.isEditor)
+            {
+                return true;
+            }
+
+            return CanConsumePlayModeKeyboardShortcutHandler != null
+                ? CanConsumePlayModeKeyboardShortcutHandler.Invoke()
+                : true;
         }
 
         internal static void RequestPlayerLoopUpdate()

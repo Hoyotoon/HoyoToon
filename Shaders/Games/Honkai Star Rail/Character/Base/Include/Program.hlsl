@@ -399,7 +399,7 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
         rsdw = lerp(1.0f, rsdw_color.xyz * 2.0f, rsdw_ndotv.xxx);
     
     float3 spec_color;
-    float spec_param;
+    float3 spec_param;
     if(_UseMaterialValuesLUT)
     {
         float4 id_uv;
@@ -441,6 +441,7 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
         spec_param = specular_values[array_index].x;
     }
 
+    
     #if defined(_USE_MATCAP)
         
         vNormal.xy = vNormal.xy * 0.5 + 0.5;
@@ -460,6 +461,9 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
     #else
         final_color.xyz *= rsdw;
     #endif
+
+
+
 
     
 

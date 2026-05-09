@@ -1,0 +1,76 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8e7378b3ed4f438b9a336c2b8b8e21a1, type: 3}
+  m_Name: EmojiControllerProfile
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime.data::HoyoToon.Runtime.ScriptableObjects.Games.EmojiControllerProfileSO
+  gameKey: Honkai Star Rail
+  displayName: Honkai Star Rail
+  faceMeshNames:
+  - '*Face*'
+  - '*Head*'
+  blinkTiming:
+    enableAutoBlink: 1
+    minBlinkGap: 3
+    maxBlinkGap: 5
+    blinkingDuration: 0.16
+    doubleBlinkProbability: 0.05
+    doubleBlinkGap: 0.08
+    fadeInAutoBlinkTime: 0
+    fadeOutAutoBlinkTime: 0
+  autoBlinkWeight: 100
+  applyDefaultFacePose: 1
+  blinkClosePoseConfigs:
+  - blendShapeName: 00_Close01_Eye
+    blinkCloseValue: 100
+    curve:
+      serializedVersion: 2
+      m_Curve:
+      - serializedVersion: 3
+        time: 0
+        value: 0
+        inSlope: 0
+        outSlope: 2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 0.5
+        value: 1
+        inSlope: 2
+        outSlope: -2
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      - serializedVersion: 3
+        time: 1
+        value: 0
+        inSlope: -2
+        outSlope: 0
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.33333334
+        outWeight: 0.33333334
+      m_PreInfinity: 2
+      m_PostInfinity: 2
+      m_RotationOrder: 4
+  autoBlinkPoseParams:
+  - blendShapeName: 00_Default_Brow
+    value: 100
+    enabled: 1
+  - blendShapeName: 00_Default_Eye
+    value: 100
+    enabled: 1
+  - blendShapeName: 00_Default_Mouth
+    value: 100
+    enabled: 1

@@ -3,7 +3,7 @@
     "name": "HoyoToon",
     "maps": [
         {
-            "name": "Simulator",
+            "name": "HoyoToon",
             "id": "b816fe40-bc8c-4de1-a614-d800530ba73c",
             "actions": [
                 {
@@ -29,6 +29,15 @@
                     "type": "Button",
                     "id": "a7c33dfe-bcbf-4fab-8fc7-1c6546695428",
                     "expectedControlType": "",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
+                    "name": "ToggleLookAt",
+                    "type": "Button",
+                    "id": "e81f5f30-046f-48bb-bd23-75fcff589548",
+                    "expectedControlType": "Button",
                     "processors": "",
                     "interactions": "",
                     "initialStateCheck": false
@@ -105,6 +114,17 @@
                     "processors": "",
                     "groups": "Keyboard&Mouse",
                     "action": "AutoRotate",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "fe36bb89-1d50-4d09-b974-1958428358ea",
+                    "path": "<Keyboard>/f",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleLookAt",
                     "isComposite": false,
                     "isPartOfComposite": false
                 },
