@@ -9,7 +9,7 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/ShadowBlur"
 
     SubShader
     {
-        Tags { "LIGHTMODE" = "Transparent" "QUEUE" = "Transparent" "RenderType" = "Transparent" }
+        Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Transparent" "RenderType" = "Transparent" }
 
         Pass
         {
@@ -18,7 +18,7 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/ShadowBlur"
             Cull Back
             ZWrite Off
             ZTest LEqual
-            Blend SrcAlpha OneMinusSrcAlpha
+            Blend SrcAlpha OneMinusSrcAlpha, Zero One
 
             HLSLPROGRAM
             #pragma vertex Vert

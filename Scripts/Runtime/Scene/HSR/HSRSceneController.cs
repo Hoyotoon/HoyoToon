@@ -5,6 +5,10 @@ using HoyoToon.Runtime.Core;
 using HoyoToon.Runtime.Utilities;
 using UnityScene = UnityEngine.SceneManagement.Scene;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace HoyoToon.Runtime.Scene.HSR
 {
 [ExecuteAlways]
@@ -13,6 +17,8 @@ public class HSRSceneController : MonoBehaviour
     private const float MinColorTemperature = 1000f;
     private const float MaxColorTemperature = 20000f;
     private const float DefaultDirectionalYaw = 180f;
+    private const float CameraRelativeLightSourceYaw = 180f;
+    private const float CameraRelativeLightTransformYawOffset = 180f;
     private const float DefaultAutoRotateSpeed = 50f;
     private const string CharacterLightName = "CharacterLight";
     private const string SceneLightName = "HoyoToon Scene Light";
@@ -84,6 +90,8 @@ public class HSRSceneController : MonoBehaviour
     [PropertyLabel("Rotation"), Tooltip("Yaw rotation, in local space, applied to the scene main light when auto rotate is disabled.")]
     [Range(0f, 360f)]
     public float MainLightRotation = DefaultDirectionalYaw;
+    [PropertyLabel("Sync Light to Camera Rotation"), Tooltip("Keeps the scene main light yaw relative to the active camera. The Rotation value is the camera-relative light-source yaw; 180 keeps characters lit from the camera/front.")]
+    public bool MainLightSyncToCameraRotation = false;
     [PropertyLabel("Auto Rotate"), Tooltip("Temporarily rotates the scene main light as a preview until disabled.")]
     public bool MainLightAutoRotate = false;
     [PropertyLabel("Auto Rotate Speed"), Tooltip("Degrees per second used while auto rotate is enabled.")]
@@ -109,6 +117,10 @@ public class HSRSceneController : MonoBehaviour
     private float _lastMainLightAutoRotateTime;
     private TransformSnapshot _mainLightAutoRotateSnapshot;
     private bool _hasMainLightAutoRotateSnapshot;
+    private bool _mainLightCameraSyncActive;
+    private TransformSnapshot _mainLightCameraSyncSnapshot;
+    private bool _hasMainLightCameraSyncSnapshot;
+    private float _mainLightCameraSyncRotationSnapshot;
     private Light _registeredMainLight;
     [SerializeField, HideInInspector] private bool _mainLightSettingsInitialized;
 
@@ -495,6 +507,7 @@ public class HSRSceneController : MonoBehaviour
     {
         UnregisterSceneController(this);
         UnregisterMainLightReference();
+        EndMainLightCameraSyncSession();
         EndMainLightAutoRotateSession();
 
         if (_instance == this)
@@ -580,6 +593,11 @@ public class HSRSceneController : MonoBehaviour
         TryInitializeMainLightSettings();
         ApplyMainLightSettings(forceApply);
         SyncMainLightTransform(forceApply);
+    }
+
+    public void ForceSyncMainLightMotion()
+    {
+        SyncMainLightIfNeeded(true);
     }
 
     private void SanitizeMainLightSettings()
@@ -749,9 +767,20 @@ public class HSRSceneController : MonoBehaviour
     {
         if (main_light == null || main_light.transform == null)
         {
+            EndMainLightCameraSyncSession();
             EndMainLightAutoRotateSession();
             return;
         }
+
+        if (MainLightSyncToCameraRotation)
+        {
+            EndMainLightAutoRotateSession();
+            BeginMainLightCameraSyncSession();
+            ApplyCameraRelativeMainLightRotation(forceApply);
+            return;
+        }
+
+        EndMainLightCameraSyncSession();
 
         if (MainLightAutoRotate)
         {
@@ -777,6 +806,75 @@ public class HSRSceneController : MonoBehaviour
 
         main_light.transform.localEulerAngles = new Vector3(currentEuler.x, normalizedYaw, currentEuler.z);
         RuntimeEditorBridge.MarkDirty(main_light.transform);
+    }
+
+    private void ApplyCameraRelativeMainLightRotation(bool forceApply)
+    {
+        if (main_light == null || main_light.transform == null)
+            return;
+
+        if (!TryGetReferenceCameraYaw(out float cameraYaw))
+        {
+            ApplyManualMainLightRotation(forceApply);
+            return;
+        }
+
+        MainLightRotation = CameraRelativeLightSourceYaw;
+
+        float desiredYaw = ResolveCameraRelativeMainLightYaw(cameraYaw);
+        Vector3 currentEuler = main_light.transform.rotation.eulerAngles;
+        float currentYaw = NormalizeYaw(currentEuler.y);
+        if (!forceApply && Mathf.Approximately(currentYaw, desiredYaw))
+            return;
+
+        main_light.transform.rotation = Quaternion.Euler(currentEuler.x, desiredYaw, currentEuler.z);
+        RuntimeEditorBridge.MarkDirty(main_light.transform);
+    }
+
+    private void BeginMainLightCameraSyncSession()
+    {
+        if (main_light == null || main_light.transform == null)
+            return;
+
+        if (_hasMainLightCameraSyncSnapshot && _mainLightCameraSyncSnapshot.Transform != main_light.transform)
+            EndMainLightCameraSyncSession();
+
+        if (_mainLightCameraSyncActive)
+        {
+            MainLightRotation = CameraRelativeLightSourceYaw;
+            return;
+        }
+
+        _mainLightCameraSyncSnapshot = new TransformSnapshot(main_light.transform);
+        _mainLightCameraSyncRotationSnapshot = NormalizeYaw(MainLightRotation);
+        _hasMainLightCameraSyncSnapshot = true;
+        _mainLightCameraSyncActive = true;
+        MainLightRotation = CameraRelativeLightSourceYaw;
+    }
+
+    private void EndMainLightCameraSyncSession()
+    {
+        if (_hasMainLightCameraSyncSnapshot)
+            RestoreMainLightCameraSyncTransform();
+
+        if (_mainLightCameraSyncActive)
+            MainLightRotation = NormalizeYaw(_mainLightCameraSyncRotationSnapshot);
+
+        _mainLightCameraSyncActive = false;
+        _hasMainLightCameraSyncSnapshot = false;
+        _mainLightCameraSyncRotationSnapshot = 0f;
+    }
+
+    private void RestoreMainLightCameraSyncTransform()
+    {
+        Transform transform = _mainLightCameraSyncSnapshot.Transform;
+        if (transform == null)
+            return;
+
+        transform.localPosition = _mainLightCameraSyncSnapshot.LocalPosition;
+        transform.localRotation = _mainLightCameraSyncSnapshot.LocalRotation;
+        transform.localScale = _mainLightCameraSyncSnapshot.LocalScale;
+        RuntimeEditorBridge.MarkDirty(transform);
     }
 
     private void BeginMainLightAutoRotateSession()
@@ -861,6 +959,52 @@ public class HSRSceneController : MonoBehaviour
     private static float NormalizeYaw(float yaw)
     {
         return Mathf.Repeat(yaw, 360f);
+    }
+
+    private static float ResolveCameraRelativeMainLightYaw(float cameraYaw)
+    {
+        return NormalizeYaw(cameraYaw + CameraRelativeLightSourceYaw + CameraRelativeLightTransformYawOffset);
+    }
+
+    private static bool TryGetReferenceCameraYaw(out float yaw)
+    {
+        Camera referenceCamera = ResolveReferenceCamera();
+        if (referenceCamera == null || referenceCamera.transform == null)
+        {
+            yaw = 0f;
+            return false;
+        }
+
+        yaw = referenceCamera.transform.rotation.eulerAngles.y;
+        return true;
+    }
+
+    private static Camera ResolveReferenceCamera()
+    {
+        if (Camera.main != null)
+            return Camera.main;
+
+#if UNITY_EDITOR
+        if (!Application.isPlaying
+            && SceneView.lastActiveSceneView != null
+            && SceneView.lastActiveSceneView.camera != null)
+        {
+            return SceneView.lastActiveSceneView.camera;
+        }
+#endif
+
+        if (Camera.current != null)
+            return Camera.current;
+
+        Camera[] cameras = Camera.allCameras;
+        for (int index = 0; index < cameras.Length; index++)
+        {
+            Camera camera = cameras[index];
+            if (camera != null && camera.isActiveAndEnabled)
+                return camera;
+        }
+
+        return null;
     }
 
     private void InvalidateGlobalRotMatrixCache()

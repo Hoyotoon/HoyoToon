@@ -237,7 +237,7 @@ MonoBehaviour:
   m_Active: 1
   settings:
     renderPassEvent: 250
-    forwardRenderPassEvent: 400
+    forwardRenderPassEvent: 300
 --- !u!114 &8241053736256968867
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -276,9 +276,11 @@ MonoBehaviour:
     slotResolution: 512
     lightFollowAmount: 1
     firstSliceUsesSceneLight: 0
-    firstSliceFakePitch: 50
+    firstSliceFakePitch: 38.6
     firstSliceFakeYaw: 180
-    firstSliceFakeRoll: 151
+    firstSliceFakeRoll: 180
+    secondSliceYawOffset: 35
+    thirdSliceYawOffset: -35
     nearPlane: 0.0001
     farPlane: 10
     floorProjectionDistance: 1
@@ -291,5 +293,5 @@ MonoBehaviour:
     radialBlurEnd: 1.62
     radialBlurStrength: 3
     radialFadeStart: 0.17
-    radialFadeEnd: 1.8
+    radialFadeEnd: 1.71
     floorDepthThreshold: 0.0025

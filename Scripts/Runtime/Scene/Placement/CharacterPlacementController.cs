@@ -12,6 +12,7 @@ namespace HoyoToon.Runtime.Scene.Placement
     public sealed class CharacterPlacementController : MonoBehaviour
     {
         private const int MaxTeamMembers = 4;
+        private const float RuntimeManagedModelDiscoveryPollInterval = 0.25f;
 
         private static readonly List<CharacterPlacementController> s_ActivePlacementControllers = new List<CharacterPlacementController>();
         private static readonly List<HSRCharacterController> s_DiscoveredControllerScratch = new List<HSRCharacterController>();
@@ -71,6 +72,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         private bool m_HasPendingForcedPlacementRequest;
         private bool m_ManagedModelDiscoveryDirty = true;
         private bool m_RosterConsistencyDirty = true;
+        private float m_NextRuntimeManagedModelDiscoveryPollTime;
         private int m_InputSwitchVersion;
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
@@ -356,6 +358,15 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         private void Update()
         {
+            if (Application.isPlaying
+                && autoDiscoverManagedModels
+                && Time.unscaledTime >= m_NextRuntimeManagedModelDiscoveryPollTime)
+            {
+                m_NextRuntimeManagedModelDiscoveryPollTime = Time.unscaledTime + RuntimeManagedModelDiscoveryPollInterval;
+                MarkManagedModelDiscoveryDirty();
+                QueuePlacementRequest(force: false);
+            }
+
             if (Application.isPlaying && TryConsumePendingPlacementRequest(out bool force))
             {
                 ApplyPlacement(force);

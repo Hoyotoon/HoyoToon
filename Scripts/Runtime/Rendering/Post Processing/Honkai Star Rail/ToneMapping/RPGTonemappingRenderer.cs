@@ -72,6 +72,10 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
 
         protected override bool ShouldEnqueuePass(ref RenderingData renderingData, RPGTonemappingPass renderPass)
         {
+            // Reset generation state per renderer enqueue cycle so global LUT handles
+            // are only considered valid for the current render-graph execution.
+            s_HasGeneratedLutKey = false;
+
             RPGTonemapping settings = VolumeManager.instance.stack.GetComponent<RPGTonemapping>();
             return settings != null && settings.IsActive();
         }
@@ -117,7 +121,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
         public sealed class RPGTonemappingPass : HsrFullscreenMaterialRenderPass
         {
             private const string TonemappingShaderName = "HoyoToon/Honkai Star Rail/Post Processing/Lut2DBaker";
-            private const string TonemappingPassName = "ChromaticAberration";
+            private const string TonemappingPassName = "BakeLUT2D";
             private const string RenderGraphName = "RPG Tonemapping Pass";
             private const int LutSize = 32;
 
@@ -239,6 +243,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
                 return combined;
             }
 
+
             private TonemappingShaderUniforms BuildTonemappingShaderUniforms(RPGTonemapping settings)
             {
                 _hableCurve.Init(
@@ -280,7 +285,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
                     shoSegmentA = _hableCurve.uniforms.shoSegmentA,
                     shoSegmentB = _hableCurve.uniforms.shoSegmentB,
                     expandGamut = settings.ExpandGamut.value,
-                    hdrHeadroom = 1f,
+                    hdrHeadroom = settings.HDRHeadroom.value,
                     enableHdrTonemapping = settings.ForceDisableToneMapping.value ? 0f : 1f,
                     debugHdrOutputIntermediate = 0f,
                     forceDisableToneMapping = settings.ForceDisableToneMapping.value ? 1f : 0f,
@@ -350,6 +355,13 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
             {
                 UniversalCameraData cameraData = frameData.Get<UniversalCameraData>();
                 Camera camera = cameraData.camera;
+
+                // Guard against duplicate RecordRenderGraph invocations for the same camera/frame.
+                // Only one LUT bake should ever happen per camera in a frame.
+                if (s_HasGeneratedLutKey && s_LastGeneratedLutKey.Equals(CreateCameraFrameKey(camera)))
+                {
+                    return;
+                }
 
                 if (!TryApplyVolumeSettings())
                 {

@@ -23,6 +23,8 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         private const string SceneLightDefaultName = "HoyoToon Scene Fill Light";
         private const float MinColorTemperature = 1000f;
         private const float MaxColorTemperature = 20000f;
+        private const float CameraRelativeLightSourceYaw = 180f;
+        private const float CameraRelativeLightTransformYawOffset = 180f;
 
         private static readonly string[] s_PreferredControllerSections =
         {
@@ -830,6 +832,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             string[] propertyNames =
             {
                 "MainLightRotation",
+                "MainLightSyncToCameraRotation",
                 "MainLightAutoRotate",
                 "MainLightAutoRotateSpeed",
                 "MainLightAutoRotateDirection"
@@ -858,6 +861,15 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             if (addedFieldCount <= 0)
             {
                 host.Add(CreateHelpBox("No main light motion controls were found.", HelpBoxMessageType.Info));
+            }
+
+            if (controller is HSRSceneController hsrSceneController)
+            {
+                host.schedule.Execute(() =>
+                {
+                    if (hsrSceneController != null && hsrSceneController.MainLightSyncToCameraRotation)
+                        hsrSceneController.ForceSyncMainLightMotion();
+                }).Every(16);
             }
 
             return host;
@@ -900,8 +912,19 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                         euler.y = NormalizeYaw(evt.newValue);
                         transform.localEulerAngles = euler;
                     });
+
+                if (state.SyncToCameraRotation)
+                    TickLocalLightMotion(light, state, rotationSlider);
             });
             host.Add(rotationSlider);
+
+            Toggle syncToCameraToggle = new Toggle("Sync Light to Camera Rotation")
+            {
+                value = state.SyncToCameraRotation
+            };
+            syncToCameraToggle.AddToClassList("ht-toggle");
+            syncToCameraToggle.AddToClassList("ht-character-controller-toggle");
+            host.Add(syncToCameraToggle);
 
             Toggle autoRotateToggle = new Toggle("Auto Rotate")
             {
@@ -927,9 +950,29 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
             void RefreshMotionFieldState()
             {
-                speedSlider.SetEnabled(autoRotateToggle.value);
-                directionField.SetEnabled(autoRotateToggle.value);
+                bool syncToCamera = syncToCameraToggle.value;
+                rotationSlider.SetEnabled(!syncToCamera);
+                autoRotateToggle.SetEnabled(!syncToCamera);
+                speedSlider.SetEnabled(!syncToCamera && autoRotateToggle.value);
+                directionField.SetEnabled(!syncToCamera && autoRotateToggle.value);
             }
+
+            syncToCameraToggle.RegisterValueChangedCallback(evt =>
+            {
+                if (evt.newValue == evt.previousValue)
+                {
+                    return;
+                }
+
+                state.LastUpdateTime = 0d;
+                if (evt.newValue)
+                    BeginLocalLightCameraSyncSession(light, state, rotationSlider);
+                else
+                    EndLocalLightCameraSyncSession(light, state, rotationSlider);
+
+                RefreshMotionFieldState();
+                TickLocalLightMotion(light, state, rotationSlider);
+            });
 
             autoRotateToggle.RegisterValueChangedCallback(evt =>
             {
@@ -1075,7 +1118,31 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private static void TickLocalLightMotion(Light light, LocalLightMotionState state, Slider rotationSlider)
         {
-            if (light == null || light.transform == null || state == null || !state.AutoRotate)
+            if (light == null || light.transform == null || state == null)
+            {
+                return;
+            }
+
+            if (state.SyncToCameraRotation)
+            {
+                if (!TryGetReferenceCameraYaw(out float cameraYaw))
+                    return;
+
+                float offsetYaw = CameraRelativeLightSourceYaw;
+                if (rotationSlider != null && !Mathf.Approximately(NormalizeYaw(rotationSlider.value), offsetYaw))
+                    rotationSlider.SetValueWithoutNotify(offsetYaw);
+
+                float targetYaw = NormalizeYaw(cameraYaw + offsetYaw + CameraRelativeLightTransformYawOffset);
+                Vector3 cameraRelativeEuler = light.transform.rotation.eulerAngles;
+                if (Mathf.Approximately(NormalizeYaw(cameraRelativeEuler.y), targetYaw))
+                    return;
+
+                light.transform.rotation = Quaternion.Euler(cameraRelativeEuler.x, targetYaw, cameraRelativeEuler.z);
+                EditorUtility.SetDirty(light.transform);
+                return;
+            }
+
+            if (!state.AutoRotate)
             {
                 return;
             }
@@ -1116,6 +1183,48 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             Undo.RecordObject(light.transform, undoName);
             apply(light.transform);
             EditorUtility.SetDirty(light.transform);
+        }
+
+        private static void BeginLocalLightCameraSyncSession(Light light, LocalLightMotionState state, Slider rotationSlider)
+        {
+            if (light == null || light.transform == null || state == null)
+                return;
+
+            if (!state.HasCameraSyncSnapshot)
+            {
+                state.CameraSyncLocalPosition = light.transform.localPosition;
+                state.CameraSyncLocalRotation = light.transform.localRotation;
+                state.CameraSyncLocalScale = light.transform.localScale;
+                state.HasCameraSyncSnapshot = true;
+            }
+
+            state.SyncToCameraRotation = true;
+            if (rotationSlider != null)
+                rotationSlider.SetValueWithoutNotify(CameraRelativeLightSourceYaw);
+        }
+
+        private static void EndLocalLightCameraSyncSession(Light light, LocalLightMotionState state, Slider rotationSlider)
+        {
+            if (state == null)
+                return;
+
+            state.SyncToCameraRotation = false;
+
+            if (state.HasCameraSyncSnapshot && light != null && light.transform != null)
+            {
+                light.transform.localPosition = state.CameraSyncLocalPosition;
+                light.transform.localRotation = state.CameraSyncLocalRotation;
+                light.transform.localScale = state.CameraSyncLocalScale;
+                EditorUtility.SetDirty(light.transform);
+
+                if (rotationSlider != null)
+                    rotationSlider.SetValueWithoutNotify(NormalizeYaw(light.transform.localEulerAngles.y));
+            }
+
+            state.HasCameraSyncSnapshot = false;
+            state.CameraSyncLocalPosition = Vector3.zero;
+            state.CameraSyncLocalRotation = Quaternion.identity;
+            state.CameraSyncLocalScale = Vector3.one;
         }
 
         private static void ApplyHsrMainLightTransformChange(
@@ -1620,6 +1729,41 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             return Mathf.Repeat(yaw, 360f);
         }
 
+        private static bool TryGetReferenceCameraYaw(out float yaw)
+        {
+            Camera referenceCamera = ResolveReferenceCamera();
+            if (referenceCamera == null || referenceCamera.transform == null)
+            {
+                yaw = 0f;
+                return false;
+            }
+
+            yaw = referenceCamera.transform.rotation.eulerAngles.y;
+            return true;
+        }
+
+        private static Camera ResolveReferenceCamera()
+        {
+            if (Camera.main != null)
+                return Camera.main;
+
+            if (SceneView.lastActiveSceneView != null && SceneView.lastActiveSceneView.camera != null)
+                return SceneView.lastActiveSceneView.camera;
+
+            if (Camera.current != null)
+                return Camera.current;
+
+            Camera[] cameras = Camera.allCameras;
+            for (int index = 0; index < cameras.Length; index++)
+            {
+                Camera camera = cameras[index];
+                if (camera != null && camera.isActiveAndEnabled)
+                    return camera;
+            }
+
+            return null;
+        }
+
         private static bool IsSceneComponent(Component component)
         {
             return component != null
@@ -1740,6 +1884,11 @@ namespace HoyoToon.Editor.UI.Manager.Modules
 
         private sealed class LocalLightMotionState
         {
+            public bool SyncToCameraRotation;
+            public bool HasCameraSyncSnapshot;
+            public Vector3 CameraSyncLocalPosition;
+            public Quaternion CameraSyncLocalRotation = Quaternion.identity;
+            public Vector3 CameraSyncLocalScale = Vector3.one;
             public bool AutoRotate;
             public float AutoRotateSpeed = 50f;
             public LightMotionDirection Direction = LightMotionDirection.Clockwise;

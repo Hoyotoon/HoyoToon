@@ -26,6 +26,7 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/FloorLine"
         Name "CustomForward"
         Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Geometry" "RenderType" = "Opaque" }
         Offset 20, 20
+        Blend SrcAlpha OneMinusSrcAlpha, Zero One
         HLSLINCLUDE
             #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
             #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
@@ -37,7 +38,6 @@ Shader "HoyoToon/Honkai Star Rail/UI/Manikin/FloorLine"
             Name "CustomForward"
             Tags { "LIGHTMODE" = "CustomForwardOpaque2" "QUEUE" = "Geometry-40" "RenderType" = "Opaque" }
             ZWrite [_ZWriteMode]
-            Blend SrcAlpha OneMinusSrcAlpha, SrcAlpha OneMinusSrcAlpha
             HLSLPROGRAM
                 #include "Common/Declarations.hlsl"
                 #pragma vertex vert

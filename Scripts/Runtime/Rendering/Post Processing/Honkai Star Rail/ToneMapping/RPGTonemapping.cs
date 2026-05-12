@@ -14,30 +14,36 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
         public enum TonemappingMethod
         {
             GenerateLUTTexture = 0,
+            HableCurve = 1, 
+            ACES = 2,
         };
         public TonemappingMethod tonemapping;
+        [HideInInspector]
         public ClampedFloatParameter BlueCorrection = new(0.6f, 0f, 1f);
-
+        [HideInInspector]
+        public FloatParameter HDRHeadroom = new(240000f);
+        [HideInInspector]
         public ClampedFloatParameter ExpandGamut = new(1f, 0f, 1f);
         public BoolParameter ForceDisableToneMapping = new(false);
-        public ClampedFloatParameter Slope = new(0.8799999952316284f, 0f, 1f);
-        public ClampedFloatParameter Toe = new(0.550000011920929f, 0f, 1f);
-        public ClampedFloatParameter Shoulder = new(0.25999999046325684f, 0f, 1f);
-        public ClampedFloatParameter BlackClip = new(0f, 0f, 1f);
-        public ClampedFloatParameter WhiteClip = new(0.03999999910593033f, 0f, 1f);
+        [HideInInspector] public ClampedFloatParameter Slope = new(0.8799999952316284f, 0f, 1f);
+        [HideInInspector] public ClampedFloatParameter Toe = new(0.550000011920929f, 0f, 1f);
+        [HideInInspector] public ClampedFloatParameter Shoulder = new(0.25999999046325684f, 0f, 1f);
+        [HideInInspector] public ClampedFloatParameter BlackClip = new(0f, 0f, 1f);
+        [HideInInspector] public ClampedFloatParameter WhiteClip = new(0.03999999910593033f, 0f, 1f);
         public ClampedFloatParameter ToneCurveToeStrength = new(0.41499999165534973f, 0f, 1f);
         public ClampedFloatParameter ToneCurveToeLength = new(0.6140000224113464f, 0f, 1f);
         public ClampedFloatParameter ToneCurveShoulderStrength = new(0.0f, 0f, 1f);
         public ClampedFloatParameter ToneCurveShoulderLength = new(1.0f, 0f, 1f);
         public ClampedFloatParameter ToneCurveShoulderAngle = new(0.10000000149011612f, 0f, 1f);
         public MinFloatParameter ToneCurveGamma = new(1f, 0.001f);
-        public FloatParameter ACES_A = new(3.7100000381469727f);
-        public FloatParameter ACES_B = new(0.10777200013399124f);
-        public FloatParameter ACES_C = new(2.936044931411743f);
-        public FloatParameter ACES_D = new(0.8871219754219055f);
-        public FloatParameter ACES_E = new(0.806888997554779f);
+        
+        [HideInInspector] public FloatParameter ACES_A = new(3.7100000381469727f);
+        [HideInInspector] public FloatParameter ACES_B = new(0.10777200013399124f);
+        [HideInInspector] public FloatParameter ACES_C = new(2.936044931411743f);
+        [HideInInspector] public FloatParameter ACES_D = new(0.8871219754219055f);
+        [HideInInspector] public FloatParameter ACES_E = new(0.806888997554779f);
 
-         [Header("Color Grading")]
+        [Header("Color Grading")]
         public FloatParameter ColorCorrectionShadowMax = new(0.09f);
         public FloatParameter ColorCorrectionHighlightMin = new(0.5f);
         public FloatParameter LevelHighLightTone = new(1f);
@@ -67,6 +73,7 @@ namespace HoyoToon.Runtime.Rendering.PostProcessing.HSR.ToneMapping
         {
             return IsOverriddenPositive(BlueCorrection)
                 || IsOverriddenPositive(ExpandGamut)
+                || IsOverriddenPositive(HDRHeadroom)
                 || IsOverriddenTrue(ForceDisableToneMapping)
                 || IsOverriddenPositive(ToneCurveToeStrength)
                 || IsOverriddenPositive(ToneCurveToeLength)

@@ -389,13 +389,13 @@ MonoBehaviour:
     name: Velina
     sourceName: Velina
     overrideName: 
-    avatarIcon: 
-    roundIcon: 
-    splashIcon: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect64.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle64.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole64.webp@png
   - characterId: 1571
     name: Norma
     sourceName: Norma
     overrideName: 
-    avatarIcon: 
-    roundIcon: 
-    splashIcon: 
+    avatarIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleSelect65.webp@png
+    roundIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRoleCircle65.webp@png
+    splashIcon: https://imgproxy.hoyotoon.com/unsafe/plain/https://static.nanoka.cc/assets/zzz/IconRole65.webp@png

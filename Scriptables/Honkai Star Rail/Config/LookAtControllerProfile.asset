@@ -149,7 +149,7 @@ MonoBehaviour:
     enabled: 1
     rotateEyeBones: 1
     driveBlendShapes: 1
-    weight: 1
+    weight: 0.5
     speed: 8
     yawLeft: 18
     yawRight: 18

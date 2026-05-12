@@ -50,6 +50,8 @@ namespace HoyoToon.Runtime.Rendering.HSR
             [Range(-89f, 89f)] public float firstSliceFakePitch = 0f;
             [Range(0f, 360f)] public float firstSliceFakeYaw = 0f;
             [Range(-180f, 180f)] public float firstSliceFakeRoll = 0f;
+            [Range(-180f, 180f)] public float secondSliceYawOffset = 0f;
+            [Range(-180f, 180f)] public float thirdSliceYawOffset = 0f;
             [Min(0.0001f)] public float nearPlane = 0.01f;
             [Min(0.001f)] public float farPlane = 2f;
             [Min(0f)] public float floorProjectionDistance = 3f;
@@ -521,7 +523,20 @@ namespace HoyoToon.Runtime.Rendering.HSR
                 return fakeRotation * Vector3.forward;
             }
 
-            static Vector3 BuildSliceDirection(Vector3 baseDirection, int sliceIndex, int sliceCount)
+            static float GetSliceYawOffset(CharacterManikinAreaFloorShadowSettings settings, int sliceIndex)
+            {
+                switch (sliceIndex)
+                {
+                    case 1:
+                        return settings.secondSliceYawOffset;
+                    case 2:
+                        return settings.thirdSliceYawOffset;
+                    default:
+                        return 0f;
+                }
+            }
+
+            static Vector3 BuildSliceDirection(CharacterManikinAreaFloorShadowSettings settings, Vector3 baseDirection, int sliceIndex, int sliceCount)
             {
                 if (sliceCount <= 1)
                     return baseDirection;
@@ -530,6 +545,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     return baseDirection;
 
                 float angle = 360f * ((float)sliceIndex / sliceCount);
+                angle += GetSliceYawOffset(settings, sliceIndex);
                 Quaternion yaw = Quaternion.AngleAxis(angle, Vector3.up);
                 return yaw * baseDirection;
             }
@@ -848,7 +864,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
                         Bounds shadowBounds = candidate.bounds;
 
-                        Vector3 sliceDirection = BuildSliceDirection(baseSliceDirection, sliceIndex, slicesPerCharacter);
+                        Vector3 sliceDirection = BuildSliceDirection(m_Settings, baseSliceDirection, sliceIndex, slicesPerCharacter);
                         if (!CharacterManikinPerObjectShadowUtility.TryBuildSelfShadowMatricesFromDirection(
                                 camera,
                                 candidate.controller.transform,

@@ -45,7 +45,7 @@ MonoBehaviour:
     m_Value: 0.0028
   Angle:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 177
   AvoidBrightnessBug:
     m_OverrideState: 1
     m_Value: 1
@@ -132,13 +132,13 @@ MonoBehaviour:
     m_Value: 1
   BakedLutTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 2800000, guid: f6a5b92887ae5f14f95aabc07c898a85, type: 3}
+    m_Value: {fileID: 2800000, guid: b945b381d73e66b4c8a0745dbc882b71, type: 3}
   LutSlices:
     m_OverrideState: 1
     m_Value: 31
   LutFactor:
     m_OverrideState: 1
-    m_Value: {x: 0.00098, y: 0.03127}
+    m_Value: {x: 0.0009765625, y: 0.03125}
   FlipLutY:
     m_OverrideState: 1
     m_Value: 0
@@ -165,6 +165,9 @@ MonoBehaviour:
   BlueCorrection:
     m_OverrideState: 1
     m_Value: 1
+  HDRHeadroom:
+    m_OverrideState: 1
+    m_Value: 240000
   ExpandGamut:
     m_OverrideState: 1
     m_Value: 1
@@ -194,7 +197,7 @@ MonoBehaviour:
     m_Value: 0.614
   ToneCurveShoulderStrength:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 1
   ToneCurveShoulderLength:
     m_OverrideState: 1
     m_Value: 1
@@ -236,7 +239,7 @@ MonoBehaviour:
     m_Value: {r: 1, g: 1, b: 1, a: 1}
   ColorSaturationGlobal:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 1, z: 1, w: 1}
+    m_Value: {x: 0.98, y: 0.99, z: 1, w: 1}
   ColorContrastGlobal:
     m_OverrideState: 1
     m_Value: {x: 1, y: 1, z: 1, w: 1}
@@ -294,7 +297,7 @@ MonoBehaviour:
     m_Value: {r: 0.3066038, g: 0.3066038, b: 1, a: 1}
   CombineWithRadialBlur:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 0
   intensity:
     m_OverrideState: 1
-    m_Value: 0
+    m_Value: 0.137

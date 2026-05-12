@@ -43,7 +43,7 @@ Shader "HoyoToon/Honkai Star Rail/Post Processing/Lut2DBaker"
 
         Pass
         {
-            Name "ChromaticAberration"
+            Name "BakeLUT2D"
             ZWrite Off
             ZTest Always
             Cull Off

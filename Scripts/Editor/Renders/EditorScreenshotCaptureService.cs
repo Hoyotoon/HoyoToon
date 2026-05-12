@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 using System;
+using System.Collections.Generic;
 using System.IO;
 using HoyoToon.Editor.Utilities.Debugging;
 using HoyoToon.Editor.Utilities.IO;
@@ -58,6 +59,10 @@ namespace HoyoToon.Editor.Renders
                 return null;
             }
 
+            CaptureUiVisibilityScope uiVisibilityScope = transparent
+                ? CaptureUiVisibilityScope.HideSimulatorUi()
+                : null;
+
             try
             {
                 return transparent
@@ -68,6 +73,10 @@ namespace HoyoToon.Editor.Renders
             {
                 HoyoToonLogger.Error(HoyoToonLogCategory.General, "Screenshot capture failed.", exception);
                 return null;
+            }
+            finally
+            {
+                uiVisibilityScope?.Dispose();
             }
         }
 
@@ -140,6 +149,125 @@ namespace HoyoToon.Editor.Renders
             }
 
             return string.Format("{0}_{1:yyyy-MM-dd_HH-mm-ss}.png", prefix, DateTime.Now);
+        }
+
+        private sealed class CaptureUiVisibilityScope : IDisposable
+        {
+            private readonly List<TargetState> m_TargetStates;
+
+            private CaptureUiVisibilityScope(List<TargetState> targetStates)
+            {
+                m_TargetStates = targetStates;
+            }
+
+            public static CaptureUiVisibilityScope HideSimulatorUi()
+            {
+                List<TargetState> targetStates = new List<TargetState>();
+                HashSet<int> seenIds = new HashSet<int>();
+                Canvas[] canvases = UnityEngine.Resources.FindObjectsOfTypeAll<Canvas>();
+
+                for (int index = 0; index < canvases.Length; index++)
+                {
+                    Canvas canvas = canvases[index];
+                    if (canvas == null || canvas.gameObject == null || !IsSimulatorUiRoot(canvas.gameObject))
+                    {
+                        continue;
+                    }
+
+                    int instanceId = canvas.gameObject.GetInstanceID();
+                    if (!seenIds.Add(instanceId))
+                    {
+                        continue;
+                    }
+
+                    targetStates.Add(new TargetState(canvas.gameObject, canvas.gameObject.activeSelf));
+                }
+
+                if (targetStates.Count <= 0)
+                {
+                    return null;
+                }
+
+                for (int index = 0; index < targetStates.Count; index++)
+                {
+                    if (targetStates[index].Target != null)
+                    {
+                        targetStates[index].Target.SetActive(false);
+                    }
+                }
+
+                return new CaptureUiVisibilityScope(targetStates);
+            }
+
+            public void Dispose()
+            {
+                for (int index = m_TargetStates.Count - 1; index >= 0; index--)
+                {
+                    TargetState targetState = m_TargetStates[index];
+                    if (targetState.Target != null)
+                    {
+                        targetState.Target.SetActive(targetState.ActiveSelf);
+                    }
+                }
+            }
+
+            private static bool IsSimulatorUiRoot(GameObject candidate)
+            {
+                if (candidate == null
+                    || EditorUtility.IsPersistent(candidate)
+                    || !candidate.scene.IsValid()
+                    || !candidate.scene.isLoaded)
+                {
+                    return false;
+                }
+
+                string hierarchyPath = GetHierarchyPath(candidate.transform);
+                if (string.Equals(hierarchyPath, "HoyoToon/UI", StringComparison.Ordinal)
+                    || hierarchyPath.EndsWith("/HoyoToon/UI", StringComparison.Ordinal))
+                {
+                    return true;
+                }
+
+                if (!string.Equals(candidate.name, "UI", StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+                Transform transform = candidate.transform;
+                return transform.Find("Top Bar") != null
+                    || transform.Find("Help Bar") != null
+                    || transform.Find("Character Row") != null;
+            }
+
+            private static string GetHierarchyPath(Transform transform)
+            {
+                if (transform == null)
+                {
+                    return string.Empty;
+                }
+
+                Stack<string> names = new Stack<string>();
+                while (transform != null)
+                {
+                    names.Push(transform.name);
+                    transform = transform.parent;
+                }
+
+                return string.Join("/", names.ToArray());
+            }
+
+            private readonly struct TargetState
+            {
+                public TargetState(GameObject target, bool activeSelf)
+                {
+                    Target = target;
+                    ActiveSelf = activeSelf;
+                }
+
+                public GameObject Target { get; }
+
+                public bool ActiveSelf { get; }
+            }
         }
 
         public static void OpenFolder(string absolutePath)

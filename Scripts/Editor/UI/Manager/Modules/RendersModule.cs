@@ -54,6 +54,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         private const string TurnaroundGapKey = PrefsPrefix + "TurnaroundGap";
         private const string TurnaroundPaddingKey = PrefsPrefix + "TurnaroundPadding";
         private const string TurnaroundEnabledKey = PrefsPrefix + "TurnaroundEnabled";
+        private const string SyncWithSceneViewKey = PrefsPrefix + "SyncWithSceneView";
 
         private static readonly string[] ScaleOptions =
         {
@@ -698,6 +699,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             openAfterCapture = EditorPrefs.GetBool(PrefsKey(OpenAfterKey), openAfterCapture);
             enableWatermark = EditorPrefs.GetBool(PrefsKey(WatermarkEnabledKey), enableWatermark);
             turnaroundEnabled = EditorPrefs.GetBool(PrefsKey(TurnaroundEnabledKey), turnaroundEnabled);
+            syncWithSceneView = EditorPrefs.GetBool(PrefsKey(SyncWithSceneViewKey), syncWithSceneView);
             turnaroundGap = Mathf.Clamp(EditorPrefs.GetInt(PrefsKey(TurnaroundGapKey), turnaroundGap), MinTurnaroundGap, MaxTurnaroundGap);
             turnaroundPaddingMultiplier = Mathf.Clamp(
                 EditorPrefs.GetFloat(PrefsKey(TurnaroundPaddingKey), turnaroundPaddingMultiplier),
@@ -736,6 +738,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             EditorPrefs.SetBool(PrefsKey(OpenAfterKey), openAfterCapture);
             EditorPrefs.SetBool(PrefsKey(WatermarkEnabledKey), enableWatermark);
             EditorPrefs.SetBool(PrefsKey(TurnaroundEnabledKey), turnaroundEnabled);
+            EditorPrefs.SetBool(PrefsKey(SyncWithSceneViewKey), syncWithSceneView);
             EditorPrefs.SetString(PrefsKey(CameraKey), SerializeObject(captureCamera));
             EditorPrefs.SetString(PrefsKey(WatermarkTextureKey), SerializeObject(watermarkTexture));
             EditorPrefs.SetString(PrefsKey(TurnaroundBackgroundKey), SerializeObject(turnaroundBackgroundTexture));
@@ -1007,11 +1010,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
         {
             cinemachineBrainStates.Restore();
 
-            if (syncedCamera != null)
-            {
-                TurnaroundCaptureUtility.RestoreState(syncedCamera, syncedCameraState);
-                syncedCamera = null;
-            }
+            syncedCamera = null;
         }
 
         private void CopySceneViewStateToCaptureCamera()

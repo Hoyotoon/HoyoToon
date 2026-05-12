@@ -15,6 +15,7 @@ namespace HoyoToon.Runtime.Input
         private const string PreviousCharacterActionName = "PreviousCharacter";
         private const string NextCharacterActionName = "NextCharacter";
         private const string ToggleLookAtActionName = "ToggleLookAt";
+        private const string ToggleUiActionName = "ToggleUI";
 
         private static HoyoToonInputManager s_Instance;
 
@@ -34,11 +35,16 @@ namespace HoyoToon.Runtime.Input
         private InputAction m_PreviousCharacterAction;
         private InputAction m_NextCharacterAction;
         private InputAction m_ToggleLookAtAction;
+        private InputAction m_ToggleUiAction;
+        private bool m_RuntimeUiVisible = true;
+        private static readonly System.Collections.Generic.HashSet<int> s_CameraInputBlockers =
+            new System.Collections.Generic.HashSet<int>();
 
         public event Action AutoRotatePressed;
         public event Action PreviousCharacterPressed;
         public event Action NextCharacterPressed;
         public event Action ToggleLookAtPressed;
+        public event Action ToggleUiPressed;
 
         public static HoyoToonInputManager Instance
         {
@@ -64,6 +70,25 @@ namespace HoyoToon.Runtime.Input
         private static void ResetStaticState()
         {
             s_Instance = null;
+            s_CameraInputBlockers.Clear();
+        }
+
+        public static bool IsCameraInputBlocked => s_CameraInputBlockers.Count > 0;
+
+        public static void SetCameraInputBlocked(UnityEngine.Object owner, bool blocked)
+        {
+            if (owner == null)
+                return;
+
+            int ownerId = owner.GetInstanceID();
+            if (blocked)
+            {
+                s_CameraInputBlockers.Add(ownerId);
+            }
+            else
+            {
+                s_CameraInputBlockers.Remove(ownerId);
+            }
         }
 
         public Vector2 ReadLookDelta()
@@ -117,10 +142,17 @@ namespace HoyoToon.Runtime.Input
             if (!RuntimeEditorBridge.CanConsumePlayModeKeyboardShortcut())
                 return;
 
-            InvokeIfPressed(m_AutoRotateAction, AutoRotatePressed);
+            if (CanConsumeCameraInput())
+                InvokeIfPressed(m_AutoRotateAction, AutoRotatePressed);
+
             InvokeIfPressed(m_PreviousCharacterAction, PreviousCharacterPressed);
             InvokeIfPressed(m_NextCharacterAction, NextCharacterPressed);
             InvokeIfPressed(m_ToggleLookAtAction, ToggleLookAtPressed);
+            if (m_ToggleUiAction != null && m_ToggleUiAction.WasPressedThisFrame())
+            {
+                ToggleRuntimeUiVisibility();
+                ToggleUiPressed?.Invoke();
+            }
         }
 
         private void BindInputActions()
@@ -146,6 +178,7 @@ namespace HoyoToon.Runtime.Input
             m_PreviousCharacterAction = m_ActionMap.FindAction(PreviousCharacterActionName);
             m_NextCharacterAction = m_ActionMap.FindAction(NextCharacterActionName);
             m_ToggleLookAtAction = m_ActionMap.FindAction(ToggleLookAtActionName);
+            m_ToggleUiAction = m_ActionMap.FindAction(ToggleUiActionName);
         }
 
         private void SetInputActionsEnabled(bool enabled)
@@ -158,6 +191,9 @@ namespace HoyoToon.Runtime.Input
 
         private static bool CanConsumeCameraInput()
         {
+            if (IsCameraInputBlocked)
+                return false;
+
             if (!Application.isFocused)
                 return false;
 
@@ -171,6 +207,31 @@ namespace HoyoToon.Runtime.Input
         {
             if (action != null && action.WasPressedThisFrame())
                 callback?.Invoke();
+        }
+
+        private void ToggleRuntimeUiVisibility()
+        {
+            SetRuntimeUiVisible(!m_RuntimeUiVisible);
+        }
+
+        private void SetRuntimeUiVisible(bool visible)
+        {
+            m_RuntimeUiVisible = visible;
+
+            GameObject uiRoot = GameObject.Find("HoyoToon/UI");
+            if (uiRoot == null)
+                uiRoot = GameObject.Find("UI");
+
+            if (uiRoot == null)
+                return;
+
+            Transform uiTransform = uiRoot.transform;
+            for (int index = 0; index < uiTransform.childCount; index++)
+            {
+                Transform child = uiTransform.GetChild(index);
+                if (child != null)
+                    child.gameObject.SetActive(visible);
+            }
         }
     }
 }

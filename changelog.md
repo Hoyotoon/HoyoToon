@@ -1,16 +1,16 @@
-# HoyoToon 0.3.4
+# HoyoToon 0.3.5
 
-## Scripts
-- Fixed render watermark compositing so screenshots add the watermark after capture without darkening it on transparent outputs.
-- Restored play-mode Q/E model swapping by auto-adding a simulator placement input controller when scenes only contain the placement controller.
-- Routed placement keyboard shortcuts through an editor shortcut-focus check so they work from Game View or the HoyoToon Manager without firing while editing text.
-- New Emoji Controller
-    - Characters with anims will now have their default face loaded.
-    - Characters with anims will now auto blink.
-    - Configuration is stored as a local only ScriptableObject in `Scriptables > (Game) > Config > EmojiControllerProfile`
-- New Look At Controller
-    - Characters can now track the active camera with configurable per-game constraints and eye follow settings.
-    - Honkai Star Rail auto setup now assigns the look-at profile automatically.
-    - Pressing `F` in play mode toggles character look-at on or off through `HoyoToon.inputactions`.
-    - Runtime look-at logic was cleaned up to remove debug-only work and keep per-frame tracking performant.
-- Added a HoyoToon input manager so camera, character switching, look-at toggles, and future runtime inputs are driven from one shared input owner.
+## Simulator
+- Added a dedicated UI for Game View.
+- Character Icons will now show in the UI and allow you to select and change characters by clicking on them.
+- Bottom Help bar with current controls and a FPS counter.
+- Added a toggle for showing the UI in the Game View. `H`
+
+## Scene And Lighting
+- Added `Sync Light to Camera Rotation` for the HSR scene main light and manager light motion controls.
+- Syncing a light to the camera now temporarily locks the camera-relative source yaw to `180` and restores the previous light rotation when sync is disabled.
+- Persisted the Render tab `Sync With View` setting across Game View fullscreen and layout changes.
+
+## Rendering
+- Transparent renders now hide simulator UI during capture and restore it afterwards.
+- Updated HSR post-processing, tone mapping, and manikin UI floor/shadow shader support.
