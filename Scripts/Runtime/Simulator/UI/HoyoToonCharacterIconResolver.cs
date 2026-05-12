@@ -18,6 +18,13 @@ namespace HoyoToon.Runtime.Simulator.UI
 
 #if UNITY_EDITOR
         private static readonly Dictionary<string, Sprite> s_SpriteCache = new Dictionary<string, Sprite>();
+        private static readonly Dictionary<int, string> s_SourceAssetPathCache = new Dictionary<int, string>();
+        private static readonly Dictionary<string, string> s_SourceIconPathCache = new Dictionary<string, string>();
+        private static readonly Dictionary<string, string> s_DirectoryIconPathCache = new Dictionary<string, string>();
+        private static readonly HashSet<Sprite> s_RuntimeSprites = new HashSet<Sprite>();
+        private static readonly List<string> s_CandidateDirectories = new List<string>(8);
+        private static readonly HashSet<string> s_CandidateDirectorySet = new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        private static string s_ProjectRoot;
 #endif
 
         public static Sprite ResolveIcon(GameObject model)
@@ -46,28 +53,50 @@ namespace HoyoToon.Runtime.Simulator.UI
 
         public static void ClearCache()
         {
+            foreach (Sprite sprite in s_RuntimeSprites)
+                DestroyRuntimeSprite(sprite);
+
+            s_RuntimeSprites.Clear();
             s_SpriteCache.Clear();
+            s_SourceAssetPathCache.Clear();
+            s_SourceIconPathCache.Clear();
+            s_DirectoryIconPathCache.Clear();
+            s_CandidateDirectories.Clear();
+            s_CandidateDirectorySet.Clear();
             s_DefaultFallbackIcon = null;
+            s_ProjectRoot = null;
         }
 
         private static string ResolveIconPath(GameObject model)
         {
             string sourceAssetPath = ResolveSourceAssetPath(model);
-            return ResolveIconPathNearSource(sourceAssetPath);
+            if (string.IsNullOrEmpty(sourceAssetPath))
+                return null;
+
+            if (s_SourceIconPathCache.TryGetValue(sourceAssetPath, out string cachedIconPath))
+                return cachedIconPath;
+
+            string iconPath = ResolveIconPathNearSource(sourceAssetPath);
+            s_SourceIconPathCache[sourceAssetPath] = iconPath;
+            return iconPath;
         }
 
         private static string ResolveSourceAssetPath(GameObject model)
         {
+            int modelId = model.GetInstanceID();
+            if (s_SourceAssetPathCache.TryGetValue(modelId, out string cachedAssetPath))
+                return cachedAssetPath;
+
             string assetPath = PrefabUtility.GetPrefabAssetPathOfNearestInstanceRoot(model);
             if (!string.IsNullOrEmpty(assetPath))
-                return assetPath;
+                return CacheSourceAssetPath(modelId, assetPath);
 
             Object source = PrefabUtility.GetCorrespondingObjectFromSource(model);
             if (source != null)
             {
                 assetPath = AssetDatabase.GetAssetPath(source);
                 if (!string.IsNullOrEmpty(assetPath))
-                    return assetPath;
+                    return CacheSourceAssetPath(modelId, assetPath);
             }
 
             SkinnedMeshRenderer[] skinnedRenderers = model.GetComponentsInChildren<SkinnedMeshRenderer>(true);
@@ -76,7 +105,7 @@ namespace HoyoToon.Runtime.Simulator.UI
                 Mesh mesh = skinnedRenderers[i] != null ? skinnedRenderers[i].sharedMesh : null;
                 assetPath = AssetDatabase.GetAssetPath(mesh);
                 if (!string.IsNullOrEmpty(assetPath))
-                    return assetPath;
+                    return CacheSourceAssetPath(modelId, assetPath);
             }
 
             MeshFilter[] meshFilters = model.GetComponentsInChildren<MeshFilter>(true);
@@ -85,10 +114,16 @@ namespace HoyoToon.Runtime.Simulator.UI
                 Mesh mesh = meshFilters[i] != null ? meshFilters[i].sharedMesh : null;
                 assetPath = AssetDatabase.GetAssetPath(mesh);
                 if (!string.IsNullOrEmpty(assetPath))
-                    return assetPath;
+                    return CacheSourceAssetPath(modelId, assetPath);
             }
 
-            return null;
+            return CacheSourceAssetPath(modelId, null);
+        }
+
+        private static string CacheSourceAssetPath(int modelId, string assetPath)
+        {
+            s_SourceAssetPathCache[modelId] = assetPath;
+            return assetPath;
         }
 
         private static string ResolveIconPathNearSource(string sourceAssetPath)
@@ -101,37 +136,47 @@ namespace HoyoToon.Runtime.Simulator.UI
                 return null;
 
             string characterRootDirectory = ResolveCharacterRootDirectory(sourceDirectory);
-            List<string> candidateDirectories = new List<string>(8);
-            string directoryName = Path.GetFileName(sourceDirectory);
-            if (string.Equals(directoryName, "Meshes", System.StringComparison.OrdinalIgnoreCase)
-                || string.Equals(directoryName, "Model", System.StringComparison.OrdinalIgnoreCase)
-                || string.Equals(directoryName, "Models", System.StringComparison.OrdinalIgnoreCase))
+            s_CandidateDirectories.Clear();
+            s_CandidateDirectorySet.Clear();
+
+            try
             {
-                string parentDirectory = Path.GetDirectoryName(sourceDirectory)?.Replace('\\', '/');
-                if (!string.IsNullOrEmpty(parentDirectory))
-                    AddCandidateIconDirectory(candidateDirectories, parentDirectory + "/Icons");
+                string directoryName = Path.GetFileName(sourceDirectory);
+                if (string.Equals(directoryName, "Meshes", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(directoryName, "Model", System.StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(directoryName, "Models", System.StringComparison.OrdinalIgnoreCase))
+                {
+                    string parentDirectory = Path.GetDirectoryName(sourceDirectory)?.Replace('\\', '/');
+                    if (!string.IsNullOrEmpty(parentDirectory))
+                        AddCandidateIconDirectory(parentDirectory + "/Icons");
+                }
+
+                AddCandidateIconDirectory(sourceDirectory + "/Icons");
+
+                string currentDirectory = sourceDirectory;
+                int guard = 0;
+                while (!string.IsNullOrEmpty(currentDirectory)
+                    && IsSameOrChildDirectory(currentDirectory, characterRootDirectory)
+                    && guard++ < 6)
+                {
+                    AddCandidateIconDirectory(currentDirectory + "/Icons");
+                    if (string.Equals(currentDirectory, characterRootDirectory, System.StringComparison.OrdinalIgnoreCase))
+                        break;
+
+                    currentDirectory = Path.GetDirectoryName(currentDirectory)?.Replace('\\', '/');
+                }
+
+                for (int i = 0; i < s_CandidateDirectories.Count; ++i)
+                {
+                    string iconPath = ResolveBestRoundIconPath(s_CandidateDirectories[i]);
+                    if (!string.IsNullOrEmpty(iconPath))
+                        return iconPath;
+                }
             }
-
-            AddCandidateIconDirectory(candidateDirectories, sourceDirectory + "/Icons");
-
-            string currentDirectory = sourceDirectory;
-            int guard = 0;
-            while (!string.IsNullOrEmpty(currentDirectory)
-                && IsSameOrChildDirectory(currentDirectory, characterRootDirectory)
-                && guard++ < 6)
+            finally
             {
-                AddCandidateIconDirectory(candidateDirectories, currentDirectory + "/Icons");
-                if (string.Equals(currentDirectory, characterRootDirectory, System.StringComparison.OrdinalIgnoreCase))
-                    break;
-
-                currentDirectory = Path.GetDirectoryName(currentDirectory)?.Replace('\\', '/');
-            }
-
-            for (int i = 0; i < candidateDirectories.Count; ++i)
-            {
-                string iconPath = ResolveBestRoundIconPath(candidateDirectories[i]);
-                if (!string.IsNullOrEmpty(iconPath))
-                    return iconPath;
+                s_CandidateDirectories.Clear();
+                s_CandidateDirectorySet.Clear();
             }
 
             return null;
@@ -155,13 +200,13 @@ namespace HoyoToon.Runtime.Simulator.UI
                 : sourceDirectory.Substring(0, characterSlashIndex);
         }
 
-        private static void AddCandidateIconDirectory(List<string> candidateDirectories, string iconsDirectory)
+        private static void AddCandidateIconDirectory(string iconsDirectory)
         {
             if (string.IsNullOrEmpty(iconsDirectory))
                 return;
 
-            if (!candidateDirectories.Contains(iconsDirectory))
-                candidateDirectories.Add(iconsDirectory);
+            if (s_CandidateDirectorySet.Add(iconsDirectory))
+                s_CandidateDirectories.Add(iconsDirectory);
         }
 
         private static bool IsSameOrChildDirectory(string directory, string parentDirectory)
@@ -175,8 +220,17 @@ namespace HoyoToon.Runtime.Simulator.UI
 
         private static string ResolveBestRoundIconPath(string iconsDirectory)
         {
-            if (string.IsNullOrEmpty(iconsDirectory) || !AssetDatabase.IsValidFolder(iconsDirectory))
+            if (string.IsNullOrEmpty(iconsDirectory))
                 return null;
+
+            if (s_DirectoryIconPathCache.TryGetValue(iconsDirectory, out string cachedPath))
+                return cachedPath;
+
+            if (!AssetDatabase.IsValidFolder(iconsDirectory))
+            {
+                s_DirectoryIconPathCache[iconsDirectory] = null;
+                return null;
+            }
 
             string[] guids = AssetDatabase.FindAssets("t:Texture2D", new[] { iconsDirectory });
             string bestPath = null;
@@ -202,6 +256,7 @@ namespace HoyoToon.Runtime.Simulator.UI
                 }
             }
 
+            s_DirectoryIconPathCache[iconsDirectory] = bestPath;
             return bestPath;
         }
 
@@ -214,17 +269,37 @@ namespace HoyoToon.Runtime.Simulator.UI
                 return cachedSprite;
             }
 
+            if (cachedSprite != null)
+                s_RuntimeSprites.Remove(cachedSprite);
             s_SpriteCache.Remove(assetPath);
 
-            string projectRoot = Directory.GetParent(Application.dataPath)?.FullName;
+            string projectRoot = ResolveProjectRoot();
             if (string.IsNullOrEmpty(projectRoot))
                 return LoadImportedSprite(assetPath);
 
-            string absolutePath = Path.GetFullPath(Path.Combine(projectRoot, assetPath));
+            string absolutePath;
+            try
+            {
+                absolutePath = Path.GetFullPath(Path.Combine(projectRoot, assetPath));
+            }
+            catch
+            {
+                return LoadImportedSprite(assetPath);
+            }
+
             if (!File.Exists(absolutePath))
                 return LoadImportedSprite(assetPath);
 
-            byte[] bytes = File.ReadAllBytes(absolutePath);
+            byte[] bytes;
+            try
+            {
+                bytes = File.ReadAllBytes(absolutePath);
+            }
+            catch
+            {
+                return LoadImportedSprite(assetPath);
+            }
+
             Texture2D texture = new Texture2D(2, 2, TextureFormat.RGBA32, false)
             {
                 name = Path.GetFileNameWithoutExtension(assetPath) + "_RuntimeIcon",
@@ -233,15 +308,17 @@ namespace HoyoToon.Runtime.Simulator.UI
 
             if (!texture.LoadImage(bytes))
             {
-                Object.Destroy(texture);
+                DestroyTexture(texture);
                 return LoadImportedSprite(assetPath);
             }
 
             Rect cropRect = CalculateOpaqueSquareRect(texture);
             Sprite sprite = Sprite.Create(texture, cropRect, new Vector2(0.5f, 0.5f), Mathf.Max(cropRect.width, cropRect.height));
+            texture.Apply(false, true);
             sprite.name = Path.GetFileNameWithoutExtension(assetPath) + "_RuntimeIcon";
             sprite.hideFlags = HideFlags.DontSave;
             s_SpriteCache[assetPath] = sprite;
+            s_RuntimeSprites.Add(sprite);
             return sprite;
         }
 
@@ -259,6 +336,45 @@ namespace HoyoToon.Runtime.Simulator.UI
                 s_SpriteCache[assetPath] = sprite;
 
             return sprite;
+        }
+
+        private static string ResolveProjectRoot()
+        {
+            if (!string.IsNullOrEmpty(s_ProjectRoot))
+                return s_ProjectRoot;
+
+            DirectoryInfo projectRootDirectory = Directory.GetParent(Application.dataPath);
+            s_ProjectRoot = projectRootDirectory?.FullName;
+            return s_ProjectRoot;
+        }
+
+        private static void DestroyRuntimeSprite(Sprite sprite)
+        {
+            if (sprite == null)
+                return;
+
+            Texture texture = sprite.texture;
+            if (Application.isPlaying)
+            {
+                Object.Destroy(sprite);
+                DestroyTexture(texture);
+            }
+            else
+            {
+                Object.DestroyImmediate(sprite);
+                DestroyTexture(texture);
+            }
+        }
+
+        private static void DestroyTexture(Texture texture)
+        {
+            if (texture == null)
+                return;
+
+            if (Application.isPlaying)
+                Object.Destroy(texture);
+            else
+                Object.DestroyImmediate(texture);
         }
 
         private static Rect CalculateOpaqueSquareRect(Texture2D texture)

@@ -59,6 +59,7 @@ namespace HoyoToon.Editor.UI.Manager
         private const string VersionBadgeErrorClass = "ht-version-badge--error";
         private const double RemoteAvatarRetryDelaySeconds = 30d;
         private const double ValueInteractionRefreshQuietSeconds = 0.3d;
+        private const double PointerReleaseRefreshQuietSeconds = 0.08d;
         private const long ValueInteractionRefreshPollMilliseconds = 50L;
         private const int MaxRemoteAvatarPayloadBytes = 2 * 1024 * 1024;
         private const int MaxRemoteAvatarTextureCacheEntries = 8;
@@ -127,6 +128,12 @@ namespace HoyoToon.Editor.UI.Manager
         private string lastCharacterSplashAssetPath = string.Empty;
         private string lastCharacterSplashModelAssetPath = string.Empty;
         private int lastCharacterSplashModelInstanceId;
+        private int cachedCharacterSplashPlacementControllerId;
+        private int cachedCharacterSplashModelInstanceId;
+        private int cachedCharacterSplashActiveModelIndex = -1;
+        private int cachedCharacterSplashInputSwitchVersion = -1;
+        private bool hasCachedCharacterSplash;
+        private Texture2D cachedCharacterSplashTexture;
         private int observedCharacterSplashPlacementControllerId;
         private int observedCharacterSplashActiveModelId;
         private int observedCharacterSplashActiveModelIndex = -1;
@@ -221,11 +228,13 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void HandleUndoRedoPerformed()
         {
+            ClearCharacterSplashCache();
             RequestDeferredManagerRefresh();
         }
 
         private void HandleEditorContextChanged()
         {
+            ClearCharacterSplashCache();
             RequestDeferredManagerRefresh();
         }
 
@@ -236,6 +245,7 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
+            ClearCharacterSplashCache();
             ApplyActiveCharacterSplashArtwork();
             Repaint();
         }
@@ -509,7 +519,6 @@ namespace HoyoToon.Editor.UI.Manager
 
             if (!forceRefresh && ReferenceEquals(activeModule, nextModule))
             {
-                RefreshBody();
                 return;
             }
 
@@ -517,8 +526,8 @@ namespace HoyoToon.Editor.UI.Manager
             activeModule = nextModule;
             OnboardingSignals.RecordValueChanged("Manager.ActiveModule", nextModule.Id);
             RefreshTabVisualState();
-            RefreshBody();
             activeModule.OnSelected(currentContext);
+            RefreshBody();
         }
 
         private void RefreshBody()
@@ -1556,16 +1565,52 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
-            GameObject activeModel = ResolveLivePlacementActiveModel();
+            CharacterPlacementController placementController = ResolveLivePlacementController();
+            GameObject activeModel = placementController != null ? placementController.ActiveModel : currentContext?.PlacementActiveModel;
+            int placementControllerId = placementController != null ? placementController.GetInstanceID() : 0;
+            int activeModelInstanceId = activeModel != null ? activeModel.GetInstanceID() : 0;
+            int activeModelIndex = placementController != null ? placementController.ActiveModelIndex : -1;
+            int inputSwitchVersion = placementController != null ? placementController.InputSwitchVersion : -1;
+            if (hasCachedCharacterSplash
+                && cachedCharacterSplashPlacementControllerId == placementControllerId
+                && cachedCharacterSplashModelInstanceId == activeModelInstanceId
+                && cachedCharacterSplashActiveModelIndex == activeModelIndex
+                && cachedCharacterSplashInputSwitchVersion == inputSwitchVersion)
+            {
+                ApplyCharacterSplashTexture(cachedCharacterSplashTexture);
+                return;
+            }
+
             Texture2D splashTexture = ResolveActiveCharacterSplashTexture(activeModel, out string activeModelAssetPath);
             if (splashTexture == null && ShouldUseRememberedCharacterSplash(activeModel, activeModelAssetPath))
             {
                 splashTexture = ResolveRememberedCharacterSplashTexture();
             }
 
+            cachedCharacterSplashPlacementControllerId = placementControllerId;
+            cachedCharacterSplashModelInstanceId = activeModelInstanceId;
+            cachedCharacterSplashActiveModelIndex = activeModelIndex;
+            cachedCharacterSplashInputSwitchVersion = inputSwitchVersion;
+            cachedCharacterSplashTexture = splashTexture;
+            hasCachedCharacterSplash = true;
+            ApplyCharacterSplashTexture(splashTexture);
+        }
+
+        private void ApplyCharacterSplashTexture(Texture2D splashTexture)
+        {
             characterSplashImage.image = splashTexture;
             characterSplashImage.scaleMode = ScaleMode.ScaleToFit;
             characterSplashImage.style.display = splashTexture != null ? DisplayStyle.Flex : DisplayStyle.None;
+        }
+
+        private void ClearCharacterSplashCache()
+        {
+            cachedCharacterSplashPlacementControllerId = 0;
+            cachedCharacterSplashModelInstanceId = 0;
+            cachedCharacterSplashActiveModelIndex = -1;
+            cachedCharacterSplashInputSwitchVersion = -1;
+            cachedCharacterSplashTexture = null;
+            hasCachedCharacterSplash = false;
         }
 
         private Texture2D ResolveActiveCharacterSplashTexture(GameObject activeModel, out string activeModelAssetPath)
@@ -1952,7 +1997,20 @@ namespace HoyoToon.Editor.UI.Manager
             observedCharacterSplashActiveModelIndex = activeModelIndex;
             observedCharacterSplashInputSwitchVersion = inputSwitchVersion;
             currentContext = BuildModuleContext();
+            ClearCharacterSplashCache();
             ApplyActiveCharacterSplashArtwork();
+            if (!IsManagerRefreshBlockedByValueInteraction())
+            {
+                RefreshGlobalContext();
+                RefreshFooterActionStates();
+                RefreshBody();
+                RegisterOnboardingTargets();
+            }
+            else
+            {
+                managerRefreshDeferredByValueInteraction = true;
+            }
+
             Repaint();
             return true;
         }
@@ -1964,6 +2022,7 @@ namespace HoyoToon.Editor.UI.Manager
             observedCharacterSplashActiveModelIndex = -1;
             observedCharacterSplashInputSwitchVersion = -1;
             nextCharacterSplashRefreshTime = 0d;
+            ClearCharacterSplashCache();
         }
 
         private void StartVersionBadgeSchedule()
@@ -2111,7 +2170,7 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void HandleManagerValueChanged<T>(ChangeEvent<T> evt)
         {
-            if (evt == null || !IsManagerEditableValueTarget(evt.target as VisualElement))
+            if (evt == null || !IsManagerRefreshGuardedValueTarget(evt.target as VisualElement))
             {
                 return;
             }
@@ -2174,7 +2233,7 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
-            if (!IsSliderInteractionTarget(evt.target as VisualElement))
+            if (!IsManagerRefreshBlockingInteractionTarget(evt.target as VisualElement))
             {
                 return;
             }
@@ -2217,21 +2276,24 @@ namespace HoyoToon.Editor.UI.Manager
         {
             managerValueInteractionActive = false;
             managerValueInteractionPointerId = -1;
+            managerValueInteractionQuietUntil = Math.Max(
+                managerValueInteractionQuietUntil,
+                EditorApplication.timeSinceStartup + PointerReleaseRefreshQuietSeconds);
+            EnsureManagerValueInteractionRefreshSchedule();
 
             if (!managerRefreshDeferredByValueInteraction)
             {
                 return;
             }
 
-            managerRefreshDeferredByValueInteraction = false;
-            RequestDeferredManagerRefresh();
+            EnsureManagerValueInteractionRefreshSchedule();
         }
 
-        private static bool IsSliderInteractionTarget(VisualElement element)
+        private static bool IsManagerRefreshBlockingInteractionTarget(VisualElement element)
         {
             for (VisualElement current = element; current != null; current = current.parent)
             {
-                if (current is Slider || current is SliderInt || current is MinMaxSlider)
+                if (IsManagerRefreshGuardedValueTarget(current))
                 {
                     return true;
                 }
@@ -2240,22 +2302,22 @@ namespace HoyoToon.Editor.UI.Manager
             return false;
         }
 
-        private static bool IsManagerEditableValueTarget(VisualElement element)
+        private static bool IsManagerRefreshGuardedValueTarget(VisualElement element)
         {
             for (VisualElement current = element; current != null; current = current.parent)
             {
                 if (current is Slider
                     || current is SliderInt
                     || current is MinMaxSlider
-                    || current is Toggle
                     || current is TextField
                     || current is IntegerField
                     || current is FloatField
-                    || current is EnumField
-                    || current is DropdownField
-                    || current is ObjectField
                     || current is ColorField
-                    || current is Vector3Field)
+                    || current is Vector2Field
+                    || current is Vector2IntField
+                    || current is Vector3Field
+                    || current is Vector3IntField
+                    || current is Vector4Field)
                 {
                     return true;
                 }

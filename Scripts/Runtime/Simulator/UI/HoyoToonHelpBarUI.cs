@@ -22,8 +22,13 @@ namespace HoyoToon.Runtime.Simulator.UI
         [SerializeField] private Color mediumFpsColor = new Color(1f, 0.82f, 0.24f, 1f);
         [SerializeField] private Color lowFpsColor = new Color(1f, 0.32f, 0.24f, 1f);
 
+        private static string s_CachedVersionLabel;
+
         private float m_FpsElapsed;
         private int m_FpsFrames;
+        private int m_LastDisplayedFps = int.MinValue;
+        private Color m_LastDisplayedFpsColor;
+        private bool m_HasDisplayedFpsColor;
 
         private void Awake()
         {
@@ -35,8 +40,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         {
             ResolveReferences();
             RefreshVersionText();
-            m_FpsElapsed = 0f;
-            m_FpsFrames = 0;
+            ResetFpsSample();
         }
 
         private void Update()
@@ -51,10 +55,21 @@ namespace HoyoToon.Runtime.Simulator.UI
                 return;
 
             int fps = Mathf.RoundToInt(m_FpsFrames / Mathf.Max(0.0001f, m_FpsElapsed));
-            fpsText.text = fps.ToString() + " FPS";
-            fpsText.color = ResolveFpsColor(fps);
-            m_FpsElapsed = 0f;
-            m_FpsFrames = 0;
+            if (fps != m_LastDisplayedFps)
+            {
+                fpsText.text = fps.ToString() + " FPS";
+                m_LastDisplayedFps = fps;
+            }
+
+            Color fpsColor = ResolveFpsColor(fps);
+            if (!m_HasDisplayedFpsColor || m_LastDisplayedFpsColor != fpsColor)
+            {
+                fpsText.color = fpsColor;
+                m_LastDisplayedFpsColor = fpsColor;
+                m_HasDisplayedFpsColor = true;
+            }
+
+            ResetFpsSample(keepDisplayedState: true);
         }
 
         private void OnValidate()
@@ -69,7 +84,9 @@ namespace HoyoToon.Runtime.Simulator.UI
             if (versionText == null)
                 return;
 
-            versionText.text = versionPrefix + ResolvePackageVersionLabel();
+            string text = versionPrefix + ResolvePackageVersionLabel();
+            if (!string.Equals(versionText.text, text, StringComparison.Ordinal))
+                versionText.text = text;
         }
 
         private void ResolveReferences()
@@ -98,21 +115,42 @@ namespace HoyoToon.Runtime.Simulator.UI
             return fps >= 30 ? mediumFpsColor : lowFpsColor;
         }
 
+        private void ResetFpsSample(bool keepDisplayedState = false)
+        {
+            m_FpsElapsed = 0f;
+            m_FpsFrames = 0;
+
+            if (keepDisplayedState)
+                return;
+
+            m_LastDisplayedFps = int.MinValue;
+            m_LastDisplayedFpsColor = default(Color);
+            m_HasDisplayedFpsColor = false;
+        }
+
         private static string ResolvePackageVersionLabel()
         {
+            if (!string.IsNullOrEmpty(s_CachedVersionLabel))
+                return s_CachedVersionLabel;
+
+            string versionLabel = null;
 #if UNITY_EDITOR
             try
             {
                 PackageInfo packageInfo = PackageInfo.FindForAssembly(typeof(HoyoToonHelpBarUI).Assembly);
                 if (packageInfo != null && !string.IsNullOrWhiteSpace(packageInfo.version))
-                    return NormalizeVersionLabel(packageInfo.version);
+                    versionLabel = NormalizeVersionLabel(packageInfo.version);
             }
             catch
             {
             }
 #endif
 
-            return NormalizeVersionLabel(Application.version);
+            if (string.IsNullOrEmpty(versionLabel))
+                versionLabel = NormalizeVersionLabel(Application.version);
+
+            s_CachedVersionLabel = versionLabel;
+            return s_CachedVersionLabel;
         }
 
         private static string NormalizeVersionLabel(string version)

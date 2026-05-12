@@ -699,7 +699,10 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             openAfterCapture = EditorPrefs.GetBool(PrefsKey(OpenAfterKey), openAfterCapture);
             enableWatermark = EditorPrefs.GetBool(PrefsKey(WatermarkEnabledKey), enableWatermark);
             turnaroundEnabled = EditorPrefs.GetBool(PrefsKey(TurnaroundEnabledKey), turnaroundEnabled);
-            syncWithSceneView = EditorPrefs.GetBool(PrefsKey(SyncWithSceneViewKey), syncWithSceneView);
+            string syncPrefsKey = PrefsKey(SyncWithSceneViewKey);
+            syncWithSceneView = SessionState.GetBool(
+                syncPrefsKey,
+                EditorPrefs.GetBool(syncPrefsKey, syncWithSceneView));
             turnaroundGap = Mathf.Clamp(EditorPrefs.GetInt(PrefsKey(TurnaroundGapKey), turnaroundGap), MinTurnaroundGap, MaxTurnaroundGap);
             turnaroundPaddingMultiplier = Mathf.Clamp(
                 EditorPrefs.GetFloat(PrefsKey(TurnaroundPaddingKey), turnaroundPaddingMultiplier),
@@ -738,7 +741,9 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             EditorPrefs.SetBool(PrefsKey(OpenAfterKey), openAfterCapture);
             EditorPrefs.SetBool(PrefsKey(WatermarkEnabledKey), enableWatermark);
             EditorPrefs.SetBool(PrefsKey(TurnaroundEnabledKey), turnaroundEnabled);
-            EditorPrefs.SetBool(PrefsKey(SyncWithSceneViewKey), syncWithSceneView);
+            string syncPrefsKey = PrefsKey(SyncWithSceneViewKey);
+            EditorPrefs.SetBool(syncPrefsKey, syncWithSceneView);
+            SessionState.SetBool(syncPrefsKey, syncWithSceneView);
             EditorPrefs.SetString(PrefsKey(CameraKey), SerializeObject(captureCamera));
             EditorPrefs.SetString(PrefsKey(WatermarkTextureKey), SerializeObject(watermarkTexture));
             EditorPrefs.SetString(PrefsKey(TurnaroundBackgroundKey), SerializeObject(turnaroundBackgroundTexture));

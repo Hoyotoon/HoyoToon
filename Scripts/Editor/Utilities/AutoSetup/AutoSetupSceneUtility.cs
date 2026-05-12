@@ -282,9 +282,36 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 return;
             }
 
+            Dictionary<CharacterPlacementController, List<GameObject>> modelsByPlacementController =
+                new Dictionary<CharacterPlacementController, List<GameObject>>();
             foreach (GameObject model in models)
             {
-                UpdatePlacementForModel(model);
+                if (model == null || !model.scene.IsValid())
+                {
+                    continue;
+                }
+
+                CharacterPlacementController placementController = CharacterPlacementController.FindForScene(model.scene);
+                if (placementController == null)
+                {
+                    continue;
+                }
+
+                if (!modelsByPlacementController.TryGetValue(placementController, out List<GameObject> controllerModels))
+                {
+                    controllerModels = new List<GameObject>();
+                    modelsByPlacementController.Add(placementController, controllerModels);
+                }
+
+                if (!controllerModels.Contains(model))
+                {
+                    controllerModels.Add(model);
+                }
+            }
+
+            foreach (KeyValuePair<CharacterPlacementController, List<GameObject>> controllerEntry in modelsByPlacementController)
+            {
+                UpdatePlacementForController(controllerEntry.Key, controllerEntry.Value);
             }
         }
 
@@ -301,15 +328,68 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 return;
             }
 
+            UpdatePlacementForController(placementController, new[] { model });
+        }
+
+        private static void UpdatePlacementForController(
+            CharacterPlacementController placementController,
+            IReadOnlyList<GameObject> models)
+        {
+            if (placementController == null || models == null || models.Count <= 0)
+            {
+                return;
+            }
+
             Undo.RecordObject(placementController, "HoyoToon Auto Setup Update Placement");
 
-            if (placementController.PlacementMode == ManagerPlacementMode.Single)
+            GameObject focusModel = null;
+            for (int i = 0; i < models.Count; i++)
             {
-                placementController.SetFocusedModel(model);
+                GameObject model = models[i];
+                if (model == null
+                    || !model.scene.IsValid()
+                    || model.scene != placementController.gameObject.scene)
+                {
+                    continue;
+                }
+
+                placementController.RegisterModel(model);
+                if (placementController.PlacementMode == ManagerPlacementMode.Team)
+                {
+                    placementController.SetModelTeamActive(model, true);
+                }
+
+                focusModel = model;
+            }
+
+            if (focusModel == null)
+            {
+                return;
+            }
+
+            if (placementController.PlacementMode == ManagerPlacementMode.Team)
+            {
+                IReadOnlyList<GameObject> teamActiveModels = placementController.TeamActiveModels;
+                if (teamActiveModels.Contains(focusModel))
+                {
+                    placementController.SetFocusedModel(focusModel);
+                }
+                else
+                {
+                    for (int i = models.Count - 1; i >= 0; i--)
+                    {
+                        GameObject teamModel = models[i];
+                        if (teamModel != null && teamActiveModels.Contains(teamModel))
+                        {
+                            placementController.SetFocusedModel(teamModel);
+                            break;
+                        }
+                    }
+                }
             }
             else
             {
-                placementController.RegisterModel(model);
+                placementController.SetFocusedModel(focusModel);
             }
 
             placementController.ApplyNow();

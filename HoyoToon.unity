@@ -801,7 +801,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: com.hoyotoon.hoyotoon.Runtime::HoyoToon.Runtime.Scene.HSRSceneController
   _GlobalOneMinusAvatarIntensity: 0
-  main_light: {fileID: 822455649}
+  main_light: {fileID: 0}
   MainLightUseColorTemperature: 0
   MainLightColor: {r: 1, g: 1, b: 1, a: 1}
   MainLightColorTemperature: 6000
@@ -1617,7 +1617,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 822455648}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.10938767, y: 0.8754163, z: -0.40823877, w: 0.2345673}
+  m_LocalRotation: {x: 0.00000038073625, y: 0.9062977, z: -0.42263997, w: 0.00000014655099}
   m_LocalPosition: {x: 2.34, y: 30.4, z: 120.708694}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
@@ -3948,6 +3948,10 @@ PrefabInstance:
       propertyPath: placementController
       value: 
       objectReference: {fileID: 1964062623}
+    - target: {fileID: 7264734818581652671, guid: 56233fcf69b9d9e48bfcafcf40ad6b83, type: 3}
+      propertyPath: m_Elasticity
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

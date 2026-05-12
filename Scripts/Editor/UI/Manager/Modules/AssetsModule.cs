@@ -166,6 +166,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
             bool syncingAutoSetupToggle = false;
             string lastGameSnapshot = string.Empty;
             string lastCharacterSnapshot = string.Empty;
+            string lastVariantOptionsSnapshot = string.Empty;
             string lastVariantSnapshot = string.Empty;
 
             searchField.RegisterValueChangedCallback(evt =>
@@ -253,16 +254,35 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 autoSetupToggle.SetEnabled(supportsAutoSetup && !isBusy);
 
                 bool showHsrChoice = backend.ShouldShowHsrChoiceForManager();
-                variantOptionsHost.Clear();
-                if (showHsrChoice && selectedCharacters.Count == 1)
+                int sharedHsrChoiceIndex = showHsrChoice && selectedCharacters.Count == 1
+                    ? backend.GetHsrChoiceIndexForManager()
+                    : -1;
+                string guidedTypeValue = TryGetGuidedRequiredValue(".SelectType", out string requiredType)
+                    ? requiredType
+                    : string.Empty;
+                string currentVariantOptionsSnapshot = showHsrChoice
+                    + "::"
+                    + selectedCharacters.Count
+                    + "::"
+                    + sharedHsrChoiceIndex
+                    + "::"
+                    + isBusy
+                    + "::"
+                    + guidedTypeValue;
+                if (!string.Equals(lastVariantOptionsSnapshot, currentVariantOptionsSnapshot, StringComparison.Ordinal))
                 {
-                    int hsrChoiceIndex = backend.GetHsrChoiceIndexForManager();
-                    variantOptionsHost.Add(
-                        CreateHsrChoiceRow(
-                            "FBX Type",
-                            hsrChoiceIndex,
-                            isBusy,
-                            backend.SetHsrChoiceIndexForManager));
+                    variantOptionsHost.Clear();
+                    if (showHsrChoice && selectedCharacters.Count == 1)
+                    {
+                        variantOptionsHost.Add(
+                            CreateHsrChoiceRow(
+                                "FBX Type",
+                                sharedHsrChoiceIndex,
+                                isBusy,
+                                backend.SetHsrChoiceIndexForManager));
+                    }
+
+                    lastVariantOptionsSnapshot = currentVariantOptionsSnapshot;
                 }
 
                 string currentVariantSnapshot = string.Join("|", selectedCharacters.Select(characterName =>

@@ -21,6 +21,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         private const float DefaultScrollWheelPixels = 90f;
         private const float DefaultSelectedVisualMaskPadding = 64f;
         private const float DefaultSelectedVisualVerticalMaskPadding = 16f;
+        private const float DefaultElasticReturnSmoothTime = 0.14f;
         private const float RosterPollInterval = 0.2f;
 
         [SerializeField] private CharacterPlacementController placementController;
@@ -35,6 +36,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         [SerializeField] private float scrollWheelPixels = DefaultScrollWheelPixels;
         [SerializeField] private float selectedVisualMaskPadding = DefaultSelectedVisualMaskPadding;
         [SerializeField] private float selectedVisualVerticalMaskPadding = DefaultSelectedVisualVerticalMaskPadding;
+        [SerializeField] private float elasticReturnSmoothTime = DefaultElasticReturnSmoothTime;
         [SerializeField] private bool blockCameraInputWhilePointerOver = true;
 
         private readonly List<HoyoToonCharacterSlotUI> m_Slots = new List<HoyoToonCharacterSlotUI>();
@@ -47,7 +49,11 @@ namespace HoyoToon.Runtime.Simulator.UI
         private bool m_SuppressSlotClick;
         private bool m_LayoutOverflowsViewport;
         private float m_NextRosterPollTime;
-        private float m_DefaultOverflowScrollOffset;
+        private float m_MinRestingScrollOffset;
+        private float m_MaxRestingScrollOffset;
+        private float m_MinElasticScrollOffset;
+        private float m_MaxElasticScrollOffset;
+        private float m_ElasticReturnVelocity;
         private int m_LastRosterHash = int.MinValue;
         private int m_LastActiveIndex = int.MinValue;
 
@@ -78,6 +84,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             m_PointerInsideRow = false;
             m_PointerInsideSlot = false;
             m_SuppressSlotClick = false;
+            m_ElasticReturnVelocity = 0f;
         }
 
         private void Update()
@@ -101,6 +108,14 @@ namespace HoyoToon.Runtime.Simulator.UI
             int rosterHash = BuildRosterHash();
             if (rosterHash != m_LastRosterHash)
                 SyncRoster(force: false);
+        }
+
+        private void LateUpdate()
+        {
+            if (!Application.isPlaying)
+                return;
+
+            ConstrainContentToScrollBounds();
         }
 
         public void SelectSlot(HoyoToonCharacterSlotUI slot)
@@ -138,6 +153,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         {
             m_IsDragging = true;
             m_SuppressSlotClick = true;
+            m_ElasticReturnVelocity = 0f;
             RefreshCameraInputBlock();
         }
 
@@ -185,7 +201,9 @@ namespace HoyoToon.Runtime.Simulator.UI
             for (int i = 0; i < m_Slots.Count; ++i)
             {
                 bool visible = i < m_Models.Count;
-                m_Slots[i].gameObject.SetActive(visible);
+                if (m_Slots[i].gameObject.activeSelf != visible)
+                    m_Slots[i].gameObject.SetActive(visible);
+
                 if (!visible)
                     continue;
 
@@ -194,7 +212,7 @@ namespace HoyoToon.Runtime.Simulator.UI
                 m_Slots[i].Bind(this, model, i, HoyoToonCharacterIconResolver.ResolveIcon(model));
             }
 
-            float normalizedPosition = scrollRect != null ? scrollRect.horizontalNormalizedPosition : 0f;
+            float normalizedPosition = GetRestingNormalizedScrollOffset();
             bool wasOverflowing = m_LayoutOverflowsViewport;
 
             ConfigureLayout(m_Models.Count);
@@ -207,11 +225,11 @@ namespace HoyoToon.Runtime.Simulator.UI
                 }
                 else if (force || !wasOverflowing)
                 {
-                    SetScrollOffset(m_DefaultOverflowScrollOffset);
+                    SetScrollOffset(m_MinRestingScrollOffset);
                 }
                 else
                 {
-                    scrollRect.horizontalNormalizedPosition = Mathf.Clamp01(normalizedPosition);
+                    SetScrollOffset(Mathf.Lerp(m_MinRestingScrollOffset, m_MaxRestingScrollOffset, Mathf.Clamp01(normalizedPosition)));
                 }
             }
 
@@ -324,10 +342,11 @@ namespace HoyoToon.Runtime.Simulator.UI
             bool overflowsViewport = itemWidth > viewportWidth;
             float requestedEdgePadding = Mathf.Max(0f, overflowEdgePadding);
             float centeredEndPadding = Mathf.Max(0f, (viewportWidth - slotSize) * 0.5f);
-            float edgePadding = overflowsViewport ? Mathf.Max(requestedEdgePadding, centeredEndPadding) : 0f;
+            float edgePadding = overflowsViewport ? requestedEdgePadding : 0f;
+            float elasticOverscrollOffset = overflowsViewport ? Mathf.Max(0f, centeredEndPadding - requestedEdgePadding) : 0f;
             float contentWidth = overflowsViewport ? itemWidth + edgePadding * 2f : viewportWidth;
             m_LayoutOverflowsViewport = overflowsViewport;
-            m_DefaultOverflowScrollOffset = overflowsViewport ? Mathf.Max(0f, edgePadding - requestedEdgePadding) : 0f;
+            ConfigureScrollBounds(overflowsViewport, contentWidth, viewportWidth, elasticOverscrollOffset);
 
             if (viewport != null)
                 viewport.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, viewportWidth);
@@ -339,7 +358,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             content.SetSizeWithCurrentAnchors(RectTransform.Axis.Horizontal, contentWidth);
             content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, slotSize);
             content.anchoredPosition = overflowsViewport
-                ? ClampContentPosition(previousContentPosition)
+                ? ClampContentPosition(previousContentPosition, allowElastic: false)
                 : Vector2.zero;
 
             HorizontalLayoutGroup layoutGroup = content.GetComponent<HorizontalLayoutGroup>();
@@ -377,10 +396,12 @@ namespace HoyoToon.Runtime.Simulator.UI
             if (scrollRect == null)
                 return;
 
-            scrollRect.horizontal = true;
-            scrollRect.vertical = false;
-            scrollRect.movementType = ScrollRect.MovementType.Clamped;
-            scrollRect.scrollSensitivity = 0f;
+            if (!scrollRect.horizontal)
+                scrollRect.horizontal = true;
+            if (scrollRect.vertical)
+                scrollRect.vertical = false;
+            if (!Mathf.Approximately(scrollRect.scrollSensitivity, 0f))
+                scrollRect.scrollSensitivity = 0f;
 
             if (viewport != null)
                 scrollRect.viewport = viewport;
@@ -393,9 +414,10 @@ namespace HoyoToon.Runtime.Simulator.UI
             if (scrollRect == null)
                 return;
 
-            scrollRect.vertical = false;
-            scrollRect.movementType = ScrollRect.MovementType.Clamped;
-            scrollRect.scrollSensitivity = 0f;
+            if (scrollRect.vertical)
+                scrollRect.vertical = false;
+            if (!Mathf.Approximately(scrollRect.scrollSensitivity, 0f))
+                scrollRect.scrollSensitivity = 0f;
 
             if (viewport != null && scrollRect.viewport != viewport)
                 scrollRect.viewport = viewport;
@@ -495,9 +517,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             if (!m_LayoutOverflowsViewport || content == null)
                 return;
 
-            Vector2 position = content.anchoredPosition;
-            position.x += pixelDelta;
-            content.anchoredPosition = ClampContentPosition(position);
+            SetScrollOffset(GetScrollOffset() - pixelDelta);
 
             if (scrollRect != null)
                 scrollRect.velocity = Vector2.zero;
@@ -510,21 +530,154 @@ namespace HoyoToon.Runtime.Simulator.UI
 
             Vector2 position = content.anchoredPosition;
             position.x = -Mathf.Max(0f, offset);
-            content.anchoredPosition = ClampContentPosition(position);
+            content.anchoredPosition = ClampContentPosition(position, allowElastic: false);
 
             if (scrollRect != null)
                 scrollRect.velocity = Vector2.zero;
         }
 
-        private Vector2 ClampContentPosition(Vector2 position)
+        private void ConfigureScrollBounds(
+            bool overflowsViewport,
+            float contentWidth,
+            float viewportWidth,
+            float elasticOverscrollOffset)
         {
-            if (content == null || viewport == null)
+            if (!overflowsViewport)
+            {
+                m_MinRestingScrollOffset = 0f;
+                m_MaxRestingScrollOffset = 0f;
+                m_MinElasticScrollOffset = 0f;
+                m_MaxElasticScrollOffset = 0f;
+                return;
+            }
+
+            float scrollableWidth = Mathf.Max(0f, contentWidth - viewportWidth);
+            float elasticOffset = Mathf.Max(0f, elasticOverscrollOffset);
+            m_MinRestingScrollOffset = 0f;
+            m_MaxRestingScrollOffset = scrollableWidth;
+            m_MinElasticScrollOffset = -elasticOffset;
+            m_MaxElasticScrollOffset = scrollableWidth + elasticOffset;
+        }
+
+        private void ConstrainContentToScrollBounds()
+        {
+            if (content == null)
+                return;
+
+            if (!m_LayoutOverflowsViewport)
+            {
+                SetContentAnchoredPosition(Vector2.zero);
+
+                m_ElasticReturnVelocity = 0f;
+                return;
+            }
+
+            ScrollRect.MovementType movementType = scrollRect != null
+                ? scrollRect.movementType
+                : ScrollRect.MovementType.Clamped;
+
+            if (movementType == ScrollRect.MovementType.Unrestricted)
+            {
+                Vector2 unrestrictedPosition = content.anchoredPosition;
+                unrestrictedPosition.y = 0f;
+                SetContentAnchoredPosition(unrestrictedPosition);
+                m_ElasticReturnVelocity = 0f;
+                return;
+            }
+
+            bool allowElastic = movementType == ScrollRect.MovementType.Elastic;
+            float offset = GetScrollOffset();
+            float constrainedOffset = ClampScrollOffset(offset, allowElastic);
+
+            if (!Mathf.Approximately(offset, constrainedOffset) && scrollRect != null)
+                scrollRect.velocity = Vector2.zero;
+
+            if (allowElastic && !m_IsDragging)
+            {
+                float restingOffset = ClampScrollOffset(constrainedOffset, allowElastic: false);
+                if (!Mathf.Approximately(constrainedOffset, restingOffset))
+                {
+                    float smoothTime = Mathf.Max(0.01f, elasticReturnSmoothTime);
+                    constrainedOffset = Mathf.SmoothDamp(
+                        constrainedOffset,
+                        restingOffset,
+                        ref m_ElasticReturnVelocity,
+                        smoothTime,
+                        Mathf.Infinity,
+                        Time.unscaledDeltaTime);
+
+                    if (Mathf.Abs(constrainedOffset - restingOffset) < 0.5f && Mathf.Abs(m_ElasticReturnVelocity) < 0.5f)
+                        constrainedOffset = restingOffset;
+
+                    if (scrollRect != null)
+                        scrollRect.velocity = Vector2.zero;
+                }
+                else
+                {
+                    m_ElasticReturnVelocity = 0f;
+                }
+            }
+            else
+            {
+                m_ElasticReturnVelocity = 0f;
+            }
+
+            Vector2 position = content.anchoredPosition;
+            position.x = -constrainedOffset;
+            position.y = 0f;
+            SetContentAnchoredPosition(position);
+        }
+
+        private Vector2 ClampContentPosition(Vector2 position, bool allowElastic)
+        {
+            if (content == null)
                 return position;
 
-            float scrollableWidth = Mathf.Max(0f, content.rect.width - viewport.rect.width);
-            position.x = scrollableWidth > 0f ? Mathf.Clamp(position.x, -scrollableWidth, 0f) : 0f;
+            float offset = -position.x;
+            position.x = -ClampScrollOffset(offset, allowElastic);
             position.y = 0f;
             return position;
+        }
+
+        private float ClampScrollOffset(float offset, bool allowElastic)
+        {
+            if (!m_LayoutOverflowsViewport)
+                return 0f;
+
+            float minimumOffset = allowElastic ? m_MinElasticScrollOffset : m_MinRestingScrollOffset;
+            float maximumOffset = allowElastic ? m_MaxElasticScrollOffset : m_MaxRestingScrollOffset;
+            return Mathf.Clamp(offset, minimumOffset, maximumOffset);
+        }
+
+        private float GetScrollOffset()
+        {
+            return content != null ? -content.anchoredPosition.x : 0f;
+        }
+
+        private float GetRestingNormalizedScrollOffset()
+        {
+            if (!m_LayoutOverflowsViewport)
+                return 0f;
+
+            float range = m_MaxRestingScrollOffset - m_MinRestingScrollOffset;
+            return range > 0f
+                ? Mathf.InverseLerp(m_MinRestingScrollOffset, m_MaxRestingScrollOffset, ClampScrollOffset(GetScrollOffset(), allowElastic: false))
+                : 0f;
+        }
+
+        private void SetContentAnchoredPosition(Vector2 position)
+        {
+            if (content == null)
+                return;
+
+            Vector2 currentPosition = content.anchoredPosition;
+            if (Mathf.Approximately(currentPosition.x, position.x)
+                && Mathf.Approximately(currentPosition.y, position.y))
+            {
+                return;
+            }
+
+            content.anchoredPosition = position;
         }
 
         private CharacterPlacementController ResolvePlacementController()

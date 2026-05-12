@@ -50,6 +50,7 @@ namespace HoyoToon.Editor.Renders
         private const string TurnaroundBackgroundKey = PrefsPrefix + "TurnaroundBackground";
         private const string TurnaroundGapKey = PrefsPrefix + "TurnaroundGap";
         private const string TurnaroundPaddingKey = PrefsPrefix + "TurnaroundPadding";
+        private const string SyncWithSceneViewKey = PrefsPrefix + "SyncWithSceneView";
 
         private static Texture2D s_DefaultTurnaroundBackground;
 
@@ -920,6 +921,10 @@ namespace HoyoToon.Editor.Renders
             m_TransparentBackground = EditorPrefs.GetBool(PrefsKey(TransparentKey), m_TransparentBackground);
             m_OpenAfterCapture = EditorPrefs.GetBool(PrefsKey(OpenAfterKey), m_OpenAfterCapture);
             m_EnableWatermark = EditorPrefs.GetBool(PrefsKey(WatermarkEnabledKey), m_EnableWatermark);
+            string syncPrefsKey = PrefsKey(SyncWithSceneViewKey);
+            m_SyncWithSceneView = SessionState.GetBool(
+                syncPrefsKey,
+                EditorPrefs.GetBool(syncPrefsKey, m_SyncWithSceneView));
             m_TurnaroundGap = Mathf.Clamp(EditorPrefs.GetInt(PrefsKey(TurnaroundGapKey), m_TurnaroundGap), MinTurnaroundGap, MaxTurnaroundGap);
             m_TurnaroundPaddingMultiplier = Mathf.Clamp(
                 EditorPrefs.GetFloat(PrefsKey(TurnaroundPaddingKey), m_TurnaroundPaddingMultiplier),
@@ -948,6 +953,9 @@ namespace HoyoToon.Editor.Renders
             EditorPrefs.SetBool(PrefsKey(TransparentKey), m_TransparentBackground);
             EditorPrefs.SetBool(PrefsKey(OpenAfterKey), m_OpenAfterCapture);
             EditorPrefs.SetBool(PrefsKey(WatermarkEnabledKey), m_EnableWatermark);
+            string syncPrefsKey = PrefsKey(SyncWithSceneViewKey);
+            EditorPrefs.SetBool(syncPrefsKey, m_SyncWithSceneView);
+            SessionState.SetBool(syncPrefsKey, m_SyncWithSceneView);
             EditorPrefs.SetString(PrefsKey(CameraKey), SerializeObject(m_Camera));
             EditorPrefs.SetString(PrefsKey(ModelKey), SerializeObject(m_ModelOverride));
             EditorPrefs.SetString(PrefsKey(WatermarkTextureKey), SerializeObject(m_WatermarkTexture));

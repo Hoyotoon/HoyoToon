@@ -28,8 +28,15 @@ namespace HoyoToon.Runtime.Simulator.UI
         private GameObject m_Model;
         private Sprite m_Icon;
         private Animation m_SelectedFrontAnimation;
+        private LayoutElement m_LayoutElement;
+        private Image m_InputSurface;
+        private Toggle m_Toggle;
+        private Button m_Button;
+        private EventTrigger m_EventTrigger;
         private Vector2 m_RarityRightUnselectedPosition;
         private Color m_SelectedIconBackUnselectedColor;
+        private float m_LayoutSize = -1f;
+        private bool m_InputSurfaceConfigured;
         private bool m_HasRarityRightUnselectedPosition;
         private bool m_HasSelectedIconBackUnselectedColor;
         private bool m_HasReferences;
@@ -72,9 +79,10 @@ namespace HoyoToon.Runtime.Simulator.UI
         public void SetLayoutSize(float size)
         {
             float resolvedSize = size > 0f ? size : DefaultSlotSize;
+            bool sizeChanged = !Mathf.Approximately(m_LayoutSize, resolvedSize);
 
             RectTransform rectTransform = transform as RectTransform;
-            if (rectTransform != null)
+            if (rectTransform != null && sizeChanged)
             {
                 rectTransform.anchorMin = new Vector2(0.5f, 0.5f);
                 rectTransform.anchorMax = new Vector2(0.5f, 0.5f);
@@ -84,17 +92,30 @@ namespace HoyoToon.Runtime.Simulator.UI
                 rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, resolvedSize);
             }
 
-            LayoutElement layoutElement = GetComponent<LayoutElement>();
-            if (layoutElement == null)
-                layoutElement = gameObject.AddComponent<LayoutElement>();
+            if (m_LayoutElement == null)
+                m_LayoutElement = GetComponent<LayoutElement>();
+            if (m_LayoutElement == null)
+                m_LayoutElement = gameObject.AddComponent<LayoutElement>();
 
-            layoutElement.minWidth = resolvedSize;
-            layoutElement.minHeight = resolvedSize;
-            layoutElement.preferredWidth = resolvedSize;
-            layoutElement.preferredHeight = resolvedSize;
-            layoutElement.flexibleWidth = 0f;
-            layoutElement.flexibleHeight = 0f;
-            layoutElement.layoutPriority = 1;
+            bool layoutMatchesSize = Mathf.Approximately(m_LayoutElement.minWidth, resolvedSize)
+                && Mathf.Approximately(m_LayoutElement.minHeight, resolvedSize)
+                && Mathf.Approximately(m_LayoutElement.preferredWidth, resolvedSize)
+                && Mathf.Approximately(m_LayoutElement.preferredHeight, resolvedSize)
+                && Mathf.Approximately(m_LayoutElement.flexibleWidth, 0f)
+                && Mathf.Approximately(m_LayoutElement.flexibleHeight, 0f)
+                && m_LayoutElement.layoutPriority == 1;
+
+            if (!sizeChanged && layoutMatchesSize)
+                return;
+
+            m_LayoutElement.minWidth = resolvedSize;
+            m_LayoutElement.minHeight = resolvedSize;
+            m_LayoutElement.preferredWidth = resolvedSize;
+            m_LayoutElement.preferredHeight = resolvedSize;
+            m_LayoutElement.flexibleWidth = 0f;
+            m_LayoutElement.flexibleHeight = 0f;
+            m_LayoutElement.layoutPriority = 1;
+            m_LayoutSize = resolvedSize;
         }
 
         public void SetSelected(bool selected)
@@ -147,8 +168,15 @@ namespace HoyoToon.Runtime.Simulator.UI
             m_Model = null;
             m_Icon = null;
             m_SelectedFrontAnimation = null;
+            m_LayoutElement = null;
+            m_InputSurface = null;
+            m_Toggle = null;
+            m_Button = null;
+            m_EventTrigger = null;
             m_HasRarityRightUnselectedPosition = false;
             m_HasSelectedIconBackUnselectedColor = false;
+            m_LayoutSize = -1f;
+            m_InputSurfaceConfigured = false;
             m_HasReferences = false;
             m_Selected = false;
             m_Index = -1;
@@ -211,28 +239,37 @@ namespace HoyoToon.Runtime.Simulator.UI
 
         private void ConfigureInputSurface()
         {
-            Image surface = GetComponent<Image>();
-            if (surface == null)
-                surface = gameObject.AddComponent<Image>();
+            if (m_InputSurfaceConfigured)
+                return;
 
-            surface.sprite = null;
-            surface.color = Color.clear;
-            surface.raycastTarget = true;
+            if (m_InputSurface == null)
+                m_InputSurface = GetComponent<Image>();
+            if (m_InputSurface == null)
+                m_InputSurface = gameObject.AddComponent<Image>();
 
-            Toggle toggle = GetComponent<Toggle>();
-            if (toggle != null)
+            m_InputSurface.sprite = null;
+            m_InputSurface.color = Color.clear;
+            m_InputSurface.raycastTarget = true;
+
+            if (m_Toggle == null)
+                m_Toggle = GetComponent<Toggle>();
+            if (m_Toggle != null)
             {
-                toggle.SetIsOnWithoutNotify(false);
-                toggle.enabled = false;
+                m_Toggle.SetIsOnWithoutNotify(false);
+                m_Toggle.enabled = false;
             }
 
-            Button button = GetComponent<Button>();
-            if (button != null)
-                button.enabled = false;
+            if (m_Button == null)
+                m_Button = GetComponent<Button>();
+            if (m_Button != null)
+                m_Button.enabled = false;
 
-            EventTrigger eventTrigger = GetComponent<EventTrigger>();
-            if (eventTrigger != null)
-                eventTrigger.enabled = false;
+            if (m_EventTrigger == null)
+                m_EventTrigger = GetComponent<EventTrigger>();
+            if (m_EventTrigger != null)
+                m_EventTrigger.enabled = false;
+
+            m_InputSurfaceConfigured = true;
         }
 
         private void SetIcon(Sprite icon)
