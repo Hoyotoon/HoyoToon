@@ -37,7 +37,7 @@ namespace HoyoToon.Editor.API.Resources
                 }
 
                 string assetPath = GetAssetPath(assetFolderPath);
-                HoyoToonResourcesSO asset = AssetDatabase.LoadAssetAtPath<HoyoToonResourcesSO>(assetPath);
+                ResourcesSO asset = AssetDatabase.LoadAssetAtPath<ResourcesSO>(assetPath);
                 if (!GeneratedAssetSyncUtility.AssetMatchesPayload(asset, BuildPayload(resource)))
                 {
                     return true;
@@ -72,7 +72,7 @@ namespace HoyoToon.Editor.API.Resources
                     GeneratedAssetSyncUtility.EnsureAssetFolderExists(assetFolderPath);
 
                     string assetPath = GetAssetPath(assetFolderPath);
-                    HoyoToonResourcesSO asset = GeneratedAssetSyncUtility.LoadOrCreateAsset<HoyoToonResourcesSO>(assetPath);
+                    ResourcesSO asset = GeneratedAssetSyncUtility.LoadOrCreateAsset<ResourcesSO>(assetPath);
                     GeneratedAssetSyncUtility.OverwriteAsset(asset, BuildPayload(resource));
                 }
             }
@@ -217,3 +217,4 @@ namespace HoyoToon.Editor.API.Resources
         }
     }
 }
+

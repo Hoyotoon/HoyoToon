@@ -83,8 +83,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: fe1977cbf474e144c885d5ae75e41048, type: 3}
-  m_Name: HoyoToonPlanarReflection
-  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.Rendering.Core.HoyoToonPlanarReflection
+  m_Name: PlanarReflection
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.Rendering.Core.PlanarReflection
   m_Active: 1
   settings:
     renderPassEvent: 150

@@ -8,7 +8,7 @@ using UnityEditor;
 
 namespace HoyoToon.Runtime.Simulator.UI
 {
-    internal static class HoyoToonCharacterIconResolver
+    internal static class CharacterIconResolver
     {
         private const string DefaultFallbackIconResourcePath = "UI/Game UI/Textures/999";
         private const string DefaultFallbackIconAssetPath = "Packages/com.hoyotoon.hoyotoon/Resources/UI/Game UI/Textures/999.png";
@@ -434,3 +434,4 @@ namespace HoyoToon.Runtime.Simulator.UI
 
     }
 }
+

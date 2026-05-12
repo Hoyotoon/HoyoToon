@@ -20,12 +20,12 @@ namespace HoyoToon.Runtime.Scene.Placement
         private const string TeamCameraName = "HSRTeamLook";
         private const int MaxDeferredLayoutPasses = 8;
 
-        private static readonly Dictionary<HoyoToonTeamGame, string> s_TeamRootNames = new Dictionary<HoyoToonTeamGame, string>
+        private static readonly Dictionary<TeamGame, string> s_TeamRootNames = new Dictionary<TeamGame, string>
         {
-            { HoyoToonTeamGame.GenshinImpact, "GI" },
-            { HoyoToonTeamGame.HonkaiStarRail, "HSR" },
-            { HoyoToonTeamGame.ZenlessZoneZero, "ZZZ" },
-            { HoyoToonTeamGame.HonkaiImpact3rd, "HI3" }
+            { TeamGame.GenshinImpact, "GI" },
+            { TeamGame.HonkaiStarRail, "HSR" },
+            { TeamGame.ZenlessZoneZero, "ZZZ" },
+            { TeamGame.HonkaiImpact3rd, "HI3" }
         };
 
         private sealed class SceneReferences
@@ -36,7 +36,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             public GameObject SingleCamera;
             public GameObject TeamCamera;
             public GameObject LegacyGridCamera;
-            public readonly Dictionary<HoyoToonTeamGame, Transform> TeamGameRoots = new Dictionary<HoyoToonTeamGame, Transform>();
+            public readonly Dictionary<TeamGame, Transform> TeamGameRoots = new Dictionary<TeamGame, Transform>();
         }
 
         private static readonly List<CharacterPlacementController> s_DeferredLayoutControllers = new List<CharacterPlacementController>();
@@ -214,7 +214,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             return changed;
         }
 
-        private static bool ApplyModeContainers(SceneReferences sceneReferences, ManagerPlacementMode mode, HoyoToonTeamGame teamGame)
+        private static bool ApplyModeContainers(SceneReferences sceneReferences, ManagerPlacementMode mode, TeamGame teamGame)
         {
             bool changed = false;
 
@@ -222,7 +222,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             changed |= SetObjectActive(sceneReferences.TeamRoot != null ? sceneReferences.TeamRoot.gameObject : null, mode == ManagerPlacementMode.Team);
             changed |= SetObjectActive(sceneReferences.GridRoot != null ? sceneReferences.GridRoot.gameObject : null, mode == ManagerPlacementMode.Grid);
 
-            foreach (KeyValuePair<HoyoToonTeamGame, Transform> pair in sceneReferences.TeamGameRoots)
+            foreach (KeyValuePair<TeamGame, Transform> pair in sceneReferences.TeamGameRoots)
             {
                 changed |= SetObjectActive(pair.Value != null ? pair.Value.gameObject : null, mode == ManagerPlacementMode.Team && pair.Key == teamGame);
             }
@@ -273,7 +273,7 @@ namespace HoyoToon.Runtime.Scene.Placement
                 resolved.LegacyGridCamera = explicitReferences.LegacyGridCamera;
             }
 
-            foreach (KeyValuePair<HoyoToonTeamGame, string> pair in s_TeamRootNames)
+            foreach (KeyValuePair<TeamGame, string> pair in s_TeamRootNames)
             {
                 Transform fallbackRoot = FindTransform(scene, pair.Value);
                 if (explicitReferences != null && explicitReferences.TryGetTeamRoot(pair.Key, out Transform explicitTeamRoot))

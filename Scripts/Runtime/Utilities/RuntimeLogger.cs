@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace HoyoToon.Runtime.Utilities
 {
-    internal static class HoyoToonRuntimeLogger
+    internal static class RuntimeLogger
     {
         private static readonly HashSet<LogKey> s_Warnings = new HashSet<LogKey>();
         private static readonly HashSet<LogKey> s_Errors = new HashSet<LogKey>();
@@ -78,3 +78,4 @@ namespace HoyoToon.Runtime.Utilities
         }
     }
 }
+

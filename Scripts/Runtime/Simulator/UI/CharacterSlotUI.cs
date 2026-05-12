@@ -10,7 +10,7 @@ namespace HoyoToon.Runtime.Simulator.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("HoyoToon/Simulator/UI/Character Slot UI")]
-    public sealed class HoyoToonCharacterSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
+    public sealed class CharacterSlotUI : MonoBehaviour, IPointerClickHandler, IPointerEnterHandler, IPointerExitHandler
     {
         private const float DefaultSlotSize = 112f;
         private const string TemplateResourcePath = "UI/Game UI/Template";
@@ -24,7 +24,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         [SerializeField] private Image iconImage;
         [SerializeField] private RawImage iconRawImage;
 
-        private HoyoToonCharacterRowUI m_Row;
+        private CharacterRowUI m_Row;
         private GameObject m_Model;
         private Sprite m_Icon;
         private Animation m_SelectedFrontAnimation;
@@ -46,9 +46,9 @@ namespace HoyoToon.Runtime.Simulator.UI
         public GameObject Model => m_Model;
         public int Index => m_Index;
 
-        public static HoyoToonCharacterSlotUI Create(RectTransform parent, HoyoToonCharacterSlotUI template = null)
+        public static CharacterSlotUI Create(RectTransform parent, CharacterSlotUI template = null)
         {
-            HoyoToonCharacterSlotUI slot = CreateFromTemplate(parent, template);
+            CharacterSlotUI slot = CreateFromTemplate(parent, template);
             if (slot == null)
                 slot = CreateFallback(parent);
 
@@ -61,7 +61,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             return slot;
         }
 
-        public void Bind(HoyoToonCharacterRowUI row, GameObject model, int index, Sprite icon)
+        public void Bind(CharacterRowUI row, GameObject model, int index, Sprite icon)
         {
             m_Row = row;
             m_Model = model;
@@ -142,7 +142,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             m_Row?.SetPointerInsideSlot(false);
         }
 
-        private static HoyoToonCharacterSlotUI CreateFromTemplate(RectTransform parent, HoyoToonCharacterSlotUI template)
+        private static CharacterSlotUI CreateFromTemplate(RectTransform parent, CharacterSlotUI template)
         {
             if (template == null)
                 template = SlotTemplateResources.TemplateSlot;
@@ -153,13 +153,13 @@ namespace HoyoToon.Runtime.Simulator.UI
             return Object.Instantiate(template, parent, false);
         }
 
-        private static HoyoToonCharacterSlotUI CreateFallback(RectTransform parent)
+        private static CharacterSlotUI CreateFallback(RectTransform parent)
         {
             GameObject slotObject = new GameObject("Character Slot", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(LayoutElement));
             if (parent != null)
                 slotObject.transform.SetParent(parent, false);
 
-            return slotObject.AddComponent<HoyoToonCharacterSlotUI>();
+            return slotObject.AddComponent<CharacterSlotUI>();
         }
 
         private void ResetRuntimeState()
@@ -367,12 +367,12 @@ namespace HoyoToon.Runtime.Simulator.UI
         {
             private static GameObject s_TemplateObject;
 
-            public static HoyoToonCharacterSlotUI TemplateSlot
+            public static CharacterSlotUI TemplateSlot
             {
                 get
                 {
                     GameObject templateObject = LoadTemplateObject();
-                    return templateObject != null ? templateObject.GetComponent<HoyoToonCharacterSlotUI>() : null;
+                    return templateObject != null ? templateObject.GetComponent<CharacterSlotUI>() : null;
                 }
             }
 
@@ -391,3 +391,4 @@ namespace HoyoToon.Runtime.Simulator.UI
         }
     }
 }
+

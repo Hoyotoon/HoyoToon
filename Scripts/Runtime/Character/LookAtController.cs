@@ -168,7 +168,7 @@ namespace HoyoToon.Runtime.Character
         private bool m_EyeBlendShapeBindingsDirty = true;
         private bool m_DrivenBoneBasePoseDirty = true;
         private bool m_AnimatorResolveAttempted;
-        private HoyoToonInputManager m_InputManager;
+        private InputManager m_InputManager;
         private int[] m_LookAtStateHashes = Array.Empty<int>();
         private readonly HashSet<LookAtDisableCause> m_DisableCauses = new HashSet<LookAtDisableCause>();
         private readonly List<Transform> m_BodyBones = new List<Transform>(4);
@@ -512,7 +512,7 @@ namespace HoyoToon.Runtime.Character
             if (!enableInputToggle)
                 return;
 
-            m_InputManager = HoyoToonInputManager.Instance;
+            m_InputManager = InputManager.Instance;
             m_InputManager.ToggleLookAtPressed += HandleToggleLookAtPressed;
         }
 
@@ -1619,3 +1619,4 @@ namespace HoyoToon.Runtime.Character
             new LookAtControllerProfileSO.EyeFollowSettings();
     }
 }
+

@@ -36,7 +36,7 @@ namespace HoyoToon.Runtime.Character.HSR
         private const string CharacterLayerName = "Honkai Star Rail";
         private const string HairTag = "Honkai Star Rail Hair";
         private const string HairToken = "Hair";
-        private const string PlanarReflectionParticipantTypeName = "HoyoToonPlanarReflectionParticipant";
+        private const string PlanarReflectionParticipantTypeName = "PlanarReflectionParticipant";
         private static readonly string[] s_HeadBoneCandidateNames = { "Head", "Head_M" };
         private static readonly List<HSRCharacterController> s_ActiveControllers = new List<HSRCharacterController>();
         private static readonly HashSet<Renderer> s_TrackedRenderers = new HashSet<Renderer>();
@@ -2210,3 +2210,4 @@ namespace HoyoToon.Runtime.Character.HSR
         }
     }
 }
+

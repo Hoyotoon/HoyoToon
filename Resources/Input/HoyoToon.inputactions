@@ -61,6 +61,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "ToggleHelpBar",
+                    "type": "Button",
+                    "id": "73bb56a8-cfd8-49e3-8f88-3a122f3c7448",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "ToggleUI",
                     "type": "Button",
                     "id": "faa8a5d1-51a8-4dac-88ac-783e4a367c39",
@@ -162,7 +171,18 @@
                 {
                     "name": "",
                     "id": "71c26aa0-2886-47b4-b2be-97e66a3f1537",
-                    "path": "<Keyboard>/h",
+                    "path": "<Keyboard>/f1",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard&Mouse",
+                    "action": "ToggleHelpBar",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "e771c1c8-8a26-4ad5-b3f6-54a40b3a0e55",
+                    "path": "<Keyboard>/f2",
                     "interactions": "",
                     "processors": "",
                     "groups": "Keyboard&Mouse",

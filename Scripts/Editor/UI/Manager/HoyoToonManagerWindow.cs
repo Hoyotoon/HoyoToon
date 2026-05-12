@@ -884,7 +884,7 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
-            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
             bool hasProfile = HoyoToonUserProfileStorage.IsComplete(profile);
             if (hasProfile)
             {
@@ -998,7 +998,7 @@ namespace HoyoToon.Editor.UI.Manager
             }
         }
 
-        private void TryRefreshUserProfileForHeader(HoyoToonUserProfileSO profile)
+        private void TryRefreshUserProfileForHeader(UserProfileSO profile)
         {
             if (userProfileRefreshRequested
                 || userProfileRefreshAttempted
@@ -1012,7 +1012,7 @@ namespace HoyoToon.Editor.UI.Manager
             _ = RefreshUserProfileForHeaderAsync(profile);
         }
 
-        private async Task RefreshUserProfileForHeaderAsync(HoyoToonUserProfileSO profile)
+        private async Task RefreshUserProfileForHeaderAsync(UserProfileSO profile)
         {
             try
             {
@@ -1037,7 +1037,7 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void HandleUserProfileClicked(ClickEvent evt)
         {
-            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
             if (HoyoToonUserProfileStorage.IsComplete(profile))
             {
                 if (userProfilePromptOpen || HoyoToonUserProfileService.IsUpdatingAvatar)
@@ -1078,7 +1078,7 @@ namespace HoyoToon.Editor.UI.Manager
 
         private void HandleUserProfileUidClicked(ClickEvent evt)
         {
-            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
             if (!HoyoToonUserProfileStorage.IsComplete(profile))
             {
                 return;
@@ -1110,7 +1110,7 @@ namespace HoyoToon.Editor.UI.Manager
 
         private async Task UpdateUserAvatarFromHeaderAsync(string avatarUrl)
         {
-            HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO profile = HoyoToonUserProfileStorage.GetLocalProfile();
             string previousAvatar = profile != null ? profile.Avatar : string.Empty;
             if (HoyoToonUserProfileService.TryNormalizeAvatarUrl(
                 avatarUrl,
@@ -1122,7 +1122,7 @@ namespace HoyoToon.Editor.UI.Manager
 
             try
             {
-                HoyoToonUserProfileSO updatedProfile = await HoyoToonUserProfileService.UpdateLocalUserAvatarAsync(
+                UserProfileSO updatedProfile = await HoyoToonUserProfileService.UpdateLocalUserAvatarAsync(
                     profile,
                     avatarUrl,
                     CancellationToken.None);
@@ -3519,3 +3519,4 @@ namespace HoyoToon.Editor.UI.Manager
         }
     }
 }
+

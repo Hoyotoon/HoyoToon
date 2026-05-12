@@ -175,14 +175,14 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                 Component[] components = EnsureComponents(
                     instantiatedModel,
                     typeof(HSRCharacterController),
-                    typeof(HoyoToonPlanarReflectionParticipant));
+                    typeof(PlanarReflectionParticipant));
                 if (components.Length <= 0 || components[0] is not HSRCharacterController characterController)
                 {
                     result.RecordWarning($"Auto setup failed to add an HSRCharacterController to '{instantiatedModel.name}'.");
                     continue;
                 }
 
-                if (instantiatedModel.GetComponent<HoyoToonPlanarReflectionParticipant>() is HoyoToonPlanarReflectionParticipant reflectionParticipant)
+                if (instantiatedModel.GetComponent<PlanarReflectionParticipant>() is PlanarReflectionParticipant reflectionParticipant)
                     reflectionParticipant.RefreshRenderers();
 
                 HSRCharacterEditorService.TryAssignDefaultComputeShader(characterController);
@@ -650,3 +650,4 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
     }
 }
 #endif
+

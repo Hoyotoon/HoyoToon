@@ -152,7 +152,7 @@ namespace HoyoToon.Editor.Resources
         public string DisplayName = string.Empty;
         public string DestinationAssetPath = string.Empty;
         public string DestinationAbsolutePath = string.Empty;
-        public HoyoToonResourcesSO ResourceAsset;
+        public ResourcesSO ResourceAsset;
 
         public string OperationLabel => string.IsNullOrWhiteSpace(DisplayName) ? GameKey : DisplayName;
     }
@@ -282,3 +282,4 @@ namespace HoyoToon.Editor.Resources
     }
 }
 #endif
+

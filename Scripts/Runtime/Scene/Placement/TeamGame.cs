@@ -7,7 +7,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         Grid
     }
 
-    public enum HoyoToonTeamGame
+    public enum TeamGame
     {
         GenshinImpact,
         HonkaiStarRail,

@@ -34,7 +34,7 @@ namespace HoyoToon.Runtime.Rendering.Utilities
 
             for (int i = 0; i < renderers.Length; ++i)
             {
-                if (HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderers[i]))
+                if (PlanarReflectionParticipant.IsActiveRenderer(renderers[i]))
                     return true;
             }
 
@@ -44,17 +44,17 @@ namespace HoyoToon.Runtime.Rendering.Utilities
         void OnEnable()
         {
             RefreshRenderers();
-            HoyoToonRenderParticipantRegistry.Register(this);
+            RenderParticipantRegistry.Register(this);
         }
 
         void OnDisable()
         {
-            HoyoToonRenderParticipantRegistry.Unregister(this);
+            RenderParticipantRegistry.Unregister(this);
         }
 
         void OnDestroy()
         {
-            HoyoToonRenderParticipantRegistry.MarkPruneNeeded(Scene);
+            RenderParticipantRegistry.MarkPruneNeeded(Scene);
         }
 
         void OnTransformChildrenChanged()
@@ -79,7 +79,8 @@ namespace HoyoToon.Runtime.Rendering.Utilities
                 m_TopologyVersion++;
             }
 
-            HoyoToonRenderParticipantRegistry.MarkDirty(Scene);
+            RenderParticipantRegistry.MarkDirty(Scene);
         }
     }
 }
+

@@ -426,7 +426,7 @@ namespace HoyoToon.Editor.UI.Manager.Modules
                 teamField.AddToClassList("ht-placement-compact-field");
                 teamField.RegisterValueChangedCallback(evt =>
                 {
-                    if (evt.newValue is HoyoToonTeamGame teamGame)
+                    if (evt.newValue is TeamGame teamGame)
                     {
                         ApplyPlacementChange(controller, "HoyoToon Change Team Game", () => controller.TeamGame = teamGame, window);
                     }

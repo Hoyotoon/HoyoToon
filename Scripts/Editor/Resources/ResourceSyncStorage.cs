@@ -50,7 +50,7 @@ namespace HoyoToon.Editor.Resources
         }
 
         internal static bool TryResolveDestinationRoot(
-            Runtime.ScriptableObjects.Resources.HoyoToonResourcesSO resourceAsset,
+            Runtime.ScriptableObjects.Resources.ResourcesSO resourceAsset,
             out string destinationAssetPath,
             out string destinationAbsolutePath,
             out string error)
@@ -346,3 +346,4 @@ namespace HoyoToon.Editor.Resources
     }
 }
 #endif
+

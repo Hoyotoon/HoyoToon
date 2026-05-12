@@ -1961,7 +1961,7 @@ namespace HoyoToon.Editor.Assets
                     group => group.Key,
                     group =>
                     {
-                        HoyoToonResourcesSO resource = group.FirstOrDefault();
+                        ResourcesSO resource = group.FirstOrDefault();
                         return string.IsNullOrWhiteSpace(resource?.DisplayName) ? group.Key : resource.DisplayName;
                     },
                     StringComparer.OrdinalIgnoreCase);
@@ -3367,3 +3367,4 @@ namespace HoyoToon.Editor.Assets
     }
 }
 #endif
+

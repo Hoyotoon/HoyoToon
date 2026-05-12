@@ -18,11 +18,11 @@ namespace HoyoToon.Editor.API.Users
 
         internal static string LastError { get; private set; } = string.Empty;
 
-        internal static HoyoToonUserProfileSO LocalProfile => HoyoToonUserProfileStorage.GetLocalProfile();
+        internal static UserProfileSO LocalProfile => HoyoToonUserProfileStorage.GetLocalProfile();
 
         internal static bool HasCompleteLocalProfile => HoyoToonUserProfileStorage.HasCompleteLocalProfile();
 
-        internal static async Task<HoyoToonUserProfileSO> CreateLocalUserProfileAsync(
+        internal static async Task<UserProfileSO> CreateLocalUserProfileAsync(
             string username,
             CancellationToken cancellationToken)
         {
@@ -57,7 +57,7 @@ namespace HoyoToon.Editor.API.Users
                     throw new InvalidOperationException("The HoyoToon API returned a non-numeric UID.");
                 }
 
-                HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.SaveLocalProfile(
+                UserProfileSO profile = HoyoToonUserProfileStorage.SaveLocalProfile(
                     createdUser.UID,
                     string.IsNullOrWhiteSpace(createdUser.username) ? normalizedUsername : createdUser.username,
                     string.IsNullOrWhiteSpace(createdUser.avatar) ? avatar : createdUser.avatar,
@@ -77,9 +77,9 @@ namespace HoyoToon.Editor.API.Users
             }
         }
 
-        internal static async Task<HoyoToonUserProfileSO> RestoreLocalUserProfileAsync(CancellationToken cancellationToken)
+        internal static async Task<UserProfileSO> RestoreLocalUserProfileAsync(CancellationToken cancellationToken)
         {
-            HoyoToonUserProfileSO localProfile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO localProfile = HoyoToonUserProfileStorage.GetLocalProfile();
             if (HoyoToonUserProfileStorage.IsComplete(localProfile))
             {
                 return await RefreshLocalProfileFromApiAsync(localProfile, cancellationToken);
@@ -111,8 +111,8 @@ namespace HoyoToon.Editor.API.Users
             return null;
         }
 
-        internal static async Task<HoyoToonUserProfileSO> UpdateLocalUserAvatarAsync(
-            HoyoToonUserProfileSO localProfile,
+        internal static async Task<UserProfileSO> UpdateLocalUserAvatarAsync(
+            UserProfileSO localProfile,
             string avatarUrl,
             CancellationToken cancellationToken)
         {
@@ -142,7 +142,7 @@ namespace HoyoToon.Editor.API.Users
                     normalizedAvatarUrl,
                     cancellationToken);
 
-                HoyoToonUserProfileSO profile = HoyoToonUserProfileStorage.SaveLocalProfile(
+                UserProfileSO profile = HoyoToonUserProfileStorage.SaveLocalProfile(
                     localProfile.UID,
                     localProfile.Username,
                     normalizedAvatarUrl,
@@ -162,8 +162,8 @@ namespace HoyoToon.Editor.API.Users
             }
         }
 
-        internal static async Task<HoyoToonUserProfileSO> RefreshLocalProfileFromApiAsync(
-            HoyoToonUserProfileSO localProfile,
+        internal static async Task<UserProfileSO> RefreshLocalProfileFromApiAsync(
+            UserProfileSO localProfile,
             CancellationToken cancellationToken)
         {
             if (!TryResolveAuthoritativeRefreshUid(localProfile, out string refreshUid, out UserProfileGlobalRecord cachedProfile))
@@ -185,7 +185,7 @@ namespace HoyoToon.Editor.API.Users
                 throw;
             }
 
-            HoyoToonUserProfileSO cachedProfileAsset = SaveCachedUser(cachedProfile, localProfile);
+            UserProfileSO cachedProfileAsset = SaveCachedUser(cachedProfile, localProfile);
             if (cachedProfileAsset != null)
             {
                 return cachedProfileAsset;
@@ -240,21 +240,21 @@ namespace HoyoToon.Editor.API.Users
                 normalizedRoleColor);
         }
 
-        internal static HoyoToonUserProfileSO SaveApiUserProfile(UserRecordDto apiUser)
+        internal static UserProfileSO SaveApiUserProfile(UserRecordDto apiUser)
         {
             return SaveApiUser(apiUser, HoyoToonUserProfileStorage.GetLocalProfile());
         }
 
-        internal static HoyoToonUserProfileSO SaveCachedUserProfile()
+        internal static UserProfileSO SaveCachedUserProfile()
         {
-            HoyoToonUserProfileSO currentProfile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO currentProfile = HoyoToonUserProfileStorage.GetLocalProfile();
             return TryLoadCachedProfile(out UserProfileGlobalRecord cachedProfile)
                 ? SaveCachedUser(cachedProfile, currentProfile)
                 : currentProfile;
         }
 
         internal static bool TryResolveAuthoritativeRefreshUid(
-            HoyoToonUserProfileSO localProfile,
+            UserProfileSO localProfile,
             out string uid,
             out UserProfileGlobalRecord cachedProfile)
         {
@@ -336,9 +336,9 @@ namespace HoyoToon.Editor.API.Users
             return true;
         }
 
-        private static HoyoToonUserProfileSO SaveApiUser(
+        private static UserProfileSO SaveApiUser(
             UserRecordDto apiUser,
-            HoyoToonUserProfileSO currentProfile = null)
+            UserProfileSO currentProfile = null)
         {
             if (!TryNormalizeApiUser(
                 apiUser,
@@ -376,9 +376,9 @@ namespace HoyoToon.Editor.API.Users
                 normalizedRoleColor);
         }
 
-        private static HoyoToonUserProfileSO SaveCachedUser(
+        private static UserProfileSO SaveCachedUser(
             UserProfileGlobalRecord cachedProfile,
-            HoyoToonUserProfileSO currentProfile = null)
+            UserProfileSO currentProfile = null)
         {
             if (!TryNormalizeCachedUser(
                 cachedProfile,
@@ -517,7 +517,7 @@ namespace HoyoToon.Editor.API.Users
         }
 
         private static void SaveProfileSnapshotForFallback(
-            HoyoToonUserProfileSO localProfile,
+            UserProfileSO localProfile,
             UserProfileGlobalRecord cachedProfile)
         {
             if (cachedProfile != null || !HoyoToonUserProfileStorage.IsComplete(localProfile))
@@ -534,7 +534,7 @@ namespace HoyoToon.Editor.API.Users
         }
 
         private static bool IsSameProfile(
-            HoyoToonUserProfileSO profile,
+            UserProfileSO profile,
             string uid,
             string username,
             string avatar,
@@ -571,3 +571,4 @@ namespace HoyoToon.Editor.API.Users
         }
     }
 }
+

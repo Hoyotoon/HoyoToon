@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace HoyoToon.Runtime.ScriptableObjects.Users
 {
-    public class HoyoToonUserProfileSO : ScriptableObject
+    public class UserProfileSO : ScriptableObject
     {
         [SerializeField] private string uid;
         [SerializeField] private string username;
@@ -27,3 +27,4 @@ namespace HoyoToon.Runtime.ScriptableObjects.Users
         public long UpdatedAtUtcTicks => updatedAtUtcTicks;
     }
 }
+

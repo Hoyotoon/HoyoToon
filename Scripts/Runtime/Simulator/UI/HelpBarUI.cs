@@ -10,7 +10,7 @@ namespace HoyoToon.Runtime.Simulator.UI
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("HoyoToon/Simulator/UI/Help Bar UI")]
-    public sealed class HoyoToonHelpBarUI : MonoBehaviour
+    public sealed class HelpBarUI : MonoBehaviour
     {
         private const string VersionUnavailableLabel = "Version unavailable";
 
@@ -137,7 +137,7 @@ namespace HoyoToon.Runtime.Simulator.UI
 #if UNITY_EDITOR
             try
             {
-                PackageInfo packageInfo = PackageInfo.FindForAssembly(typeof(HoyoToonHelpBarUI).Assembly);
+                PackageInfo packageInfo = PackageInfo.FindForAssembly(typeof(HelpBarUI).Assembly);
                 if (packageInfo != null && !string.IsNullOrWhiteSpace(packageInfo.version))
                     versionLabel = NormalizeVersionLabel(packageInfo.version);
             }
@@ -165,3 +165,4 @@ namespace HoyoToon.Runtime.Simulator.UI
         }
     }
 }
+

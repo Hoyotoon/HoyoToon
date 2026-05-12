@@ -4,7 +4,7 @@ using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.Utilities
 {
-    public enum HoyoToonPlanarReflectionRole
+    public enum PlanarReflectionRole
     {
         Caster = 0,
         Receiver = 1,
@@ -14,19 +14,19 @@ namespace HoyoToon.Runtime.Rendering.Utilities
     [ExecuteAlways]
     [DisallowMultipleComponent]
     [AddComponentMenu("HoyoToon/Rendering/Planar Reflection Participant")]
-    public sealed class HoyoToonPlanarReflectionParticipant : MonoBehaviour
+    public sealed class PlanarReflectionParticipant : MonoBehaviour
     {
-        [SerializeField] HoyoToonPlanarReflectionRole role = HoyoToonPlanarReflectionRole.Caster;
+        [SerializeField] PlanarReflectionRole role = PlanarReflectionRole.Caster;
         [SerializeField] Renderer[] renderers = System.Array.Empty<Renderer>();
 
         readonly List<Renderer> m_RendererScratch = new List<Renderer>(8);
         int m_TopologyVersion;
 
-        internal bool CastsReflection => role == HoyoToonPlanarReflectionRole.Caster
-            || role == HoyoToonPlanarReflectionRole.CasterAndReceiver;
+        internal bool CastsReflection => role == PlanarReflectionRole.Caster
+            || role == PlanarReflectionRole.CasterAndReceiver;
 
-        internal bool ReceivesReflection => role == HoyoToonPlanarReflectionRole.Receiver
-            || role == HoyoToonPlanarReflectionRole.CasterAndReceiver;
+        internal bool ReceivesReflection => role == PlanarReflectionRole.Receiver
+            || role == PlanarReflectionRole.CasterAndReceiver;
 
         internal IReadOnlyList<Renderer> Renderers => renderers;
         internal UnityScene Scene => gameObject != null ? gameObject.scene : default;
@@ -67,17 +67,17 @@ namespace HoyoToon.Runtime.Rendering.Utilities
         void OnEnable()
         {
             RefreshRenderers();
-            HoyoToonRenderParticipantRegistry.Register(this);
+            RenderParticipantRegistry.Register(this);
         }
 
         void OnDisable()
         {
-            HoyoToonRenderParticipantRegistry.Unregister(this);
+            RenderParticipantRegistry.Unregister(this);
         }
 
         void OnDestroy()
         {
-            HoyoToonRenderParticipantRegistry.MarkPruneNeeded(Scene);
+            RenderParticipantRegistry.MarkPruneNeeded(Scene);
         }
 
         void OnTransformChildrenChanged()
@@ -102,7 +102,8 @@ namespace HoyoToon.Runtime.Rendering.Utilities
                 m_TopologyVersion++;
             }
 
-            HoyoToonRenderParticipantRegistry.MarkDirty(Scene);
+            RenderParticipantRegistry.MarkDirty(Scene);
         }
     }
 }
+

@@ -12,7 +12,7 @@ namespace HoyoToon.Runtime.Simulator.UI
     [DisallowMultipleComponent]
     [RequireComponent(typeof(ScrollRect))]
     [AddComponentMenu("HoyoToon/Simulator/UI/Character Row UI")]
-    public sealed class HoyoToonCharacterRowUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IEndDragHandler, IScrollHandler
+    public sealed class CharacterRowUI : MonoBehaviour, IPointerEnterHandler, IPointerExitHandler, IBeginDragHandler, IEndDragHandler, IScrollHandler
     {
         private const int DefaultMaxVisibleSlots = 10;
         private const float DefaultSlotSize = 112f;
@@ -28,7 +28,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         [SerializeField] private ScrollRect scrollRect;
         [SerializeField] private RectTransform viewport;
         [SerializeField] private RectTransform content;
-        [SerializeField] private HoyoToonCharacterSlotUI slotTemplate;
+        [SerializeField] private CharacterSlotUI slotTemplate;
         [SerializeField] private int maxVisibleSlots = DefaultMaxVisibleSlots;
         [SerializeField] private float slotSize = DefaultSlotSize;
         [SerializeField] private float slotSpacing = DefaultSlotSpacing;
@@ -39,7 +39,7 @@ namespace HoyoToon.Runtime.Simulator.UI
         [SerializeField] private float elasticReturnSmoothTime = DefaultElasticReturnSmoothTime;
         [SerializeField] private bool blockCameraInputWhilePointerOver = true;
 
-        private readonly List<HoyoToonCharacterSlotUI> m_Slots = new List<HoyoToonCharacterSlotUI>();
+        private readonly List<CharacterSlotUI> m_Slots = new List<CharacterSlotUI>();
         private readonly List<GameObject> m_Models = new List<GameObject>();
         private readonly List<HSRCharacterController> m_ControllerScratch = new List<HSRCharacterController>();
 
@@ -118,7 +118,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             ConstrainContentToScrollBounds();
         }
 
-        public void SelectSlot(HoyoToonCharacterSlotUI slot)
+        public void SelectSlot(CharacterSlotUI slot)
         {
             if (slot == null || slot.Index < 0)
                 return;
@@ -209,7 +209,7 @@ namespace HoyoToon.Runtime.Simulator.UI
 
                 GameObject model = m_Models[i];
                 m_Slots[i].name = ResolveSlotName(model, i);
-                m_Slots[i].Bind(this, model, i, HoyoToonCharacterIconResolver.ResolveIcon(model));
+                m_Slots[i].Bind(this, model, i, CharacterIconResolver.ResolveIcon(model));
             }
 
             float normalizedPosition = GetRestingNormalizedScrollOffset();
@@ -313,7 +313,7 @@ namespace HoyoToon.Runtime.Simulator.UI
                 return;
 
             while (m_Slots.Count < count)
-                m_Slots.Add(HoyoToonCharacterSlotUI.Create(content, slotTemplate));
+                m_Slots.Add(CharacterSlotUI.Create(content, slotTemplate));
         }
 
         private void CacheExistingSlots()
@@ -323,9 +323,9 @@ namespace HoyoToon.Runtime.Simulator.UI
 
             for (int i = 0; i < content.childCount; ++i)
             {
-                HoyoToonCharacterSlotUI slot = content.GetChild(i).GetComponent<HoyoToonCharacterSlotUI>();
+                CharacterSlotUI slot = content.GetChild(i).GetComponent<CharacterSlotUI>();
                 if (slot == null)
-                    slot = content.GetChild(i).gameObject.AddComponent<HoyoToonCharacterSlotUI>();
+                    slot = content.GetChild(i).gameObject.AddComponent<CharacterSlotUI>();
 
                 m_Slots.Add(slot);
             }
@@ -698,7 +698,7 @@ namespace HoyoToon.Runtime.Simulator.UI
             if (!blockCameraInputWhilePointerOver)
                 blocked = false;
 
-            HoyoToonInputManager.SetCameraInputBlocked(this, blocked);
+            InputManager.SetCameraInputBlocked(this, blocked);
         }
 
         private static string ResolveSlotName(GameObject model, int index)
@@ -708,3 +708,4 @@ namespace HoyoToon.Runtime.Simulator.UI
         }
     }
 }
+

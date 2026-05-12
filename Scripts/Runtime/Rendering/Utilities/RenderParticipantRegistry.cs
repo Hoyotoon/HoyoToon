@@ -5,10 +5,10 @@ using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.Utilities
 {
-    internal static class HoyoToonRenderParticipantRegistry
+    internal static class RenderParticipantRegistry
     {
-        static readonly List<HoyoToonPlanarReflectionParticipant> s_PlanarReflectionParticipants =
-            new List<HoyoToonPlanarReflectionParticipant>();
+        static readonly List<PlanarReflectionParticipant> s_PlanarReflectionParticipants =
+            new List<PlanarReflectionParticipant>();
 
         static readonly List<HsrManikinShadowReceiver> s_ManikinShadowReceivers =
             new List<HsrManikinShadowReceiver>();
@@ -17,7 +17,7 @@ namespace HoyoToon.Runtime.Rendering.Utilities
         static int s_Version;
         static bool s_PruneNeeded;
 
-        static HoyoToonRenderParticipantRegistry()
+        static RenderParticipantRegistry()
         {
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded -= HandleSceneUnloaded;
             UnityEngine.SceneManagement.SceneManager.sceneUnloaded += HandleSceneUnloaded;
@@ -48,7 +48,7 @@ namespace HoyoToon.Runtime.Rendering.Utilities
                 : 0;
         }
 
-        internal static void Register(HoyoToonPlanarReflectionParticipant participant)
+        internal static void Register(PlanarReflectionParticipant participant)
         {
             if (participant == null)
                 return;
@@ -61,7 +61,7 @@ namespace HoyoToon.Runtime.Rendering.Utilities
             }
         }
 
-        internal static void Unregister(HoyoToonPlanarReflectionParticipant participant)
+        internal static void Unregister(PlanarReflectionParticipant participant)
         {
             if (participant == null)
                 return;
@@ -96,7 +96,7 @@ namespace HoyoToon.Runtime.Rendering.Utilities
 
         internal static void GetPlanarReflectionParticipants(
             UnityScene scene,
-            List<HoyoToonPlanarReflectionParticipant> results)
+            List<PlanarReflectionParticipant> results)
         {
             if (results == null)
                 return;
@@ -108,7 +108,7 @@ namespace HoyoToon.Runtime.Rendering.Utilities
 
             for (int i = 0; i < s_PlanarReflectionParticipants.Count; ++i)
             {
-                HoyoToonPlanarReflectionParticipant participant = s_PlanarReflectionParticipants[i];
+                PlanarReflectionParticipant participant = s_PlanarReflectionParticipants[i];
                 if (participant != null
                     && participant.isActiveAndEnabled
                     && participant.Scene == scene)
@@ -212,3 +212,4 @@ namespace HoyoToon.Runtime.Rendering.Utilities
         }
     }
 }
+

@@ -3,7 +3,7 @@ using UnityEngine;
 namespace HoyoToon.Runtime.ScriptableObjects.Resources
 {
     [CreateAssetMenu(fileName = "HoyoToonResources", menuName = "HoyoToon/HoyoToonResources")]
-    public class HoyoToonResourcesSO : ScriptableObject
+    public class ResourcesSO : ScriptableObject
     {
         [SerializeField] private string displayName;
         [SerializeField] private string key;

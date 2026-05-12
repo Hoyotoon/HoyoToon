@@ -11,7 +11,7 @@ using UnityScene = UnityEngine.SceneManagement.Scene;
 
 namespace HoyoToon.Runtime.Rendering.Core
 {
-    public class HoyoToonPlanarReflection : ScriptableRendererFeature
+    public class PlanarReflection : ScriptableRendererFeature
     {
         private const string DefaultReflectionTextureName = "_ReflectionColor";
         private static readonly string[] DefaultReflectionReceiverShaderNames =
@@ -20,7 +20,7 @@ namespace HoyoToon.Runtime.Rendering.Core
         };
 
         [Serializable]
-        public class HoyoToonPlanarReflectionSettings
+        public class PlanarReflectionSettings
         {
             public RenderPassEvent renderPassEvent = RenderPassEvent.AfterRenderingShadows;
             [Min(1)] public int reflectionWidth = 1024;
@@ -40,17 +40,17 @@ namespace HoyoToon.Runtime.Rendering.Core
             };
         }
 
-        [SerializeField] private HoyoToonPlanarReflectionSettings settings = new HoyoToonPlanarReflectionSettings();
-        private HoyoToonPlanarReflectionPass m_ScriptablePass;
+        [SerializeField] private PlanarReflectionSettings settings = new PlanarReflectionSettings();
+        private PlanarReflectionPass m_ScriptablePass;
 
         public override void Create()
         {
             if (settings == null)
-                settings = new HoyoToonPlanarReflectionSettings();
+                settings = new PlanarReflectionSettings();
 
             m_ScriptablePass?.Cleanup();
             m_ScriptablePass = null;
-            m_ScriptablePass = new HoyoToonPlanarReflectionPass(settings)
+            m_ScriptablePass = new PlanarReflectionPass(settings)
             {
                 renderPassEvent = settings.renderPassEvent
             };
@@ -73,14 +73,14 @@ namespace HoyoToon.Runtime.Rendering.Core
             renderer.EnqueuePass(m_ScriptablePass);
         }
 
-        private class HoyoToonPlanarReflectionPass : ScriptableRenderPass
+        private class PlanarReflectionPass : ScriptableRenderPass
         {
             private const int LegacyMissScanIntervalFrames = 30;
             private const int MaterialPassCacheMaxEntries = 512;
             private const int ReflectionMaterialPassQueryId = 1001;
 
-            private static readonly List<HoyoToonPlanarReflectionParticipant> k_Participants =
-                new List<HoyoToonPlanarReflectionParticipant>(32);
+            private static readonly List<PlanarReflectionParticipant> k_Participants =
+                new List<PlanarReflectionParticipant>(32);
 
             private static readonly List<Renderer> k_FilteredRenderers = new List<Renderer>(256);
             private static readonly List<Renderer> k_ReflectionReceiverRenderers = new List<Renderer>(32);
@@ -102,7 +102,7 @@ namespace HoyoToon.Runtime.Rendering.Core
                 "Always"
             };
 
-            private readonly HoyoToonPlanarReflectionSettings settings;
+            private readonly PlanarReflectionSettings settings;
             private int m_LastSceneHandle;
             private int m_LastLayerMask;
             private int m_LastReceiverShaderNamesHash;
@@ -134,19 +134,19 @@ namespace HoyoToon.Runtime.Rendering.Core
                 public int reflectionTextureId;
             }
 
-            public HoyoToonPlanarReflectionPass(HoyoToonPlanarReflectionSettings settings)
+            public PlanarReflectionPass(PlanarReflectionSettings settings)
             {
                 this.settings = settings;
             }
 
-            private static string ResolveReflectionTextureName(HoyoToonPlanarReflectionSettings settings)
+            private static string ResolveReflectionTextureName(PlanarReflectionSettings settings)
             {
                 return settings == null || string.IsNullOrWhiteSpace(settings.reflectionTextureName)
                     ? DefaultReflectionTextureName
                     : settings.reflectionTextureName;
             }
 
-            private static string[] ResolveReflectionReceiverShaderNames(HoyoToonPlanarReflectionSettings settings)
+            private static string[] ResolveReflectionReceiverShaderNames(PlanarReflectionSettings settings)
             {
                 return settings == null
                     || settings.reflectionReceiverShaderNames == null
@@ -196,7 +196,7 @@ namespace HoyoToon.Runtime.Rendering.Core
 
             private Renderer[] CollectRenderers(UnityScene scene, int layerMask, out bool hasReflectionReceiver)
             {
-                int registryVersion = HoyoToonRenderParticipantRegistry.GetVersion(scene);
+                int registryVersion = RenderParticipantRegistry.GetVersion(scene);
                 int sceneHandle = RenderSceneUtility.GetSceneHandleOrDefault(scene);
                 string[] receiverShaderNames = ResolveReflectionReceiverShaderNames(settings);
                 int receiverShaderNamesHash = ComputeStringArrayHash(receiverShaderNames);
@@ -225,11 +225,11 @@ namespace HoyoToon.Runtime.Rendering.Core
                 k_UniqueRenderers.Clear();
                 k_UniqueReceiverRenderers.Clear();
 
-                HoyoToonRenderParticipantRegistry.GetPlanarReflectionParticipants(scene, k_Participants);
+                RenderParticipantRegistry.GetPlanarReflectionParticipants(scene, k_Participants);
 
                 for (int i = 0; i < k_Participants.Count; ++i)
                 {
-                    HoyoToonPlanarReflectionParticipant participant = k_Participants[i];
+                    PlanarReflectionParticipant participant = k_Participants[i];
                     if (participant == null || !participant.ReceivesReflection)
                         continue;
 
@@ -240,7 +240,7 @@ namespace HoyoToon.Runtime.Rendering.Core
 
                 for (int i = 0; i < k_Participants.Count; ++i)
                 {
-                    HoyoToonPlanarReflectionParticipant participant = k_Participants[i];
+                    PlanarReflectionParticipant participant = k_Participants[i];
                     if (participant == null || !participant.CastsReflection)
                         continue;
 
@@ -433,7 +433,7 @@ namespace HoyoToon.Runtime.Rendering.Core
 
                 for (int i = 0; i < renderers.Count; ++i)
                 {
-                    if (HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderers[i]))
+                    if (PlanarReflectionParticipant.IsActiveRenderer(renderers[i]))
                         return true;
                 }
 
@@ -451,7 +451,7 @@ namespace HoyoToon.Runtime.Rendering.Core
             private static bool IsRenderableReflectionCaster(Renderer renderer, int layerMask)
             {
                 return IsPotentialReflectionCaster(renderer, layerMask)
-                    && HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderer);
+                    && PlanarReflectionParticipant.IsActiveRenderer(renderer);
             }
 
             private static bool HasAnyRenderableReflectionCaster(Renderer[] renderers, int layerMask)
@@ -735,3 +735,4 @@ namespace HoyoToon.Runtime.Rendering.Core
         }
     }
 }
+

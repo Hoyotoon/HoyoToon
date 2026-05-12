@@ -625,7 +625,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 500a76d5099465641ab2f270c04af7ed, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime.simulator::HoyoToon.Runtime.Simulator.UI.HoyoToonCharacterSlotUI
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime.simulator::HoyoToon.Runtime.Simulator.UI.CharacterSlotUI
   rarityRight: {fileID: 3212167705013645393}
   selectedFront: {fileID: 1290738282875374635}
   iconMaskImage: {fileID: 8819257231293283206}

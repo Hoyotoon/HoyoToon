@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 namespace HoyoToon.Runtime.Input
 {
-    internal static class HoyoToonInputActions
+    internal static class InputActions
     {
         internal const string DefaultActionMapName = "HoyoToon";
         internal const string LegacyActionMapName = "Simulator";
@@ -35,3 +35,4 @@ namespace HoyoToon.Runtime.Input
         }
     }
 }
+

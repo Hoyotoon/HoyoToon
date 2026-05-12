@@ -13,7 +13,7 @@ namespace HoyoToon.Editor.API.Users
 
         internal static EditorWindow Show(Action<string> onSubmit, Action onClosed = null)
         {
-            HoyoToonUserProfileSO localProfile = HoyoToonUserProfileStorage.GetLocalProfile();
+            UserProfileSO localProfile = HoyoToonUserProfileStorage.GetLocalProfile();
             string initialUsername = !string.IsNullOrWhiteSpace(localProfile?.Username)
                 ? localProfile.Username
                 : DefaultUsername;
@@ -73,7 +73,7 @@ namespace HoyoToon.Editor.API.Users
         }
 
         internal static EditorWindow ShowAvatarEditor(
-            HoyoToonUserProfileSO profile,
+            UserProfileSO profile,
             Action<string> onSubmit,
             Action onClosed = null)
         {
@@ -173,3 +173,4 @@ namespace HoyoToon.Editor.API.Users
         }
     }
 }
+

@@ -12,7 +12,7 @@ namespace HoyoToon.Runtime.Simulator.Placement
         [SerializeField]
         private CharacterPlacementController placementController;
 
-        private HoyoToonInputManager m_InputManager;
+        private InputManager m_InputManager;
         private static bool s_SceneLoadedHandlerRegistered;
 
         public CharacterPlacementController PlacementController
@@ -109,7 +109,7 @@ namespace HoyoToon.Runtime.Simulator.Placement
         private void BindInputManager()
         {
             UnbindInputManager();
-            m_InputManager = HoyoToonInputManager.Instance;
+            m_InputManager = InputManager.Instance;
             m_InputManager.PreviousCharacterPressed += HandlePreviousCharacterPressed;
             m_InputManager.NextCharacterPressed += HandleNextCharacterPressed;
         }
@@ -141,3 +141,4 @@ namespace HoyoToon.Runtime.Simulator.Placement
         }
     }
 }
+

@@ -10,7 +10,7 @@ namespace HoyoToon.Editor.API.Users
         private const string LegacyUserFolderName = "User";
         private const string LegacyLocalProfileAssetName = "LocalUserProfile";
 
-        private static HoyoToonUserProfileSO cachedProfile;
+        private static UserProfileSO cachedProfile;
 
         internal static event Action ProfileChanged;
 
@@ -24,7 +24,7 @@ namespace HoyoToon.Editor.API.Users
             EditorApplication.delayCall += EnsureMigratedFromLegacyAsset;
         }
 
-        internal static HoyoToonUserProfileSO GetLocalProfile()
+        internal static UserProfileSO GetLocalProfile()
         {
             EnsureMigratedFromLegacyAsset();
 
@@ -42,7 +42,7 @@ namespace HoyoToon.Editor.API.Users
             return IsComplete(GetLocalProfile());
         }
 
-        internal static bool IsComplete(HoyoToonUserProfileSO profile)
+        internal static bool IsComplete(UserProfileSO profile)
         {
             return profile != null
                 && IsNumericUid(profile.UID)
@@ -68,7 +68,7 @@ namespace HoyoToon.Editor.API.Users
             return true;
         }
 
-        internal static HoyoToonUserProfileSO SaveLocalProfile(string uid, string username, string avatar, bool updateGlobalCache = true)
+        internal static UserProfileSO SaveLocalProfile(string uid, string username, string avatar, bool updateGlobalCache = true)
         {
             return SaveLocalProfile(
                 uid,
@@ -79,7 +79,7 @@ namespace HoyoToon.Editor.API.Users
                 updateGlobalCache);
         }
 
-        internal static HoyoToonUserProfileSO SaveLocalProfile(
+        internal static UserProfileSO SaveLocalProfile(
             string uid,
             string username,
             string avatar,
@@ -120,7 +120,7 @@ namespace HoyoToon.Editor.API.Users
             HoyoToonUserProfileLocalStore.Save(record);
             DeleteLegacyLocalProfileAssetIfPresent();
 
-            HoyoToonUserProfileSO profile = CacheRecord(record);
+            UserProfileSO profile = CacheRecord(record);
             if (updateGlobalCache)
             {
                 HoyoToonUserProfileGlobalStore.Save(
@@ -163,9 +163,9 @@ namespace HoyoToon.Editor.API.Users
             return true;
         }
 
-        private static HoyoToonUserProfileSO CacheRecord(UserProfileLocalRecord record)
+        private static UserProfileSO CacheRecord(UserProfileLocalRecord record)
         {
-            HoyoToonUserProfileSO profile = GetOrCreateCachedProfile();
+            UserProfileSO profile = GetOrCreateCachedProfile();
             SerializedObject serializedProfile = new SerializedObject(profile);
             serializedProfile.FindProperty("uid").stringValue = record.UID ?? string.Empty;
             serializedProfile.FindProperty("username").stringValue = record.username ?? string.Empty;
@@ -180,7 +180,7 @@ namespace HoyoToon.Editor.API.Users
 
         private static void EnsureMigratedFromLegacyAsset()
         {
-            HoyoToonUserProfileSO legacyProfile = LoadLegacyLocalProfileAsset();
+            UserProfileSO legacyProfile = LoadLegacyLocalProfileAsset();
             if (legacyProfile == null)
             {
                 return;
@@ -194,11 +194,11 @@ namespace HoyoToon.Editor.API.Users
             DeleteLegacyLocalProfileAssetIfPresent();
         }
 
-        private static HoyoToonUserProfileSO GetOrCreateCachedProfile()
+        private static UserProfileSO GetOrCreateCachedProfile()
         {
             if (cachedProfile == null)
             {
-                cachedProfile = ScriptableObject.CreateInstance<HoyoToonUserProfileSO>();
+                cachedProfile = ScriptableObject.CreateInstance<UserProfileSO>();
                 cachedProfile.name = "HoyoToon Local User Profile";
                 cachedProfile.hideFlags = HideFlags.HideAndDontSave;
             }
@@ -206,12 +206,12 @@ namespace HoyoToon.Editor.API.Users
             return cachedProfile;
         }
 
-        private static HoyoToonUserProfileSO LoadLegacyLocalProfileAsset()
+        private static UserProfileSO LoadLegacyLocalProfileAsset()
         {
-            return AssetDatabase.LoadAssetAtPath<HoyoToonUserProfileSO>(LegacyLocalProfileAssetPath);
+            return AssetDatabase.LoadAssetAtPath<UserProfileSO>(LegacyLocalProfileAssetPath);
         }
 
-        private static UserProfileLocalRecord CreateRecordFromProfile(HoyoToonUserProfileSO profile)
+        private static UserProfileLocalRecord CreateRecordFromProfile(UserProfileSO profile)
         {
             long nowTicks = DateTime.UtcNow.Ticks;
             return new UserProfileLocalRecord
@@ -276,3 +276,4 @@ namespace HoyoToon.Editor.API.Users
         }
     }
 }
+

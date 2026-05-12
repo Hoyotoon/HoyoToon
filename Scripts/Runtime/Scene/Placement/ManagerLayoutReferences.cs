@@ -11,7 +11,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         [Serializable]
         public struct TeamRootReference
         {
-            public HoyoToonTeamGame Game;
+            public TeamGame Game;
             public Transform Root;
         }
 
@@ -31,7 +31,7 @@ namespace HoyoToon.Runtime.Scene.Placement
         public GameObject LegacyGridCamera => legacyGridCamera;
         public IReadOnlyList<TeamRootReference> TeamRoots => teamRoots;
 
-        public bool TryGetTeamRoot(HoyoToonTeamGame game, out Transform root)
+        public bool TryGetTeamRoot(TeamGame game, out Transform root)
         {
             if (teamRoots != null)
             {

@@ -7,7 +7,7 @@ namespace HoyoToon.Runtime.Input
 {
     [DisallowMultipleComponent]
     [AddComponentMenu("HoyoToon/Input Manager")]
-    public sealed class HoyoToonInputManager : MonoBehaviour
+    public sealed class InputManager : MonoBehaviour
     {
         private const string LookActionName = "Look";
         private const string ZoomActionName = "Zoom";
@@ -15,15 +15,16 @@ namespace HoyoToon.Runtime.Input
         private const string PreviousCharacterActionName = "PreviousCharacter";
         private const string NextCharacterActionName = "NextCharacter";
         private const string ToggleLookAtActionName = "ToggleLookAt";
+        private const string ToggleHelpBarActionName = "ToggleHelpBar";
         private const string ToggleUiActionName = "ToggleUI";
 
-        private static HoyoToonInputManager s_Instance;
+        private static InputManager s_Instance;
 
         [SerializeField]
         private InputActionAsset inputActions;
 
         [SerializeField]
-        private string actionMapName = HoyoToonInputActions.DefaultActionMapName;
+        private string actionMapName = InputActions.DefaultActionMapName;
 
         [SerializeField]
         private bool persistAcrossSceneLoads = true;
@@ -35,8 +36,8 @@ namespace HoyoToon.Runtime.Input
         private InputAction m_PreviousCharacterAction;
         private InputAction m_NextCharacterAction;
         private InputAction m_ToggleLookAtAction;
+        private InputAction m_ToggleHelpBarAction;
         private InputAction m_ToggleUiAction;
-        private bool m_RuntimeUiVisible = true;
         private static readonly System.Collections.Generic.HashSet<int> s_CameraInputBlockers =
             new System.Collections.Generic.HashSet<int>();
 
@@ -44,16 +45,17 @@ namespace HoyoToon.Runtime.Input
         public event Action PreviousCharacterPressed;
         public event Action NextCharacterPressed;
         public event Action ToggleLookAtPressed;
+        public event Action ToggleHelpBarPressed;
         public event Action ToggleUiPressed;
 
-        public static HoyoToonInputManager Instance
+        public static InputManager Instance
         {
             get
             {
                 if (s_Instance != null)
                     return s_Instance;
 
-                HoyoToonInputManager[] managers = FindObjectsByType<HoyoToonInputManager>(FindObjectsSortMode.None);
+                InputManager[] managers = FindObjectsByType<InputManager>(FindObjectsSortMode.None);
                 if (managers.Length > 0)
                 {
                     s_Instance = managers[0];
@@ -61,7 +63,7 @@ namespace HoyoToon.Runtime.Input
                 }
 
                 GameObject inputManagerObject = new GameObject("HoyoToon Input Manager");
-                s_Instance = inputManagerObject.AddComponent<HoyoToonInputManager>();
+                s_Instance = inputManagerObject.AddComponent<InputManager>();
                 return s_Instance;
             }
         }
@@ -148,26 +150,23 @@ namespace HoyoToon.Runtime.Input
             InvokeIfPressed(m_PreviousCharacterAction, PreviousCharacterPressed);
             InvokeIfPressed(m_NextCharacterAction, NextCharacterPressed);
             InvokeIfPressed(m_ToggleLookAtAction, ToggleLookAtPressed);
-            if (m_ToggleUiAction != null && m_ToggleUiAction.WasPressedThisFrame())
-            {
-                ToggleRuntimeUiVisibility();
-                ToggleUiPressed?.Invoke();
-            }
+
+            TryHandleInputShortcutActions();
         }
 
         private void BindInputActions()
         {
-            InputActionAsset resolvedInputActions = HoyoToonInputActions.Resolve(inputActions);
+            InputActionAsset resolvedInputActions = InputActions.Resolve(inputActions);
             if (resolvedInputActions == null)
                 return;
 
             inputActions = resolvedInputActions;
             string resolvedActionMapName = string.IsNullOrWhiteSpace(actionMapName)
-                ? HoyoToonInputActions.DefaultActionMapName
+                ? InputActions.DefaultActionMapName
                 : actionMapName;
             m_ActionMap = inputActions.FindActionMap(resolvedActionMapName);
-            if (m_ActionMap == null && !string.Equals(resolvedActionMapName, HoyoToonInputActions.LegacyActionMapName, StringComparison.Ordinal))
-                m_ActionMap = inputActions.FindActionMap(HoyoToonInputActions.LegacyActionMapName);
+            if (m_ActionMap == null && !string.Equals(resolvedActionMapName, InputActions.LegacyActionMapName, StringComparison.Ordinal))
+                m_ActionMap = inputActions.FindActionMap(InputActions.LegacyActionMapName);
 
             if (m_ActionMap == null)
                 return;
@@ -178,6 +177,7 @@ namespace HoyoToon.Runtime.Input
             m_PreviousCharacterAction = m_ActionMap.FindAction(PreviousCharacterActionName);
             m_NextCharacterAction = m_ActionMap.FindAction(NextCharacterActionName);
             m_ToggleLookAtAction = m_ActionMap.FindAction(ToggleLookAtActionName);
+            m_ToggleHelpBarAction = m_ActionMap.FindAction(ToggleHelpBarActionName);
             m_ToggleUiAction = m_ActionMap.FindAction(ToggleUiActionName);
         }
 
@@ -209,29 +209,43 @@ namespace HoyoToon.Runtime.Input
                 callback?.Invoke();
         }
 
-        private void ToggleRuntimeUiVisibility()
+        private bool TryHandleInputShortcutActions()
         {
-            SetRuntimeUiVisible(!m_RuntimeUiVisible);
+            if (m_ToggleHelpBarAction != null && m_ToggleHelpBarAction.WasPressedThisFrame())
+            {
+                ToggleHelpBarPressed?.Invoke();
+                return true;
+            }
+
+            if (m_ToggleUiAction != null && m_ToggleUiAction.WasPressedThisFrame())
+            {
+                ToggleUiPressed?.Invoke();
+                return true;
+            }
+
+            return TryHandleKeyboardShortcutFallback();
         }
 
-        private void SetRuntimeUiVisible(bool visible)
+        private bool TryHandleKeyboardShortcutFallback()
         {
-            m_RuntimeUiVisible = visible;
+            Keyboard keyboard = Keyboard.current;
+            if (keyboard == null)
+                return false;
 
-            GameObject uiRoot = GameObject.Find("HoyoToon/UI");
-            if (uiRoot == null)
-                uiRoot = GameObject.Find("UI");
-
-            if (uiRoot == null)
-                return;
-
-            Transform uiTransform = uiRoot.transform;
-            for (int index = 0; index < uiTransform.childCount; index++)
+            if (keyboard.f1Key.wasPressedThisFrame)
             {
-                Transform child = uiTransform.GetChild(index);
-                if (child != null)
-                    child.gameObject.SetActive(visible);
+                ToggleHelpBarPressed?.Invoke();
+                return true;
             }
+
+            if (keyboard.f2Key.wasPressedThisFrame)
+            {
+                ToggleUiPressed?.Invoke();
+                return true;
+            }
+
+            return false;
         }
     }
 }
+

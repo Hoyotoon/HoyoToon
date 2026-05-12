@@ -14,7 +14,7 @@ namespace HoyoToon.Editor.Resources
             targets = new List<ResourceSyncTarget>();
             messages = new List<string>();
 
-            foreach (HoyoToonResourcesSO resourceAsset in ResourceRegistry.Resources)
+            foreach (ResourcesSO resourceAsset in ResourceRegistry.Resources)
             {
                 if (resourceAsset == null)
                 {
@@ -69,7 +69,7 @@ namespace HoyoToon.Editor.Resources
 
         private static bool TryResolveFromSelectedResource(out ResourceSyncTarget target, out string message)
         {
-            if (Selection.activeObject is HoyoToonResourcesSO selectedResource)
+            if (Selection.activeObject is ResourcesSO selectedResource)
             {
                 return TryBuildTarget(selectedResource, out target, out message);
             }
@@ -105,7 +105,7 @@ namespace HoyoToon.Editor.Resources
                 return false;
             }
 
-            if (!ResourceRegistry.TryGetResources(gameConfig.Key, out HoyoToonResourcesSO resourceAsset))
+            if (!ResourceRegistry.TryGetResources(gameConfig.Key, out ResourcesSO resourceAsset))
             {
                 message = $"Detected game '{gameConfig.Key}' from '{matchedJsonAssetPath}', but no generated HoyoToonResources definition exists for that game.";
                 return false;
@@ -114,7 +114,7 @@ namespace HoyoToon.Editor.Resources
             return TryBuildTarget(resourceAsset, out target, out message);
         }
 
-        private static bool TryBuildTarget(HoyoToonResourcesSO resourceAsset, out ResourceSyncTarget target, out string message)
+        private static bool TryBuildTarget(ResourcesSO resourceAsset, out ResourceSyncTarget target, out string message)
         {
             target = null;
             message = null;

@@ -38,7 +38,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
         [SerializeField] private float middleRigLookAtBlendSmoothTime = 0.5f;
 
         private CinemachineFreeLook freeLook;
-        private HoyoToonInputManager inputManager;
+        private InputManager inputManager;
         private float targetZoomRadius;
         private float zoomRadiusVelocity;
         private Transform cachedMiddleRigDefaultLookAtTarget;
@@ -91,7 +91,7 @@ namespace HoyoToon.Runtime.Simulator.Camera
         private void BindInputManager()
         {
             UnbindInputManager();
-            inputManager = HoyoToonInputManager.Instance;
+            inputManager = InputManager.Instance;
             inputManager.AutoRotatePressed += HandleAutoRotatePressed;
         }
 
@@ -367,3 +367,4 @@ namespace HoyoToon.Runtime.Simulator.Camera
         }
     }
 }
+

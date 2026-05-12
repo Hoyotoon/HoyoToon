@@ -33,7 +33,7 @@ namespace HoyoToon.Runtime.Scene.Placement
 
         [SerializeField]
         [Tooltip("Selected team roster root when Team mode is active.")]
-        private HoyoToonTeamGame teamGame = HoyoToonTeamGame.HonkaiStarRail;
+        private TeamGame teamGame = TeamGame.HonkaiStarRail;
 
         [SerializeField]
         [Tooltip("Camera behavior used while Grid mode is active.")]
@@ -123,7 +123,7 @@ namespace HoyoToon.Runtime.Scene.Placement
             }
         }
 
-        public HoyoToonTeamGame TeamGame
+        public TeamGame TeamGame
         {
             get => teamGame;
             set

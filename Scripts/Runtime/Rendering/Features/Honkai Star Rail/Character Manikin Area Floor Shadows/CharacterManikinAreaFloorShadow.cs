@@ -248,7 +248,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
 
             public bool HasSceneReceiverPass(UnityScene scene)
             {
-                if (HoyoToonRenderParticipantRegistry.HasManikinShadowReceiver(scene))
+                if (RenderParticipantRegistry.HasManikinShadowReceiver(scene))
                     return true;
 
                 return HasLegacySceneReceiverPass(scene);
@@ -286,7 +286,7 @@ namespace HoyoToon.Runtime.Rendering.HSR
                     for (int rendererIndex = 0; rendererIndex < k_RendererScratch.Count; ++rendererIndex)
                     {
                         Renderer renderer = k_RendererScratch[rendererIndex];
-                        if (!HoyoToonPlanarReflectionParticipant.IsActiveRenderer(renderer))
+                        if (!PlanarReflectionParticipant.IsActiveRenderer(renderer))
                             continue;
 
                         if (!HsrRendererMaterialQueryUtility.TryGetSharedMaterials(renderer, k_MaterialScratch, out int materialCount))
@@ -1052,3 +1052,4 @@ namespace HoyoToon.Runtime.Rendering.HSR
         }
     }
 }
+
