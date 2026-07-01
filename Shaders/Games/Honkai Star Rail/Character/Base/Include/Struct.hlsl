@@ -20,10 +20,10 @@ struct vertex_out
     float4 ss_pos  : TEXCOORD2;
     float3 ws_pos  : TEXCOORD3;
     float4 sdw_pos : TEXCOORD4;
-    #if defined(_DIRECTIONALDISSOLVE)
+    // #if defined(_DIRECTIONALDISSOLVE)
         float4 diss_uv   : TEXCOORD5;
         float4 diss_pos  : TEXCOORD6; // z is the dither rate
-    #endif
+    // #endif
     float3 tangent : TEXCOORD7;
     #if defined(_USE_NORMAL_MAP)
         float3 bitangent : TEXCOORD8;

@@ -1,16 +1,25 @@
-# HoyoToon 0.3.7
+# HoyoToon 0.3.8
 
-## Simulator
-- Changed runtime UI shortcuts to a non-modifier scheme: `F1` toggles the help bar and `F2` hides all UI.
-- Updated the HoyoToon input action asset with the new `F1` and `F2` bindings and removed legacy `UnityEngine.Input` hotkey polling.
-- Updated help-bar shortcut labels so the row now shows separate `F1` Hide Help and `F2` Hide UI hints.
-- Added separate `Key F1` and `Key F2` textures based on the existing key sprite style and switched the help bar prefab to those authored icons.
-- Kept help-bar shortcut text authored in the prefab instead of rewriting shortcut labels at runtime.
-- Kept UI hint rows prefab-only (no runtime-generated hint GameObjects) and made help-bar visibility resolution resilient to nested or inactive instances.
-- Ensured the all-UI shortcut explicitly deactivates the `HelpBar` GameObject as part of the full UI visibility toggle.
-- Added an Input System keyboard fallback for `F1`/`F2` and component-based HelpBar resolution so `F1` reliably toggles the actual `HelpBar` GameObject.
-- Updated help-bar detection to resolve the `HelpBar` `GameObject` through its UI component first, then scene/name fallbacks.
-- Split input and simulator responsibilities: `InputManager` now only emits input events, while a new simulator-side
-  shortcut controller handles the actual UI visibility state and HelpBar toggling behavior.
-- Cleaned up redundant `HoyoToon` prefixes from runtime script names and types (and updated serialized Unity references accordingly), including:
-  `InputManager`, `PlanarReflection`, `CharacterRowUI`, `CharacterSlotUI`, `HelpBarUI`, `ResourcesSO`, and associated runtime enum/type references.
+## Setup
+- Removed the model conversion step from Auto Setup and the onboarding flow.
+- Removed tangent generation from the Auto Setup onboarding copy; tangents are now handled through FBX import settings when configured.
+- Added Auto Setup model renaming so detected character FBXs are renamed to the Game Entity Catalog display name before later setup steps run.
+- Updated character model name detection to match Game Entity Catalog art names and ignore the `_WithAnims` suffix.
+- Kept Auto Setup focused on material generation, FBX import settings, texture import settings, scene placement, and required HSR components.
+
+## Detection
+- Switched queued model display names to Game Entity Catalog display names instead of problem-list or JSON filename guesses.
+- Fixed HSR character detection for local model folders such as Cerydra by resolving the character from catalog art names and parent folder context.
+- Updated queued setup counts to read JSON and material assets from the FBX sibling `Materials` folder.
+- Simplified character icon resolution to read icon URLs directly from the Game Entity Catalog and cache those images locally.
+- Updated the character icon debug menu to use the catalog icon resolver.
+
+## API
+- Added Game Entity Catalog sync support for display names, art name mappings, entity IDs, and icon URLs.
+- Added the entity catalog fallback fetch path through the public character, monster, and weapon routes.
+- Added model import settings support for API-provided tangent import values.
+
+## Cleanup
+- Removed the old character ID icon lookup path in favor of Game Entity Catalog entries.
+- Removed stale model converter and HoyoToon converter setup references from the active Auto Setup flow.
+- Updated onboarding text so it no longer describes disabled conversion or tangent generation steps.

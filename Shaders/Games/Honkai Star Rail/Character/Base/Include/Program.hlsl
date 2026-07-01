@@ -26,10 +26,11 @@ vertex_out vert_base(vertex_in v, uint vertexID : SV_VertexID)
     float4 uv = float4(_UVChannelFront.xx, _UVChannelBack.xx) < 0.5f ? v.uv.xyxy * _MainTex_ST.xyxy + _MainTex_ST.zwzw : v.uv1.xyxy;
     o.uv = uv;
 
-    float4 tmp_color_a = (1 - _VertexColorSwitch) * float4(1.0, 1.0, 0.5, 0.5);
-    float4 tmp_color_b = _VertexColorSwitch;
-    tmp_color_a = v.color * tmp_color_b + tmp_color_a;
-    o.color = tmp_color_a;
+    // float4 tmp_color_a = (int)(1 - _VertexColorSwitch) * float4(1.0, 1.0, 0.5, 0.5);
+    // float4 tmp_color_b = _VertexColorSwitch;
+    // tmp_color_a = v.color * tmp_color_b + tmp_color_a;
+    // o.color = tmp_color_a;
+    o.color = v.color; // the above code seems to break things even though its supposed to be that way
     float4 ss_tmp;
     ss_tmp.w = (position.y * _ProjectionParams.x) * 0.5f;
     ss_tmp.xz = position.xw * 0.5f;
@@ -309,7 +310,7 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
 
     #if defined(_CHARACTER_SPECIAL_FEATURE)
         float check = _UseMoonHalo;
-        float moon_area = 0.95f < i.color.y;
+        float moon_area = 0.949999988 < i.color.y ? 1 : 0;
 
         // get both moon halo smoothsteps
         float range = frac(-_MoonHaloRange);
@@ -330,9 +331,10 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
 
         moon_uv.x = lerp(mlength, moon_uv.x, _MoonUVType);
         float real_moon = smoothstep(_MoonDir.w, _MoonDir.z, moon_uv.x);
-        float3 moon_color =  real_moon.xxx * final_color.xyz - final_color.xyz;
-        moon_color = moon_area * moon_color + final_color.xyz;
-        final_color.xyz =  _UseMoonHalo ? moon_color : final_color.xyz;
+        // float3 moon_color =  real_moon.xxx * final_color.xyz - final_color.xyz;
+        // moon_color = moon_area * moon_color + final_color.xyz;
+        float3 moon_color =  lerp(final_color, real_moon.xxx * final_color, moon_area);
+        final_color.xyz = check ? moon_color : final_color.xyz;
     #endif
     // after the moon was the rimshadow
     float3 rsdw_color;
@@ -400,46 +402,85 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
     
     float3 spec_color;
     float3 spec_param;
-    if(_UseMaterialValuesLUT)
-    {
-        float4 id_uv;
-        id_uv.x = uint(int(id));
-        id_uv.y = uint(1u);
-        id_uv.z = uint(0u);
-        id_uv.w = uint(6u);
+    // if(_UseMaterialValuesLUT)
+    // {
+    //     float4 id_uv;
+    //     id_uv.x = uint(int(id));
+    //     id_uv.y = uint(1u);
+    //     id_uv.z = uint(0u);
+    //     id_uv.w = uint(6u);
 
-        spec_color = _MaterialValuesPackLUT.Load(float4(id, 0, 0, 0)).xyz;
-        spec_param = _MaterialValuesPackLUT.Load(float4(id, 1, 0, 0)).z;
-    }
-    else
-    {
-        float4 specular_color[8] =
+    //     spec_color = _MaterialValuesPackLUT.Load(float4(id, 0, 0, 0)).xyz;
+    //     spec_param = _MaterialValuesPackLUT.Load(float4(id, 1, 0, 0)).z;
+    // }
+    // else
+    // {
+        // float4 specular_color[8] =
+        // {
+        //     _SpecularColor0,
+        //     _SpecularColor1,
+        //     _SpecularColor2,
+        //     _SpecularColor3,
+        //     _SpecularColor4,
+        //     _SpecularColor5,
+        //     _SpecularColor6,
+        //     _SpecularColor7,
+        // };
+
+        // float specular_values[8] =
+        // {
+        //     float(_SpecularIntensity0),
+        //     float(_SpecularIntensity1),
+        //     float(_SpecularIntensity2),
+        //     float(_SpecularIntensity3),
+        //     float(_SpecularIntensity4),
+        //     float(_SpecularIntensity5),
+        //     float(_SpecularIntensity6),
+        //     float(_SpecularIntensity7),
+        // };
+
+        // spec_color = (specular_color[array_index] * lerp(1.0f, _ES_SPColor, _ES_SPColor.www)) * _ES_SPIntensity;
+        // spec_param = specular_values[array_index].x;
+
+        [forcecase]
+        switch(array_index)
         {
-            _SpecularColor0,
-            _SpecularColor1,
-            _SpecularColor2,
-            _SpecularColor3,
-            _SpecularColor4,
-            _SpecularColor5,
-            _SpecularColor6,
-            _SpecularColor7,
-        };
+        case 0:
+            spec_color = _SpecularColor0.xyz;
+            spec_param = _SpecularIntensity0;
+            break;
+        case 1:
+            spec_color = _SpecularColor1.xyz;
+            spec_param = _SpecularIntensity1;
+            break;
+        case 2:
+            spec_color = _SpecularColor2.xyz;
+            spec_param = _SpecularIntensity2;
+            break;
+        case 3:
+            spec_color = _SpecularColor3.xyz;
+            spec_param = _SpecularIntensity3;
+            break;
+        case 4:
+            spec_color = _SpecularColor4.xyz;
+            spec_param = _SpecularIntensity4;
+            break;
+        case 5:
+            spec_color = _SpecularColor5.xyz;
+            spec_param = _SpecularIntensity5;
+            break;
+        case 6:
+            spec_color = _SpecularColor6.xyz;
+            spec_param = _SpecularIntensity6;
+            break;
+        default:
+            spec_color = _SpecularColor7.xyz;
+            spec_param = _SpecularIntensity7;
+            break;
+        }
 
-        float specular_values[8] =
-        {
-            float(_SpecularIntensity0),
-            float(_SpecularIntensity1),
-            float(_SpecularIntensity2),
-            float(_SpecularIntensity3),
-            float(_SpecularIntensity4),
-            float(_SpecularIntensity5),
-            float(_SpecularIntensity6),
-            float(_SpecularIntensity7),
-        };
-
-        spec_color = (specular_color[array_index] * lerp(1.0f, _ES_SPColor, _ES_SPColor.www)) * _ES_SPIntensity;
-        spec_param = specular_values[array_index].x;
-    }
+        spec_color = (spec_color * lerp(1.0f, _ES_SPColor, _ES_SPColor.www)) * _ES_SPIntensity;
+    // }
 
     
     #if defined(_USE_MATCAP)
@@ -447,17 +488,17 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace)
         vNormal.xy = vNormal.xy * 0.5 + 0.5;
         // vNormal.y = 1.0f - vNormal.y;
         float3 matcap = _MatCapTex.Sample(sampler_linear_repeat, vNormal.xy).xyz;
-        float matcap_mask = _MatCapMaskTex.Sample(sampler_linear_repeat, i.uv.xy).x * lightmap.z;
-        sdw_combine.x = saturate(sdw_combine.x * 5.0 - 4.0);
-        float strength = lerp(_MatCapStrength * _MatCapStrengthInShadow, _MatCapStrength, sdw_combine);
+        float matcap_mask = _MatCapMaskTex.Sample(sampler_linear_repeat, i.uv.xy).x ;
+        // sdw_combine.x = saturate(sdw_combine.x * 5.0 - 4.0);
+        float strength = _MatCapStrength;
         float3 tmp_color = strength * matcap.xyz;
         tmp_color.xyz = tmp_color.xyz * _MatCapColor.xyz;
-        tmp_color.xyz = matcap_mask * tmp_color.xyz;
-        spec_color.xyz = spec_color.xyz * tmp_color.xyz;
-        spec_color.xyz = spec_param * spec_color.xyz;
-        float ceil_mask = ceil(saturate(matcap_mask - 0.01f));
-        spec_color.xyz = spec_color.xyz * ceil_mask;
-        final_color.xyz = final_color.xyz * rsdw.xyz +  spec_color.xyz;
+        tmp_color.xyz = (matcap_mask * lightmap.z) * tmp_color.xyz;
+        tmp_color.xyz = spec_color.xyz * tmp_color.xyz;
+        tmp_color.xyz = spec_param * tmp_color.xyz;
+        float ceil_mask = ceil(saturate((lightmap.z * matcap_mask ) - 0.01f));
+        tmp_color.xyz = tmp_color.xyz *ceil_mask;
+        final_color.xyz += tmp_color;
     #else
         final_color.xyz *= rsdw;
     #endif
@@ -600,7 +641,7 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
     shadow_factor = SampleCharacterSelfShadow(i.ws_pos.xyz, normal, light);
 
     // float3 vView = mul(view, (float3x3)unity_MatrixV);
-    // float3 vNormal = mul(normal, (float3x3)unity_MatrixV);
+    float3 vNormal = mul(normal, (float3x3)unity_MatrixV);
 
     float ndotl = dot(normal, light);
     float ndotv = dot(normal, view);
@@ -678,7 +719,7 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
     spec_color = (spec_color * lerp(1.0f, _ES_SPColor, _ES_SPColor.www)) * _ES_SPIntensity;
 
     float3 specular = ndoth;
-    specular = pow(max(specular, 0.00f), spec_param.x) * shadow_factor;
+    specular = pow(max(specular, 0.00f), spec_param.x); // * shadow_factor;
     float store_specular = specular;
     spec_param.y = max(spec_param.y, 0.001f);
     
@@ -688,17 +729,22 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
     specular = smoothstep(specular_thresh - spec_param.y, specular_thresh + spec_param.y, specular) * spec_color * spec_param.z;
     
     #if defined(_USE_GLINT)
-        float3 glintObjectToCamera = normalize(_WorldSpaceCameraPos.xyz + (-unity_ObjectToWorld[3].xyz));
-        // float glintObjectToCameraLenInv = inversesqrt(dot(glintObjectToCamera, glintObjectToCamera));
-        // glintObjectToCamera = glintObjectToCameraLenInv * glintObjectToCamera;
+    /*
+        dual-layer procedural glint/sparkle/glitter
+
+        uses a variant of the wang & bowles stochastic micro-flake technique.
+        Turns input UVs into a procedural grid and uses a 5-tap neighbor search to eliminate clipping between grid cells
+        Combine a primary glint layer and an optimized global glint pass, both using view-dependent shimmer tracking
+        and a time-based sparkling animnation.
+    */
         float3 glint_uv;
         glint_uv.xy = (vface) ? i.uv.xy : i.uv.zw;
         glint_uv.z = glint_uv.y * _GlintUVTillingY;
+
+        float4 glint_mask = _GlintMask.Sample(sampler_linear_repeat, glint_uv);
+
         float2 glintAxisSource = normal.zx;
-        float glintCellScaleFactor = custom_param1;
-        float glintDensityFactor = custom_param2;
-        float glintPointInput = specular;
-        float3 glintBaseLit = specular * diffuse.xyz;
+
         bool useWorldPosGlintUV = 0.899999976 < _GlintWorldPosUV;
         float2 wsAxisSelector = abs(glintAxisSource) + float2(-0.5, -0.5);
         wsAxisSelector = ceil(clamp(wsAxisSelector, 0.0, 1.0));
@@ -707,213 +753,132 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
         float4 wsMixB = (-wsMixA.zwzw) + i.ws_pos.yzyz;
         float4 glintCoord4 = wsAxisSelector.yyyy * wsMixB + wsMixA;
         glintCoord4 = useWorldPosGlintUV ? glintCoord4 : glint_uv.xzxz;
+
         float glintFaceScale = (vface) ? 1.0 : _GlintScaleBackface;
         glintCoord4 = glintFaceScale.xxxx * glintCoord4;
 
-        float4 glintMaskSample = _GlintMask.Sample(sampler_linear_clamp, glint_uv.xy);
-        float glintMaskAlpha = glintMaskSample.w;
-        float4 glintCell4 = glintCoord4.zwzw * _GlintScale;
-        glintCell4 = glintCellScaleFactor.xxxx * glintCell4;
-        float2 glintCellFrac = frac(glintCell4.zw);
-        glintCell4 = floor(glintCell4);
+        // primary layer
+        float4 grid_uv = glintCoord4.zwzw * float4(_GlintScale, _GlintScale, _GlintScale, _GlintScale);
+        grid_uv = custom_param1 * grid_uv;
+        float2 cell_frac = frac(grid_uv.zw);
+        float4 cell_id = floor(grid_uv);
 
-        float glintConcentrationLerp = saturate(_GlintConcentration * 10.0);
-        float glintPointScaleValue = glintPointInput * _GlintIntensity;
-        glintPointScaleValue = pow(glintPointScaleValue, _GlintConcentration);
-        glintPointScaleValue = max(glintPointScaleValue, 0.00999999978);
-        glintPointScaleValue = glintPointScaleValue + (-_GlintPointScale);
-        glintPointScaleValue = glintConcentrationLerp * glintPointScaleValue + _GlintPointScale;
-        float glintPointBase = glintMaskAlpha * glintPointScaleValue;
+        float conc_clamped = clamp(_GlintConcentration * 10.0, 0.0, 1.0);
+        float base_intensity = store_specular * _GlintIntensity;
+        base_intensity = pow(base_intensity, _GlintConcentration);
+        base_intensity = max(base_intensity, 0.00999999978);
+        base_intensity = base_intensity + (-_GlintPointScale);
+        float glint_intensity_mod = conc_clamped * base_intensity + _GlintPointScale;
+        float final_concentration = glint_mask.w * glint_intensity_mod;
 
-        float hashA = glint_hash12(glintCell4.zw);
-        float2 hashOffsetA = hashA + glintCell4.zw;
-        float hashB = glint_hash12(hashOffsetA);
-        float4 neighborhoodA = glintCell4.zwzw + float4(0.454869986, 0.454869986, 5.415452, 5.415452);
-        float2 randA;
-        randA.x = glint_hash12(neighborhoodA.xy);
-        neighborhoodA.xy = neighborhoodA.xy + randA.xx;
-        randA.y = glint_hash12(neighborhoodA.xy);
-        randA = randA * 2 - 1;
-        float densityA = glint_hash12(neighborhoodA.zw);
-        float2 localOffsetA = glintCellFrac + float2(-0.5, -0.5);
-        randA = randA * float2(0.400000006, 0.400000006);
-        randA = localOffsetA - (randA * _GlintRandom);
-        float distanceGateA = glint_distance_gate(randA, hashA, glintPointBase);
-        densityA = densityA + -1.0;
-        densityA = glint_density_gate(densityA, glintDensityFactor);
-        densityA = densityA * distanceGateA;
+        // neighborhood eval
+        float accum_sparkle = 0.0;
+        float4 accum_normal = float4(0.0, 0.0, 0.0, 0.0);
 
-        float glintSparkleHalf = _GlintSparkle * 0.5;
-        float glintTimePhase = (_Time.x * 50.0) * _GlintSparkFreq;
-        float sparkAccum = glint_spark_wave(hashB, glintTimePhase, hashA, glintSparkleHalf, 3.14);
-        float4 randDirAccum = float4(glint_random_unit(hashA, hashB), 1.0);
+        eval_tap(cell_id.zw, cell_frac, float2(0.0, 0.0), glint_intensity_mod, final_concentration, -custom_param2, accum_sparkle, accum_normal);
+        eval_tap(cell_id.zw, cell_frac, float2(1.0, 0.0), glint_intensity_mod, final_concentration, -custom_param2, accum_sparkle, accum_normal);
+        eval_tap(cell_id.zw, cell_frac, float2(-1.0, 0.0), glint_intensity_mod, final_concentration, -custom_param2, accum_sparkle, accum_normal);
+        eval_tap(cell_id.zw, cell_frac, float2(0.0, 1.0), glint_intensity_mod, final_concentration, -custom_param2, accum_sparkle, accum_normal);
+        eval_tap(cell_id.zw, cell_frac, float2(0.0, -1.0), glint_intensity_mod, final_concentration, -custom_param2, accum_sparkle, accum_normal);
 
-        float4 neighborhoodB = glintCell4.zwzw + float4(1.0, 0.0, 1.45486999, 0.454869986);
-        hashA = glint_hash12(neighborhoodB.xy);
-        float2 hashOffsetB = hashA + neighborhoodB.xy;
-        hashB = glint_hash12(hashOffsetB);
-        randA.x = glint_hash12(neighborhoodB.zw);
-        neighborhoodB.xy = randA.xx + neighborhoodB.zw;
-        randA.y = glint_hash12(neighborhoodB.xy);
-        randA = randA * 2 - 1;
-        neighborhoodB = glintCell4.zwzw + float4(6.415452, 5.415452, -1.0, 0.0);
-        float densityB = glint_hash12(neighborhoodB.xy);
-        randA = randA * float2(0.400000006, 0.400000006);
-        randA = (-randA) * _GlintRandom + glintCellFrac + float2(-1.5, -0.5);
-        float distanceGateB = glint_distance_gate(randA, hashA, glintPointBase);
-        densityB = glint_density_gate(densityB, glintDensityFactor);
-        densityB = densityB * distanceGateB;
-        float sparkB = glint_spark_wave(hashB, glintTimePhase, hashA, glintSparkleHalf, 3.14);
-        sparkB = densityB * sparkB;
-        sparkAccum = sparkAccum * densityA + sparkB;
+        // resolve sparkle response
+        if (0.00999999978 < accum_normal.w) accum_normal.xyz = accum_normal.xyz / accum_normal.www;
 
-        float4 randDirB = float4(glint_random_unit(hashA, hashB), 1.0);
-        randDirB = densityB * randDirB;
-        randDirAccum = randDirAccum * densityA + randDirB;
+        float shimmer_range = glint_intensity_mod * glint_mask.w + -1.0;
+        float shimmer_width = conc_clamped * shimmer_range + 1.0;
 
-        hashA = glint_hash12(neighborhoodB.zw);
-        hashOffsetB = hashA + neighborhoodB.zw;
-        hashB = glint_hash12(hashOffsetB);
-        float4 neighborhoodC = glintCell4.zwzw + float4(-0.545130014, 0.454869986, 4.415452, 5.415452);
-        randA.x = glint_hash12(neighborhoodC.xy);
-        neighborhoodC.xy = neighborhoodC.xy + randA.xx;
-        randA.y = glint_hash12(neighborhoodC.xy);
-        randA = randA * 2.0 - 1.0;
-        float densityC = glint_hash12(neighborhoodC.zw);
-        randA = randA * float2(0.4, 0.4);
-        randA = (-randA) * _GlintRandom + glintCellFrac + float2(0.5, -0.5);
-        float distanceGateC = glint_distance_gate(randA, hashA, glintPointBase);
-        densityC = glint_density_gate(densityC, glintDensityFactor);
-        densityC = densityC * distanceGateC;
-        float sparkC = glint_spark_wave(hashB, glintTimePhase, hashA, glintSparkleHalf, 3.14);
-        sparkAccum = sparkC * densityC + sparkAccum;
-        randDirAccum = float4(glint_random_unit(hashA, hashB), 1.0) * densityC + randDirAccum;
+        float view_dot_normal = dot(accum_normal.xyz, view.xyz);
+        float shimmer_phase = frac(view_dot_normal * _GlintViewFreq);
+        float final_primary_glint = shimmer_phase * shimmer_width;
 
-        float4 neighborhoodD = glintCell4.zwzw + float4(0.0, 1.0, 0.454869986, 1.45486999);
-        hashA = glint_hash12(neighborhoodD.xy);
-        neighborhoodD.xy = hashA + neighborhoodD.xy;
-        hashB = glint_hash12(neighborhoodD.xy);
-        randA.x = glint_hash12(neighborhoodD.zw);
-        float2 hashOffsetD = randA.xx + neighborhoodD.zw;
-        randA.y = glint_hash12(hashOffsetD);
-        randA = randA * 2 - 1;
-        float4 neighborhoodE = glintCell4.zwzw + float4(5.415452, 6.415452, 0.0, -1.0);
-        float densityD = glint_hash12(neighborhoodE.xy);
-        randA = randA * float2(0.400000006, 0.400000006);
-        randA = (-randA) * _GlintRandom + glintCellFrac + float2(-0.5, -1.5);
-        float distanceGateD = glint_distance_gate(randA, hashA, glintPointBase);
-        densityD = glint_density_gate(densityD, glintDensityFactor);
-        densityD = densityD * distanceGateD;
-        float sparkD = glint_spark_wave(hashB, glintTimePhase, hashA, glintSparkleHalf, 3.14);
-        sparkAccum = sparkD * densityD + sparkAccum;
-        randDirAccum = float4(glint_random_unit(hashA, hashB), 1.0) * densityD + randDirAccum;
+        float falloff_attenuation = max(final_concentration + 0.800000012, 0.0);
+        falloff_attenuation = min(falloff_attenuation, 3.0);
+        final_primary_glint = final_primary_glint * falloff_attenuation;
 
-        hashA = glint_hash12(neighborhoodE.zw);
-        hashOffsetD = hashA + neighborhoodE.zw;
-        hashB = glint_hash12(hashOffsetD);
-        glintCell4 = glintCell4 + float4(0.454869986, -0.545130014, 5.415452, 4.415452);
-        randA.x = glint_hash12(glintCell4.xy);
-        glintCell4.xy = glintCell4.xy + randA.xx;
-        randA.y = glint_hash12(glintCell4.xy);
-        randA = randA * 2 - 1;
-        float densityE = glint_hash12(glintCell4.zw);
-        float2 localOffsetE = glintCellFrac + float2(-0.5, 0.5);
-        randA = randA * float2(0.4, 0.4);
-        localOffsetE = (-randA) * _GlintRandom + localOffsetE;
-        float distanceGateE = glint_distance_gate(localOffsetE, hashA, glintPointBase);
-        densityE = glint_density_gate(densityE, glintDensityFactor);
-        distanceGateE = densityE * distanceGateE;
-        float sparkE = glint_spark_wave(hashB, glintTimePhase, hashA, glintSparkleHalf, 3.14);
-        float sparkFinal = sparkE * distanceGateE + sparkAccum;
+        // "global" layer
+        float4 global_grid_uv = glintCoord4.zwzw * float4(_GlobalGlintScale, _GlobalGlintScale, _GlobalGlintScale, _GlobalGlintScale);
+        float2 global_frac = frac(global_grid_uv.zw);
 
-        float4 randDirE = float4(glint_random_unit(hashA, hashB), 1.0);
-        float4 randDirSum = randDirE * distanceGateE.xxxx + randDirAccum;
-        bool hasRandDirWeight = 0.00999999978 < randDirSum.w;
-        float3 randDirNormalized = randDirSum.xyz / randDirSum.www;
-        randDirSum.xyz = hasRandDirWeight ? randDirNormalized : randDirSum.xyz;
+        // before i was reconstructing the roundEven function from glsl but the hlsl round() rounds to the nearest even
+        float4 global_id = floor(global_grid_uv);
+        global_id.zw = round(global_grid_uv.zw);
 
-        float glintMaskBias = glintPointScaleValue * glintMaskAlpha + -1.0;
-        float glintViewMask = glintConcentrationLerp * glintMaskBias + 1.0;
-        float glintViewPhase = dot(randDirSum.xyz, view.xyz);
-        glintViewPhase = glintViewPhase * _GlintViewFreq;
-        glintViewPhase = frac(glintViewPhase);
-        glintViewPhase = glintViewMask * glintViewPhase;
-        float sparkScale = sparkFinal + 0.8;
-        sparkScale = max(sparkScale, 0.0);
-        sparkScale = min(sparkScale, 3.0);
-        float localGlintIntensity = glintViewPhase * sparkScale;
+        float global_hash_1 = rand(global_id.zw);
+        float2 global_jitter_seed = global_id.zw + float2(global_hash_1, global_hash_1);
+        float global_hash_2 = rand(global_jitter_seed);
 
-        float4 globalGlintCoord4 = glintCoord4 * _GlobalGlintScale;
-        globalGlintCoord4 = glintCellScaleFactor.xxxx * globalGlintCoord4;
-        float2 globalGlintFrac = frac(globalGlintCoord4.zw);
-        globalGlintCoord4 = round(globalGlintCoord4);
+        float2 global_jitter = (float2(global_hash_1, global_hash_2) * 2.0 - 1.0) * 0.5;
+        global_frac = global_frac + global_jitter + float2(-0.5, -0.5);
+        float global_dist = length(global_frac);
 
-        randA.x = glint_hash12(globalGlintCoord4.zw);
-        float2 globalHashOffset = globalGlintCoord4.zw + randA.xx;
-        randA.y = glint_hash12(globalHashOffset);
-        randA = randA * 2 - 1;
-        globalGlintFrac = randA * 0.5 + globalGlintFrac;
+        float2 global_scale_uv = global_id.xy * float2(0.0386548117, 0.0386548117) + float2(global_hash_1, global_hash_1);
+        float global_hash_3 = rand(global_scale_uv);
 
-        float4 globalHashCoord4 = globalGlintCoord4 * float4(0.0386548117, 0.0386548117, 58.3610001, 58.3610001);
-        hashB = glint_hash12(globalHashCoord4.xy);
-        float2 globalHashCoord = globalGlintCoord4.xy * float2(0.0386548117, 0.0386548117) + hashB;
-        float globalHashRnd = glint_hash12(globalHashCoord);
+        float global_rot = global_hash_1 * 6.28318024;
+        float global_pitch_cos = (-global_hash_3) * 2.0 + 1.0;
+        float global_pitch = acos(global_pitch_cos);
 
-        float azimuth = hashB * 6.28318024;
-        float elevationCosSeed = (-globalHashRnd) * 2.0 + 1.0;
-        float elevationSin = sqrt(-abs(elevationCosSeed) + 1.0);
-        float poly = abs(elevationCosSeed) * -0.0187292993 + 0.0742610022;
-        poly = poly * abs(elevationCosSeed) + -0.212114394;
-        poly = poly * abs(elevationCosSeed) + 1.57072878;
-        float angleFix = elevationSin * poly;
-        angleFix = angleFix * -2.0 + 3.14159274;
-        bool useAngleFix = elevationCosSeed < (-elevationCosSeed);
-        float elevationAngle = useAngleFix ? angleFix : float(0.0);
-        elevationAngle = poly * elevationSin + elevationAngle;
-        float sinElevation = sin(elevationAngle);
-        float cosElevation = cos(elevationAngle);
-        float sinAzimuth = sin(azimuth);
-        float cosAzimuth = cos(azimuth);
+        float3 global_normal;
+        global_normal.x = sin(global_pitch) * cos(global_rot);
+        global_normal.y = sin(global_pitch) * sin(global_rot);
+        global_normal.z = cos(global_pitch);
+        global_normal = normalize(global_normal);
 
-        float3 globalRandDir = saturate(float3(sinElevation * cosAzimuth, sinElevation * sinAzimuth, cosElevation));
+        float2 global_time_uv = global_id.zw * float2(58.3610001, 58.3610001) + float2(global_hash_1, global_hash_1);
+        float global_hash_4 = rand(global_time_uv);
 
-        hashB = glint_hash12(globalHashCoord4.zw);
-        globalHashCoord = globalGlintCoord4.zw * float2(58.3610001, 58.3610001) + hashB;
-        globalHashRnd = glint_hash12(globalHashCoord);
-        float globalSparkEnvelope = globalRandDir.y * _GlobalGlintSparkFreq + hashB;
-        globalSparkEnvelope = frac(globalSparkEnvelope);
-        globalSparkEnvelope = globalSparkEnvelope - 0.5;
-        globalSparkEnvelope = abs(globalSparkEnvelope) * _GlobalGlintSparkle + 0.300000012;
+        float global_spark_phase = frac(view.y * _GlobalGlintSparkFreq + global_hash_1);
+        global_spark_phase = abs(global_spark_phase - 0.5) * _GlobalGlintSparkle + 0.300000012;
 
-        float2 globalPointOffset = globalGlintFrac - 0.5;
-        float globalPointDistance = length(globalPointOffset);
-        float globalPointRadiusBase = _GlobalGlintPointScale * 0.399999976;
-        float globalPointRadiusRand = frac(globalHashRnd);
-        float globalPointRadius = globalPointRadiusBase * globalPointRadiusRand + 0.0199999996;
-        bool globalPointMaskedOut = globalPointRadius < globalPointDistance;
+        float global_max_radius = (_GlobalGlintPointScale * 0.399999976) * frac(global_hash_4) + 0.0199999996;
+        bool global_radius_check = global_max_radius < global_dist;
 
-        float globalViewPhase = dot(globalRandDir, glintObjectToCamera);
-        globalViewPhase = globalViewPhase * _GlobalGlintViewFreq;
-        globalViewPhase = frac(globalViewPhase);
-        float globalDensityThreshold = (-_GlobalGlintDensity) * glintDensityFactor + 1.0;
-        globalDensityThreshold = clamp(globalDensityThreshold, 0.0, 1.0);
-        int globalDensityPassMask = int((globalDensityThreshold < globalViewPhase) ? 0xFFFFFFFFu : uint(0));
-        int globalGlintPassMask = globalPointMaskedOut ? 0 : globalDensityPassMask;
-        float globalSparkMasked = (globalGlintPassMask != 0) ? globalSparkEnvelope : 0.0;
+        float global_view_dot = dot(global_normal, view.xyz);
+        float global_shimmer = frac(global_view_dot * _GlobalGlintViewFreq);
 
-        float globalIntensityDenom = _GlobalGlintPointScale * 5.0 + 0.5;
-        float globalGlintScalar = globalSparkMasked / globalIntensityDenom; 
-        float3 globalGlintBase = globalGlintScalar * _GlobalGlintColor.xyz;
-        globalGlintBase = globalGlintBase * _GlobalGlintIntensity;
+        float global_density_limit = clamp((-_GlobalGlintDensity) * custom_param2 + 1.0, 0.0, 1.0);
 
-        float3 glintMaskColor = glintMaskSample.xyz * glintMaskAlpha;
-        float3 glintCombinedColor = globalGlintBase * _GlobalGlintColor.xyz;
-        glintCombinedColor = glintCombinedColor * _GlobalGlintIntensity;
-        glintCombinedColor = localGlintIntensity * _GlintColor.xyz + glintCombinedColor;
-        glintMaskColor = glintMaskColor * glintCombinedColor;
-        specular = glintBaseLit + glintMaskColor;
+        int cond_shimmer = (global_density_limit < global_shimmer) ? 1 : 0;
+        int is_global_active = global_radius_check ? int(0) : cond_shimmer;
+
+        float final_global_glint = (is_global_active != 0) ? global_spark_phase : 0.0;
+        float global_scale_factor = _GlobalGlintPointScale * 5.0 + 0.5;
+        final_global_glint = final_global_glint / global_scale_factor;
+
+        // applying everything together
+        float3 global_layer_color = float3(final_global_glint, final_global_glint, final_global_glint) * _GlobalGlintColor.xyz;
+        global_layer_color = global_layer_color * float3(_GlobalGlintIntensity, _GlobalGlintIntensity, _GlobalGlintIntensity);
+
+        float3 primary_layer_color = float3(final_primary_glint, final_primary_glint, final_primary_glint) * _GlintColor.xyz;
+
+        float3 accumulated_glint_color = global_layer_color + primary_layer_color;
+
+        float3 glint_mask_modulated = glint_mask.xyz * glint_mask.www;
+        glint_mask_modulated = glint_mask_modulated * accumulated_glint_color;
+
+        gbuffer.xyz += (glint_mask_modulated);
 
     #endif 
+
+    // #if defined(_USE_MATCAP)
+        
+    //     vNormal.xy = vNormal.xy * 0.5 + 0.5;
+    //     // vNormal.y = 1.0f - vNormal.y;
+    //     float3 matcap = _MatCapTex.Sample(sampler_linear_repeat, vNormal.xy).xyz;
+    //     float matcap_mask = _MatCapMaskTex.Sample(sampler_linear_repeat, i.uv.xy).x ;
+    //     // sdw_combine.x = saturate(sdw_combine.x * 5.0 - 4.0);
+    //     float strength = _MatCapStrength;
+    //     float3 tmp_color = strength * matcap.xyz;
+    //     tmp_color.xyz = tmp_color.xyz * _MatCapColor.xyz;
+    //     tmp_color.xyz = (matcap_mask * lightmap.z) * tmp_color.xyz;
+    //     tmp_color.xyz = spec_color.xyz * tmp_color.xyz;
+    //     tmp_color.xyz = spec_param * tmp_color.xyz;
+    //     float ceil_mask = ceil(saturate((lightmap.z * matcap_mask ) - 0.01f));
+    //     tmp_color.xyz = tmp_color.xyz ;
+    //     spec_color.xyz *=  matcap.xyz;
+    // #else
+    //     spec_color.xyz *= 1;
+    // #endif
 
     // emission
     float emission_thresh = (_EmissionThreshold < diffuse.w) ? saturate(diffuse.w - _EmissionThreshold / max(1.0f - _EmissionThreshold, 0.001f)) : 0.0;   

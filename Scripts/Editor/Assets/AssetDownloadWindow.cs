@@ -2780,7 +2780,6 @@ namespace HoyoToon.Editor.Assets
 
             aggregateResult.MaterialsCreated += result.MaterialsCreated;
             aggregateResult.MaterialsUpdated += result.MaterialsUpdated;
-            aggregateResult.ModelsConverted += result.ModelsConverted;
             aggregateResult.ModelImportSettingsApplied += result.ModelImportSettingsApplied;
             aggregateResult.TangentApplications += result.TangentApplications;
             aggregateResult.PrerequisiteFailures += result.PrerequisiteFailures;

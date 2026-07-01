@@ -1214,7 +1214,11 @@ namespace HoyoToon.Runtime.Character.HSR
                 if (ren == null)
                     continue;
 
+                ApplyStencilToRendererMaterials(ren);
+
                 RendererConstantBufferState state = GetOrCreateRendererConstantBufferState(ren);
+                int computeVertexOffset = 0;
+                bool hasComputeSkinning = m_ComputeSkinningInitialized && m_ComputeVertexOffsets.TryGetValue(ren, out computeVertexOffset);
 
                 ren.GetPropertyBlock(state.propertyBlock);
                 state.propertyBlock.SetConstantBuffer(s_CrpPerDrawExId, rendererConstantBuffer, 0, s_CrpPerDrawExSize);
@@ -1222,14 +1226,37 @@ namespace HoyoToon.Runtime.Character.HSR
                 state.propertyBlock.SetVector(s_CharacterSelfShadowAtlasRectId, m_CharacterSelfShadowAtlasRect);
                 state.propertyBlock.SetFloat(s_CharacterSelfShadowSliceIndexId, m_CharacterSelfShadowSliceIndex);
                 state.propertyBlock.SetFloat(s_CharacterSelfShadowValidId, m_CharacterSelfShadowValid);
-
-                int computeVertexOffset = 0;
-                bool hasComputeSkinning = m_ComputeSkinningInitialized && m_ComputeVertexOffsets.TryGetValue(ren, out computeVertexOffset);
                 state.propertyBlock.SetInteger(s_HsrComputeSkinningEnabledId, hasComputeSkinning ? 1 : 0);
                 state.propertyBlock.SetInteger(s_HsrComputeSkinningVertexOffsetId, hasComputeSkinning ? computeVertexOffset : 0);
                 state.propertyBlock.SetBuffer(s_HsrComputeSkinnedVerticesId, skinnedVerticesBuffer);
 
                 ren.SetPropertyBlock(state.propertyBlock);
+            }
+        }
+
+        private void ApplyStencilToRendererMaterials(Renderer renderer)
+        {
+            if (renderer == null)
+                return;
+
+            float targetStencil = Mathf.Round(_StencilEyeValue);
+            if (!Mathf.Approximately(_StencilEyeValue, targetStencil))
+                _StencilEyeValue = targetStencil;
+
+            Material[] materials = renderer.sharedMaterials;
+            if (materials == null || materials.Length == 0)
+                return;
+
+            for (int i = 0; i < materials.Length; ++i)
+            {
+                Material material = materials[i];
+                if (material == null || !material.HasProperty(s_StencilEyeId))
+                    continue;
+
+                if (Mathf.Approximately(material.GetFloat(s_StencilEyeId), targetStencil))
+                    continue;
+
+                material.SetFloat(s_StencilEyeId, targetStencil);
             }
         }
 

@@ -276,7 +276,7 @@ MonoBehaviour:
     slotResolution: 512
     lightFollowAmount: 1
     firstSliceUsesSceneLight: 0
-    firstSliceFakePitch: 38.6
+    firstSliceFakePitch: 41.7
     firstSliceFakeYaw: 180
     firstSliceFakeRoll: 180
     secondSliceYawOffset: 35
@@ -291,7 +291,7 @@ MonoBehaviour:
     pcssMaxFilterRadius: 6.5
     radialBlurStart: 0.8
     radialBlurEnd: 1.62
-    radialBlurStrength: 3
+    radialBlurStrength: 2.22
     radialFadeStart: 0.17
-    radialFadeEnd: 1.71
+    radialFadeEnd: 1.25
     floorDepthThreshold: 0.0025

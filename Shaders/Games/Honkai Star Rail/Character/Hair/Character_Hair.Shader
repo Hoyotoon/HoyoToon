@@ -98,49 +98,69 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             [Sub(Outline)] _OutlineOffset ("Outline Offset", Range(-1, 1)) = 0
        
         [Main(Effects, _, off, off)] _Effects ("Effects", Float) = 0
-        [SubGroup(Effects, Emission)] _EmissionGroup ("Emission", Float) = 0
+            [SubGroup(Effects, Emission)] _EmissionGroup ("Emission", Float) = 0
                 [Sub(Emission)] _EmissionThreshold ("Emission Threshold", Range(0, 1)) = 1
                 [Sub(Emission)] _EmissionIntensity ("Emission Intensity", Float) = 0
-        [SubGroup(Effects, Dissolve)] _DissolveEffect("Dissolve Effect", Float) = 0
-            [SubKeyword(Dissolve, _DIRECTIONALDISSOLVE)] _DissoveON ("Enable Dissolve", Float) = 0
-            [SubToggle(Dissolve)] _DissolveShadowOff ("Disable Dissolve Shadow", Float) = 0
-            [Sub(Dissolve)] _DissolveRate ("Dissolve Rate", Range(0, 1)) = 0
-            [Tex(Dissolve, small, collapsed)] _DissolveMap ("Dissolve Map", 2D) = "white" { }
-            [Sub(Dissolve)] _DissolveST ("Dissolve Scale & Offset", Vector) = (1,1,0,0)
-            [Sub(Dissolve)] _DistortionST ("Distortion Scale & Offset", Vector) = (1,1,0,0)
-            [Sub(Dissolve)] _DissolveDistortionIntensity ("Dissolve Distortion Intensity", Float) = 0.01
-            [Sub(Dissolve)] _DissolveOutlineSize1 ("Dissolve Outline Size 1", Float) = 0.05
-            [Sub(Dissolve)] _DissolveOutlineSize2 ("Dissolve Outline Size 2", Float) = 0
-            [Sub(Dissolve)] _DissolveOutlineOffset ("Dissolve Outline Offset", Float) = 0
-            [Sub(Dissolve)] _DissolveOutlineColor1 ("Dissolve Outline Color 1", Color) = (1,1,1,1)
-            [Sub(Dissolve)] _DissolveOutlineColor2 ("Dissolve Outline Color 2", Color) = (0,0,0,0)
-            [Sub(Dissolve)] _DissoveDirecMask ("Dissolve Direction Mask", Float) = 2
-            [Sub(Dissolve)] _DissolveMapAdd ("Dissolve Map Addition", Float) = 0
-            [Sub(Dissolve)] _DissolveOutlineSmoothStep ("Dissolve Outline Smoothstep", Vector) = (0,0,0,0)
-            [Sub(Dissolve)] _DissolveUV ("Dissolve UV Mode", Range(0, 1)) = 0
-            [Sub(Dissolve)] _DissolveUVSpeed ("Dissolve UV Speed", Vector) = (0,0,0,0)
-            [Tex(Dissolve, small, collapsed)] _DissolveMask ("Dissolve Mask", 2D) = "white" { }
-            [Sub(Dissolve)] _DissolveComponent ("Dissolve Mask Channel (RGBA=0/1/2/3)", Vector) = (1,0,0,0)
-            [Sub(Dissolve)] _DissolvePosMaskPos ("Dissolve Position Mask Position", Vector) = (1,0,0,1)
-            [SubToggle(Dissolve)] _DissolvePosMaskWorldON ("Dissolve Position Mask in World Space", Float) = 0
-            [Sub(Dissolve)] _DissolvePosMaskRootOffset ("Dissolve Position Mask Root Offset", Vector) = (0,0,0,0)
-            [SubToggle(Dissolve)] _DissolvePosMaskFilpOn ("Dissolve Position Mask Flip", Float) = 0
-            [SubToggle(Dissolve)] _DissolvePosMaskOn ("Enable Dissolve Position Mask", Float) = 0 
-            [Sub(Dissolve)] _DissolveMaskUVSet ("Dissolve Mask UV Set", Range(0, 1)) = 0
-            [SubToggle(Dissolve)] _DissolveUseDirection ("Use Dissolve Direction", Float) = 0
-            [Sub(Dissolve)] _DissolveCenter ("Dissolve Center Position", Vector) = (0,0,0,0)
-            [Sub(Dissolve)] _DissolveDiretcionXYZ ("Dissolve Direction (XYZ)", Vector) = (0,0,0,0)
-            [SubToggle(Dissolve)] _DissolvePosMaskGlobalOn ("Enable Global Dissolve Position Mask", Float) = 0
-        [SubGroup(Effects, Bloom)] _BloomEffect("Bloom Effect", Float) = 0
-            [SubGroup(Bloom, BloomParams)] _BloomParams ("Bloom Params", Float) = 0
-            [Sub(BloomParams)]_BloomIntensity ("Bloom Intensity", Range(0, 1)) = 0
-        [Sub(BloomParams)] _mBloomIntensity0 ("Bloom Intensity 0 (ID = 0)", Float) = 0
-        [HideInInspector] _Opaqueness ("Opaqueness", Range(0, 1)) = 1
-        [SubGroup(Effects, Dither)] _DitherEffect("Dither Effect", Float) = 0
-        [SubKeyword(Dither, _USE_DITHER)] _UsingDitherAlpha ("Using Dither Alpha", Float) = 0
-        [Sub(Dither)] _DitherAlpha ("Dither Alpha Value", Range(0, 1)) = 1
-        [Sub(Dither)] _UsingDitherAlphaArt ("UsingDitherAlpha Art", Float) = 0
-        [Sub(Dither)] _DITHER_FADE_IN ("_DITHER_FADE_IN", Float) = 0
+            [SubGroup(Effects, StarrySky)] _StarrySkyEffect("StarrySky Effect", Float) = 0
+                [SubKeyword(StarrySky, _STATTYSKY)] _StarrySky ("With StarrySky", Float) = 0
+                [Sub(StarrySky)] _SkyTex ("StarrySky Base Texture", 2D) = "black" { }
+                [Sub(StarrySky)] _SkyMask ("StarrySky Mask Texture", 2D) = "black" { }
+                [Sub(StarrySky)] _SkyRange ("StarrySky Range", Range(-1, 1)) = 0
+                [Sub(StarrySky)] _SkyStarColor ("StarrySky Star Color", Color) = (1,1,1,1)
+                [Sub(StarrySky)] _SkyStarTex ("StarrySky Star Texture", 2D) = "black" { }
+                [Sub(StarrySky)] _SkyStarTexScale ("StarrySky Star Texture Scale", Float) = 1
+                [Sub(StarrySky)] _SkyStarSpeed ("StarrySky Star Speed(XY)", Vector) = (0,0,0,0)
+                [Sub(StarrySky)] _SkyStarDepthScale ("StarrySky Star DepthScale", Float) = 1
+                [Sub(StarrySky)] _SkyStarMaskTex ("StarrySky Star Mask Texture", 2D) = "whilte" { }
+                [Sub(StarrySky)] _SkyStarMaskTexScale ("StarrySky Star Mask Texture Scale", Float) = 1
+                [Sub(StarrySky)] _SkyStarMaskTexSpeed ("StarrySky Star flicker frequency", Range(0, 20)) = 0
+                [Sub(StarrySky)] _SkyFresnelColor ("StarrySky FresnelColor", Color) = (0,0,0,1)
+                [Sub(StarrySky)] _SkyFresnelBaise ("StarrySky FresnelBaise", Float) = 0
+                [Sub(StarrySky)] _SkyFresnelScale ("StarrySky FresnelScale", Float) = 0
+                [Sub(StarrySky)] _SkyFresnelSmooth ("StarrySky FresnelSmooth", Range(0, 0.5)) = 0
+                [Sub(StarrySky)] _OSScale ("StarrySky Model Scale", Range(0, 30)) = 1
+                [Sub(StarrySky)] _StarDensity ("StarrySky Density", Range(0, 1)) = 0.5
+                [Sub(StarrySky)] _StarMode ("StarrySky Mode", Float) = 0
+            [SubGroup(Effects, Dissolve)] _DissolveEffect("Dissolve Effect", Float) = 0
+                [SubKeyword(Dissolve, _DIRECTIONALDISSOLVE)] _DissoveON ("Enable Dissolve", Float) = 0
+                [SubToggle(Dissolve)] _DissolveShadowOff ("Disable Dissolve Shadow", Float) = 0
+                [Sub(Dissolve)] _DissolveRate ("Dissolve Rate", Range(0, 1)) = 0
+                [Tex(Dissolve, small, collapsed)] _DissolveMap ("Dissolve Map", 2D) = "white" { }
+                [Sub(Dissolve)] _DissolveST ("Dissolve Scale & Offset", Vector) = (1,1,0,0)
+                [Sub(Dissolve)] _DistortionST ("Distortion Scale & Offset", Vector) = (1,1,0,0)
+                [Sub(Dissolve)] _DissolveDistortionIntensity ("Dissolve Distortion Intensity", Float) = 0.01
+                [Sub(Dissolve)] _DissolveOutlineSize1 ("Dissolve Outline Size 1", Float) = 0.05
+                [Sub(Dissolve)] _DissolveOutlineSize2 ("Dissolve Outline Size 2", Float) = 0
+                [Sub(Dissolve)] _DissolveOutlineOffset ("Dissolve Outline Offset", Float) = 0
+                [Sub(Dissolve)] _DissolveOutlineColor1 ("Dissolve Outline Color 1", Color) = (1,1,1,1)
+                [Sub(Dissolve)] _DissolveOutlineColor2 ("Dissolve Outline Color 2", Color) = (0,0,0,0)
+                [Sub(Dissolve)] _DissoveDirecMask ("Dissolve Direction Mask", Float) = 2
+                [Sub(Dissolve)] _DissolveMapAdd ("Dissolve Map Addition", Float) = 0
+                [Sub(Dissolve)] _DissolveOutlineSmoothStep ("Dissolve Outline Smoothstep", Vector) = (0,0,0,0)
+                [Sub(Dissolve)] _DissolveUV ("Dissolve UV Mode", Range(0, 1)) = 0
+                [Sub(Dissolve)] _DissolveUVSpeed ("Dissolve UV Speed", Vector) = (0,0,0,0)
+                [Tex(Dissolve, small, collapsed)] _DissolveMask ("Dissolve Mask", 2D) = "white" { }
+                [Sub(Dissolve)] _DissolveComponent ("Dissolve Mask Channel (RGBA=0/1/2/3)", Vector) = (1,0,0,0)
+                [Sub(Dissolve)] _DissolvePosMaskPos ("Dissolve Position Mask Position", Vector) = (1,0,0,1)
+                [SubToggle(Dissolve)] _DissolvePosMaskWorldON ("Dissolve Position Mask in World Space", Float) = 0
+                [Sub(Dissolve)] _DissolvePosMaskRootOffset ("Dissolve Position Mask Root Offset", Vector) = (0,0,0,0)
+                [SubToggle(Dissolve)] _DissolvePosMaskFilpOn ("Dissolve Position Mask Flip", Float) = 0
+                [SubToggle(Dissolve)] _DissolvePosMaskOn ("Enable Dissolve Position Mask", Float) = 0 
+                [Sub(Dissolve)] _DissolveMaskUVSet ("Dissolve Mask UV Set", Range(0, 1)) = 0
+                [SubToggle(Dissolve)] _DissolveUseDirection ("Use Dissolve Direction", Float) = 0
+                [Sub(Dissolve)] _DissolveCenter ("Dissolve Center Position", Vector) = (0,0,0,0)
+                [Sub(Dissolve)] _DissolveDiretcionXYZ ("Dissolve Direction (XYZ)", Vector) = (0,0,0,0)
+                [SubToggle(Dissolve)] _DissolvePosMaskGlobalOn ("Enable Global Dissolve Position Mask", Float) = 0
+            [SubGroup(Effects, Bloom)] _BloomEffect("Bloom Effect", Float) = 0
+                [SubGroup(Bloom, BloomParams)] _BloomParams ("Bloom Params", Float) = 0
+                [Sub(BloomParams)]_BloomIntensity ("Bloom Intensity", Range(0, 1)) = 0
+            [Sub(BloomParams)] _mBloomIntensity0 ("Bloom Intensity 0 (ID = 0)", Float) = 0
+            [HideInInspector] _Opaqueness ("Opaqueness", Range(0, 1)) = 1
+            [SubGroup(Effects, Dither)] _DitherEffect("Dither Effect", Float) = 0
+                [SubKeyword(Dither, _USE_DITHER)] _UsingDitherAlpha ("Using Dither Alpha", Float) = 0
+                [Sub(Dither)] _DitherAlpha ("Dither Alpha Value", Range(0, 1)) = 1
+                [Sub(Dither)] _UsingDitherAlphaArt ("UsingDitherAlpha Art", Float) = 0
+                [Sub(Dither)] _DITHER_FADE_IN ("_DITHER_FADE_IN", Float) = 0
         [HideInInspector] _CharacterPerDrawEx ("_CharacterPerDrawEx", Float) = 1
         [HideInInspector] _XorShadowPartID ("Xor Shadow Parts", Float) = 0
         [HideInInspector] _UVChannelFront ("UV Channel for Frontside", Float) = 0
@@ -272,6 +292,7 @@ Shader "HoyoToon/Honkai Star Rail/Character/Hair"
             #pragma multi_compile_fragment _ _SHADOWS_SOFT _SHADOWS_SOFT_LOW _SHADOWS_SOFT_MEDIUM _SHADOWS_SOFT_HIGH
             #pragma shader_feature_local _DIRECTIONALDISSOLVE
             #pragma multi_compile _ _HEIGHTLERP
+            #pragma shader_feature_local _STATTYSKY
             #pragma shader_feature_local _USE_NORMAL_MAP
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _RIM_BACKLIGHT_ON

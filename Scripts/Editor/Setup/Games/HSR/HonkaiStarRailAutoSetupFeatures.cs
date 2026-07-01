@@ -15,14 +15,14 @@ namespace HoyoToon.Editor.Setup.Games.HSR
                     AutoSetup.ApplyPrerequisites,
                     context => context.Options.RunPrerequisites),
                 new AutoSetupFeature(
-                    "convert-models",
-                    "Convert models",
-                    AutoSetupModelsUtility.ConvertSelectedModels,
-                    context => context.Options.ConvertModels && context.SelectedFbxAssetPaths.Count > 0),
+                    "rename-models",
+                    "Rename models",
+                    AutoSetupModelsUtility.RenameDetectedModels,
+                    context => !string.IsNullOrWhiteSpace(context.DetectedGameKey) && context.ModelAssetPaths.Count > 0),
                 new AutoSetupFeature(
                     "character-icons",
-                    "Detect character icons",
-                    AutoSetupModelsUtility.DetectCharacterIcons,
+                    "Cache character icons",
+                    AutoSetupModelsUtility.CacheCharacterIcons,
                     context => !string.IsNullOrWhiteSpace(context.DetectedGameKey) && context.ModelAssetPaths.Count > 0),
                 new AutoSetupFeature(
                     "hsr-companion-materials",
@@ -59,11 +59,6 @@ namespace HoyoToon.Editor.Setup.Games.HSR
                     "Add look-at controller",
                     AutoSetupSceneUtility.AddLookAtController,
                     context => context.InstantiatedModels.Count > 0),
-                new AutoSetupFeature(
-                    "tangents",
-                    "Apply tangent settings",
-                    AutoSetupModelsUtility.ApplyTangents,
-                    context => context.Options.ApplyTangents && (context.InstantiatedModels.Count > 0 || context.ModelAssetPaths.Count > 0)),
                 new AutoSetupFeature(
                     "placement",
                     "Update placement",

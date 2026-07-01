@@ -132,7 +132,7 @@ MonoBehaviour:
     m_Value: 1
   BakedLutTexture:
     m_OverrideState: 1
-    m_Value: {fileID: 2800000, guid: b945b381d73e66b4c8a0745dbc882b71, type: 3}
+    m_Value: {fileID: 2800000, guid: f6a5b92887ae5f14f95aabc07c898a85, type: 3}
   LutSlices:
     m_OverrideState: 1
     m_Value: 31

@@ -37,6 +37,7 @@ vertex_out vert_base(vertex_in v, uint vertexID : SV_VertexID)
     o.ss_pos.xy = ss_tmp.zz + ss_tmp.xw;
     o.ws_pos = ws_pos;
     o.pos = o.vertex;
+    o.os_pos = v.vertex;
 
     o.view.xyz = _WorldSpaceCameraPos.xyz - ws_pos.xyz;
     float2 tmp = normalize(mul((float3x3)unity_WorldToObject, o.view.xyz)).xy; 
@@ -106,6 +107,8 @@ buffer_out frag_base(vertex_out i,  bool vface : SV_IsFrontFace) : SV_Target
 
     float4 final_color = 1.f;
     final_color.xyz = diffuse.xyz ;
+
+    
 
     float id;
     get_id(lightmap.w, id);
@@ -303,6 +306,14 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
     float2 screen_uv = i.ss_pos.xy / i.ss_pos.w;
     float4 gbuffer = _GBufferA.Sample(sampler_linear_clamp, screen_uv).xyzw;
 
+    #if defined(_STATTYSKY)
+        float2 starmodes = (_StarMode.xx > float2(2.5f, 0.5f));
+        float2 mask_uv = starmodes.x ? i.uv.zw : i.uv.xy;
+        float3 skytex = _SkyTex.Sample(sampler_linear_repeat, i.uv.xy * _SkyTex_ST.xy + _SkyTex_ST.zw);
+        float2 skymask = _SkyMask.Sample(sampler_linear_repeat, mask_uv * _SkyMask_ST.xy + _SkyMask_ST.zw).xy + _SkyRange;
+        gbuffer.xyz = lerp(gbuffer, skytex, skymask.x);
+    #endif
+
     #if defined(_DIRECTIONALDISSOLVE)
         float dis_out;
         float dis_area;
@@ -398,6 +409,77 @@ forward_mask_out frab_forward(vertex_out i, bool vface : SV_IsFrontFace)
     emission_thresh);
     final_color.xyz = final_color.xyz * light_color + fresnel;
     final_color.xyz = _ES_AddColor.xyz * gbuffer + final_color;
+    #if defined(_STATTYSKY) // the logic for the hair starry sky is slightly different for tghe hair
+        // sky a = screenspace texture
+        float2 screen_centered =  screen_uv.xy - 0.5f;
+        float2 screen_offset = ((screen_centered * length(view)) * _SkyStarDepthScale) * _SkyStarTex_ST.xy + _SkyStarTex_ST.zw;
+        screen_offset = _Time.yy * _SkyStarSpeed.xy + screen_offset;
+
+        float sky_a = _SkyStarTex.Sample(sampler_linear_repeat, screen_offset);
+        float3 skycolor_a = ((sky_a * _SkyStarColor) * _SkyStarTexScale) * skymask.xxx;
+
+        // sky b = uv based texture
+        float2 sky_uv = (mask_uv * _SkyStarDepthScale.xx) * _SkyStarTex_ST.xy + _SkyStarTex_ST.zw;
+        sky_uv = _Time.yy * _SkyStarSpeed.xy + sky_uv;
+
+        float sky_b = _SkyStarTex.Sample(sampler_linear_repeat, sky_uv);
+        float3 skycolor_b = ((sky_b * _SkyStarColor) * _SkyStarTexScale) * skymask.xxx;
+        
+        // create combined mask 
+        float2 starmask_uv = mask_uv * _SkyStarMaskTex_ST.xy + _SkyStarMaskTex_ST.zw;
+        float3 mask_a = _SkyStarMaskTex.Sample(sampler_linear_repeat, _Time.yy * _SkyStarMaskTexSpeed.xx + starmask_uv);
+        float3 mask_b = _SkyStarMaskTex.Sample(sampler_linear_repeat, _Time.yy * _SkyStarMaskTexSpeed.xx + starmask_uv);
+
+        float3 combined_mask = (mask_a + mask_b) * _SkyStarMaskTexScale.xxx;
+        
+        float os_x = i.os_pos.x / _OSScale;
+        float half_os = _OSScale * 0.5;
+        float2 os_yz = i.os_pos.yz / half_os;
+        float3 ss_val = float3(
+            smoothstep(1.0f, -0.5f, os_yz.x),
+            smoothstep(1.0f, -0.5f, os_yz.y),
+            smoothstep(1.0f, -0.5f, os_x) 
+        );
+
+        float star_a = _SkyStarTex.Sample(sampler_linear_repeat, ss_val.yz * 20);
+        float2 star_b = _SkyStarTex.Sample(sampler_linear_repeat, mask_uv);
+        star_a = saturate((-star_b.x * _StarDensity + star_a) / (1.0f - _StarDensity));
+
+        float4 star_coords = ss_val.xyyz * _SkyStarTex_ST + _SkyStarTex_ST;
+
+        float star_c = _SkyStarTex.Sample(sampler_linear_repeat, star_coords.xy);
+        float star_d = _SkyStarTex.Sample(sampler_linear_repeat, star_coords.zw);
+
+        float star_lerp = lerp(star_d, star_c, star_b.y);
+
+
+        float3 starcolor = (((star_a * _SkyStarColor) * star_lerp) * _SkyStarTexScale) * combined_mask;
+
+
+        float3 tan_norm = normalize(i.tangent.xyz);
+        float3 tan_tmp = tan_norm.yyy * unity_MatrixV._m01_m11_m21;
+        tan_tmp.xyz = unity_MatrixV._m00_m10_m20 * tan_norm.xxx + tan_tmp.xyz;
+        tan_norm = unity_MatrixV._m02_m12_m22 * tan_norm.zzz + tan_tmp.xyz;
+
+        float3 tdotv = dot(tan_norm, view);
+        float fresnel_base = pow(1.0f - tdotv, 6.0f);
+
+        float fresnel_smooth = smoothstep(_SkyFresnelBaise - 0.5f, _SkyFresnelBaise + _SkyFresnelSmooth, fresnel_base);
+        fresnel_smooth = fresnel_smooth * _SkyFresnelScale;
+        float3 fresnel_color = fresnel_smooth * _SkyFresnelColor.xyz;
+
+        float mode_check = _StarMode < 1.5f;
+
+        skycolor_a = skycolor_a * combined_mask.xxx;
+        skycolor_a = skymask.x * skycolor_a;
+        skycolor_a = starmodes.yyy ? starcolor : skycolor_a;
+        skycolor_b = skycolor_b * combined_mask.xxx;
+        skycolor_b = skymask.x * skycolor_b;
+        skycolor_a = mode_check ? skycolor_a : skycolor_b;
+        skycolor_a = fresnel_color * skymask.y + skycolor_a;
+        final_color.xyz = final_color.xyz + skycolor_a;
+       
+    #endif
 
     if(!_UsingDitherAlpha)
     {

@@ -454,10 +454,10 @@ TEXTURE2D(_ES_GradientAtlas);
 TEXTURE2D(_NormalMap);
 #endif
 
-#if defined(_DIRECTIONALDISSOLVE)
+// #if defined(_DIRECTIONALDISSOLVE)
 TEXTURE2D(_DissolveMap);
 TEXTURE2D(_DissolveMask);
-#endif
+// #endif
 
 #if defined(_WITHSTOCKINGS)
     TEXTURE2D(_StockRangeTex);

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -32,17 +33,17 @@ namespace HoyoToon.Editor.API
             needsWrite: GamesScriptableObjectSync.NeedsWrite,
             writeAssets: GamesScriptableObjectSync.WriteAssets);
 
-        private static readonly SyncEndpoint<CharacterIdRecordDto> CharacterIdsEndpoint = new SyncEndpoint<CharacterIdRecordDto>(
-            displayName: "character ID data",
-            payloadName: "character IDs",
-            sourceUrl: HoyoToonApi.CharacterIdsHttpUrl,
-            lastCheckTicksKey: "HoyoToon.CharacterIdsApi.LastCheckTicks",
-            lastPayloadHashKey: "HoyoToon.CharacterIdsApi.LastPayloadHash",
-            lastSchemaVersionKey: "HoyoToon.CharacterIdsApi.LastSchemaVersion",
+        private static readonly SyncEndpoint<EntityCatalogRecordDto> EntityCatalogEndpoint = new SyncEndpoint<EntityCatalogRecordDto>(
+            displayName: "entity catalog data",
+            payloadName: "entity catalog",
+            sourceUrl: HoyoToonApi.EntityCatalogHttpUrl,
+            lastCheckTicksKey: "HoyoToon.EntityCatalogApi.LastCheckTicks",
+            lastPayloadHashKey: "HoyoToon.EntityCatalogApi.LastPayloadHash",
+            lastSchemaVersionKey: "HoyoToon.EntityCatalogApi.LastSchemaVersion",
             schemaVersion: "1",
-            fetchPayload: FetchArrayPayloadAsync<CharacterIdRecordDto>,
-            needsWrite: GameCharacterIdsScriptableObjectSync.NeedsWrite,
-            writeAssets: GameCharacterIdsScriptableObjectSync.WriteAssets);
+            fetchPayload: FetchEntityCatalogPayloadAsync,
+            needsWrite: GameEntityCatalogScriptableObjectSync.NeedsWrite,
+            writeAssets: GameEntityCatalogScriptableObjectSync.WriteAssets);
 
         private static readonly SyncEndpoint<ResourceRecordDto> ResourcesEndpoint = new SyncEndpoint<ResourceRecordDto>(
             displayName: "resource data",
@@ -81,7 +82,7 @@ namespace HoyoToon.Editor.API
         private static void CheckForApiUpdatesMenuItem()
         {
             LogManualRefreshResult(GamesEndpoint, TryStartRefresh(GamesEndpoint, true));
-            LogManualRefreshResult(CharacterIdsEndpoint, TryStartRefresh(CharacterIdsEndpoint, true));
+            LogManualRefreshResult(EntityCatalogEndpoint, TryStartRefresh(EntityCatalogEndpoint, true));
             LogManualRefreshResult(ResourcesEndpoint, TryStartRefresh(ResourcesEndpoint, true));
             LogManualRefreshResult(UserProfileEndpoint, TryStartRefresh(UserProfileEndpoint, true));
         }
@@ -98,7 +99,7 @@ namespace HoyoToon.Editor.API
         private static void TriggerInitialRefresh()
         {
             TryStartRefresh(GamesEndpoint, false);
-            TryStartRefresh(CharacterIdsEndpoint, false);
+            TryStartRefresh(EntityCatalogEndpoint, false);
             TryStartRefresh(ResourcesEndpoint, false);
             TryStartRefresh(UserProfileEndpoint, false);
         }
@@ -111,7 +112,7 @@ namespace HoyoToon.Editor.API
             }
 
             TryStartRefresh(GamesEndpoint, false);
-            TryStartRefresh(CharacterIdsEndpoint, false);
+            TryStartRefresh(EntityCatalogEndpoint, false);
             TryStartRefresh(ResourcesEndpoint, false);
             TryStartRefresh(UserProfileEndpoint, false);
         }
@@ -239,6 +240,29 @@ namespace HoyoToon.Editor.API
                 cancellationToken);
         }
 
+        private static async Task<HoyoToonApiPayloadResult<EntityCatalogRecordDto>> FetchEntityCatalogPayloadAsync(
+            SyncEndpoint<EntityCatalogRecordDto> endpoint,
+            CancellationToken cancellationToken)
+        {
+            try
+            {
+                return await HoyoToonApiFetchUtility.FetchArrayPayloadAsync<EntityCatalogRecordDto>(
+                    endpoint.SourceUrl,
+                    endpoint.PayloadName,
+                    cancellationToken).ConfigureAwait(false);
+            }
+            catch (InvalidOperationException exception) when (ShouldUseEntityCatalogRouteFallback(exception))
+            {
+                List<EntityCatalogRecordDto> records = await FetchEntityCatalogFromPublicEntityRoutesAsync(cancellationToken)
+                    .ConfigureAwait(false);
+                byte[] payload = JsonSerializer.Serialize(records, HoyoToonApi.JsonResolver);
+                return new HoyoToonApiPayloadResult<EntityCatalogRecordDto>(
+                    Encoding.UTF8.GetString(payload),
+                    records,
+                    "entity route fallback");
+            }
+        }
+
         private static async Task<HoyoToonApiPayloadResult<UserRecordDto>> FetchUserProfilePayloadAsync(
             SyncEndpoint<UserRecordDto> endpoint,
             CancellationToken cancellationToken)
@@ -261,6 +285,116 @@ namespace HoyoToon.Editor.API
                 ? string.Empty
                 : Encoding.UTF8.GetString(JsonSerializer.Serialize(apiUser, HoyoToonApi.JsonResolver));
             return new HoyoToonApiPayloadResult<UserRecordDto>(rawPayload, records, sourceUrl);
+        }
+
+        private static async Task<List<EntityCatalogRecordDto>> FetchEntityCatalogFromPublicEntityRoutesAsync(
+            CancellationToken cancellationToken)
+        {
+            HoyoToonApiPayloadResult<GameRecordDto> gamesPayload = await HoyoToonApiFetchUtility
+                .FetchArrayPayloadAsync<GameRecordDto>(HoyoToonApi.GamesV2HttpUrl, "games", cancellationToken)
+                .ConfigureAwait(false);
+
+            var records = new List<EntityCatalogRecordDto>();
+            foreach (GameRecordDto game in gamesPayload.Records)
+            {
+                string gameKey = game?.config?.key;
+                if (string.IsNullOrWhiteSpace(gameKey))
+                {
+                    continue;
+                }
+
+                await FetchEntityPageRecordsAsync(records, gameKey, HoyoToonApi.CharactersHttpUrl, "Character", cancellationToken)
+                    .ConfigureAwait(false);
+                await FetchEntityPageRecordsAsync(records, gameKey, HoyoToonApi.MonstersHttpUrl, "Monster", cancellationToken)
+                    .ConfigureAwait(false);
+                await FetchEntityPageRecordsAsync(records, gameKey, HoyoToonApi.WeaponsHttpUrl, "Weapon", cancellationToken)
+                    .ConfigureAwait(false);
+            }
+
+            return records;
+        }
+
+        private static async Task FetchEntityPageRecordsAsync(
+            List<EntityCatalogRecordDto> records,
+            string gameKey,
+            string baseUrl,
+            string entityKind,
+            CancellationToken cancellationToken)
+        {
+            string cursor = null;
+            do
+            {
+                string payload;
+                try
+                {
+                    payload = await HoyoToonApiFetchUtility
+                        .GetStringAsync(BuildEntityPageUrl(baseUrl, gameKey, cursor), cancellationToken)
+                        .ConfigureAwait(false);
+                }
+                catch (HttpRequestException exception) when (IsMissingProjectionPage(exception))
+                {
+                    return;
+                }
+
+                EntityCatalogPageDto page = JsonSerializer.Deserialize<EntityCatalogPageDto>(payload, HoyoToonApi.JsonResolver);
+
+                foreach (EntityCatalogRecordDto record in page?.items ?? new List<EntityCatalogRecordDto>())
+                {
+                    record.gameKey = string.IsNullOrWhiteSpace(record.gameKey) ? gameKey : record.gameKey;
+                    record.entityKind = entityKind;
+                    record.entityId = ResolveEntityPageRecordId(record);
+                    records.Add(record);
+                }
+
+                cursor = page != null && !page.isDone ? page.continueCursor : null;
+            }
+            while (!string.IsNullOrWhiteSpace(cursor));
+        }
+
+        private static string BuildEntityPageUrl(string baseUrl, string gameKey, string cursor)
+        {
+            var builder = new StringBuilder(baseUrl);
+            builder.Append("?gameKey=").Append(Uri.EscapeDataString(gameKey));
+            builder.Append("&limit=250");
+            if (!string.IsNullOrWhiteSpace(cursor))
+            {
+                builder.Append("&cursor=").Append(Uri.EscapeDataString(cursor));
+            }
+
+            return builder.ToString();
+        }
+
+        private static string ResolveEntityPageRecordId(EntityCatalogRecordDto record)
+        {
+            if (!string.IsNullOrWhiteSpace(record.entityId))
+            {
+                return record.entityId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(record.characterId))
+            {
+                return record.characterId;
+            }
+
+            if (!string.IsNullOrWhiteSpace(record.monsterId))
+            {
+                return record.monsterId;
+            }
+
+            return record.weaponId;
+        }
+
+        private static bool ShouldUseEntityCatalogRouteFallback(Exception exception)
+        {
+            string message = exception.ToString();
+            return message.Contains("404", StringComparison.Ordinal)
+                || message.Contains(nameof(HttpRequestException), StringComparison.Ordinal)
+                || message.Contains("JSON array", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsMissingProjectionPage(Exception exception)
+        {
+            return exception.ToString().Contains("400", StringComparison.Ordinal);
         }
 
         private static bool HasUserProfileRefreshTarget()

@@ -9,9 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0ddcd9a28aa14999bb6c2f32620da38a, type: 3}
+  m_Script: {fileID: 0}
   m_Name: GameConverterConfigs
-  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime::HoyoToon.Runtime.ScriptableObjects.Games.GameConverterConfigsSO
+  m_EditorClassIdentifier: com.hoyotoon.hoyotoon.runtime.data:HoyoToon.Runtime.ScriptableObjects.Games:GameConverterConfigsSO
   entries:
   - gameKey: Zenless Zone Zero
     converterType: Hoyo2Unity

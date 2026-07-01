@@ -5,45 +5,6 @@ using UnityEngine;
 namespace HoyoToon.Runtime.ScriptableObjects
 {
     [Serializable]
-    public class GameAxesData
-    {
-        [SerializeField] private bool x = true;
-        [SerializeField] private bool y = true;
-        [SerializeField] private bool z = true;
-
-        public bool X => x;
-
-        public bool Y => y;
-
-        public bool Z => z;
-    }
-
-    [Serializable]
-    public class GameConverterSectionData
-    {
-        [SerializeField] private string defaultValue;
-        [SerializeField] private List<string> defaultList = new List<string>();
-        [SerializeField] private List<string> options = new List<string>();
-
-        public string Default => defaultValue;
-
-        public IReadOnlyList<string> DefaultList => defaultList;
-
-        public IReadOnlyList<string> Options => options;
-    }
-
-    [Serializable]
-    public class GameConverterMappingData
-    {
-        [SerializeField] private string list;
-        [SerializeField] private string mapping;
-
-        public string List => list;
-
-        public string Mapping => mapping;
-    }
-
-    [Serializable]
     public class PopupProgressData
     {
         [SerializeField] private string mode = "indeterminate";

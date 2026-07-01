@@ -146,6 +146,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
                     continue;
                 }
 
+                ApplyDetectedModelName(context, modelAssetPath, instance);
                 context.RegisterInstantiatedModel(instance);
             }
         }
@@ -399,11 +400,7 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
 
         private static IReadOnlyList<string> CollectTargetModelAssetPaths(AutoSetupContext context)
         {
-            IEnumerable<string> sourcePaths = context.ConvertedModelAssetPaths.Count > 0
-                ? context.ConvertedModelAssetPaths
-                : context.ModelAssetPaths;
-
-            return sourcePaths
+            return context.ModelAssetPaths
                 .Where(path => !string.IsNullOrWhiteSpace(path))
                 .Select(EditorPathUtility.NormalizeAssetPath)
                 .Where(path => AssetDatabase.LoadAssetAtPath<GameObject>(path) != null)
@@ -647,7 +644,28 @@ namespace HoyoToon.Editor.Utilities.AutoSetup
         {
             return string.IsNullOrWhiteSpace(assetPath) ? null : EditorPathUtility.NormalizeAssetPath(assetPath);
         }
+
+        private static void ApplyDetectedModelName(AutoSetupContext context, string modelAssetPath, GameObject instance)
+        {
+            if (instance == null)
+            {
+                return;
+            }
+
+            string displayName = AutoSetupModelsUtility.ResolveDetectedModelName(context, modelAssetPath);
+            if (string.IsNullOrWhiteSpace(displayName) || string.Equals(instance.name, displayName, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            Undo.RecordObject(instance, "HoyoToon Auto Setup Rename Model");
+            instance.name = displayName;
+            EditorUtility.SetDirty(instance);
+            if (instance.scene.IsValid())
+            {
+                EditorSceneManager.MarkSceneDirty(instance.scene);
+            }
+        }
     }
 }
 #endif
-

@@ -14,7 +14,10 @@ namespace HoyoToon.Editor.API
 
         internal const string Host = "https://hapi.hoyotoon.com";
         internal const string GamesV2HttpUrl = Host + "/games/v2";
-        internal const string CharacterIdsHttpUrl = Host + "/character-ids";
+        internal const string EntityCatalogHttpUrl = Host + "/entity-catalog";
+        internal const string CharactersHttpUrl = Host + "/characters";
+        internal const string MonstersHttpUrl = Host + "/monsters";
+        internal const string WeaponsHttpUrl = Host + "/weapons";
         internal const string ResourcesHttpUrl = Host + "/resources";
         internal const string UsersHttpUrl = Host + "/users";
         internal const string DefaultUserAvatar = "https://img.hoyotoon.com/raw/HoyoToon%20Logo.png";

@@ -16,7 +16,6 @@ namespace HoyoToon.Editor.Setup
         private readonly List<string> selectedAssetPaths = new List<string>();
         private readonly List<string> selectedFbxAssetPaths = new List<string>();
         private readonly List<string> modelAssetPaths = new List<string>();
-        private readonly List<string> convertedModelAssetPaths = new List<string>();
         private readonly List<GameObject> instantiatedModels = new List<GameObject>();
 
         public AutoSetupContext(AutoSetupOptions options = null)
@@ -34,8 +33,6 @@ namespace HoyoToon.Editor.Setup
         public IReadOnlyList<string> SelectedFbxAssetPaths => selectedFbxAssetPaths;
 
         public IReadOnlyList<string> ModelAssetPaths => modelAssetPaths;
-
-        public IReadOnlyList<string> ConvertedModelAssetPaths => convertedModelAssetPaths;
 
         public IReadOnlyList<GameObject> InstantiatedModels => instantiatedModels;
 
@@ -65,36 +62,9 @@ namespace HoyoToon.Editor.Setup
             selectedFbxAssetPaths.AddRange(AutoSetupModelsUtility.CollectSelectedFbxAssetPaths(selectedAssets));
 
             modelAssetPaths.Clear();
-            modelAssetPaths.AddRange(
-                AutoSetupModelsUtility.CollectKnownModelAssetPaths(
-                    selectedAssets,
-                    convertedModelAssetPaths));
+            modelAssetPaths.AddRange(AutoSetupModelsUtility.CollectKnownModelAssetPaths(selectedAssets));
 
             ResolveDetectedGame();
-        }
-
-        internal void RegisterConvertedModelAssetPath(string assetPath)
-        {
-            string normalizedAssetPath = AutoSetupModelsUtility.NormalizeAssetPath(assetPath);
-            if (string.IsNullOrWhiteSpace(normalizedAssetPath))
-            {
-                return;
-            }
-
-            bool alreadyTracked = convertedModelAssetPaths.Any(
-                candidate => string.Equals(candidate, normalizedAssetPath, StringComparison.OrdinalIgnoreCase));
-            if (!alreadyTracked)
-            {
-                convertedModelAssetPaths.Add(normalizedAssetPath);
-            }
-
-            bool modelAlreadyTracked = modelAssetPaths.Any(
-                candidate => string.Equals(candidate, normalizedAssetPath, StringComparison.OrdinalIgnoreCase));
-            if (!modelAlreadyTracked)
-            {
-                modelAssetPaths.Add(normalizedAssetPath);
-                modelAssetPaths.Sort(StringComparer.OrdinalIgnoreCase);
-            }
         }
 
         internal void RegisterInstantiatedModel(GameObject model)

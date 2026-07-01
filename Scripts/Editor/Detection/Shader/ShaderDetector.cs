@@ -181,6 +181,11 @@ namespace HoyoToon.Editor.Detection.Shader
 
             characterName = CharacterNameDetector.TryExtractCharacterName(game.Key, contextAssetPath);
 
+            if (TryDetectShader(game, materialJson, rawJson, out shaderPath, out source, out _, out _))
+            {
+                return true;
+            }
+
             IReadOnlyList<string> matchedGameProperties = GameDetector.GetMatchedProperties(game, materialJson);
             string lookedForGamePropertiesText = game.GameProperties == null
                 ? null
@@ -188,36 +193,6 @@ namespace HoyoToon.Editor.Detection.Shader
             string matchedGamePropertiesText = matchedGameProperties == null
                 ? null
                 : string.Join(", ", matchedGameProperties.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal));
-
-            if (TryDetectShader(game, materialJson, rawJson, out shaderPath, out source, out IReadOnlyList<string> lookedForShaderKeywords, out IReadOnlyList<string> matchedShaderKeywords))
-            {
-                string lookedForShaderKeywordsText = lookedForShaderKeywords == null
-                    ? null
-                    : string.Join(", ", lookedForShaderKeywords.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal));
-                string matchedShaderKeywordsText = matchedShaderKeywords == null
-                    ? null
-                    : string.Join(", ", matchedShaderKeywords.Where(value => !string.IsNullOrWhiteSpace(value)).Distinct(StringComparer.Ordinal));
-                string message = source == ShaderMatchSource.GameDefaultShader
-                    ? "No shader rule matched, so the game default shader was used."
-                    : "Game and shader detected.";
-
-                var messageBuilder = new StringBuilder();
-                messageBuilder.AppendLine(source == ShaderMatchSource.GameDefaultShader
-                    ? "Detection result: game detected and default shader used."
-                    : "Detection result: game and shader detected.");
-                messageBuilder.AppendLine($"Json: {contextAssetPath ?? "-"}");
-                messageBuilder.AppendLine($"Game: {game.Key}");
-                messageBuilder.AppendLine($"Character: {characterName ?? "-"}");
-                messageBuilder.AppendLine($"Shader: {shaderPath ?? "-"}");
-                messageBuilder.AppendLine($"Source: {source}");
-                messageBuilder.AppendLine($"Looked For (Game): {lookedForGamePropertiesText ?? "-"}");
-                messageBuilder.AppendLine($"Matched (Game): {matchedGamePropertiesText ?? "-"}");
-                messageBuilder.AppendLine($"Looked For (Shader): {lookedForShaderKeywordsText ?? "-"}");
-                messageBuilder.AppendLine($"Matched (Shader): {matchedShaderKeywordsText ?? "-"}");
-                messageBuilder.AppendLine($"Message: {message}");
-                HoyoToonLogger.Verbose(HoyoToonLogCategory.Detection, messageBuilder.ToString());
-                return true;
-            }
 
             var shaderMissMessageBuilder = new StringBuilder();
             shaderMissMessageBuilder.AppendLine("Detection result: game detected, but no matching shader was detected.");

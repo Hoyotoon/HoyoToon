@@ -42,8 +42,6 @@ namespace HoyoToon.Editor.UI.Manager
         private const string ComponentsAssetPath = PackageAssetRoot + "/USS/HoyoToonComponents.uss";
         private const string HeaderBackgroundAssetPath = "Packages/com.hoyotoon.hoyotoon/Resources/UI/background.png";
         private const string HeaderLogoAssetPath = "Packages/com.hoyotoon.hoyotoon/Resources/UI/hoyotoon.png";
-        private const string LastCharacterSplashAssetPathSessionKey = "HoyoToon.Manager.LastCharacterSplashAssetPath";
-        private const string LastCharacterSplashModelAssetPathSessionKey = "HoyoToon.Manager.LastCharacterSplashModelAssetPath";
         private const double CharacterSplashRefreshIntervalSeconds = 0.15d;
         private const string ConvertedAssetLabel = "HoyoToonConverted";
         private const string VersionUnavailableLabel = "Version unavailable";
@@ -125,9 +123,6 @@ namespace HoyoToon.Editor.UI.Manager
         private bool managerRefreshDeferredByValueInteraction;
         private int managerValueInteractionPointerId = -1;
         private double managerValueInteractionQuietUntil;
-        private string lastCharacterSplashAssetPath = string.Empty;
-        private string lastCharacterSplashModelAssetPath = string.Empty;
-        private int lastCharacterSplashModelInstanceId;
         private int cachedCharacterSplashPlacementControllerId;
         private int cachedCharacterSplashModelInstanceId;
         private int cachedCharacterSplashActiveModelIndex = -1;
@@ -1581,12 +1576,7 @@ namespace HoyoToon.Editor.UI.Manager
                 return;
             }
 
-            Texture2D splashTexture = ResolveActiveCharacterSplashTexture(activeModel, out string activeModelAssetPath);
-            if (splashTexture == null && ShouldUseRememberedCharacterSplash(activeModel, activeModelAssetPath))
-            {
-                splashTexture = ResolveRememberedCharacterSplashTexture();
-            }
-
+            Texture2D splashTexture = ResolveActiveCharacterSplashTexture(activeModel);
             cachedCharacterSplashPlacementControllerId = placementControllerId;
             cachedCharacterSplashModelInstanceId = activeModelInstanceId;
             cachedCharacterSplashActiveModelIndex = activeModelIndex;
@@ -1613,9 +1603,8 @@ namespace HoyoToon.Editor.UI.Manager
             hasCachedCharacterSplash = false;
         }
 
-        private Texture2D ResolveActiveCharacterSplashTexture(GameObject activeModel, out string activeModelAssetPath)
+        private Texture2D ResolveActiveCharacterSplashTexture(GameObject activeModel)
         {
-            activeModelAssetPath = string.Empty;
             if (activeModel == null)
             {
                 return null;
@@ -1629,56 +1618,21 @@ namespace HoyoToon.Editor.UI.Manager
                     continue;
                 }
 
-                Texture2D splashTexture = ResolveCharacterSplashTexture(gameKey, contextAssetPath, out string splashAssetPath);
-                if (splashTexture == null)
-                {
-                    splashTexture = ResolveCharacterSplashTextureByName(
-                        activeModel,
-                        gameKey,
-                        contextAssetPath,
-                        out splashAssetPath);
-                }
+                Texture2D splashTexture = ResolveCharacterSplashTextureByName(
+                    activeModel,
+                    gameKey,
+                    contextAssetPath,
+                    out _);
 
                 if (splashTexture == null)
                 {
                     continue;
                 }
 
-                activeModelAssetPath = contextAssetPath;
-                RememberCharacterSplashAssetPath(activeModel.GetInstanceID(), contextAssetPath, splashAssetPath);
                 return splashTexture;
             }
 
             return null;
-        }
-
-        private Texture2D ResolveCharacterSplashTexture(string gameKey, string contextAssetPath, out string splashAssetPath)
-        {
-            splashAssetPath = string.Empty;
-            CharacterIconDetector.CharacterIconResolutionResult result =
-                CharacterIconDetector.ResolveCharacterIcon(gameKey, contextAssetPath);
-            if (!result.Succeeded || string.IsNullOrWhiteSpace(result.SplashIconUrl))
-            {
-                return null;
-            }
-
-            if (!CharacterIconCacheUtility.TryGetCachedCharacterIconPath(
-                contextAssetPath,
-                null,
-                null,
-                result.SplashIconUrl,
-                out string cachedSplashIconPath))
-            {
-                return null;
-            }
-
-            splashAssetPath = AssetContextJsonQueryUtility.ToAssetPath(cachedSplashIconPath);
-            if (string.IsNullOrWhiteSpace(splashAssetPath))
-            {
-                return null;
-            }
-
-            return AssetDatabase.LoadAssetAtPath<Texture2D>(splashAssetPath);
         }
 
         private Texture2D ResolveCharacterSplashTextureByName(
@@ -1688,14 +1642,19 @@ namespace HoyoToon.Editor.UI.Manager
             out string splashAssetPath)
         {
             splashAssetPath = string.Empty;
-            string characterName = NormalizeSceneCharacterName(ResolvePlacementCharacterName(activeModel));
+            string characterName = CharacterNameDetector.TryExtractCharacterName(gameKey, contextAssetPath);
+            if (string.IsNullOrWhiteSpace(characterName))
+            {
+                characterName = NormalizeSceneCharacterName(ResolvePlacementCharacterName(activeModel));
+            }
+
             if (string.IsNullOrWhiteSpace(characterName))
             {
                 return null;
             }
 
             string resolvedGameKey = gameKey;
-            int characterId = 0;
+            string characterId = null;
             string avatarIconUrl = null;
             string roundIconUrl = null;
             string splashIconUrl = null;
@@ -1807,76 +1766,6 @@ namespace HoyoToon.Editor.UI.Manager
             }
 
             return normalizedName;
-        }
-
-        private void RememberCharacterSplashAssetPath(int modelInstanceId, string modelAssetPath, string splashAssetPath)
-        {
-            if (string.IsNullOrWhiteSpace(modelAssetPath) || string.IsNullOrWhiteSpace(splashAssetPath))
-            {
-                return;
-            }
-
-            lastCharacterSplashModelInstanceId = modelInstanceId;
-            lastCharacterSplashModelAssetPath = modelAssetPath;
-            lastCharacterSplashAssetPath = splashAssetPath;
-            SessionState.SetString(LastCharacterSplashModelAssetPathSessionKey, modelAssetPath);
-            SessionState.SetString(LastCharacterSplashAssetPathSessionKey, splashAssetPath);
-        }
-
-        private bool ShouldUseRememberedCharacterSplash(GameObject activeModel, string activeModelAssetPath)
-        {
-            if (!EditorApplication.isPlayingOrWillChangePlaymode)
-            {
-                return false;
-            }
-
-            if (activeModel != null
-                && lastCharacterSplashModelInstanceId != 0
-                && activeModel.GetInstanceID() == lastCharacterSplashModelInstanceId)
-            {
-                return true;
-            }
-
-            if (string.IsNullOrWhiteSpace(activeModelAssetPath))
-            {
-                return activeModel == null;
-            }
-
-            string rememberedModelAssetPath = GetRememberedCharacterSplashModelAssetPath();
-            return !string.IsNullOrWhiteSpace(rememberedModelAssetPath)
-                && string.Equals(activeModelAssetPath, rememberedModelAssetPath, StringComparison.OrdinalIgnoreCase);
-        }
-
-        private Texture2D ResolveRememberedCharacterSplashTexture()
-        {
-            string splashAssetPath = !string.IsNullOrWhiteSpace(lastCharacterSplashAssetPath)
-                ? lastCharacterSplashAssetPath
-                : SessionState.GetString(LastCharacterSplashAssetPathSessionKey, string.Empty);
-            if (string.IsNullOrWhiteSpace(splashAssetPath))
-            {
-                return null;
-            }
-
-            Texture2D splashTexture = AssetDatabase.LoadAssetAtPath<Texture2D>(splashAssetPath);
-            if (splashTexture == null)
-            {
-                return null;
-            }
-
-            lastCharacterSplashAssetPath = splashAssetPath;
-            return splashTexture;
-        }
-
-        private string GetRememberedCharacterSplashModelAssetPath()
-        {
-            if (!string.IsNullOrWhiteSpace(lastCharacterSplashModelAssetPath))
-            {
-                return lastCharacterSplashModelAssetPath;
-            }
-
-            lastCharacterSplashModelAssetPath =
-                SessionState.GetString(LastCharacterSplashModelAssetPathSessionKey, string.Empty);
-            return lastCharacterSplashModelAssetPath;
         }
 
         private static IEnumerable<string> EnumerateCharacterSplashContextAssetPaths(GameObject activeModel)
@@ -2761,7 +2650,7 @@ namespace HoyoToon.Editor.UI.Manager
 
         private static BatchModelDetectionInfo BuildBatchDetectionInfo(GameObject modelAsset, string modelAssetPath)
         {
-            List<string> jsonAssetPaths = AssetContextJsonQueryUtility.EnumerateJsonAssetPaths(modelAssetPath)
+            List<string> jsonAssetPaths = EnumerateLocalMaterialJsonAssetPaths(modelAssetPath)
                 .Distinct(StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -2782,9 +2671,9 @@ namespace HoyoToon.Editor.UI.Manager
                 detection.ModelName = ResolveDetectedModelName(detection.GameKey, modelAssetPath, detection.MatchedJsonAssetPath);
             }
 
-            List<string> compatibleJsonAssetPaths = ResolveCompatibleJsonAssetPaths(jsonAssetPaths, detection.GameKey, detection.ModelName);
+            List<string> compatibleJsonAssetPaths = ResolveCompatibleJsonAssetPaths(jsonAssetPaths, detection.GameKey);
             detection.CompatibleJsonCount = compatibleJsonAssetPaths.Count;
-            detection.CompatibleMaterialCount = CountCompatibleMaterialAssets(modelAssetPath, detection.GameKey, detection.ModelName, compatibleJsonAssetPaths);
+            detection.CompatibleMaterialCount = CountCompatibleMaterialAssets(modelAssetPath, detection.GameKey, compatibleJsonAssetPaths);
             return detection;
         }
 
@@ -2992,24 +2881,68 @@ namespace HoyoToon.Editor.UI.Manager
 
         private static int CountMaterialAssets(string contextAssetPath)
         {
-            if (!AssetContextJsonQueryUtility.TryResolveSearchRootDirectory(contextAssetPath, out string searchRootDirectory))
-            {
-                return 0;
-            }
-
-            string searchRootAssetPath = AssetContextJsonQueryUtility.ToAssetPath(searchRootDirectory);
+            string searchRootAssetPath = ResolveMaterialSearchRootAssetPath(contextAssetPath);
             if (string.IsNullOrWhiteSpace(searchRootAssetPath))
             {
                 return 0;
             }
 
-            return AssetDatabase.FindAssets("t:Material", new[] { searchRootAssetPath }).Length;
+            return CollectMaterialAssetPaths(searchRootAssetPath).Count;
+        }
+
+        private static IEnumerable<string> EnumerateLocalMaterialJsonAssetPaths(string contextAssetPath)
+        {
+            string searchRootAssetPath = ResolveMaterialSearchRootAssetPath(contextAssetPath);
+            if (string.IsNullOrWhiteSpace(searchRootAssetPath))
+            {
+                yield break;
+            }
+
+            foreach (string assetPath in AssetContextJsonQueryUtility.EnumerateJsonAssetPaths(searchRootAssetPath))
+            {
+                yield return assetPath;
+            }
+        }
+
+        private static string ResolveMaterialSearchRootAssetPath(string contextAssetPath)
+        {
+            if (!AssetContextJsonQueryUtility.TryResolveSearchRootDirectory(contextAssetPath, out string searchRootDirectory))
+            {
+                return string.Empty;
+            }
+
+            string materialsDirectory = Path.Combine(searchRootDirectory, "Materials");
+            if (Directory.Exists(materialsDirectory))
+            {
+                string materialsAssetPath = AssetContextJsonQueryUtility.ToAssetPath(materialsDirectory);
+                if (!string.IsNullOrWhiteSpace(materialsAssetPath) && AssetDatabase.IsValidFolder(materialsAssetPath))
+                {
+                    return materialsAssetPath;
+                }
+            }
+
+            string searchRootAssetPath = AssetContextJsonQueryUtility.ToAssetPath(searchRootDirectory);
+            return string.IsNullOrWhiteSpace(searchRootAssetPath) ? string.Empty : searchRootAssetPath;
+        }
+
+        private static List<string> CollectMaterialAssetPaths(string searchRootAssetPath)
+        {
+            if (string.IsNullOrWhiteSpace(searchRootAssetPath))
+            {
+                return new List<string>();
+            }
+
+            return AssetDatabase.FindAssets("t:Material", new[] { searchRootAssetPath })
+                .Select(AssetDatabase.GUIDToAssetPath)
+                .Where(assetPath => !string.IsNullOrWhiteSpace(assetPath))
+                .Select(AssetContextJsonQueryUtility.NormalizeAssetPath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
         private static List<string> ResolveCompatibleJsonAssetPaths(
             IEnumerable<string> jsonAssetPaths,
-            string detectedGameKey,
-            string detectedModelName)
+            string detectedGameKey)
         {
             List<string> compatibleJsonAssetPaths = new List<string>();
 
@@ -3018,6 +2951,12 @@ namespace HoyoToon.Editor.UI.Manager
                 string absoluteJsonPath = AssetContextJsonQueryUtility.ToAbsolutePath(jsonAssetPath);
                 if (string.IsNullOrWhiteSpace(absoluteJsonPath) || !File.Exists(absoluteJsonPath))
                 {
+                    continue;
+                }
+
+                if (!string.IsNullOrWhiteSpace(detectedGameKey))
+                {
+                    compatibleJsonAssetPaths.Add(jsonAssetPath);
                     continue;
                 }
 
@@ -3031,25 +2970,10 @@ namespace HoyoToon.Editor.UI.Manager
                     continue;
                 }
 
-                if (!GameDetector.TryDetectGame(rawJson, jsonAssetPath, out GameConfigSO detectedGame, out string detectedCharacterName)
+                if (!GameDetector.TryDetectGame(rawJson, out GameConfigSO detectedGame)
                     || detectedGame == null)
                 {
                     continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(detectedGameKey)
-                    && !string.Equals(detectedGame.Key, detectedGameKey, StringComparison.Ordinal))
-                {
-                    continue;
-                }
-
-                if (!string.IsNullOrWhiteSpace(detectedModelName))
-                {
-                    if (string.IsNullOrWhiteSpace(detectedCharacterName)
-                        || !string.Equals(detectedCharacterName, detectedModelName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        continue;
-                    }
                 }
 
                 compatibleJsonAssetPaths.Add(jsonAssetPath);
@@ -3061,18 +2985,18 @@ namespace HoyoToon.Editor.UI.Manager
         private static int CountCompatibleMaterialAssets(
             string contextAssetPath,
             string detectedGameKey,
-            string detectedModelName,
             IEnumerable<string> compatibleJsonAssetPaths)
         {
-            if (!AssetContextJsonQueryUtility.TryResolveSearchRootDirectory(contextAssetPath, out string searchRootDirectory))
+            string searchRootAssetPath = ResolveMaterialSearchRootAssetPath(contextAssetPath);
+            if (string.IsNullOrWhiteSpace(searchRootAssetPath))
             {
                 return 0;
             }
 
-            string searchRootAssetPath = AssetContextJsonQueryUtility.ToAssetPath(searchRootDirectory);
-            if (string.IsNullOrWhiteSpace(searchRootAssetPath))
+            List<string> materialAssetPaths = CollectMaterialAssetPaths(searchRootAssetPath);
+            if (!string.IsNullOrWhiteSpace(detectedGameKey))
             {
-                return 0;
+                return materialAssetPaths.Count;
             }
 
             HashSet<string> expectedMaterialPaths = new HashSet<string>(
@@ -3082,19 +3006,7 @@ namespace HoyoToon.Editor.UI.Manager
                     .Select(AssetContextJsonQueryUtility.NormalizeAssetPath),
                 StringComparer.OrdinalIgnoreCase);
 
-            return AssetDatabase.FindAssets("t:Material", new[] { searchRootAssetPath })
-                .Select(AssetDatabase.GUIDToAssetPath)
-                .Where(assetPath => !string.IsNullOrWhiteSpace(assetPath))
-                .Select(AssetContextJsonQueryUtility.NormalizeAssetPath)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .Count(materialAssetPath =>
-                    expectedMaterialPaths.Contains(materialAssetPath)
-                    || (!string.IsNullOrWhiteSpace(detectedGameKey)
-                        && !string.IsNullOrWhiteSpace(detectedModelName)
-                        && string.Equals(
-                            CharacterNameDetector.TryExtractCharacterName(detectedGameKey, materialAssetPath),
-                            detectedModelName,
-                            StringComparison.OrdinalIgnoreCase)));
+            return materialAssetPaths.Count(expectedMaterialPaths.Contains);
         }
 
         private static bool HasConvertedLabel(string assetPath)
@@ -3119,6 +3031,15 @@ namespace HoyoToon.Editor.UI.Manager
             if (string.IsNullOrWhiteSpace(gameKey))
             {
                 return string.Empty;
+            }
+
+            if (!string.IsNullOrWhiteSpace(modelAssetPath))
+            {
+                string detectedName = CharacterNameDetector.TryExtractCatalogCharacterName(gameKey, modelAssetPath);
+                if (!string.IsNullOrWhiteSpace(detectedName))
+                {
+                    return detectedName;
+                }
             }
 
             if (!string.IsNullOrWhiteSpace(matchedJsonAssetPath))

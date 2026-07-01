@@ -61,7 +61,7 @@ MonoBehaviour:
     scaleFactor:
       hasValue: 1
       value: 1
-    tangents: 
+    tangents: Import
     useFileScale:
       hasValue: 0
       value: 0

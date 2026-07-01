@@ -11,8 +11,6 @@ namespace HoyoToon.Editor.Setup
 
         public bool GenerateMaterials { get; set; } = true;
 
-        public bool ConvertModels { get; set; } = true;
-
         public bool ApplyModelImportSettings { get; set; } = true;
 
         public bool ApplyTangents { get; set; } = true;

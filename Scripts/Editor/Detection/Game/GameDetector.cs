@@ -70,20 +70,14 @@ namespace HoyoToon.Editor.Detection.Game
 
             if (!AssetContextJsonQueryUtility.TryResolveSearchRootDirectory(contextAssetPath, out _))
             {
-                HoyoToonLogger.Verbose(
-                    HoyoToonLogCategory.Detection,
-                    $"Game detection was skipped for '{contextAssetPath}' because no valid search root could be resolved.");
                 return false;
             }
 
             GameConfigSO matchedGame = null;
             string firstMatchedJsonAssetPath = null;
-            bool foundJsonInSearchRoot = false;
 
             foreach (string jsonAssetPath in AssetContextJsonQueryUtility.EnumerateJsonAssetPaths(contextAssetPath))
             {
-                foundJsonInSearchRoot = true;
-
                 if (!TextFileUtility.TryReadAllText(AssetContextJsonQueryUtility.ToAbsolutePath(jsonAssetPath), out string rawJson))
                 {
                     continue;
@@ -111,24 +105,9 @@ namespace HoyoToon.Editor.Detection.Game
 
             if (game == null)
             {
-                if (!foundJsonInSearchRoot)
-                {
-                    HoyoToonLogger.Verbose(
-                        HoyoToonLogCategory.Detection,
-                        $"Game detection could not find any JSON files in the current folder or its descendants for '{contextAssetPath}'.");
-                    return false;
-                }
-
-                HoyoToonLogger.Verbose(
-                    HoyoToonLogCategory.Detection,
-                    $"No matching game was detected for '{contextAssetPath}' from JSON assets in the current folder or its descendants.");
                 return false;
             }
 
-            HoyoToonLogger.Verbose(
-                HoyoToonLogCategory.Detection,
-                $"Detected game '{game.Key}' for '{contextAssetPath}' using '{matchedJsonAssetPath}'.",
-                context: game);
             return true;
         }
 

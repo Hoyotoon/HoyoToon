@@ -34,8 +34,6 @@ namespace HoyoToon.Editor.Setup
 
         public int MaterialsUpdated { get; set; }
 
-        public int ModelsConverted { get; set; }
-
         public int ModelImportSettingsApplied { get; set; }
 
         public int CharacterIconsCached { get; set; }

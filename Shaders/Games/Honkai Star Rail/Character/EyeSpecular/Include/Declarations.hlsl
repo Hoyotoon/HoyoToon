@@ -23,6 +23,7 @@ int _HSRComputeSkinningEnabled;
 int _HSRComputeSkinningVertexOffset;
 
 
+
 #ifndef UNITY_MATRIX_MV
     #define UNITY_MATRIX_MV mul(unity_MatrixV, unity_ObjectToWorld)
 #endif
@@ -44,8 +45,6 @@ int _HSRComputeSkinningVertexOffset;
 #define UNITY_MATRIX_VP         unity_MatrixVP
 
 
-
-
 CBUFFER_START (CRP_PerDrawEx) 
 	float4                _CharacterLocalMainLightPosition;
     float4                _CharacterLocalMainLightColor;
@@ -58,20 +57,27 @@ CBUFFER_START (CRP_PerDrawEx)
 	float4                _NewLocalLightStrength;
 	float                _DisableCharacterLocalLight;
 	float                _EnableCustomCameraOverride;
-    float4                _CharacterSelfShadowAtlasRect;
-    float                _CharacterSelfShadowSliceIndex;
-    float                _CharacterSelfShadowValid;
-    float2               _PadCharacterSelfShadow;
 CBUFFER_END
 
-
+#define HSR_CHARACTER_SELF_SHADOW_SLOTS 16
+float4x4 _CharacterSelfShadowWorldToShadowArr[HSR_CHARACTER_SELF_SHADOW_SLOTS];
+float4 _CharacterSelfShadowAtlasRectArr[HSR_CHARACTER_SELF_SHADOW_SLOTS];
+float _CharacterSelfShadowSlotCount;
+float3 _PadCharacterSelfShadowSlotCount;
+float4 _CharacterSelfShadowAtlasRect;
+float _CharacterSelfShadowSliceIndex;
+float _CharacterSelfShadowValid;
+float2 _PadCharacterSelfShadow;
+float4 _CharacterSelfShadowAtlasTexelSize;
 
 CBUFFER_START(UnityPerMaterial)
     float3 _CharaWorldSpaceOffset;
     float _IsMonster;
     float _UVChannelFront;
     float _UVChannelBack;
-    float _NormalScale;
+    float _EnableAlphaCutoff;
+    float _AlphaCutoff;
+    float _AlphaTestThreshold;
     int _HideCharaParts;
     int _ShowPartID;
     int4 _VertexColorSwitch;
@@ -79,39 +85,13 @@ CBUFFER_START(UnityPerMaterial)
     float4 _CustomMainLightDir;
     float4 _Color;
     float4 _BackColor;
-    float _EmissionThreshold;
-    float _EmissionIntensity;
-    float _ShadowRamp;
-    float _ShadowBoost;
-    float _ShadowBoostVal;
-    float4 _SpecularColor0;
-    float _SpecularShininess0;
-    float _SpecularRoughness0;
-    float _SpecularIntensity0;
-    float4 _OutlineColor0;
-    float _OutlineWidth;
-    float _OutlineExtdStart;
-    float _OutlineExtdMax;
-    float _OutlineOffset;
-    float _RimLightMode;
-    float4 _RimColor0;
-    float _RimEdgeSoftness0;
-    float _RimType0;
-    float _RimDark0;
-    float _RimShadowWidth0;
-    float3 _RimShadowColor0;
-    float _RimShadowFeather0;
-    float _Rimintensity;
-    float _RimWidth;
-    float _RimEdge;
-    float4 _FresnelColor;
-    float4 _FresnelBSI;
-    float _FresnelColorStrength;
-    float _RimShadowCt;
-    float _RimShadowIntensity;
-    float4 _RimShadowOffset;
-    float _GlobalOneMinusAvatarIntensityEnable;
-    float _OneMinusCharacterOutlineWidthScale;
+    float4 _LightMap_TexelSize;
+    float _NormalScale;
+    float4 _FresnelColor; 
+    float4 _FresnelBSI; 
+    float _FresnelColorStrength; 
+    float _UseMatcap;
+    float _MatCapStrength;
     float _DissoveON;
     float _DissolveShadowOff;
     float _DissolveRate;
@@ -125,7 +105,6 @@ CBUFFER_START(UnityPerMaterial)
     float4 _DissolveOutlineColor2;
     float _DissoveDirecMask;
     float _DissolveMapAdd;
-    float2 _Pad6;
     float4 _DissolveOutlineSmoothStep;
     float _DissolveUV;
     float4 _DissolveUVSpeed;
@@ -140,35 +119,15 @@ CBUFFER_START(UnityPerMaterial)
     float4 _DissolveCenter;
     float4 _DissolveDiretcionXYZ;
     float _DissolvePosMaskGlobalOn;
-    float _mBloomIntensity0;
+    
     int _UsingDitherAlpha;
     int _UsingDitherAlphaArt;
     float _DitherAlpha;
     int _DITHER_FADE_IN;
+    int _UseMaterialValuesLUT;
     int _XorShadowPartID;
-    float _HairBlendWeight;
-    float _HairBlendOffset;
-    float _SpecularShadowOffset;
-    float _SpecularShadowIntensity;
-    float4 _SkyTex_ST;
-    float4 _SkyMask_ST;
-    float _SkyRange;
-    float4 _SkyStarColor;
-    float4 _SkyStarTex_ST;
-    float _SkyStarTexScale;
-    float4 _SkyStarSpeed;
-    float _SkyStarDepthScale;
-    float4 _SkyStarMaskTex_ST;
-    float _SkyStarMaskTexScale;
-    float _SkyStarMaskTexSpeed;
-    float4 _SkyFresnelColor;
-    float _SkyFresnelBaise;
-    float _SkyFresnelScale;
-    float _SkyFresnelSmooth;
-    float _OSScale;
-    float _StarDensity;
-    float _StarMode;
 CBUFFER_END
+
 
 CBUFFER_START(RPGEnv_PerMainCamera)
 	float _GlobalOneMinusAvatarIntensity;
@@ -235,32 +194,9 @@ CBUFFER_END
 
 
 TEXTURE2D(_MainTex);
-TEXTURE2D(_LightMap);
-TEXTURE2D(_DiffuseCoolRampMultiTex);
-TEXTURE2D(_DiffuseRampMultiTex);
-TEXTURE2D(_MaterialValuesPackLUT);
 SAMPLER(sampler_linear_repeat);
 SAMPLER(sampler_linear_clamp);
-// #if defined(is_forwardemission)
-TEXTURE2D(_GBufferA);
-TEXTURE2D(_DepthBufferOrCopy);
-// #endif
 
-TEXTURE2D(_ES_GradientAtlas);
-
-#if defined(_USE_NORMAL_MAP)
-TEXTURE2D(_NormalMap);
-#endif
-
-#if defined(_STATTYSKY)
-    TEXTURE2D(_SkyTex);
-    TEXTURE2D(_SkyMask);
-    TEXTURE2D(_SkyStarTex);
-    TEXTURE2D(_SkyStarMaskTex);
-#endif
-
-#if defined(_RAMP_OUTLINE)
-    TEXTURE2D(_OutlineColorTex);
-#endif
+TEXTURE2D(_MatCapTex);
 
 #endif

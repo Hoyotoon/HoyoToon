@@ -2189,7 +2189,7 @@ namespace HoyoToon.Editor.Onboarding
             return Directory.EnumerateFiles(absoluteDownloadRoot, "*.*", SearchOption.AllDirectories)
                 .Where(path => IsModelFile(path))
                 .Where(path => NormalizeAssetName(path).IndexOf(normalizedCharacterName, StringComparison.OrdinalIgnoreCase) >= 0)
-                .Select(ConvertAbsolutePathToAssetPath)
+                .Select(ToAssetPath)
                 .Where(path => !string.IsNullOrWhiteSpace(path))
                 .OrderBy(path => path.IndexOf("/Default/", StringComparison.OrdinalIgnoreCase) >= 0 ? 0 : 1)
                 .ThenBy(path => path, StringComparer.OrdinalIgnoreCase);
@@ -2207,7 +2207,7 @@ namespace HoyoToon.Editor.Onboarding
             return Path.GetFullPath(Path.Combine(Application.dataPath, "HoyoToon", "Characters"));
         }
 
-        private static string ConvertAbsolutePathToAssetPath(string absolutePath)
+        private static string ToAssetPath(string absolutePath)
         {
             if (string.IsNullOrWhiteSpace(absolutePath))
             {

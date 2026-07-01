@@ -9,9 +9,7 @@ namespace HoyoToon.Editor.API.Games
 
     public sealed class GameRecordDto
     {
-        public List<BoneConstraintDto> boneConstraints;
         public GameConfigDto config;
-        public List<ConverterConfigDto> converterConfigs;
         public ModelImportSettingsDto modelImportSettings;
         public ProblemListDto problemList;
         public List<PropertyConversionDto> propertyConversions;
@@ -29,111 +27,63 @@ namespace HoyoToon.Editor.API.Games
         public List<string> gameProperties;
     }
 
-    public sealed class CharacterIdRecordDto
+    public sealed class EntityCatalogRecordDto
     {
         public string gameKey;
-        public int characterId;
-        public string name;
+        public string version;
+        public string entityKind;
+        public string entityId;
+        public string characterId;
+        public string monsterId;
+        public string weaponId;
+        public string displayName;
         public string sourceName;
-        public string overrideName;
+        public string variantName;
+        public string internalName;
+        public string weaponType;
+        public int rarity;
+        public List<string> artNames;
+        public List<EntityCatalogArtNameMappingDto> artNameMappings;
+        public string primaryArtName;
         public string avatarIcon;
         public string roundIcon;
         public string splashIcon;
+        public RawJson displayImage;
+        public RawJson icons;
+        public RawJson iconPaths;
+        public RawJson mediaRefs;
+        public RawJson assetRefs;
+        public List<string> aliases;
+        public bool? available;
 
-        public string GameKey
-        {
-            get => gameKey;
-            set => gameKey = value;
-        }
+        public string GameKey => gameKey;
 
-        public int CharacterId
-        {
-            get => characterId;
-            set => characterId = value;
-        }
+        public string EntityKind => entityKind;
 
-        public string Name
-        {
-            get => name;
-            set => name = value;
-        }
+        public string EntityId => entityId;
 
-        public string SourceName
-        {
-            get => sourceName;
-            set => sourceName = value;
-        }
+        public string DisplayName => displayName;
 
-        public string OverrideName
-        {
-            get => overrideName;
-            set => overrideName = value;
-        }
+        public string SourceName => sourceName;
 
-        public string AvatarIcon
-        {
-            get => avatarIcon;
-            set => avatarIcon = value;
-        }
+        public string VariantName => variantName;
 
-        public string RoundIcon
-        {
-            get => roundIcon;
-            set => roundIcon = value;
-        }
+        public string InternalName => internalName;
 
-        public string SplashIcon
-        {
-            get => splashIcon;
-            set => splashIcon = value;
-        }
+        public string PrimaryArtName => primaryArtName;
     }
 
-    public sealed class BoneConstraintDto
+    public sealed class EntityCatalogArtNameMappingDto
     {
-        public string gameKey;
-        public string TargetBone;
-        public string SourceBone;
-        public string ConstraintType;
-        public float Weight = 1f;
-        public float SourceWeight = 1f;
-        public AxesDto PositionAxes;
-        public AxesDto RotationAxes;
-        public bool MaintainOffset;
-        public bool? Active;
-        public bool Locked;
+        public string fileName;
+        public string finalName;
     }
 
-    public sealed class AxesDto
+    public sealed class EntityCatalogPageDto
     {
-        public bool X = true;
-        public bool Y = true;
-        public bool Z = true;
-    }
-
-    public sealed class ConverterConfigDto
-    {
-        public string gameKey;
-        public string converterType;
-        public string key;
-        public ConverterSectionDto Features;
-        public ConverterSectionDto Disable;
-        public ConverterMappingDto RemoveMeshes;
-        public ConverterMappingDto RemoveBones;
-        public ConverterMappingDto RenameBones;
-    }
-
-    public sealed class ConverterSectionDto
-    {
-        public string Default;
-        public List<string> DefaultList;
-        public List<string> Options;
-    }
-
-    public sealed class ConverterMappingDto
-    {
-        public string List;
-        public string Mapping;
+        public List<EntityCatalogRecordDto> items;
+        public string continueCursor;
+        public bool isDone;
     }
 
     public sealed class ModelImportSettingsDto

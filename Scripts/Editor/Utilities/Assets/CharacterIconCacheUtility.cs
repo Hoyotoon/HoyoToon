@@ -38,7 +38,7 @@ namespace HoyoToon.Editor.Utilities.Assets
 
             for (int i = 0; i < iconUrls.Length; i++)
             {
-                string iconUrl = iconUrls[i];
+                string iconUrl = ImageProxyUrlUtility.ToUnitySupportedPngUrl(iconUrls[i]);
                 if (string.IsNullOrWhiteSpace(iconUrl)
                     || !TryGetCharacterIconCacheAbsolutePath(contextAssetPath, iconKinds[i], iconUrl, out string cacheAbsolutePath)
                     || !IsCacheFileValid(cacheAbsolutePath))
@@ -57,7 +57,7 @@ namespace HoyoToon.Editor.Utilities.Assets
         public static bool TryEnsureCharacterIconsCached(
             string contextAssetPath,
             string gameKey,
-            int characterId,
+            string characterId,
             string avatarIconUrl,
             string roundIconUrl,
             string splashIconUrl,
@@ -72,7 +72,7 @@ namespace HoyoToon.Editor.Utilities.Assets
 
             for (int i = 0; i < iconUrls.Length; i++)
             {
-                string iconUrl = iconUrls[i];
+                string iconUrl = ImageProxyUrlUtility.ToUnitySupportedPngUrl(iconUrls[i]);
                 if (string.IsNullOrWhiteSpace(iconUrl))
                 {
                     continue;
@@ -106,7 +106,7 @@ namespace HoyoToon.Editor.Utilities.Assets
         private static bool TryGetOrRequestCharacterIconCached(
             string contextAssetPath,
             string gameKey,
-            int characterId,
+            string characterId,
             string iconKind,
             string iconUrl,
             out string cachedIconPath)
@@ -117,6 +117,8 @@ namespace HoyoToon.Editor.Utilities.Assets
             {
                 return false;
             }
+
+            RemoveStaleCharacterIconCacheFiles(cacheAbsolutePath, iconKind);
 
             if (IsCacheFileValid(cacheAbsolutePath))
             {
@@ -129,10 +131,44 @@ namespace HoyoToon.Editor.Utilities.Assets
             return false;
         }
 
+        private static void RemoveStaleCharacterIconCacheFiles(string cacheAbsolutePath, string iconKind)
+        {
+            string cacheDirectory = Path.GetDirectoryName(cacheAbsolutePath);
+            if (string.IsNullOrWhiteSpace(cacheDirectory)
+                || string.IsNullOrWhiteSpace(iconKind)
+                || !Directory.Exists(cacheDirectory))
+            {
+                return;
+            }
+
+            string currentFileName = Path.GetFileName(cacheAbsolutePath);
+            string currentMetaFileName = currentFileName + ".meta";
+            foreach (string filePath in Directory.GetFiles(cacheDirectory, iconKind + "_*.*", SearchOption.TopDirectoryOnly))
+            {
+                string fileName = Path.GetFileName(filePath);
+                if (string.Equals(fileName, currentFileName, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(fileName, currentMetaFileName, StringComparison.OrdinalIgnoreCase))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    File.Delete(filePath);
+                }
+                catch (IOException)
+                {
+                }
+                catch (UnauthorizedAccessException)
+                {
+                }
+            }
+        }
+
         private static void QueueCharacterIconDownload(
             string contextAssetPath,
             string gameKey,
-            int characterId,
+            string characterId,
             string iconKind,
             string iconUrl,
             string cacheAbsolutePath)
@@ -159,7 +195,7 @@ namespace HoyoToon.Editor.Utilities.Assets
         private static async Task DownloadCharacterIconAsync(
             string contextAssetPath,
             string gameKey,
-            int characterId,
+            string characterId,
             string iconKind,
             string iconUrl,
             string cacheAbsolutePath,
@@ -217,7 +253,7 @@ namespace HoyoToon.Editor.Utilities.Assets
                     {
                         HoyoToonLogger.Verbose(
                             HoyoToonLogCategory.Detection,
-                            $"Character icon caching skipped for character ID '{characterId}' in game '{gameKey}' ({iconKind}). URL: {iconUrl}. {exception.GetType().Name}: {exception.Message}");
+                            $"Character icon caching skipped for character '{characterId}' in game '{gameKey}' ({iconKind}). URL: {iconUrl}. {exception.GetType().Name}: {exception.Message}");
                     }
 
                     CompleteCharacterIconDownload(downloadKey);
@@ -468,6 +504,41 @@ namespace HoyoToon.Editor.Utilities.Assets
 
             client.DefaultRequestHeaders.Add("User-Agent", "HoyoToon-Unity-Editor");
             return client;
+        }
+    }
+
+    internal static class ImageProxyUrlUtility
+    {
+        private const string ImgProxyPngPrefix = "https://imgproxy.hoyotoon.com/unsafe/plain/";
+        private const string ImgProxyPngSuffix = "@png";
+
+        internal static string ToUnitySupportedPngUrl(string iconUrl)
+        {
+            string normalizedUrl = iconUrl?.Trim();
+            if (string.IsNullOrWhiteSpace(normalizedUrl)
+                || IsImgProxyUrl(normalizedUrl)
+                || !IsWebpUrl(normalizedUrl))
+            {
+                return string.IsNullOrWhiteSpace(normalizedUrl) ? null : normalizedUrl;
+            }
+
+            return $"{ImgProxyPngPrefix}{normalizedUrl}{ImgProxyPngSuffix}";
+        }
+
+        private static bool IsImgProxyUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out Uri uri)
+                && string.Equals(uri.Host, "imgproxy.hoyotoon.com", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsWebpUrl(string url)
+        {
+            if (!Uri.TryCreate(url, UriKind.Absolute, out Uri uri))
+            {
+                return url.IndexOf(".webp", StringComparison.OrdinalIgnoreCase) >= 0;
+            }
+
+            return uri.AbsolutePath.EndsWith(".webp", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

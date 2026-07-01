@@ -19,6 +19,7 @@ void get_id(in float light_y, out float id)
     id = normalized * sign_factors.x;
 }
 
+
 float get_lineardepth(float z)
 {
     return 1.0 / (_ZBufferParams.x * z + _ZBufferParams.y);
@@ -38,8 +39,6 @@ real SampleShadowmapForceSoft(TEXTURE2D_SHADOW_PARAM(ShadowMap, sampler_ShadowMa
    
     attenuation = LerpWhiteTo(attenuation, 0.5);
 
-    // Shadow coords that fall out of the light frustum volume must always return attenuation 1.0
-    // TODO: We could use branch here to save some perf on some platforms.
     return BEYOND_SHADOW_FAR(shadowCoord) ? 1.0 : attenuation;
 }
 
@@ -134,86 +133,64 @@ float SampleCharacterSelfShadow(float3 positionWS, float3 normalWS, float3 light
     return saturate(urpMainShadow * characterSelfShadow);
 }
 
-float glint_hash12(float2 value)
+
+// standard psuedo random number hash function
+float rand(float2 uv)
 {
-    float hashed = dot(value, float2(12.9898005, 78.2330017));
-    hashed = sin(hashed) * 43758.5469;
-    return frac(hashed);
+    float h = dot(uv, float2(12.9898005, 78.2330017));
+    return frac(sin(h) * 43758.5469);
 }
 
-float3 glint_random_unit(float azimuth_random, float z_random)
+void eval_tap(float2 cell_id, float2 cell_frac, float2 offset, float intensity_mod, float concentration, float param_b, inout float accum_sparkle, inout float4 accum_normal)
 {
-    float azimuth = azimuth_random * 6.28318024;
-    float z_mapped = z_random * -2.0 + 1.0;
+    float2 id = cell_id + offset;
+    float h1 = rand(id);
+    
+    float2 sub_id = id + float2(h1, h1);
+    float h2 = rand(sub_id);
+    
+    float2 raw_jitter = float2(rand(id + float2(0.454869986, 5.415452)), rand(id + float2(0.454869986, 5.415452) + rand(id + float2(0.454869986, 5.415452))));
+    float2 jitter = (raw_jitter * 2.0 - 1.0) * 0.400000006;
+    
+   // Direct translation of: u_xlat14.xy = cell_frac - (0.5 - (jitter * _GlintRandom)) + offset
+    float2 center_pt = 0.5 - (jitter * _GlintRandom);
+    float2 dist_vec = cell_frac - center_pt + offset;
+    float dist = length(dist_vec);
+    
+    float size_thresh = (h1 * 2.0 - 1.0) * 0.150000006 + concentration;
+    float is_inside = (dist < size_thresh) ? 1.0 : 0.0;
+    
+    float density_val = clamp((-_GlintDensity) * param_b + (h2 - 1.0), 0.0, 1.0);
+    float active_glint = ceil(density_val) * is_inside;
+    
+    float2 spark_time = _Time.yy * float2(50.0, 10.0);
+    float phase = (spark_time.x * _GlintSparkFreq) * h1 + (h2 * 3.1400001);
+    float spark_wave = (_GlintSparkle * 0.5) * sin(phase) + 0.5;
+    
+    accum_sparkle += active_glint * spark_wave;
+    
+    float rot_angle = h1 * 6.28318024;
+    float cos_pitch = (-h2) * 2.0 + 1.0;
+    float pitch_angle = acos(cos_pitch);
+    
+    float3 tap_normal;
+    tap_normal.x = sin(pitch_angle) * cos(rot_angle);
+    tap_normal.y = sin(pitch_angle) * sin(rot_angle);
+    tap_normal.z = cos(pitch_angle);
+    tap_normal = normalize(tap_normal);
+    
+    accum_normal += float4(tap_normal, 1.0) * float4(active_glint, active_glint, active_glint, active_glint);
 
-    float z_abs = abs(z_mapped);
-    float z_root = sqrt(max(1.0 - z_abs, 0.0));
-
-    float z_poly = z_abs * -0.0187292993 + 0.0742610022;
-    z_poly = z_poly * z_abs + -0.212114394;
-    z_poly = z_poly * z_abs + 1.57072878;
-
-    float elevation = z_poly * z_root;
-    elevation = (z_mapped < 0.0) ? (3.14159274 - elevation) : elevation;
-
-    float elevation_sin = sin(elevation);
-    float3 direction;
-    direction.x = elevation_sin * cos(azimuth);
-    direction.y = elevation_sin * sin(azimuth);
-    direction.z = cos(elevation);
-
-    return normalize(direction);
 }
 
-float glint_distance_gate(float2 jittered_uv, float random_seed, float point_base)
-{
-    float distance_to_cell = length(jittered_uv);
-    float threshold = random_seed * 2.0 - 1.0;
-    threshold = threshold * 0.15 + point_base;
-    return distance_to_cell < threshold ? 1.0 : 0.0;
-}
-
-float glint_density_gate(float random_seed, float density_control)
-{
-    float density = (-_GlintDensity) * density_control + random_seed;
-    density = density - 1.0;
-    density = clamp(density, 0.0, 1.0);
-    return ceil(density);
-}
-
-float glint_spark_wave(float phase_seed, float time_phase, float random_seed, float sparkle_half, float pi_value)
-{
-    float spark = phase_seed * pi_value;
-    spark = time_phase * random_seed + spark;
-    spark = sin(spark);
-    return sparkle_half * spark + 0.5;
-}
 
 int material_region(float lightmap_alpha)
 {
-    int material = 0;
-    lightmap_alpha = floor(8.0f * lightmap_alpha);
-    if(lightmap_alpha > 0.5 && lightmap_alpha < 1.5 )
-    {
-        material = 1;
-    } 
-    else if(lightmap_alpha > 1.5f && lightmap_alpha < 2.5f)
-    {
-        material = 2;
-    } 
-    else if(lightmap_alpha > 2.5f && lightmap_alpha < 3.5f)
-    {
-        material = 3;
-    } 
-    else
-    {
-        material = (lightmap_alpha > 6.5f && lightmap_alpha < 7.5f) ? 7 : 0;
-        material = (lightmap_alpha > 5.5f && lightmap_alpha < 6.5f) ? 6 : material;
-        material = (lightmap_alpha > 4.5f && lightmap_alpha < 5.5f) ? 5 : material;
-        material = (lightmap_alpha > 3.5f && lightmap_alpha < 4.5f) ? 4 : material;
-    }
-
-    return material;
+    float alpha = lightmap_alpha;
+    alpha = floor(8.0f * alpha);
+    float comp = 8.0f * alpha;
+    float2 adj = sign(comp) ? float2(8, 0.125) : float2(-8, -0.125);
+    return (uint)(round(adj.x * frac(adj.y * alpha)));
 }
 
 void get_light(out float3 light)
@@ -434,93 +411,94 @@ void dither(float4 screen_pos, float out_coord, float dis_setting)
 #endif
 
 #if defined(_DIRECTIONALDISSOLVE)
-    void dissolve_vertex_out(in float2x2 uv, in float4 ws, in float4 os, out float4 dis_uv, out float4 dis_pos)
-    {
-        // dissolve position:
-        float3 dissolve_position = ws + (-_DissolvePosMaskPos.xyz);
-        dissolve_position = lerp(os, dissolve_position, _DissolvePosMaskWorldON);
+    
+void dissolve_vertex_out(in float2x2 uv, in float4 ws, in float4 os, out float4 dis_uv, out float4 dis_pos)
+{
+    // dissolve position:
+    float3 dissolve_position = ws + (-_DissolvePosMaskPos.xyz);
+    dissolve_position = lerp(os, dissolve_position, _DissolvePosMaskWorldON);
 
-        float4 dissolve_uvs = lerp(uv[0], uv[1], _DissolveUV).xyxy;
+    float4 dissolve_uvs = lerp(uv[0], uv[1], _DissolveUV).xyxy;
 
-        dis_uv = dissolve_uvs;
-        dis_pos.x = dis_uv.x;
+    dis_uv = dissolve_uvs;
+    dis_pos.x = dis_uv.x;
 
-        float3 dis_weird = lerp(dissolve_position, _ES_EffCustomLightPosition, _DissolvePosMaskGlobalOn) - _DissolvePosMaskRootOffset;
+    float3 dis_weird = lerp(dissolve_position, _ES_EffCustomLightPosition, _DissolvePosMaskGlobalOn) - _DissolvePosMaskRootOffset;
 
-        float3 dis_camera = -unity_ObjectToWorld[3].xyz + _ES_EffCustomLightPosition.xyz;
-        float3 dis_camtwo = (float3)(_DissolvePosMaskWorldON) * (-unity_ObjectToWorld[3].xyz) + _DissolvePosMaskPos.xyz;
+    float3 dis_camera = -unity_ObjectToWorld[3].xyz + _ES_EffCustomLightPosition.xyz;
+    float3 dis_camtwo = (float3)(_DissolvePosMaskWorldON) * (-unity_ObjectToWorld[3].xyz) + _DissolvePosMaskPos.xyz;
 
-        float3 dissolve_global = lerp(dis_camtwo, dis_camera, _DissolvePosMaskGlobalOn);
+    float3 dissolve_global = lerp(dis_camtwo, dis_camera, _DissolvePosMaskGlobalOn);
 
-        float3 dissolve_norm = normalize(dissolve_global);
+    float3 dissolve_norm = normalize(dissolve_global);
 
-        float dis_check = dot(abs(dissolve_global), (float3)1.0f) >= 0.001f;
+    float dis_check = dot(abs(dissolve_global), (float3)1.0f) >= 0.001f;
 
-        float idk = dot(dissolve_norm, dis_weird);
+    float idk = dot(dissolve_norm, dis_weird);
 
-        float dis_pos_mask = max(_DissolvePosMaskPos.w, 0.00999999978);
-        float dissolve_abs = abs(idk) + dis_pos_mask;
-        dis_pos_mask = dis_pos_mask + dis_pos_mask;
-        dis_pos_mask = dissolve_abs / dis_pos_mask;
-        dissolve_abs = dissolve_abs.x * -2.0 + 1.0;
-        dis_pos_mask.x = _DissolvePosMaskFilpOn * dis_pos_mask + dis_pos_mask.x;
-        dis_pos_mask.x = dis_pos_mask.x + (-_DissolvePosMaskOn);
-        dis_pos_mask.x = dis_pos_mask.x + 1.0;
-        dis_pos_mask.x = clamp(dis_pos_mask.x, 0.0, 1.0);
+    float dis_pos_mask = max(_DissolvePosMaskPos.w, 0.00999999978);
+    float dissolve_abs = abs(idk) + dis_pos_mask;
+    dis_pos_mask = dis_pos_mask + dis_pos_mask;
+    dis_pos_mask = dissolve_abs / dis_pos_mask;
+    dissolve_abs = dissolve_abs.x * -2.0 + 1.0;
+    dis_pos_mask.x = _DissolvePosMaskFilpOn * dis_pos_mask + dis_pos_mask.x;
+    dis_pos_mask.x = dis_pos_mask.x + (-_DissolvePosMaskOn);
+    dis_pos_mask.x = dis_pos_mask.x + 1.0;
+    dis_pos_mask.x = clamp(dis_pos_mask.x, 0.0, 1.0);
 
-        dis_pos.y = dis_check ? dis_pos_mask.x : 1.0f;
-        dis_pos.z = (_UsingDitherAlpha || _UsingDitherAlphaArt) ? _DitherAlpha : ws.z;
-        dis_pos.w = 0.0f; 
-    }
+    dis_pos.y = dis_check ? dis_pos_mask.x : 1.0f;
+    dis_pos.z = (_UsingDitherAlpha || _UsingDitherAlphaArt) ? _DitherAlpha : ws.z;
+    dis_pos.w = 0.0f; 
+}
 
-    void dissolve_clip_world(in float3 ws_pos, out float dissolve_area, out float dis_out)
-    {
-        float3 ws_dis = ws_pos + 0.000001f;
-        ws_dis = ws_dis - _DissolveCenter.xyz;
-        dissolve_area = dot(ws_dis, _DissolveDiretcionXYZ.xyz);
-        int dis_clip = 0.0f < dissolve_area ? 2 : 0;
-        if(dis_clip == 0) discard;
-        dis_out = 0.000001f;
-    }
+void dissolve_clip_world(in float3 ws_pos, out float dissolve_area, out float dis_out)
+{
+    float3 ws_dis = ws_pos + 0.000001f;
+    ws_dis = ws_dis - _DissolveCenter.xyz;
+    dissolve_area = dot(ws_dis, _DissolveDiretcionXYZ.xyz);
+    int dis_clip = 0.0f < dissolve_area ? 2 : 0;
+    if(dis_clip == 0) discard;
+    dis_out = 0.000001f;
+}
 
-    void dissolve_clip_uv(in float4 dissolve_uv, in float2 dissolve_pos, in float2 uv, out float dissolve_area, out float dis_out, out float map)
-    {
-        dis_out = 0.000003f;
-        float diss_x = min(abs((-dissolve_pos.x) + _DissoveDirecMask), 1.0);
-        float2 dis_uv = _DissolveUVSpeed.zw * _Time.yy + (dissolve_uv.zw + 0.000003f);
-        float2 dis_map_a = _DissolveMap.Sample(sampler_linear_repeat, dis_uv);
-        
-        dis_uv = dis_map_a - 0.5f;
-        dis_uv = _DissolveUVSpeed.xy * _Time.yy + (-dis_uv * _DissolveDistortionIntensity + dissolve_uv.xy);
+void dissolve_clip_uv(in float4 dissolve_uv, in float2 dissolve_pos, in float2 uv, out float dissolve_area, out float dis_out, out float map)
+{
+    dis_out = 0.000003f;
+    float diss_x = min(abs((-dissolve_pos.x) + _DissoveDirecMask), 1.0);
+    float2 dis_uv = _DissolveUVSpeed.zw * _Time.yy + (dissolve_uv.zw + 0.000003f);
+    float2 dis_map_a = _DissolveMap.Sample(sampler_linear_repeat, dis_uv);
+    
+    dis_uv = dis_map_a - 0.5f;
+    dis_uv = _DissolveUVSpeed.xy * _Time.yy + (-dis_uv * _DissolveDistortionIntensity + dissolve_uv.xy);
 
-        float dis_map_b = _DissolveMap.Sample(sampler_linear_repeat, dis_uv).z;
-        map = dis_map_b;
+    float dis_map_b = _DissolveMap.Sample(sampler_linear_repeat, dis_uv).z;
+    map = dis_map_b;
 
-        float2 mask_uv = lerp(uv, dissolve_uv.xy, _DissolveMaskUVSet);
-        float3 mask = _DissolveMask.Sample(sampler_linear_repeat, mask_uv.xy);
-        mask.xyz = dot(mask, _DissolveComponent);
+    float2 mask_uv = lerp(uv, dissolve_uv.xy, _DissolveMaskUVSet);
+    float3 mask = _DissolveMask.Sample(sampler_linear_repeat, mask_uv.xy);
+    mask.xyz = dot(mask, _DissolveComponent);
 
-        dissolve_area = (((mask.x * (diss_x.x * (dis_map_b.x + _DissolveMapAdd))) * dissolve_pos.y) * 1.01f + -0.01f);
-        diss_x = (dissolve_area + (-_DissolveRate)) + 1.0f; 
-        diss_x = max(floor(diss_x), 0.0f);
-        if((int)diss_x == 0) discard;
-    }
+    dissolve_area = (((mask.x * (diss_x.x * (dis_map_b.x + _DissolveMapAdd))) * dissolve_pos.y) * 1.01f + -0.01f);
+    diss_x = (dissolve_area + (-_DissolveRate)) + 1.0f; 
+    diss_x = max(floor(diss_x), 0.0f);
+    if((int)diss_x == 0) discard;
+}
 
-    void dissolve_outline(inout float4 color, in float dissolve_area, in float map)
-    {
-        float2 range = dissolve_area - ((_DissolveRate + _DissolveOutlineSize1) + (-_DissolveOutlineSize2));
-        float2 smooth_inv = 1.0 / (_DissolveOutlineSmoothStep.xy + 0.001);
-        float2 blend = saturate(range * smooth_inv);
-        float3 base = color.xyz * map + _DissolveOutlineOffset;
-        float3 color_a = base * _DissolveOutlineColor1.xyz;
-        float3 color_diff = base * _DissolveOutlineColor2.xyz - color_a;
-        float3 final = color_diff * blend.y + color_a;
-        blend.x = blend.x + 1.0;
-        blend.x = blend.x + (-_DissolveOutlineColor1.w);
-        blend.x = saturate(blend.x);
-        
-        color.xyz = lerp(final, color.xyz, blend.x);
-    }
+void dissolve_outline(inout float4 color, in float dissolve_area, in float map)
+{
+    float2 range = dissolve_area - ((_DissolveRate + _DissolveOutlineSize1) + (-_DissolveOutlineSize2));
+    float2 smooth_inv = 1.0 / (_DissolveOutlineSmoothStep.xy + 0.001);
+    float2 blend = saturate(range * smooth_inv);
+    float3 base = color.xyz * map + _DissolveOutlineOffset;
+    float3 color_a = base * _DissolveOutlineColor1.xyz;
+    float3 color_diff = base * _DissolveOutlineColor2.xyz - color_a;
+    float3 final = color_diff * blend.y + color_a;
+    blend.x = blend.x + 1.0;
+    blend.x = blend.x + (-_DissolveOutlineColor1.w);
+    blend.x = saturate(blend.x);
+    
+    color.xyz = lerp(final, color.xyz, blend.x);
+}
 #endif
 
 #if defined(_HEIGHTLERP)

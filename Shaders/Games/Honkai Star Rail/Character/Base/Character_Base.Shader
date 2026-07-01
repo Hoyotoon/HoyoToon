@@ -496,6 +496,8 @@ Shader "HoyoToon/Honkai Star Rail/Character/Base"
             #pragma multi_compile _ _ENABLE_FOG
             #pragma shader_feature_local _IS_DUALFACE
             #pragma shader_feature_local _USE_GLINT
+            #pragma shader_feature_local _USE_MATCAP
+
             #pragma shader_feature_local _USE_DITHER
             #pragma shader_feature_local _FAKEREFLECTION
             #pragma multi_compile_fragment _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN

@@ -19,8 +19,6 @@ namespace HoyoToon.Editor.API.Games
         private static readonly GameAssetDefinition[] AssetDefinitions =
         {
             CreateAssetDefinition<GameConfigSO>("GameConfig", BuildGameConfigPayload),
-            CreateAssetDefinition<GameBoneConstraintsSO>("GameBoneConstraints", BuildBoneConstraintsPayload),
-            CreateAssetDefinition<GameConverterConfigsSO>("GameConverterConfigs", BuildConverterConfigsPayload),
             CreateAssetDefinition<GameModelImportSettingsSO>("GameModelImportSettings", BuildModelImportSettingsPayload),
             CreateAssetDefinition<GameProblemListsSO>("GameProblemLists", BuildProblemListsPayload),
             CreateAssetDefinition<GamePropertyConversionsSO>("GamePropertyConversions", BuildPropertyConversionsPayload),
@@ -142,75 +140,6 @@ namespace HoyoToon.Editor.API.Games
                 ("key", game?.config?.key),
                 ("defaultShader", game?.config?.defaultShader),
                 ("gameProperties", CopyList(game?.config?.gameProperties)));
-        }
-
-        private static Dictionary<string, object> BuildBoneConstraintsPayload(IReadOnlyList<GameRecordDto> games)
-        {
-            List<Dictionary<string, object>> entries = games
-            .SelectMany(game => game?.boneConstraints ?? Enumerable.Empty<BoneConstraintDto>(), (game, constraint) => new { game, constraint })
-                .Select(item =>
-                {
-                    string gameKey = ResolveGameKey(item.constraint?.gameKey, item.game?.config?.key);
-                    return new
-                    {
-                        GameKey = gameKey,
-                        TargetBone = item.constraint?.TargetBone,
-                        SourceBone = item.constraint?.SourceBone,
-                        ConstraintType = item.constraint?.ConstraintType,
-                        Entry = CreateObject(
-                            ("gameKey", gameKey),
-                            ("targetBone", item.constraint?.TargetBone),
-                            ("sourceBone", item.constraint?.SourceBone),
-                            ("constraintType", item.constraint?.ConstraintType),
-                            ("weight", item.constraint?.Weight ?? 1f),
-                            ("sourceWeight", item.constraint?.SourceWeight ?? 1f),
-                            ("positionAxes", CreateAxesPayload(item.constraint?.PositionAxes)),
-                            ("rotationAxes", CreateAxesPayload(item.constraint?.RotationAxes)),
-                            ("maintainOffset", item.constraint?.MaintainOffset ?? false),
-                            ("active", item.constraint?.Active ?? true),
-                            ("locked", item.constraint?.Locked ?? false))
-                    };
-                })
-                .OrderBy(item => item.GameKey, StringComparer.Ordinal)
-                .ThenBy(item => item.TargetBone, StringComparer.Ordinal)
-                .ThenBy(item => item.SourceBone, StringComparer.Ordinal)
-                .ThenBy(item => item.ConstraintType, StringComparer.Ordinal)
-                .Select(item => item.Entry)
-                .ToList();
-
-            return CreateEntriesPayload(entries);
-        }
-
-        private static Dictionary<string, object> BuildConverterConfigsPayload(IReadOnlyList<GameRecordDto> games)
-        {
-            List<Dictionary<string, object>> entries = games
-            .SelectMany(game => game?.converterConfigs ?? Enumerable.Empty<ConverterConfigDto>(), (game, converter) => new { game, converter })
-                .Select(item =>
-                {
-                    string gameKey = ResolveGameKey(item.converter?.gameKey, item.game?.config?.key);
-                    return new
-                    {
-                        GameKey = gameKey,
-                        ConverterType = item.converter?.converterType,
-                        Key = item.converter?.key,
-                        Entry = CreateObject(
-                            ("gameKey", gameKey),
-                            ("converterType", item.converter?.converterType),
-                            ("key", item.converter?.key),
-                            ("features", CreateConverterSectionPayload(item.converter?.Features)),
-                            ("disable", CreateConverterSectionPayload(item.converter?.Disable)),
-                            ("removeMeshes", CreateConverterMappingPayload(item.converter?.RemoveMeshes)),
-                            ("removeBones", CreateConverterMappingPayload(item.converter?.RemoveBones)),
-                            ("renameBones", CreateConverterMappingPayload(item.converter?.RenameBones)))
-                    };
-                })
-                .OrderBy(item => item.GameKey, StringComparer.Ordinal)
-                .ThenBy(item => item.ConverterType, StringComparer.Ordinal)
-                .ThenBy(item => item.Key, StringComparer.Ordinal)
-                .Select(item => item.Entry)
-                .ToList();
-
-            return CreateEntriesPayload(entries);
         }
 
         private static Dictionary<string, object> BuildModelImportSettingsPayload(IReadOnlyList<GameRecordDto> games)
@@ -385,37 +314,6 @@ namespace HoyoToon.Editor.API.Games
         private static Dictionary<string, object> CreateEntriesPayload(List<Dictionary<string, object>> entries)
         {
             return CreateObject(("entries", entries));
-        }
-
-        private static Dictionary<string, object> CreateAxesPayload(AxesDto value)
-        {
-            if (value == null)
-            {
-                return CreateObject(
-                    ("x", true),
-                    ("y", true),
-                    ("z", true));
-            }
-
-            return CreateObject(
-                ("x", value.X),
-                ("y", value.Y),
-                ("z", value.Z));
-        }
-
-        private static Dictionary<string, object> CreateConverterSectionPayload(ConverterSectionDto value)
-        {
-            return CreateObject(
-                ("defaultValue", value?.Default),
-                ("defaultList", CopyList(value?.DefaultList)),
-                ("options", CopyList(value?.Options)));
-        }
-
-        private static Dictionary<string, object> CreateConverterMappingPayload(ConverterMappingDto value)
-        {
-            return CreateObject(
-                ("list", value?.List),
-                ("mapping", value?.Mapping));
         }
 
         private static Dictionary<string, object> CreateSerializedJsonValuePayload(string value)
