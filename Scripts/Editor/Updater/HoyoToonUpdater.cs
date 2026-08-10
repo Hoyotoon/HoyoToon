@@ -71,9 +71,11 @@ namespace HoyoToon
             {
                 yield return webRequest.SendWebRequest();
 
+                // Fix for unassigned variable (CS0165)
+                object version = null;
                 string remoteVersion = webRequest.result == UnityWebRequest.Result.ConnectionError || webRequest.result == UnityWebRequest.Result.ProtocolError
                     ? null
-                    : JsonConvert.DeserializeObject<Dictionary<string, object>>(webRequest.downloadHandler.text)?.TryGetValue("version", out var version) == true ? version.ToString() : null;
+                    : JsonConvert.DeserializeObject<Dictionary<string, object>>(webRequest.downloadHandler.text)?.TryGetValue("version", out version) == true ? version.ToString() : null;
 
                 if (remoteVersion == null)
                 {
